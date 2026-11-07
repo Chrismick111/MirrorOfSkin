@@ -304,11 +304,16 @@ def probability_stamp():
     paths = [ROOT/'随机设置.json', ROOT/'Assets/runtime/all_sinners_pools.json', ROOT/'自定义人格池.json']
     return tuple((p.stat().st_mtime_ns, p.stat().st_size) for p in paths)
 
+def _delay_ready(detected_at, now):
+    return detected_at is not None and now - detected_at >= 30.0
+
+
 def worker():
     session = None
     load_guard = None
     discovery = None
     current = None
+    detected_at = None
     attempted = None
     previous = None
     last_error = None
@@ -328,6 +333,9 @@ def worker():
                     if load_guard:
                         compat.release_process(load_guard); load_guard = None
                     session = None; discovery = None; current = pid; attempted = None; previous = None
+                    detected_at = time.monotonic() if pid else None
+                    if pid:
+                        log("检测到游戏进程，等待 30 秒后加载随机人格")
                 if not pid:
                     continue
                 if session:
@@ -354,6 +362,8 @@ def worker():
                     previous = report(session, previous)
                     continue
                 if attempted == pid:
+                    continue
+                if not _delay_ready(detected_at, time.monotonic()):
                     continue
                 mods = modules(pid)
                 if 'gameassembly.dll' not in mods:

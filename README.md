@@ -3,7 +3,7 @@
 适用于 [FaustLauncher](https://github.com/f0lkskill/FaustLauncher) 的《边狱巴士》(Limbus Company) 人格外观随机插件。
 通过 WarpHook 注入原生 DLL，在战斗中替换罪人外观、随机切换人格，并按原生触发条件播放 Boss 语音与气泡。
 
-当前版本 **0.63.1** · 协议 75 · 原生模块 `SinnersNative-v63.dll` · 测试于启动器 `0.8.9-release.fix.4`
+当前版本 **0.63.2** · 协议 75 · 原生模块 `SinnersNative-v63.dll` · 测试于启动器 `0.8.9-release.fix.4`
 
 ---
 
@@ -61,7 +61,7 @@ FaustLauncher/addons/人格演出工作台/
 
 工作台「检查并更新」读取本仓库的 **latest 正式 Release**，不使用 main 分支源码当安装包。要求：
 
-- 标签形如 `v0.63.1`，且高于已装版本（只比较 `主.次.修订`，后缀被忽略）
+- 标签形如 `v0.63.2`，且高于已装版本（只比较 `主.次.修订`，后缀被忽略）
 - 资产含 `FaustRandomIdentity-WarpHook.zip`，GitHub 提供 SHA-256 摘要
 - 下载地址必须是本仓库的 `releases/download/`
 
@@ -81,6 +81,9 @@ FaustLauncher/addons/人格演出工作台/
 - 默认立绘 582 张，覆盖池内 **185 / 192** 个人格（96.4%）
 
 ### 仅候选 / 未验证
+
+- 原版维吉里乌斯及 E.G.O. 独立外观已加入第六章；动作及加载尚待实战验证。
+- 游戏进程被检测后等待 30 秒再加载；是否消除 GC 弹窗尚待实测。
 
 - **1337 的死亡语音**（`9SV-BAT18-26`）来自静态反汇编分析，尚未实机验证
 - 其余 Boss 的语音触发条件仍在调查，**不能认为全部 Boss 已支持**
