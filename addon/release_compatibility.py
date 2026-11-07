@@ -74,7 +74,11 @@ def validate(root, game_dir, modules, dll_name, pointer_size=None):
             raise CompatibilityError('兼容性清单与插件版本不一致')
         if any(name.lower().startswith('sinnersnative') and name.lower().endswith('.dll') for name in modules):
             raise CompatibilityError('游戏内已有随机人格Native模块，请退出游戏后重新启动，禁止叠加加载')
-        verify_files(root, manifest['package_files'], '插件')
+        addon = json.loads((root / 'addon_info.json').read_text(encoding='utf-8-sig'))
+        if addon.get('version') != manifest['version']:
+            raise CompatibilityError('插件版本与兼容性清单不一致')
+        stable_files = {name: digest for name, digest in manifest['package_files'].items() if name != 'addon_info.json'}
+        verify_files(root, stable_files, '插件')
         verify_files(game_dir, manifest['game_files'], '游戏')
         for path in (root / dll_name, pathlib.Path(game_dir) / 'GameAssembly.dll'):
             if pe_machine(path) != 0x8664:

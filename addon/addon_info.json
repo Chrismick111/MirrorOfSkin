@@ -1,14 +1,14 @@
 {
-  "name": "全角色随机人格 WarpHook",
-  "desc": "章节与快捷设置；当前版本原生基础硬币顺序映射及时间投影修正候选",
-  "authors": {
-    "神必六角恐龙": "https://space.bilibili.com/499174950"
-  },
-  "settings": {
-    "enable": true
-  },
-  "version": "0.63.0-voice-rules-candidate",
-  "requires": [
-    "WarpHook"
-  ]
+ "name": "人格演出工作台",
+ "desc": "启动器托盘——插件——人格、概率与演出设置，打开网页端工作台修改概率和挑选覆盖人格，超大体型外观有概率无攻击动画，可能有未知bug",
+ "authors": {
+  "神必六角恐龙": "https://space.bilibili.com/499174950"
+ },
+ "settings": {
+  "enable": true
+ },
+ "version": "0.63.1",
+ "requires": [
+  "WarpHook"
+ ]
 }

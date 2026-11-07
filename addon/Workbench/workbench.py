@@ -1,6 +1,10 @@
+import sys
+from pathlib import Path
+sys.path.insert(0, str(Path(__file__).resolve().parent))
 from urllib.parse import unquote, quote
 from file_lock import FileLock
 import director
+import custom_portraits
 import struct
 import subprocess
 import argparse,hashlib,json,math,os,pathlib,re,secrets,threading,time,webbrowser
@@ -25,6 +29,8 @@ def add_boss_members(profile,catalog,chapter=None):
 class Store:
  def __init__(self,root):self.root=pathlib.Path(root);self.lock=FileLock(self.root/'workbench-save.lock');self.portraits=read(self.root/'Workbench/portrait_manifest.json',{})
  def portrait(self,identity):
+  custom=custom_portraits.get(self.root,identity)
+  if custom is not None:return custom
   row=self.portraits.get(identity,{})
   name=row.get('file','')
   if not name or pathlib.Path(name).name!=name or '/' in name or '\\' in name or not name.endswith('.png'):return None
@@ -120,7 +126,7 @@ class Store:
   for e in read(self.root/'identity_catalog.json',{}).get('rows',[]):
    catalog.setdefault(str(e['id']),{'identity_id':str(e['id']),'name':e['appearance'],'source':str(100+int(e['character']))})
   for identity,e in catalog.items():
-   if identity in self.portraits:e['portrait_url']='api/portrait/'+quote(identity,safe='')
+   if identity in self.portraits or custom_portraits.path_for(self.root,identity).is_file():e['portrait_url']='api/portrait/'+quote(identity,safe='')
   chapters=read(self.root/'boss_chapters.json',{})
   for identity,e in catalog.items():
    if e.get('category')=='humanoid_boss':
@@ -156,17 +162,21 @@ def main():
     if route=='events':return self.send(store.events())
     if route and route.startswith('portrait/'):
      image=store.portrait(unquote(route[len('portrait/'):]))
-     if image is not None:return self.send(image,ctype='image/png',cache='private, max-age=600')
+     if image is not None:return self.send(image,ctype='image/png',cache='no-store')
     return self.send({'error':'未找到'},404)
    except Exception as e:return self.send({'error':str(e)},500)
   def do_POST(self):
    route=self.route()
-   if route not in ('save','import','legacy','director','bundle','boss-preview','update-check','update-install'):return self.send({'error':'未找到'},404)
+   if route not in ('save','import','legacy','director','bundle','boss-preview','update-check','update-install','portrait-save','portrait-reset','portrait-download'):return self.send({'error':'未找到'},404)
    if self.headers.get('X-Workbench')!=token:return self.send({'error':'请求无效'},403)
    try:
     n=int(self.headers.get('Content-Length',0))
-    if not 0<n<=1024*1024:raise ValueError('方案文件过大或为空')
+    limit=2*1024*1024 if route=='portrait-save' else 1024*1024
+    if not 0<n<=limit:raise ValueError('请求过大或为空')
     body=json.loads(self.rfile.read(n))
+    if route=='portrait-download':
+     import portrait_download
+     return self.send(portrait_download.download(store.root))
     if route in ('update-check','update-install'):
      import github_update
      return self.send(github_update.check(store.root) if route=='update-check' else github_update.install(store.root))
@@ -175,6 +185,13 @@ def main():
      subprocess.Popen(['powershell.exe','-NoProfile','-STA','-WindowStyle','Hidden','-ExecutionPolicy','Bypass','-File',str(store.root/'Settings.ps1')],cwd=store.root,creationflags=subprocess.CREATE_NO_WINDOW)
      return self.send({'opened':True})
     known={str(e['identity_id']) for e in store.data()['catalog']}
+    if route in ('portrait-save','portrait-reset'):
+     identity=body.get('identity')
+     if not isinstance(identity,str) or identity not in known:raise ValueError('未知人格')
+     with store.lock:
+      if route=='portrait-save':custom_portraits.save(store.root,identity,body.get('image'))
+      else:custom_portraits.reset(store.root,identity)
+     return self.send({'saved':True,'portrait_url':'api/portrait/'+quote(identity,safe='') if store.portrait(identity) else None})
     if route=='bundle':
      config=body['config'];pool=config['pools'];rules=config['director']
      if config.get('schema')!=2:raise ValueError('方案版本不支持')
