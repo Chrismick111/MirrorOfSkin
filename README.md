@@ -131,7 +131,6 @@ python Workbench/package_release.py --addon . --output C:\temp\FaustRandomIdenti
 ## 致谢
 
 插件由原「全角色随机人格」模组演进。启动器为 [FaustLauncher](https://github.com/f0lkskill/FaustLauncher)。
-现有元数据列出的作者为六角恐龙@Chrismick111。第三方代码与资源的许可由各自权利人决定。
 
 ## 许可证
 
