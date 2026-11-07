@@ -3,7 +3,7 @@
 适用于 [FaustLauncher](https://github.com/f0lkskill/FaustLauncher) 的《边狱巴士》(Limbus Company) 人格外观随机插件。
 通过 WarpHook 注入原生 DLL，在战斗中替换罪人外观、随机切换人格，并按原生触发条件播放 Boss 语音与气泡。
 
-当前版本 **0.63.2** · 协议 75 · 原生模块 `SinnersNative-v63.dll` · 测试于启动器 `0.8.9-release.fix.4`
+当前版本 **0.63.2** · 协议 75 · 原生模块 `SinnersNative-v63.dll` · 测试于启动器 `0.9.5-release.fix.1`
 
 ---
 
