@@ -28,7 +28,7 @@ SIZE = OFF_TUNABLE + 32
 ERRORS = {0: 'ok', 1: 'il2cpp-export-missing', 2: 'assembly-or-class-missing',
           6: 'no-frame-hook'}
 SESSION_NAME = 'Local\\FaustNativeSinners_v75_%d'
-DLL_NAME = 'SinnersNative-v62.dll'
+DLL_NAME = 'SinnersNative-v63.dll'
 API_NAMES = ['domain_get', 'domain_get_assemblies', 'assembly_get_image', 'image_get_name',
              'class_from_name', 'class_get_method_from_name', 'class_get_field_from_name',
              'field_get_offset', 'object_get_class', 'class_get_parent', 'runtime_invoke',

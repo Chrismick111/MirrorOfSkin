@@ -7,7 +7,7 @@
   "settings": {
     "enable": true
   },
-  "version": "0.62.0-voice-rules-candidate",
+  "version": "0.63.0-voice-rules-candidate",
   "requires": [
     "WarpHook"
   ]
