@@ -161,12 +161,15 @@ def main():
    except Exception as e:return self.send({'error':str(e)},500)
   def do_POST(self):
    route=self.route()
-   if route not in ('save','import','legacy','director','bundle','boss-preview'):return self.send({'error':'未找到'},404)
+   if route not in ('save','import','legacy','director','bundle','boss-preview','update-check','update-install'):return self.send({'error':'未找到'},404)
    if self.headers.get('X-Workbench')!=token:return self.send({'error':'请求无效'},403)
    try:
     n=int(self.headers.get('Content-Length',0))
     if not 0<n<=1024*1024:raise ValueError('方案文件过大或为空')
     body=json.loads(self.rfile.read(n))
+    if route in ('update-check','update-install'):
+     import github_update
+     return self.send(github_update.check(store.root) if route=='update-check' else github_update.install(store.root))
     if route=='boss-preview':return self.send(add_boss_members(body['profile'],store.data()['catalog'],body.get('chapter')))
     if route=='legacy':
      subprocess.Popen(['powershell.exe','-NoProfile','-STA','-WindowStyle','Hidden','-ExecutionPolicy','Bypass','-File',str(store.root/'Settings.ps1')],cwd=store.root,creationflags=subprocess.CREATE_NO_WINDOW)
