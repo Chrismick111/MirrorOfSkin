@@ -452,7 +452,7 @@ try:
     def open_settings(*unused):
         import subprocess
         subprocess.Popen(['powershell.exe','-NoProfile','-STA','-WindowStyle','Hidden','-ExecutionPolicy','Bypass','-File',str(ROOT/'Workbench'/'打开工作台.ps1')],cwd=str(ROOT),creationflags=subprocess.CREATE_NO_WINDOW)
-    menu=pystray.MenuItem('全角色随机人格 Native',pystray.Menu(
+    menu=pystray.MenuItem('人格演出工作台',pystray.Menu(
         pystray.MenuItem('人格、概率与演出设置',open_settings),
         pystray.MenuItem('原生随机已启用',None,enabled=False)))
     register=getattr(MANAGER,'register_tray_item',None)
