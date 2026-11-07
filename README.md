@@ -1,5 +1,6 @@
 # 人格演出工作台
 
+声明：本插件包含ai生成代码内容，使用的ai为gpt、deepseek
 适用于 [FaustLauncher](https://github.com/f0lkskill/FaustLauncher) 的《边狱巴士》(Limbus Company) 人格外观随机插件。
 通过 WarpHook 注入原生 DLL，在战斗中替换罪人外观、随机切换人格，并按原生触发条件播放 Boss 语音与气泡。
 
