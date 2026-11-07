@@ -129,7 +129,7 @@ class Store:
    if identity in self.portraits or custom_portraits.path_for(self.root,identity).is_file():e['portrait_url']='api/portrait/'+quote(identity,safe='')
   chapters=read(self.root/'boss_chapters.json',{})
   for identity,e in catalog.items():
-   if e.get('category')=='humanoid_boss':
+   if identity in chapters:
     group=chapters.get(identity,{})
     e.update(chapter=group.get('chapter','unassigned'),chapter_label=group.get('label','未归档'),chapter_memberships=group.get('memberships',[{'chapter':group.get('chapter','unassigned'),'label':group.get('label','未归档')}]))
     e.update(chapter_rank=group.get('rank',20000),chapter_sources=group.get('appearances_in',[]),source_note='；'.join(x.get('note','') for x in group.get('special_evidence',[])),source_evidence_level=group.get('confidence',''),source_battles=sorted({str(x['battle_id']) for x in group.get('battle_evidence',[]) if x.get('battle_id') is not None}))
