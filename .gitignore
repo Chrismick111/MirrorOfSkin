@@ -1,0 +1,12 @@
+# Local build output (never upload the build directory or its zips)
+/build/
+
+# Local tool configuration / secrets
+/opencode.json
+
+# Python caches and runtime artifacts
+__pycache__/
+*.py[cod]
+addon/github-update.lock
+
+portraits/
