@@ -52,7 +52,8 @@ FaustLauncher/addons/人格演出工作台/
 
 ### 立绘
 
-- **默认立绘**：点「下载默认头像」，从最新 Release 拉取 `FaustRandomIdentity-Portraits.zip`，要求插件版本与 Release 一致
+- **默认立绘**：点「下载默认头像」，直接读取 `Workbench/portrait_source.json` 中锁定的独立直链与 SHA-256，不再查询 GitHub Release；头像包与核心版本相互独立
+- **直链覆盖**：复制为 `Workbench/portrait_source.local.json` 并填写 `url` / `sha256`（可选 `size`）即可换镜像或独立地址；该文件在核心更新时受保护
 - **自定义立绘**：每个人格都可单独上传或重置。浏览器端缩放到 ≤384×384 转 PNG，服务端还要校验 PNG 结构与 CRC、体积 ≤1 MiB，存到 `Workbench/user_portraits/`（按人格名 SHA-256 命名），更新时受保护
 
 ---
@@ -126,7 +127,8 @@ native/       原生运行时 C 源码与测试
 2. zip 内文件集合 **精确等于** `package_files ∪ {compatibility.json, Assets/runtime/all_sinners_pools.json}`——多一个（运行时缓存、日志、备份）或少一个都会被更新器拒绝
 3. `addon_info.json` 与 `compatibility.json` 的 `version` **必须一致**，且与标签的 `主.次.修订` 匹配
 4. `scr.py` 的 `DLL_NAME` 必须等于 `compatibility.json` 的 `dll`
-5. 不得包含 `native_pools.bin`、`随机设置.json`、`自定义人格池.json`、`animation-times-*`、`*.log`、`*.bak*`
+5. `Workbench/portrait_source.json` 必须列入 `package_files`，其 `url` / `sha256` 与实际头像包一致
+6. 不得包含 `native_pools.bin`、`随机设置.json`、`自定义人格池.json`、`animation-times-*`、`*.log`、`*.bak*`
 
 ```powershell
 python Workbench/package_release.py --addon . --output C:\temp\FaustRandomIdentity-WarpHook.zip
