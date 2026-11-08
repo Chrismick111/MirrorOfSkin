@@ -217,15 +217,23 @@ def report(session, previous):
 
 
 
-ROW = struct.Struct('<IIII d 64s 128s 64s')
+ROW = struct.Struct('<IIII d 64s 128s 64s 64s')
+ROW3 = struct.Struct('<IIII d 64s 128s 64s')
+RULESET_DIR = ROOT / '规则集'
+RULESET_STATE = ROOT / '规则集状态.json'
 
-DEFAULT_SETTINGS = {'max_cached_skins': 3, 'prewarm_full_pool': False, 'enabled': True, 'characters': {str(i): True for i in range(101, 113)}}
+DEFAULT_SETTINGS = {'max_cached_skins': 3, 'prewarm_full_pool': False, 'enabled': True, 'characters': {str(i): False for i in range(101, 113)}}
 DEFAULT_CUSTOM_POOLS = {'schema': 1, 'characters': {}}
 DEFAULT_DIRECTOR = {'schema': 1, 'characters': {}, 'forms': {}}
+DEFAULT_RULESET_STATE = {'schema': 1, 'global': False, 'active': {}}
 
 
 def ensure_user_config():
-    defaults = {'随机设置.json': DEFAULT_SETTINGS, '自定义人格池.json': DEFAULT_CUSTOM_POOLS, '演出编排.json': DEFAULT_DIRECTOR}
+    try:
+        RULESET_DIR.mkdir(exist_ok=True)
+    except OSError:
+        pass
+    defaults = {'随机设置.json': DEFAULT_SETTINGS, '自定义人格池.json': DEFAULT_CUSTOM_POOLS, '演出编排.json': DEFAULT_DIRECTOR, '规则集状态.json': DEFAULT_RULESET_STATE}
     for name, data in defaults.items():
         path = ROOT / name
         if path.exists():
@@ -276,76 +284,326 @@ def prewarm_settings():
     mode = 1 if settings.get('prewarm_full_pool', False) else 0
     return mode, skins
 
-_pool_history = {}
+def _json_file(path, default=None):
+    try:
+        data = json.loads(path.read_text(encoding='utf-8-sig'))
+        return data if isinstance(data, dict) else default
+    except (OSError, ValueError):
+        return default
+
+
+def ruleset_state():
+    data = _json_file(RULESET_STATE, DEFAULT_RULESET_STATE) or DEFAULT_RULESET_STATE
+    active = data.get('active') if isinstance(data.get('active'), dict) else {}
+    return {'schema': 1, 'global': bool(data.get('global')), 'active': {str(k): str(v) for k, v in active.items()}}
+
+
+def _identity_ruleset_path(identity):
+    return RULESET_DIR / ('人格-%s.json' % identity)
+
+
+def _identity_ruleset(identity):
+    data = _json_file(_identity_ruleset_path(identity))
+    if not data or data.get('scope') != 'identity' or str(data.get('identity')) != str(identity):
+        return None
+    return data
+
+
+def _global_ruleset():
+    data = _json_file(RULESET_DIR / '全局.json')
+    if not data or data.get('scope') != 'global' or not isinstance(data.get('pools'), dict):
+        return None
+    return data
+
+
+def _catalog_by_identity(pools):
+    catalog = {}
+    for pool in pools.values():
+        for entry in pool.get('entries', []):
+            identity = str(entry.get('identity_id', ''))
+            if identity:
+                catalog.setdefault(identity, entry)
+    return catalog
+
+
+def _resolve_rows(items, base, catalog, include_zero=False):
+    import math
+    rows = []
+    for item in items or []:
+        if not isinstance(item, dict):
+            continue
+        try:
+            weight = float(item.get('weight', 1))
+        except (TypeError, ValueError):
+            continue
+        if not math.isfinite(weight) or weight < 0 or weight > 1000000:
+            continue
+        if weight <= 0 and not include_zero:
+            continue
+        identity = str(item.get('identity_id', ''))
+        source = catalog.get(identity)
+        if not source:
+            continue
+        row = dict(source)
+        row['weight'] = weight
+        row['base_identity'] = base
+        rows.append(row)
+    return rows
+
+
+def _rule_paths():
+    paths = [ROOT / '随机设置.json', ROOT / '自定义人格池.json', RULESET_STATE, ROOT / 'Assets/runtime/all_sinners_pools.json']
+    if RULESET_DIR.exists():
+        paths.extend(sorted(RULESET_DIR.glob('*.json')))
+    return paths
+
+
+def _config_digest():
+    import hashlib
+    digest = hashlib.sha256()
+    for path in _rule_paths():
+        try:
+            digest.update(path.read_bytes())
+        except OSError:
+            pass
+        digest.update(b'\0')
+    return digest.hexdigest()
+
+
+def _old_pool_rows():
+    path = ROOT / 'native_pools.bin'
+    try:
+        raw = path.read_bytes()
+    except OSError:
+        return []
+    if len(raw) < 16:
+        return []
+    magic, version, count, size = struct.unpack_from('<4sIII', raw, 0)
+    if magic != b'SRP4' or count > 4096:
+        return []
+    if version == 4 and size == ROW.size:
+        fmt, has_base = ROW, True
+    elif version == 3 and size == ROW3.size:
+        fmt, has_base = ROW3, False
+    else:
+        return []
+    if len(raw) < 16 + count * fmt.size:
+        return []
+    rows = []
+    for index in range(count):
+        fields = fmt.unpack_from(raw, 16 + index * fmt.size)
+        sinner, enabled, excluded, story, weight, identity, asset, look = fields[:8]
+        base = fields[8] if has_base else b''
+        rows.append({
+            'sinner': sinner,
+            'identity_id': identity.split(b'\0')[0].decode('utf-8', 'replace'),
+            'asset_key': asset.split(b'\0')[0].decode('utf-8', 'replace'),
+            'appearance_name': look.split(b'\0')[0].decode('utf-8', 'replace'),
+            'base_identity': base.split(b'\0')[0].decode('utf-8', 'replace'),
+            'weight': 0,
+            '_mask': excluded,
+            '_story': bool(story),
+        })
+    return rows
+
 
 def prepare_native_pools():
-    import importlib.util, hashlib
-    lock=getattr(prepare_native_pools,'lock',None)
+    import importlib.util
+    lock = getattr(prepare_native_pools, 'lock', None)
     if lock is None:
-        spec=importlib.util.spec_from_file_location('_sinners_pool_file_lock',ROOT/'Workbench'/'file_lock.py')
-        module=importlib.util.module_from_spec(spec);spec.loader.exec_module(module)
-        lock=module.FileLock(ROOT/'workbench-save.lock');prepare_native_pools.lock=lock
+        spec = importlib.util.spec_from_file_location('_sinners_pool_file_lock', ROOT / 'Workbench' / 'file_lock.py')
+        module = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(module)
+        lock = module.FileLock(ROOT / 'workbench-save.lock')
+        prepare_native_pools.lock = lock
     with lock:
-        rows=_prepare_native_pools_unlocked()
-        config_path=ROOT/'自定义人格池.json'
-        prepare_native_pools.config_revision=hashlib.sha256(config_path.read_bytes() if config_path.exists() else b'').hexdigest()
+        rows = _prepare_native_pools_unlocked()
+        prepare_native_pools.config_revision = _config_digest()
         return rows
 
+
 def _prepare_native_pools_unlocked():
-    global _pool_history
     import math
-    pools=json.loads((ROOT/'Assets/runtime/all_sinners_pools.json').read_text(encoding='utf-8-sig'))
-    import importlib.util as _cp_import
-    _spec = _cp_import.spec_from_file_location('_sinners_custom_pools',ROOT/'custom_pools.py')
-    _cp = _cp_import.module_from_spec(_spec);_spec.loader.exec_module(_cp)
-    selected = _cp.apply_custom_pools(pools, load_user_json('自定义人格池.json', DEFAULT_CUSTOM_POOLS))
-    _hot_spec = _cp_import.spec_from_file_location('_sinners_hot_pool',ROOT/'hot_pool.py')
-    _hot = _cp_import.module_from_spec(_hot_spec);_hot_spec.loader.exec_module(_hot)
-    pools = _hot.complete_snapshot(pools, selected, _pool_history)
-    settings=load_user_json('随机设置.json', DEFAULT_SETTINGS)
-    rows=[]
-    for key,pool in pools.items():
-        sinner=int(key)
-        if sinner<101 or sinner>112:raise ValueError('Invalid sinner')
-        ids=set()
-        for entry in pool['entries']:
-            identity=str(entry['identity_id']);raw=identity.encode('ascii')
-            asset=str(entry['asset_key']).encode('ascii');look=str(entry['appearance_name']).encode('ascii')
-            weight=float(entry.get('weight',1))
-            if not math.isfinite(weight) or weight<0 or weight>1000000:raise ValueError('Invalid weight')
-            if not raw or len(raw)>=64 or identity in ids:raise ValueError('Invalid/duplicate identity')
-            if not asset or len(asset)>=128:raise ValueError('Invalid asset key')
-            if not look or len(look)>=64:raise ValueError('Invalid appearance name')
-            ids.add(identity)
-            enabled=bool(settings.get('enabled',True) and settings.get('characters',{}).get(key,True))
-            actions={'evade':1,'attack':2,'attack-preparation':4,'clash':8,'clash-preparation':16}
-            excluded=entry.get('excluded_actions',[])
-            if any(x not in actions for x in excluded):raise ValueError('Unknown excluded action')
-            mask=sum(actions[x] for x in set(excluded))
-            if entry.get('auto_discovered'):mask|=0x80000000
-            story=1 if entry.get('story_metadata') else 0
-            rows.append(ROW.pack(sinner,enabled,mask,story,weight,raw,asset,look))
-    if len(rows)>4096:raise ValueError('Too many identities')
-    candidate=next((e for k,pool in pools.items() for e in pool['entries'] if settings.get('characters',{}).get(k,True) and float(e.get('weight',1))>0 and not e.get('story_metadata')),None)
+    pools = json.loads((ROOT / 'Assets/runtime/all_sinners_pools.json').read_text(encoding='utf-8-sig'))
+    catalog = _catalog_by_identity(pools)
+    custom = load_user_json('自定义人格池.json', DEFAULT_CUSTOM_POOLS)
+    state = ruleset_state()
+    settings = load_user_json('随机设置.json', DEFAULT_SETTINGS)
+
+    known = {}
+
+    def add(sinner, row):
+        row = dict(row)
+        row['sinner'] = int(sinner)
+        row['weight'] = 0
+        key = (int(sinner), str(row.get('base_identity', '')), str(row.get('identity_id', '')))
+        if key[2]:
+            known.setdefault(key, row)
+
+    # Keep every catalog identity at zero weight so changing rule sets never
+    # has to remove native rows (the hot reload path requires old rows).
+    for sinner, pool in pools.items():
+        for entry in pool.get('entries', []):
+            row = dict(entry)
+            row['weight'] = 0
+            row['base_identity'] = ''
+            add(sinner, row)
+
+    for target, profile in (custom.get('characters') or {}).items():
+        if not isinstance(profile, dict):
+            continue
+        for row in _resolve_rows(profile.get('entries', []), '', catalog, include_zero=True):
+            add(target, row)
+
+    global_rule = _global_ruleset()
+    if global_rule:
+        for target, profile in global_rule.get('pools', {}).items():
+            if str(target) not in pools or not isinstance(profile, dict):
+                continue
+            for row in _resolve_rows(profile.get('entries', []), '', catalog, include_zero=True):
+                add(target, row)
+
+    if RULESET_DIR.exists():
+        for path in sorted(RULESET_DIR.glob('人格-*.json')):
+            data = _json_file(path)
+            if not data or data.get('scope') != 'identity':
+                continue
+            identity = str(data.get('identity', ''))
+            sinner = str(data.get('sinner', ''))
+            if sinner not in pools or identity not in catalog:
+                continue
+            for row in _resolve_rows(data.get('entries', []), identity, catalog, include_zero=True):
+                add(sinner, row)
+
+    for row in _old_pool_rows():
+        sinner = str(row.get('sinner', ''))
+        if sinner in pools:
+            add(sinner, row)
+
+    active_rows = []
+
+    def activate(sinner, rows):
+        for row in rows:
+            weight = float(row.get('weight', 0))
+            if weight <= 0:
+                continue
+            row = dict(row)
+            row['sinner'] = int(sinner)
+            key = (int(sinner), str(row.get('base_identity', '')), str(row.get('identity_id', '')))
+            known[key] = row
+            active_rows.append(row)
+
+    if state['global']:
+        for sinner in range(101, 113):
+            key = str(sinner)
+            entries = None
+            if global_rule:
+                profile = global_rule.get('pools', {}).get(key)
+                if isinstance(profile, dict):
+                    entries = profile.get('entries', [])
+            if entries is None:
+                entries = pools[key].get('entries', [])
+            activate(key, _resolve_rows(entries, '', catalog))
+    else:
+        for sinner in range(101, 113):
+            key = str(sinner)
+            active = state['active'].get(key, 'none')
+            if active == 'sinner':
+                profile = (custom.get('characters') or {}).get(key)
+                entries = profile.get('entries', []) if isinstance(profile, dict) else pools[key].get('entries', [])
+                activate(key, _resolve_rows(entries, '', catalog))
+            elif active.startswith('identity:'):
+                identity = active.split(':', 1)[1]
+                rule = _identity_ruleset(identity)
+                if rule and str(rule.get('sinner')) == key:
+                    activate(key, _resolve_rows(rule.get('entries', []), identity, catalog))
+
+    rows = []
+    written = set()
+    for row in active_rows:
+        key = (int(row['sinner']), str(row.get('base_identity', '')), str(row['identity_id']))
+        if key in written:
+            continue
+        written.add(key)
+        rows.append(row)
+    for key, row in known.items():
+        if key in written:
+            continue
+        written.add(key)
+        rows.append(row)
+    if len(rows) > 4096:
+        raise ValueError('Too many identities')
+
+    actions = {'evade': 1, 'attack': 2, 'attack-preparation': 4, 'clash': 8, 'clash-preparation': 16}
+    packed = []
+    seen = set()
+    for row in rows:
+        sinner = int(row['sinner'])
+        if sinner < 101 or sinner > 112:
+            raise ValueError('Invalid sinner')
+        identity = str(row['identity_id'])
+        raw = identity.encode('ascii')
+        asset = str(row['asset_key']).encode('ascii')
+        look = str(row['appearance_name']).encode('ascii')
+        weight = float(row.get('weight', 0))
+        if not math.isfinite(weight) or weight < 0 or weight > 1000000:
+            raise ValueError('Invalid weight')
+        if not raw or len(raw) >= 64:
+            raise ValueError('Invalid identity')
+        if not asset or len(asset) >= 128:
+            raise ValueError('Invalid asset key')
+        if not look or len(look) >= 64:
+            raise ValueError('Invalid appearance name')
+        base = str(row.get('base_identity', '')).encode('ascii')
+        if len(base) >= 64:
+            raise ValueError('Invalid base identity')
+        key = (sinner, base, raw)
+        if key in seen:
+            continue
+        seen.add(key)
+        excluded = row.get('excluded_actions', [])
+        if any(x not in actions for x in excluded):
+            raise ValueError('Unknown excluded action')
+        if '_mask' in row:
+            mask = int(row['_mask'])
+        else:
+            mask = sum(actions[x] for x in set(excluded))
+        if row.get('auto_discovered'):
+            mask |= 0x80000000
+        story = 1 if row.get('_story') or row.get('story_metadata') else 0
+        enabled = 1 if weight > 0 and settings.get('enabled', True) else 0
+        packed.append(ROW.pack(sinner, enabled, mask, story, weight, raw, asset, look, base))
+
+    candidate = next((row for row in active_rows if float(row.get('weight', 0)) > 0 and not row.get('story_metadata')), None)
     if candidate:
-        (ROOT/'probe_asset.txt').write_text(candidate['asset_key'],encoding='utf8')
-    # Preserve multi-form metadata separately without changing the stable SRP4 ABI.
-    form_data={'version':1,'policy':'donor follows current unit sanity/state','identities':{}}
-    for sinner,pool in pools.items():
-        for entry in pool['entries']:
-            forms=entry.get('forms') or [entry['appearance_name']]
-            if len(forms)>1:
-                form_data['identities'][str(entry['identity_id'])]={'sinner':int(sinner),'asset_key':entry['asset_key'],'base':entry['appearance_name'],'forms':forms}
-    form_path=ROOT/'native_forms.json';form_temp=form_path.with_suffix('.tmp')
-    form_temp.write_text(json.dumps(form_data,ensure_ascii=False,indent=2),encoding='utf8');form_temp.replace(form_path)
-    dest=ROOT/'native_pools.bin';temp=dest.with_suffix('.tmp')
-    temp.write_bytes(struct.pack('<4sIII',b'SRP4',3,len(rows),ROW.size)+b''.join(rows));temp.replace(dest)
-    _pool_history = {k:p['entries'] for k,p in pools.items()}
-    return len(rows)
+        (ROOT / 'probe_asset.txt').write_text(str(candidate['asset_key']), encoding='utf8')
+
+    form_data = {'version': 1, 'policy': 'donor follows current unit sanity/state', 'identities': {}}
+    for sinner, pool in pools.items():
+        for entry in pool.get('entries', []):
+            forms = entry.get('forms') or [entry['appearance_name']]
+            if len(forms) > 1:
+                form_data['identities'][str(entry['identity_id'])] = {
+                    'sinner': int(sinner),
+                    'asset_key': entry['asset_key'],
+                    'base': entry['appearance_name'],
+                    'forms': forms,
+                }
+    form_path = ROOT / 'native_forms.json'
+    form_temp = form_path.with_suffix('.tmp')
+    form_temp.write_text(json.dumps(form_data, ensure_ascii=False, indent=2), encoding='utf8')
+    form_temp.replace(form_path)
+
+    dest = ROOT / 'native_pools.bin'
+    temp = dest.with_suffix('.tmp')
+    temp.write_bytes(struct.pack('<4sIII', b'SRP4', 4, len(packed), ROW.size) + b''.join(packed))
+    temp.replace(dest)
+    return len(packed)
+
 
 def probability_stamp():
-    paths = [ROOT/'随机设置.json', ROOT/'Assets/runtime/all_sinners_pools.json', ROOT/'自定义人格池.json']
-    return tuple((p.stat().st_mtime_ns, p.stat().st_size) if p.exists() else (0, 0) for p in paths)
+    return tuple((p.stat().st_mtime_ns, p.stat().st_size) if p.exists() else (0, 0) for p in _rule_paths())
+
 
 def _delay_ready(detected_at, now):
     return detected_at is not None and now - detected_at >= 30.0
