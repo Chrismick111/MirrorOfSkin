@@ -10,3 +10,11 @@ __pycache__/
 addon/github-update.lock
 
 portraits/
+
+# Native build artifacts
+/native/SinnersNative.dll
+/native/*.exe
+
+# Local rule-set data
+addon/规则集/
+addon/规则集状态.json
