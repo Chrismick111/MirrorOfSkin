@@ -40,7 +40,7 @@ class Tests(unittest.TestCase):
         name = 'Workbench/portraits/' + 'a' * 24 + '.png'
         blob = archive({name: PNG})
         write_source(self.root, blob)
-        p._fetch_direct = lambda url, limit: blob
+        p._fetch_direct = lambda url, limit, progress=None: blob
         result = p.download(self.root)
         self.assertEqual(result['count'], 1)
         self.assertEqual((self.root / name).read_bytes(), PNG)
@@ -50,13 +50,13 @@ class Tests(unittest.TestCase):
         blob = archive({name: PNG})
         write_source(self.root, blob, name='portrait_source.json', digest='0' * 64)
         write_source(self.root, blob, name='portrait_source.local.json')
-        p._fetch_direct = lambda url, limit: blob
+        p._fetch_direct = lambda url, limit, progress=None: blob
         self.assertEqual(p.download(self.root)['count'], 1)
 
     def test_sha256_mismatch(self):
         blob = archive({'Workbench/portraits/' + 'c' * 24 + '.png': PNG})
         write_source(self.root, blob, digest='0' * 64)
-        p._fetch_direct = lambda url, limit: blob
+        p._fetch_direct = lambda url, limit, progress=None: blob
         with self.assertRaisesRegex(UpdateError, 'SHA-256'):
             p.download(self.root)
 
@@ -68,7 +68,7 @@ class Tests(unittest.TestCase):
             json.dumps({'10101': {'file': name.rsplit('/', 1)[-1]}}), encoding='utf8')
         (self.root / 'Workbench/portrait_hashes.json').write_text(
             json.dumps({name: '0' * 64}), encoding='utf8')
-        p._fetch_direct = lambda url, limit: blob
+        p._fetch_direct = lambda url, limit, progress=None: blob
         with self.assertRaisesRegex(UpdateError, '校验清单'):
             p.download(self.root)
 
@@ -78,9 +78,26 @@ class Tests(unittest.TestCase):
         write_source(self.root, blob)
         (self.root / 'compatibility.json').write_text(
             json.dumps({'package_files': {name: '0' * 64}}), encoding='utf8')
-        p._fetch_direct = lambda url, limit: blob
+        p._fetch_direct = lambda url, limit, progress=None: blob
         with self.assertRaisesRegex(UpdateError, '当前插件校验清单'):
             p.download(self.root)
+
+    def test_progress_reports_download_and_completion(self):
+        name = 'Workbench/portraits/' + 'f' * 24 + '.png'
+        blob = archive({name: PNG})
+        write_source(self.root, blob)
+
+        def fake(url, limit, progress=None):
+            if progress:
+                progress(5, 10)
+            return blob
+
+        p._fetch_direct = fake
+        events = []
+        p.download(self.root, lambda stage, done, total, message: events.append((stage, done, total)))
+        self.assertIn(('download', 5, 10), events)
+        self.assertEqual(events[-1][0], 'done')
+        self.assertTrue(any(stage == 'install' for stage, _, _ in events))
 
     def test_missing_source(self):
         with self.assertRaisesRegex(UpdateError, '缺少头像包直链配置'):
