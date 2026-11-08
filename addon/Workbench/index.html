@@ -759,6 +759,10 @@
           <select id="addChapter">
             <option value="">全部章节</option>
           </select>
+
+          <label class="add-toggle">
+            <input id="addStory" type="checkbox" />剧情/敌方外观
+          </label>
         </div>
         <div id="addCount" class="identity-count muted"></div>
         <div class="scroll identity-scroll">
@@ -1184,6 +1188,7 @@
         const role = $("#addRole").value;
         const chapter = $("#addChapter").value;
         return data.catalog.filter((entry) => {
+          if (!$("#addStory").checked && entry.story_metadata) return false;
           if (
             source &&
             (source === "boss") !== (entry.category === "humanoid_boss")
@@ -1229,6 +1234,11 @@
       function openIdentityModal() {
         $("#identityTargetName").textContent = who(activeTarget);
         fillAddFilters();
+        $("#addRole").value = activeTarget;
+        $("#addSource").value = "other";
+        $("#addChapter").value = "";
+        $("#addSearch").value = "";
+        $("#addStory").checked = false;
         renderAddList();
         $("#identityModal").classList.remove("hidden");
         $("#addSearch").focus();
@@ -1270,6 +1280,7 @@
         }
         renderAddList();
       };
+      $("#addStory").onchange = () => renderAddList();
       document.addEventListener("click", (event) => {
         if (!event.target.closest("#identityMenu")) closeIdentityMenu();
       });
