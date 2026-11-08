@@ -637,6 +637,8 @@ def worker():
                     detected_at = time.monotonic() if pid else None
                     if pid:
                         log("检测到游戏进程，等待 30 秒后加载随机人格")
+                    else:
+                        log("未检测到游戏进程，等待游戏启动")
                 if not pid:
                     continue
                 if session:
@@ -750,6 +752,11 @@ def worker():
 def on_unload(): STOP.set()
 def disabled(*unused): STOP.set()
 def deleted(*unused): STOP.set()
+def open_workbench(*unused):
+    import subprocess
+    subprocess.Popen(['powershell.exe','-NoProfile','-STA','-WindowStyle','Hidden','-ExecutionPolicy','Bypass','-File',str(ROOT/'Workbench'/'open_workbench.ps1')],cwd=str(ROOT),creationflags=subprocess.CREATE_NO_WINDOW)
+
+
 try:
     import pystray
     def open_settings(*unused):
@@ -774,6 +781,14 @@ try:
 except Exception:
     log('diagnostic logger failed: '+traceback.format_exc())
 log('Sinners Native host loaded; protocol '+str(VERSION))
+
+if not getattr(MANAGER, '_sinners_workbench_opened', False):
+    try:
+        open_workbench()
+        setattr(MANAGER, '_sinners_workbench_opened', True)
+        log('workbench auto-opened')
+    except Exception:
+        log('workbench auto-open failed: '+traceback.format_exc())
 _registry = getattr(MANAGER, '_sinners_warp_workers', None)
 if _registry is None:
     _registry = {}; setattr(MANAGER, '_sinners_warp_workers', _registry)
