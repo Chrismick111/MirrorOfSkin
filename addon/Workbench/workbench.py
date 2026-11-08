@@ -10,6 +10,39 @@ import subprocess
 import argparse,hashlib,json,math,os,pathlib,re,secrets,threading,time,webbrowser
 from http.server import BaseHTTPRequestHandler,ThreadingHTTPServer
 
+_PORTRAIT_LOCK=threading.Lock()
+_PORTRAIT_THREAD=None
+_PORTRAIT_JOB={'stage':'idle','done':0,'total':0,'percent':0,'message':'等待开始','updated':0}
+
+def _portrait_state():
+ with _PORTRAIT_LOCK:return dict(_PORTRAIT_JOB)
+
+def _portrait_update(stage,done=0,total=0,message=''):
+ percent=100 if stage=='done' else (round(done*100/total,1) if total else 0)
+ with _PORTRAIT_LOCK:
+  _PORTRAIT_JOB.update(stage=stage,done=done,total=total,percent=percent,message=message,updated=time.time())
+
+def _portrait_run(root):
+ try:
+  import portrait_download
+  result=portrait_download.download(root,_portrait_update)
+  with _PORTRAIT_LOCK:_PORTRAIT_JOB['result']=result
+  _portrait_update('done',result.get('count',0),result.get('count',0),result.get('message','头像资源已下载'))
+ except Exception as exc:
+  with _PORTRAIT_LOCK:
+   _PORTRAIT_JOB.update(stage='error',message=str(exc),updated=time.time())
+   _PORTRAIT_JOB.pop('result',None)
+
+def _portrait_start(root):
+ global _PORTRAIT_THREAD
+ with _PORTRAIT_LOCK:
+  if _PORTRAIT_THREAD is not None and _PORTRAIT_THREAD.is_alive():return False
+  _PORTRAIT_JOB.pop('result',None)
+  _PORTRAIT_JOB.update(stage='starting',done=0,total=0,percent=0,message='准备下载',updated=time.time())
+  _PORTRAIT_THREAD=threading.Thread(target=_portrait_run,args=(root,),name='PortraitDownload',daemon=True)
+  _PORTRAIT_THREAD.start()
+ return True
+
 def read(path,default):
  try:return json.loads(path.read_text(encoding='utf-8-sig'))
  except FileNotFoundError:return default
@@ -158,6 +191,7 @@ def main():
    route=self.route()
    try:
     if route=='index':return self.send(html,ctype='text/html; charset=utf-8')
+    if route=='portrait-progress':return self.send(_portrait_state())
     if route=='data':return self.send(store.data())
     if route=='events':return self.send(store.events())
     if route and route.startswith('portrait/'):
@@ -175,8 +209,7 @@ def main():
     if not 0<n<=limit:raise ValueError('请求过大或为空')
     body=json.loads(self.rfile.read(n))
     if route=='portrait-download':
-     import portrait_download
-     return self.send(portrait_download.download(store.root))
+     return self.send({'started':_portrait_start(store.root),'progress':_portrait_state()})
     if route in ('update-check','update-install'):
      import github_update
      return self.send(github_update.check(store.root) if route=='update-check' else github_update.install(store.root))
