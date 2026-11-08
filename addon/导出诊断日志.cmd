@@ -1,3 +1,4 @@
 @echo off
-powershell.exe -NoProfile -ExecutionPolicy Bypass -File "%~dp0导出随机人格诊断.ps1"
+setlocal
+powershell.exe -NoProfile -STA -ExecutionPolicy Bypass -File "%~dp0export_diagnostics.ps1" %*
 pause
