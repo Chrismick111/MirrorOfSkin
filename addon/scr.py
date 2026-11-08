@@ -219,6 +219,45 @@ def report(session, previous):
 
 ROW = struct.Struct('<IIII d 64s 128s 64s')
 
+DEFAULT_SETTINGS = {'max_cached_skins': 3, 'enabled': True, 'characters': {str(i): True for i in range(101, 113)}}
+DEFAULT_CUSTOM_POOLS = {'schema': 1, 'characters': {}}
+DEFAULT_DIRECTOR = {'schema': 1, 'characters': {}, 'forms': {}}
+
+
+def ensure_user_config():
+    defaults = {'随机设置.json': DEFAULT_SETTINGS, '自定义人格池.json': DEFAULT_CUSTOM_POOLS, '演出编排.json': DEFAULT_DIRECTOR}
+    for name, data in defaults.items():
+        path = ROOT / name
+        if path.exists():
+            continue
+        temp = path.with_name(path.name + '.default.tmp')
+        try:
+            temp.write_text(json.dumps(data, ensure_ascii=False, indent=2), encoding='utf8')
+            temp.replace(path)
+        except OSError:
+            try:
+                temp.unlink(missing_ok=True)
+            except OSError:
+                pass
+
+
+def load_user_json(name, default):
+    path = ROOT / name
+    try:
+        data = json.loads(path.read_text(encoding='utf-8-sig'))
+        if not isinstance(data, dict):
+            raise ValueError('配置不是 JSON 对象')
+        return data
+    except FileNotFoundError:
+        return default
+    except (OSError, ValueError) as exc:
+        log('读取用户配置失败，使用默认值: ' + name + ' (' + str(exc) + ')')
+        return default
+
+
+ensure_user_config()
+
+
 def stopped_by_flag():
     try:
         saved = json.loads((ROOT / '随机设置.json').read_text(encoding='utf-8-sig'))
@@ -232,8 +271,6 @@ def max_cached_skins():
     # in user settings but is not used by this strategy.
     return 256
 
-_CUSTOM_POOLS=json.loads((ROOT/'自定义人格池.json').read_text(encoding='utf-8-sig'))
-
 _pool_history = {}
 
 def prepare_native_pools():
@@ -245,7 +282,8 @@ def prepare_native_pools():
         lock=module.FileLock(ROOT/'workbench-save.lock');prepare_native_pools.lock=lock
     with lock:
         rows=_prepare_native_pools_unlocked()
-        prepare_native_pools.config_revision=hashlib.sha256((ROOT/'自定义人格池.json').read_bytes()).hexdigest()
+        config_path=ROOT/'自定义人格池.json'
+        prepare_native_pools.config_revision=hashlib.sha256(config_path.read_bytes() if config_path.exists() else b'').hexdigest()
         return rows
 
 def _prepare_native_pools_unlocked():
@@ -255,11 +293,11 @@ def _prepare_native_pools_unlocked():
     import importlib.util as _cp_import
     _spec = _cp_import.spec_from_file_location('_sinners_custom_pools',ROOT/'custom_pools.py')
     _cp = _cp_import.module_from_spec(_spec);_spec.loader.exec_module(_cp)
-    selected = _cp.apply_custom_pools(pools, json.loads((ROOT/'自定义人格池.json').read_text(encoding='utf-8-sig')))
+    selected = _cp.apply_custom_pools(pools, load_user_json('自定义人格池.json', DEFAULT_CUSTOM_POOLS))
     _hot_spec = _cp_import.spec_from_file_location('_sinners_hot_pool',ROOT/'hot_pool.py')
     _hot = _cp_import.module_from_spec(_hot_spec);_hot_spec.loader.exec_module(_hot)
     pools = _hot.complete_snapshot(pools, selected, _pool_history)
-    settings=json.loads((ROOT/'随机设置.json').read_text(encoding='utf-8-sig'))
+    settings=load_user_json('随机设置.json', DEFAULT_SETTINGS)
     rows=[]
     for key,pool in pools.items():
         sinner=int(key)
@@ -302,7 +340,7 @@ def _prepare_native_pools_unlocked():
 
 def probability_stamp():
     paths = [ROOT/'随机设置.json', ROOT/'Assets/runtime/all_sinners_pools.json', ROOT/'自定义人格池.json']
-    return tuple((p.stat().st_mtime_ns, p.stat().st_size) for p in paths)
+    return tuple((p.stat().st_mtime_ns, p.stat().st_size) if p.exists() else (0, 0) for p in paths)
 
 def _delay_ready(detected_at, now):
     return detected_at is not None and now - detected_at >= 30.0
