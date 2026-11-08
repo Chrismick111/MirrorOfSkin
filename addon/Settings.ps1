@@ -1,4 +1,4 @@
-param([switch]$ValidateOnly)
+﻿param([switch]$ValidateOnly)
 if($ValidateOnly){
  $root=$PSScriptRoot
  $data=Get-Content -LiteralPath (Join-Path $root 'Assets/runtime/all_sinners_pools.json') -Raw -Encoding UTF8|ConvertFrom-Json
