@@ -66,8 +66,18 @@ def global_file(root):
     return pathlib.Path(root) / DIR / '全局.json'
 
 
-def _default_entries(pool):
-    return [{'identity_id': str(entry['identity_id']), 'weight': float(entry.get('weight', 1))} for entry in pool.get('entries', []) if float(entry.get('weight', 1)) > 0][:MAX_ENTRIES]
+def _default_entries(pool, sinner):
+    result = []
+    for entry in pool.get('entries', []):
+        identity = str(entry.get('identity_id', ''))
+        if not identity.isdigit() or len(identity) != 5 or identity[:3] != str(sinner):
+            continue
+        if entry.get('story_metadata') or entry.get('category') == 'humanoid_boss':
+            continue
+        weight = float(entry.get('weight', 1))
+        if weight > 0:
+            result.append({'identity_id': identity, 'weight': weight})
+    return result[:MAX_ENTRIES]
 
 
 def _positive(entries):
@@ -164,7 +174,7 @@ def entries(root, rule):
         profile = (data.get('pools') or {}).get(sinner)
         if isinstance(profile, dict):
             return _positive(profile.get('entries', []))
-        return _default_entries(pools(root).get(sinner, {}))
+        return _default_entries(pools(root).get(sinner, {}), sinner)
     if kind == 'sinner':
         profile = (custom(root).get('characters') or {}).get(sinner)
         return _positive(profile.get('entries', [])) if isinstance(profile, dict) else []
@@ -265,7 +275,7 @@ def create_identity(root, sinner, identity, known):
     entry_sinner = str(entry.get('source', ''))
     if entry_sinner not in ('', sinner):
         raise ValueError('该人格不属于当前角色')
-    entries = _default_entries(pools(root).get(sinner, {}))
+    entries = _default_entries(pools(root).get(sinner, {}), sinner)
     data = {
         'schema': 1, 'scope': 'identity', 'sinner': int(sinner), 'identity': identity,
         'name': str(entry.get('name') or identity), 'entries': entries,
@@ -289,6 +299,39 @@ def only(root, rule):
     cfg = settings(root)
     cfg['enabled'] = True
     cfg['characters'] = {str(i): str(i) == sinner for i in range(101, 113)}
+    with FileLock(root / 'workbench-save.lock'):
+        save_state(root, st)
+        _write(root / '随机设置.json', cfg)
+    return st
+
+def deactivate(root, rule):
+    root = pathlib.Path(root)
+    if not rule:
+        raise ValueError('未选择规则集')
+    st = state(root)
+    kind = rule.get('kind')
+    sinner = str(rule.get('sinner') or '')
+    identity = rule.get('identity')
+    if kind == 'global':
+        st['global'] = False
+        st['active'] = {}
+        st['selected'] = None
+    else:
+        current = st['active'].get(sinner)
+        target = 'sinner' if kind == 'sinner' else 'identity:' + str(identity)
+        if current == target:
+            st['active'][sinner] = 'none'
+        selected = st.get('selected') or {}
+        if selected.get('id') == rule.get('id'):
+            st['selected'] = None
+    cfg = settings(root)
+    cfg['characters'] = {str(i): False for i in range(101, 113)}
+    for key, value in st['active'].items():
+        if str(value) != 'none' and str(key).isdigit():
+            cfg['characters'][str(key)] = True
+    if st['global']:
+        for i in range(101, 113):
+            cfg['characters'][str(i)] = True
     with FileLock(root / 'workbench-save.lock'):
         save_state(root, st)
         _write(root / '随机设置.json', cfg)
