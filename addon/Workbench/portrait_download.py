@@ -57,14 +57,25 @@ def _load_source(root):
     return url, digest, size
 
 
-def _fetch_direct(url, limit):
+def _fetch_direct(url, limit, progress=None):
     request = urllib.request.Request(url, headers={'User-Agent': 'FaustRandomIdentity-Portraits', 'Accept': '*/*'})
     try:
-        with urllib.request.urlopen(request, timeout=60) as response:
-            blob = response.read(limit + 1)
-            if len(blob) > limit:
-                raise UpdateError('头像包下载内容过大')
-            return blob
+        with urllib.request.urlopen(request, timeout=120) as response:
+            total = int(response.headers.get('Content-Length') or 0)
+            data = bytearray()
+            while True:
+                chunk = response.read(256 * 1024)
+                if not chunk:
+                    break
+                data.extend(chunk)
+                if len(data) > limit:
+                    raise UpdateError('头像包下载内容过大')
+                if progress:
+                    try:
+                        progress(len(data), total)
+                    except Exception:
+                        pass
+            return bytes(data)
     except UpdateError:
         raise
     except urllib.error.HTTPError as exc:
@@ -73,17 +84,26 @@ def _fetch_direct(url, limit):
         raise UpdateError('无法下载头像包，请检查网络或直链配置') from exc
 
 
-def download(root):
+def download(root, progress=None):
     root = pathlib.Path(root).resolve()
     with FileLock(root / 'github-update.lock'):
-        return _download_locked(root)
+        return _download_locked(root, progress)
 
 
-def _download_locked(root):
+def _download_locked(root, progress=None):
+    def report(stage, done=0, total=0, message=''):
+        if progress:
+            try:
+                progress(stage, done, total, message)
+            except Exception:
+                pass
+
     url, digest, expected_size = _load_source(root)
-    blob = _fetch_direct(url, MAX_ZIP)
+    report('download', 0, expected_size or 0, '准备下载头像包')
+    blob = _fetch_direct(url, MAX_ZIP, lambda done, total: report('download', done, total, '正在下载头像包'))
     if expected_size is not None and len(blob) != expected_size:
         raise UpdateError('头像包大小与直链配置不符')
+    report('verify', 1, 1, '正在校验头像包')
     if hashlib.sha256(blob).hexdigest() != digest:
         raise UpdateError('头像包 SHA-256 与直链配置不符')
 
@@ -157,7 +177,8 @@ def _download_locked(root):
     written = []
     before = {}
     try:
-        for name, data in files.items():
+        total_files = len(files)
+        for index, (name, data) in enumerate(files.items(), 1):
             path = root.joinpath(*name.split('/'))
             path.parent.mkdir(parents=True, exist_ok=True)
             before[name] = path.read_bytes() if path.exists() else None
@@ -165,6 +186,7 @@ def _download_locked(root):
             tmp.write_bytes(data)
             tmp.replace(path)
             written.append(name)
+            report('install', index, total_files, '正在写入头像')
     except Exception:
         for name in reversed(written):
             path = root.joinpath(*name.split('/'))
@@ -174,4 +196,5 @@ def _download_locked(root):
             else:
                 path.write_bytes(old)
         raise
+    report('done', len(files), len(files), '头像资源已下载')
     return {'count': len(files), 'message': '头像资源已下载，请刷新工作台'}
