@@ -1,42 +1,1325 @@
-<!doctype html><html lang="zh-CN"><meta charset="utf-8"><title>人格演出工作台</title><style>
-*{box-sizing:border-box}body{margin:0;font:15px 'Microsoft YaHei',sans-serif;background:#17191d;color:#e7e7e7}header{padding:22px 30px;border-bottom:1px solid #444;display:flex;justify-content:space-between}h1{font-size:23px;margin:0}main{display:grid;grid-template-columns:170px 1fr;min-height:90vh}nav{padding:20px;border-right:1px solid #444}button,select,input{background:#292c32;color:#eee;border:1px solid #60646c;padding:9px;border-radius:4px}button{cursor:pointer}button:hover{border-color:#deb970}nav button{display:block;width:100%;margin-bottom:12px;text-align:left}article{padding:24px;min-width:0}.bar{display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin-bottom:16px}.muted{color:#b4b8c1;font-size:13px}.notice{padding:12px;background:#272a30;border-left:3px solid #deb970;margin:12px 0}table{width:100%;border-collapse:collapse}td,th{text-align:left;padding:9px;border-bottom:1px solid #343840}th{position:sticky;top:0;background:#22252b}td input[type=number]{width:110px}.avatar{width:72px;height:72px;object-fit:contain;display:block;background:#202329;border-radius:5px}.scroll{max-height:65vh;overflow:auto}.hidden{display:none}.primary{background:#685125}textarea{width:100%;height:220px;background:#202329;color:#eee}pre{white-space:pre-wrap;word-break:break-word;background:#202329;padding:15px}#status{position:sticky;bottom:0;padding:12px 24px;background:#242831;border-top:1px solid #555}label{display:inline-flex;gap:6px;align-items:center}
-</style><header><h1>人格演出工作台 <small class="muted">人格与Boss外观</small></h1><div><span id="version"></span> <button id="downloadPortraits">下载默认头像</button> <button id="updatePlugin">检查并更新</button> <button id="legacy">原设置窗口</button></div></header><main><nav><button data-page="pool">人格池</button><button data-page="events">演出记录</button><button data-page="rules">抽取编排</button><button data-page="forms">形态配置</button><button data-page="schemes">方案管理</button><button data-page="prepare">准备状态</button></nav><article>
-<section id="pool"><div class="bar"><label>出战角色 <select id="target"></select></label><label><input id="enabled" type="checkbox">启用自定义池</label><input id="search" placeholder="搜索名字、ID或来源角色"><label><input id="only" type="checkbox">仅显示已选</label><button id="save" class="primary">保存当前池</button><button id="reload">重新载入</button></div><div class="notice">勾选成员后调整权重；表中占比仅表示独立随机时的归一化权重。轮抽权重决定本轮先后，顺序模式使用保存顺序，具体模式见“抽取编排”。成员选择、顺序和权重保存后自动热更新；新增外观在后台准备，准备完成后参与随机。正在播放的动作保持完成。</div><div class="bar"><span id="summary"></span><button id="allSource">加入本角色人格</button><button id="allBoss">加入Boss</button><label>来源 <select id="sourceFilter"><option value="">全部</option><option value="boss">Boss</option><option value="other">角色与剧情</option></select></label><label>人格角色 <select id="roleFilter"><option value="">全部角色</option></select></label><label>Boss章节 <select id="chapterFilter"><option value="">全部章节</option></select></label><button id="uploadPortrait">上传当前人格图片</button><button id="resetPortrait">恢复默认图片</button><input id="portraitFile" type="file" accept="image/png,image/jpeg,image/webp" hidden><button id="onlyIdentity">仅抽中当前人格</button><button id="onlyRole">仅启用当前角色</button><button id="equalWeights">当前角色恢复均等</button><button id="clear">清空选择</button></div><div class="scroll"><table><thead><tr><th>当前</th><th>选择</th><th>图片</th><th>人格</th><th>权重</th><th>独立抽取占比</th></tr></thead><tbody id="rows"></tbody></table></div></section>
-<section id="events" class="hidden"><div class="bar"><input id="eventSearch" placeholder="筛选角色ID、事件或原因"><button id="refreshEvents">刷新日志</button><button id="exportEvents">导出当前记录</button></div><div class="notice">展示最近日志中的最多600条相关事件。硬币类型未被原生核心记录时显示“未记录”。点击行可查看原始记录。</div><div class="scroll"><table><thead><tr><th>事件</th><th>角色</th><th>硬币</th><th>类型</th><th>选中</th><th>可见外观</th><th>结果/原因</th></tr></thead><tbody id="eventRows"></tbody></table></div><pre id="eventDetail">选择一条记录查看详情</pre></section>
-<section id="rules" class="hidden"><h2>抽取编排 · <span id="rulesTarget"></span></h2><p>按当前“人格池”页选择的出战角色分别设置。顺序模式采用池成员保存顺序；在人格池页用上移／下移调整。</p><div id="ruleControls"></div><button id="saveRules">保存演出编排</button><p class="muted">原生核心读取规则后生效；旧版核心不会采用这些规则。模式变更会重置当前轮次。</p></section><section id="forms" class="hidden"><h2>现有形态资源</h2><div class="notice">选择人格可覆盖其原生形态条件。阶段从0开始；实际形态数量以资源表为准。理智和血量仅在条件满足时采用目标阶段，否则基础阶段。</div><div class="bar"><select id="formIdentity"></select><select id="formMode"><option value="native">沿用原生</option><option value="defense">守备推进</option><option value="sanity">理智阈值</option><option value="health">血量百分比</option><option value="fixed">固定阶段</option></select><select id="formCompare"><option value="0">大于等于</option><option value="1">小于等于</option></select><label>阈值／每几次守备<input id="formThreshold" type="number" value="1"></label><label>目标阶段／推进上限<input id="formStage" type="number" min="0" max="31" value="1"></label><button id="saveForm">保存此人格规则</button></div><div id="formRows"></div></section>
-<section id="schemes" class="hidden"><h2>整套演出方案</h2><p>导出已保存的人格池、抽取模式和形态规则；导入时先预览再应用。未保存的编辑不会被导出。</p><div class="bar"><button id="exportScheme">导出已保存方案</button><input type="file" id="importFile" accept=".json"><button id="applyImport" disabled>应用预览方案</button></div><pre id="importPreview">尚未选择方案</pre><h3>抽取编排</h3><p class="muted">攻击、拼点、守备可分别选择独立随机、加权轮抽或池顺序；形态规则在对应页面设置。配套原生核心读取确认可在准备状态页查看。</p></section>
-<section id="prepare" class="hidden"><h2>资源准备状态</h2><button id="refreshPrepare">刷新状态</button><pre id="prepareData"></pre></section>
-</article></main><div id="status" role="status">正在读取插件数据…</div><script>
-const $=s=>document.querySelector(s),names=['李箱','浮士德','堂吉诃德','良秀','默尔索','鸿璐','希斯克利夫','以实玛利','罗佳','辛克莱','奥提斯','格里高尔'];let data,selected=new Map(),events=[],dirty=false,activeTarget='101',pendingImport=null,currentIdentity=null,settingsDirty=false,settingsBaseline=null;const token=location.pathname.split('/')[1];
-const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));const who=id=>names[Number(id)-101]||id;const status=t=>$('#status').textContent=t;
-async function api(route,body){const r=await fetch('api/'+route,body?{method:'POST',headers:{'Content-Type':'application/json','X-Workbench':token},body:JSON.stringify(body)}:{});const j=await r.json();if(!r.ok)throw Error(j.error);return j}
-function profile(){return {enabled:$('#enabled').checked,entries:[...selected].map(([identity_id,weight])=>({identity_id,weight}))}}
-function loadTarget(){currentIdentity=null;let p=data.config.characters[activeTarget];selected=new Map((p?.entries||data.pools[activeTarget]?.entries||[]).map(e=>[String(e.identity_id),Number(e.weight??1)]));$('#enabled').checked=!!p?.enabled;dirty=false;render();if(data.director)renderDirector()}
-function render(){const q=$('#search').value.toLowerCase(),total=[...selected.values()].reduce((s,v)=>s+(Number.isFinite(v)&&v>0?v:0),0);$('#summary').textContent=`已选 ${selected.size} 项 · 总权重 ${total}`;$('#rows').innerHTML=data.catalog.slice().sort((a,b)=>{let ka=[...selected.keys()],ia=ka.indexOf(String(a.identity_id)),ib=ka.indexOf(String(b.identity_id));return (ia<0?9999:ia)-(ib<0?9999:ib)}).filter(e=>(!$('#sourceFilter').value||($('#sourceFilter').value==='boss')===(e.category==='humanoid_boss'))&&(!$('#roleFilter').value||(e.category!=='humanoid_boss'&&String(e.source)===$('#roleFilter').value))&&(!$('#chapterFilter').value||((e.chapter_memberships||[{chapter:e.chapter||'unassigned'}]).some(g=>String(g.chapter)===$('#chapterFilter').value)))&&(!$('#only').checked||selected.has(String(e.identity_id)))&&`${e.name} ${e.identity_id} ${who(e.source)} ${e.chapter_label||''}`.toLowerCase().includes(q)).map(e=>{let id=String(e.identity_id),w=selected.get(id)??0;return `<tr data-id="${esc(id)}"><td><input class="currentIdentity" type="radio" name="currentIdentity" ${currentIdentity===id?'checked':''} aria-label="将此人格设为当前操作对象"></td><td><input class="pick" type="checkbox" ${selected.has(id)?'checked':''}></td><td>${e.portrait_url?`<img class="avatar" src="${esc(e.portrait_url)}" alt="${esc(e.name)}的战斗头像" loading="lazy" decoding="async" onerror="this.remove()">`:''}</td><td>${esc(e.name||e.appearance_name||id)} <small class="muted">${esc(id)}</small>${e.category==='humanoid_boss'?`<details><summary class="muted">来源：${esc(e.chapter_label||'')}</summary><div>${esc(e.source_note||(e.chapter_sources||[]).map(g=>g.label).join('；'))}</div>${e.source_evidence_level==='localized_unit_source'?'<div class="muted">依据该章节的游戏单位文本；未找到此变体的直接初始编队引用。</div>':''}${e.source_battles?.length?`<div class="muted">游戏战斗记录编号：${esc(e.source_battles.join('、'))}</div>`:''}</details>`:''}</td><td><input class="weight" type="number" min="0" max="1000000" step="0.1" value="${w}" ${selected.has(id)?'':'disabled'}></td><td>${selected.has(id)?`<button class="move" data-step="-1">↑</button><button class="move" data-step="1">↓</button>`:""} ${total>0?(100*w/total).toFixed(2):'0.00'}%</td></tr>`}).join('')}
-$('#rows').addEventListener('change',e=>{let id=e.target.closest('tr')?.dataset.id;if(!id)return;if(e.target.classList.contains('currentIdentity')){currentIdentity=id;status('当前操作人格：'+(data.catalog.find(x=>String(x.identity_id)===id)?.name||id));return}if(e.target.classList.contains('move')){let a=[...selected],i=a.findIndex(x=>x[0]===id),j=i+Number(e.target.dataset.step);if(j>=0&&j<a.length){[a[i],a[j]]=[a[j],a[i]];selected=new Map(a)}}else if(e.target.classList.contains('pick')){if(e.target.checked)selected.set(id,1);else selected.delete(id)}else if(e.target.classList.contains('weight'))selected.set(id,Number(e.target.value));dirty=true;render();status('当前池有未保存修改')});$('#rows').addEventListener('click',e=>{if(e.target.classList.contains('move'))e.target.dispatchEvent(new Event('change',{bubbles:true}))});$('#enabled').onchange=()=>{dirty=true};$('#sourceFilter').onchange=()=>{if($('#sourceFilter').value!=='boss')$('#chapterFilter').value='';if($('#sourceFilter').value==='boss')$('#roleFilter').value='';render()};$('#chapterFilter').onchange=()=>{if($('#chapterFilter').value){$('#roleFilter').value=''}render()};$('#roleFilter').innerHTML='<option value="">全部角色</option>'+names.map((n,i)=>`<option value="${101+i}">${esc(n)}</option>`).join('');$('#roleFilter').onchange=()=>{if($('#roleFilter').value){$('#sourceFilter').value='other';$('#chapterFilter').value=''}render()};$('#search').oninput=render;$('#only').onchange=render;
-$('#target').onchange=()=>{if(dirty&&!confirm('放弃当前池未保存的修改并切换角色？')){$('#target').value=activeTarget;return}if(settingsDirty){data.settings.config=structuredClone(settingsBaseline);settingsDirty=false}activeTarget=$('#target').value;loadTarget()};$('#allSource').onclick=()=>{data.catalog.filter(e=>String(e.source)===activeTarget).forEach(e=>selected.set(String(e.identity_id),selected.get(String(e.identity_id))??1));dirty=true;render()};$('#allBoss').onclick=async()=>{try{let p=await api('boss-preview',{profile:profile(),chapter:$('#chapterFilter').value});selected=new Map(p.entries.map(e=>[String(e.identity_id),Number(e.weight)]));dirty=true;render();status('已加入Boss，保留已有权重；保存当前池后生效')}catch(e){status(e.message)}};$('#clear').onclick=()=>{selected.clear();dirty=true;render()};
-$('#save').onclick=async()=>{try{let p=profile(),r=await api('save',{target:activeTarget,profile:p,revision:data.revision,...(settingsDirty?{settingsConfig:data.settings.config,settingsRevision:data.settings.revision}:{})});data.config=r.config;data.revision=r.revision;if(r.settings)data.settings=r.settings;settingsBaseline=structuredClone(data.settings.config);settingsDirty=false;dirty=false;status('已保存当前池，插件将自动更新成员与权重；新增外观需等待后台准备。')}catch(e){status(e.message)}};
-function enableCurrentRole(){data.settings.config.enabled=true;data.settings.config.characters??={};data.settings.config.characters[activeTarget]=true;settingsDirty=true;dirty=true}
-$('#uploadPortrait').onclick=()=>{if(!currentIdentity){status('请先用表格第一列选定当前人格');return}$('#portraitFile').click()};
-$('#portraitFile').onchange=async e=>{let file=e.target.files[0],id=currentIdentity;e.target.value='';if(!file||!id)return;try{if(!['image/png','image/jpeg','image/webp'].includes(file.type)||file.size>20*1024*1024)throw Error('请选择 20 MiB 内的 PNG、JPEG 或 WebP 图片');let img=await createImageBitmap(file);try{let scale=Math.min(1,384/img.width,384/img.height),canvas=document.createElement('canvas');canvas.width=Math.max(1,Math.round(img.width*scale));canvas.height=Math.max(1,Math.round(img.height*scale));canvas.getContext('2d').drawImage(img,0,0,canvas.width,canvas.height);let encoded=canvas.toDataURL('image/png').split(',')[1];let r=await api('portrait-save',{identity:id,image:encoded});let row=data.catalog.find(x=>String(x.identity_id)===id);if(row)row.portrait_url=r.portrait_url;render();status('图片已保存')}finally{img.close()}}catch(err){status('上传失败：'+err.message)}};
-$('#resetPortrait').onclick=async()=>{let id=currentIdentity;if(!id){status('请先用表格第一列选定当前人格');return}try{let r=await api('portrait-reset',{identity:id});let row=data.catalog.find(x=>String(x.identity_id)===id);if(row)row.portrait_url=r.portrait_url;render();status(r.portrait_url?'已恢复默认图片':'已移除自定义图片；当前没有默认头像')}catch(err){status('恢复失败：'+err.message)}};
-$('#onlyIdentity').onclick=()=>{if(!currentIdentity){status('请先用表格第一列选定当前人格');return}selected=new Map([...selected].map(([id])=>[id,id===currentIdentity?1:0]));selected.set(currentIdentity,1);$('#enabled').checked=true;enableCurrentRole();render();status('已设为仅抽中当前人格，点击保存当前池后生效')};
-$('#onlyRole').onclick=()=>{enableCurrentRole();for(let n=101;n<=112;n++)data.settings.config.characters[String(n)]=String(n)===activeTarget;status('已设为仅启用当前角色，点击保存当前池后生效')};
-$('#equalWeights').onclick=()=>{selected=new Map([...selected].map(([id])=>[id,1]));dirty=true;render();status('当前池所有已选人格权重已恢复为1，点击保存当前池后生效')};
-$('#legacy').onclick=async()=>{try{await api('legacy',{});status('已打开原设置窗口')}catch(e){status(e.message)}};
-$('#downloadPortraits').onclick=async()=>{let b=$('#downloadPortraits');b.disabled=true;try{status('正在下载头像资源，请稍候…');let r=await api('portrait-download',{});status(r.message||'头像资源已下载，请保存当前编辑后刷新页面')}catch(e){status('头像下载未完成：'+e.message)}finally{b.disabled=false}};
-$('#updatePlugin').onclick=async()=>{let b=$('#updatePlugin');b.disabled=true;try{status('正在检查 GitHub 发布版本…');let r=await api('update-check',{});if(!r.available){status(r.message||'当前没有可安装的新版本');return}let summary=r.message||`发现新版本 ${r.latest||''}`;if(!confirm(summary+'\n\n安装前请退出游戏和启动器，保持本工作台打开。安装后请重新启动启动器和工作台。是否继续？')){status('已取消更新');return}status('正在下载并安装更新…');let done=await api('update-install',{});status(done.message||'更新已安装，请重启启动器和工作台')}catch(e){status('更新未完成：'+e.message)}finally{b.disabled=false}};
-function chapterRank(id){let entry=data.catalog.find(e=>e.chapter===id);return entry?.chapter_rank??20000}
-async function refresh(){try{data=await api('data');settingsBaseline=structuredClone(data.settings.config);settingsDirty=false;let chapters=new Map(data.catalog.filter(e=>e.chapter).flatMap(e=>(e.chapter_memberships||[{chapter:e.chapter||'unassigned',label:e.chapter_label||'未归档'}]).map(g=>[String(g.chapter),g.label])));$('#chapterFilter').innerHTML='<option value="">全部章节</option>'+[...chapters].sort((a,b)=>chapterRank(a[0])-chapterRank(b[0])||a[1].localeCompare(b[1],'zh-CN')).map(([id,label])=>`<option value="${esc(id)}">${esc(label)}</option>`).join('');$('#version').textContent='插件 '+data.version+' · 人格池：'+data.runtime.pool+' · 抽取规则：'+data.runtime.draw;loadTarget();$('#prepareData').textContent=JSON.stringify(data.warmup,null,2);$('#formRows').innerHTML=Object.entries(data.formAnnotations||{}).map(([id,p])=>`<h3>${esc(id)} · ${esc(p.forms)}</h3><p>${esc(p.method)}</p>`).join('');status('已读取插件数据')}catch(e){status(e.message)}}$('#reload').onclick=()=>{if(!dirty||confirm('重新读取会放弃未保存修改，继续？'))refresh()};
-function renderEvents(){let q=$('#eventSearch').value.toLowerCase();$('#eventRows').innerHTML=events.map((e,i)=>({...e,i})).filter(e=>e.raw.toLowerCase().includes(q)).reverse().map(e=>`<tr data-index="${e.i}"><td>${esc(e.kind)}</td><td>${esc(e.fields.sinner||e.fields.unit||'—')}</td><td>${esc(e.fields.coin??'—')}</td><td>${esc(e.coin_type)}</td><td>${esc(e.fields.selected||e.fields.identity||'—')}</td><td>${esc(e.fields.shown||'—')}</td><td>${esc(e.fields.result||e.fields.metadata||'—')}</td></tr>`).join('')}
-$('#refreshEvents').onclick=async()=>{try{events=await api('events');renderEvents();status(`已读取 ${events.length} 条演出记录`)}catch(e){status(e.message)}};$('#eventSearch').oninput=renderEvents;$('#eventRows').onclick=e=>{let row=e.target.closest('tr');if(row)$('#eventDetail').textContent=events[Number(row.dataset.index)].raw};
-function download(name,value){let a=document.createElement('a'),u=URL.createObjectURL(new Blob([JSON.stringify(value,null,2)],{type:'application/json'}));a.href=u;a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(u),1000)}$('#exportEvents').onclick=()=>download('演出反馈包.json',{version:data.version,generatedAt:new Date().toISOString(),pools:data.config,director:data.director.config,warmup:data.warmup,events});$('#exportScheme').onclick=()=>download('人格演出方案.json',{schema:2,pools:data.config,director:data.director.config});
-$('#importFile').onchange=async e=>{pendingImport=null;$('#applyImport').disabled=true;try{let p=JSON.parse(await e.target.files[0].text());if(!((p.schema===1&&p.characters)||(p.schema===2&&p.pools&&p.director)))throw Error('方案格式不支持');pendingImport=p;$('#importPreview').textContent=JSON.stringify(p,null,2);$('#applyImport').disabled=false}catch(err){status(err.message)}};$('#applyImport').onclick=async()=>{if(!confirm('用预览方案替换全部已保存自定义池？旧配置将备份。'))return;try{let r=await api(pendingImport.schema===2?'bundle':'import',{config:pendingImport,revision:data.revision,directorRevision:data.director.revision});if(r.director)data.director=r.director;data.config=r.config;data.revision=r.revision;data.settings.config=structuredClone(settingsBaseline);settingsDirty=false;loadTarget();status('方案已应用，旧配置已备份，成员与权重自动热更新。')}catch(e){status(e.message)}};
-$('#refreshPrepare').onclick=async()=>{try{let r=await api('data');$('#prepareData').textContent=JSON.stringify({runtime:r.runtime,resources:r.warmup},null,2)}catch(e){status(e.message)}};document.querySelectorAll('nav button').forEach(b=>b.onclick=()=>{document.querySelectorAll('article section').forEach(s=>s.classList.toggle('hidden',s.id!==b.dataset.page))});window.onbeforeunload=e=>{if(dirty){e.preventDefault();e.returnValue=''}};names.forEach((n,i)=>$('#target').add(new Option(n,String(101+i))));refresh();
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>人格演出工作台</title>
+    <style>
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        font:
+          15px "Microsoft YaHei",
+          sans-serif;
+        background: #17191d;
+        color: #e7e7e7;
+      }
+      header {
+        padding: 22px 30px;
+        border-bottom: 1px solid #444;
+        display: flex;
+        justify-content: space-between;
+      }
+      h1 {
+        font-size: 23px;
+        margin: 0;
+      }
+      main {
+        display: grid;
+        grid-template-columns: 170px 1fr;
+        min-height: 90vh;
+      }
+      nav {
+        padding: 20px;
+        border-right: 1px solid #444;
+      }
+      button,
+      select,
+      input {
+        background: #292c32;
+        color: #eee;
+        border: 1px solid #60646c;
+        padding: 9px;
+        border-radius: 4px;
+      }
+      button {
+        cursor: pointer;
+      }
+      button:hover {
+        border-color: #deb970;
+      }
+      nav button {
+        display: block;
+        width: 100%;
+        margin-bottom: 12px;
+        text-align: left;
+      }
+      article {
+        padding: 24px;
+        min-width: 0;
+      }
+      .bar {
+        display: flex;
+        gap: 12px;
+        align-items: center;
+        flex-wrap: wrap;
+        margin-bottom: 16px;
+      }
+      .muted {
+        color: #b4b8c1;
+        font-size: 13px;
+      }
+      .notice {
+        padding: 12px;
+        background: #272a30;
+        border-left: 3px solid #deb970;
+        margin: 12px 0;
+      }
+      table {
+        width: 100%;
+        border-collapse: collapse;
+      }
+      td,
+      th {
+        text-align: left;
+        padding: 9px;
+        border-bottom: 1px solid #343840;
+      }
+      th {
+        position: sticky;
+        top: 0;
+        background: #22252b;
+      }
+      td input[type="number"] {
+        width: 110px;
+      }
+      .avatar {
+        width: 72px;
+        height: 72px;
+        object-fit: contain;
+        display: block;
+        background: #202329;
+        border-radius: 5px;
+      }
+      .scroll {
+        max-height: 65vh;
+        overflow: auto;
+      }
+      .hidden {
+        display: none;
+      }
+      .primary {
+        background: #685125;
+      }
+      textarea {
+        width: 100%;
+        height: 220px;
+        background: #202329;
+        color: #eee;
+      }
+      pre {
+        white-space: pre-wrap;
+        word-break: break-word;
+        background: #202329;
+        padding: 15px;
+      }
+      #status {
+        position: sticky;
+        bottom: 0;
+        padding: 12px 24px;
+        background: #242831;
+        border-top: 1px solid #555;
+      }
+      label {
+        display: inline-flex;
+        gap: 6px;
+        align-items: center;
+      }
+      .header-actions {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        flex-wrap: wrap;
+      }
+      .version-pill {
+        padding: 6px 10px;
+        border: 1px solid #4b505a;
+        border-radius: 999px;
+        color: #b4b8c1;
+        font-size: 13px;
+        white-space: nowrap;
+      }
+      .action-group {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        position: relative;
+      }
+      .menu-wrap {
+        position: relative;
+      }
+      .menu {
+        position: absolute;
+        right: 0;
+        top: calc(100% + 6px);
+        min-width: 170px;
+        background: #22252b;
+        border: 1px solid #565b66;
+        border-radius: 8px;
+        padding: 6px;
+        z-index: 60;
+        box-shadow: 0 16px 36px #000a;
+      }
+      .menu button {
+        display: block;
+        width: 100%;
+        text-align: left;
+        border: 0;
+        background: transparent;
+        padding: 9px 10px;
+        border-radius: 5px;
+      }
+      .menu button:hover {
+        background: #333842;
+      }
+      .modal-backdrop {
+        position: fixed;
+        inset: 0;
+        background: #0009;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 20px;
+        z-index: 100;
+      }
+      .modal-backdrop.hidden,
+      .mini-progress.hidden {
+        display: none;
+      }
+      .modal {
+        width: min(560px, 100%);
+        background: #202329;
+        border: 1px solid #565b66;
+        border-radius: 12px;
+        box-shadow: 0 28px 90px #000c;
+        padding: 22px;
+      }
+      .modal-title {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        margin-bottom: 8px;
+      }
+      .modal-title h2 {
+        margin: 0;
+        font-size: 19px;
+      }
+      .progress-track {
+        height: 12px;
+        background: #343840;
+        border-radius: 999px;
+        overflow: hidden;
+        margin: 18px 0 10px;
+      }
+      .progress-bar {
+        height: 100%;
+        width: 0;
+        background: linear-gradient(90deg, #b98d3c, #f0d79b);
+        border-radius: 999px;
+        transition: width 0.25s ease;
+      }
+      .progress-meta {
+        display: flex;
+        justify-content: space-between;
+        gap: 12px;
+        color: #b4b8c1;
+        font-size: 13px;
+      }
+      .modal-actions {
+        display: flex;
+        justify-content: flex-end;
+        gap: 10px;
+        margin-top: 20px;
+      }
+      .mini-progress {
+        position: fixed;
+        right: 22px;
+        bottom: 22px;
+        width: 230px;
+        background: #202329;
+        border: 1px solid #565b66;
+        border-radius: 10px;
+        padding: 10px 12px;
+        box-shadow: 0 14px 40px #000a;
+        z-index: 90;
+        cursor: pointer;
+      }
+      .mini-progress .progress-track {
+        height: 6px;
+        margin: 9px 0 0;
+      }
+      .mini-top {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 8px;
+        font-size: 13px;
+      }
+      .mini-close {
+        border: 0;
+        background: transparent;
+        padding: 0 2px;
+        color: #b4b8c1;
+        font-size: 16px;
+        line-height: 1;
+        cursor: pointer;
+      }
+      .mini-close:hover {
+        color: #fff;
+      }
+    </style>
+  </head>
+  <body>
+    <header>
+      <h1>人格演出工作台 <small class="muted">人格与Boss外观</small></h1>
+      <div class="header-actions">
+        <span id="version" class="version-pill"></span>
+        <div class="action-group">
+          <button
+            id="downloadPortraits"
+            class="primary"
+            title="下载默认头像资源包"
+          >
+            下载头像</button
+          ><button id="updatePlugin" title="检查并安装核心插件更新">
+            检查更新
+          </button>
+          <div class="menu-wrap">
+            <button id="moreActions" title="更多操作">更多</button>
+            <div id="moreMenu" class="menu hidden">
+              <button id="legacy">原设置入口</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </header>
+    <main>
+      <nav>
+        <button data-page="pool">人格池</button
+        ><button data-page="events">演出记录</button
+        ><button data-page="rules">抽取编排</button
+        ><button data-page="forms">形态配置</button
+        ><button data-page="schemes">方案管理</button
+        ><button data-page="prepare">准备状态</button>
+      </nav>
+      <article>
+        <section id="pool">
+          <div class="bar">
+            <label
+              >出战角色
+              <select id="target"></select></label
+            ><label><input id="enabled" type="checkbox" />启用自定义池</label
+            ><input id="search" placeholder="搜索名字、ID或来源角色" /><label
+              ><input id="only" type="checkbox" />仅显示已选</label
+            ><button id="save" class="primary">保存当前池</button
+            ><button id="reload">重新载入</button>
+          </div>
+          <div class="notice">
+            勾选成员后调整权重；表中占比仅表示独立随机时的归一化权重。轮抽权重决定本轮先后，顺序模式使用保存顺序，具体模式见“抽取编排”。成员选择、顺序和权重保存后自动热更新；新增外观在后台准备，准备完成后参与随机。正在播放的动作保持完成。
+          </div>
+          <div class="bar">
+            <span id="summary"></span
+            ><button id="allSource">加入本角色人格</button
+            ><button id="allBoss">加入Boss</button
+            ><label
+              >来源
+              <select id="sourceFilter">
+                <option value="">全部</option>
+                <option value="boss">Boss</option>
+                <option value="other">角色与剧情</option>
+              </select></label
+            ><label
+              >人格角色
+              <select id="roleFilter">
+                <option value="">全部角色</option>
+              </select></label
+            ><label
+              >Boss章节
+              <select id="chapterFilter">
+                <option value="">全部章节</option>
+              </select></label
+            ><button id="uploadPortrait">上传当前人格图片</button
+            ><button id="resetPortrait">恢复默认图片</button
+            ><input
+              id="portraitFile"
+              type="file"
+              accept="image/png,image/jpeg,image/webp"
+              hidden
+            /><button id="onlyIdentity">仅抽中当前人格</button
+            ><button id="onlyRole">仅启用当前角色</button
+            ><button id="equalWeights">当前角色恢复均等</button
+            ><button id="clear">清空选择</button>
+          </div>
+          <div class="scroll">
+            <table>
+              <thead>
+                <tr>
+                  <th>当前</th>
+                  <th>选择</th>
+                  <th>图片</th>
+                  <th>人格</th>
+                  <th>权重</th>
+                  <th>独立抽取占比</th>
+                </tr>
+              </thead>
+              <tbody id="rows"></tbody>
+            </table>
+          </div>
+        </section>
+        <section id="events" class="hidden">
+          <div class="bar">
+            <input
+              id="eventSearch"
+              placeholder="筛选角色ID、事件或原因"
+            /><button id="refreshEvents">刷新日志</button
+            ><button id="exportEvents">导出当前记录</button>
+          </div>
+          <div class="notice">
+            展示最近日志中的最多600条相关事件。硬币类型未被原生核心记录时显示“未记录”。点击行可查看原始记录。
+          </div>
+          <div class="scroll">
+            <table>
+              <thead>
+                <tr>
+                  <th>事件</th>
+                  <th>角色</th>
+                  <th>硬币</th>
+                  <th>类型</th>
+                  <th>选中</th>
+                  <th>可见外观</th>
+                  <th>结果/原因</th>
+                </tr>
+              </thead>
+              <tbody id="eventRows"></tbody>
+            </table>
+          </div>
+          <pre id="eventDetail">选择一条记录查看详情</pre>
+        </section>
+        <section id="rules" class="hidden">
+          <h2>抽取编排 · <span id="rulesTarget"></span></h2>
+          <p>
+            按当前“人格池”页选择的出战角色分别设置。顺序模式采用池成员保存顺序；在人格池页用上移／下移调整。
+          </p>
+          <div id="ruleControls"></div>
+          <button id="saveRules">保存演出编排</button>
+          <p class="muted">
+            原生核心读取规则后生效；旧版核心不会采用这些规则。模式变更会重置当前轮次。
+          </p>
+        </section>
+        <section id="forms" class="hidden">
+          <h2>现有形态资源</h2>
+          <div class="notice">
+            选择人格可覆盖其原生形态条件。阶段从0开始；实际形态数量以资源表为准。理智和血量仅在条件满足时采用目标阶段，否则基础阶段。
+          </div>
+          <div class="bar">
+            <select id="formIdentity"></select
+            ><select id="formMode">
+              <option value="native">沿用原生</option>
+              <option value="defense">守备推进</option>
+              <option value="sanity">理智阈值</option>
+              <option value="health">血量百分比</option>
+              <option value="fixed">固定阶段</option></select
+            ><select id="formCompare">
+              <option value="0">大于等于</option>
+              <option value="1">小于等于</option></select
+            ><label
+              >阈值／每几次守备<input
+                id="formThreshold"
+                type="number"
+                value="1" /></label
+            ><label
+              >目标阶段／推进上限<input
+                id="formStage"
+                type="number"
+                min="0"
+                max="31"
+                value="1" /></label
+            ><button id="saveForm">保存此人格规则</button>
+          </div>
+          <div id="formRows"></div>
+        </section>
+        <section id="schemes" class="hidden">
+          <h2>整套演出方案</h2>
+          <p>
+            导出已保存的人格池、抽取模式和形态规则；导入时先预览再应用。未保存的编辑不会被导出。
+          </p>
+          <div class="bar">
+            <button id="exportScheme">导出已保存方案</button
+            ><input type="file" id="importFile" accept=".json" /><button
+              id="applyImport"
+              disabled
+            >
+              应用预览方案
+            </button>
+          </div>
+          <pre id="importPreview">尚未选择方案</pre>
+          <h3>抽取编排</h3>
+          <p class="muted">
+            攻击、拼点、守备可分别选择独立随机、加权轮抽或池顺序；形态规则在对应页面设置。配套原生核心读取确认可在准备状态页查看。
+          </p>
+        </section>
+        <section id="prepare" class="hidden">
+          <h2>资源准备状态</h2>
+          <button id="refreshPrepare">刷新状态</button>
+          <pre id="prepareData"></pre>
+        </section>
+      </article>
+    </main>
+    <div id="status" role="status">正在读取插件数据…</div>
+    <div
+      id="portraitModal"
+      class="modal-backdrop hidden"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="portraitTitle"
+    >
+      <div class="modal">
+        <div class="modal-title">
+          <h2 id="portraitTitle">下载默认头像</h2>
+          <button id="portraitClose" aria-label="关闭">关闭</button>
+        </div>
+        <p class="muted">
+          头像包与核心版本独立，使用固定直链下载。下载过程中可以隐藏此窗口，进度会保留在右下角。
+        </p>
+        <div class="progress-track">
+          <div id="portraitBar" class="progress-bar"></div>
+        </div>
+        <div class="progress-meta">
+          <span id="portraitStatus">等待开始</span
+          ><span id="portraitPercent">0%</span>
+        </div>
+        <div class="modal-actions">
+          <button id="portraitHide">隐藏</button
+          ><button id="portraitStart" class="primary">开始下载</button>
+        </div>
+      </div>
+    </div>
+    <div
+      id="portraitMini"
+      class="mini-progress hidden"
+      role="status"
+      title="点击展开下载进度"
+    >
+      <div class="mini-top">
+        <span id="portraitMiniLabel">下载头像</span
+        ><span
+          ><span id="portraitMiniPercent">0%</span>
+          <button
+            id="portraitMiniClose"
+            class="mini-close"
+            aria-label="关闭进度"
+          >
+            ×
+          </button></span
+        >
+      </div>
+      <div class="progress-track">
+        <div id="portraitMiniBar" class="progress-bar"></div>
+      </div>
+    </div>
+    <script>
+      const $ = (s) => document.querySelector(s),
+        names = [
+          "李箱",
+          "浮士德",
+          "堂吉诃德",
+          "良秀",
+          "默尔索",
+          "鸿璐",
+          "希斯克利夫",
+          "以实玛利",
+          "罗佳",
+          "辛克莱",
+          "奥提斯",
+          "格里高尔",
+        ];
+      let data,
+        selected = new Map(),
+        events = [],
+        dirty = false,
+        activeTarget = "101",
+        pendingImport = null,
+        currentIdentity = null,
+        settingsDirty = false,
+        settingsBaseline = null;
+      const token = location.pathname.split("/")[1];
+      const esc = (v) =>
+        String(v ?? "").replace(
+          /[&<>"']/g,
+          (c) =>
+            ({
+              "&": "&amp;",
+              "<": "&lt;",
+              ">": "&gt;",
+              '"': "&quot;",
+              "'": "&#39;",
+            })[c],
+        );
+      const who = (id) => names[Number(id) - 101] || id;
+      const status = (t) => ($("#status").textContent = t);
+      async function api(route, body) {
+        const r = await fetch(
+          "api/" + route,
+          body
+            ? {
+                method: "POST",
+                headers: {
+                  "Content-Type": "application/json",
+                  "X-Workbench": token,
+                },
+                body: JSON.stringify(body),
+              }
+            : {},
+        );
+        const j = await r.json();
+        if (!r.ok) throw Error(j.error);
+        return j;
+      }
+      function profile() {
+        return {
+          enabled: $("#enabled").checked,
+          entries: [...selected].map(([identity_id, weight]) => ({
+            identity_id,
+            weight,
+          })),
+        };
+      }
+      function loadTarget() {
+        currentIdentity = null;
+        let p = data.config.characters[activeTarget];
+        selected = new Map(
+          (p?.entries || data.pools[activeTarget]?.entries || []).map((e) => [
+            String(e.identity_id),
+            Number(e.weight ?? 1),
+          ]),
+        );
+        $("#enabled").checked = !!p?.enabled;
+        dirty = false;
+        render();
+        if (data.director) renderDirector();
+      }
+      function render() {
+        const q = $("#search").value.toLowerCase(),
+          total = [...selected.values()].reduce(
+            (s, v) => s + (Number.isFinite(v) && v > 0 ? v : 0),
+            0,
+          );
+        $("#summary").textContent =
+          `已选 ${selected.size} 项 · 总权重 ${total}`;
+        $("#rows").innerHTML = data.catalog
+          .slice()
+          .sort((a, b) => {
+            let ka = [...selected.keys()],
+              ia = ka.indexOf(String(a.identity_id)),
+              ib = ka.indexOf(String(b.identity_id));
+            return (ia < 0 ? 9999 : ia) - (ib < 0 ? 9999 : ib);
+          })
+          .filter(
+            (e) =>
+              (!$("#sourceFilter").value ||
+                ($("#sourceFilter").value === "boss") ===
+                  (e.category === "humanoid_boss")) &&
+              (!$("#roleFilter").value ||
+                (e.category !== "humanoid_boss" &&
+                  String(e.source) === $("#roleFilter").value)) &&
+              (!$("#chapterFilter").value ||
+                (
+                  e.chapter_memberships || [
+                    { chapter: e.chapter || "unassigned" },
+                  ]
+                ).some(
+                  (g) => String(g.chapter) === $("#chapterFilter").value,
+                )) &&
+              (!$("#only").checked || selected.has(String(e.identity_id))) &&
+              `${e.name} ${e.identity_id} ${who(e.source)} ${e.chapter_label || ""}`
+                .toLowerCase()
+                .includes(q),
+          )
+          .map((e) => {
+            let id = String(e.identity_id),
+              w = selected.get(id) ?? 0;
+            return `<tr data-id="${esc(id)}"><td><input class="currentIdentity" type="radio" name="currentIdentity" ${currentIdentity === id ? "checked" : ""} aria-label="将此人格设为当前操作对象"></td><td><input class="pick" type="checkbox" ${selected.has(id) ? "checked" : ""}></td><td>${e.portrait_url ? `<img class="avatar" src="${esc(e.portrait_url)}" alt="${esc(e.name)}的战斗头像" loading="lazy" decoding="async" onerror="this.remove()">` : ""}</td><td>${esc(e.name || e.appearance_name || id)} <small class="muted">${esc(id)}</small>${e.category === "humanoid_boss" ? `<details><summary class="muted">来源：${esc(e.chapter_label || "")}</summary><div>${esc(e.source_note || (e.chapter_sources || []).map((g) => g.label).join("；"))}</div>${e.source_evidence_level === "localized_unit_source" ? '<div class="muted">依据该章节的游戏单位文本；未找到此变体的直接初始编队引用。</div>' : ""}${e.source_battles?.length ? `<div class="muted">游戏战斗记录编号：${esc(e.source_battles.join("、"))}</div>` : ""}</details>` : ""}</td><td><input class="weight" type="number" min="0" max="1000000" step="0.1" value="${w}" ${selected.has(id) ? "" : "disabled"}></td><td>${selected.has(id) ? `<button class="move" data-step="-1">↑</button><button class="move" data-step="1">↓</button>` : ""} ${total > 0 ? ((100 * w) / total).toFixed(2) : "0.00"}%</td></tr>`;
+          })
+          .join("");
+      }
+      $("#rows").addEventListener("change", (e) => {
+        let id = e.target.closest("tr")?.dataset.id;
+        if (!id) return;
+        if (e.target.classList.contains("currentIdentity")) {
+          currentIdentity = id;
+          status(
+            "当前操作人格：" +
+              (data.catalog.find((x) => String(x.identity_id) === id)?.name ||
+                id),
+          );
+          return;
+        }
+        if (e.target.classList.contains("move")) {
+          let a = [...selected],
+            i = a.findIndex((x) => x[0] === id),
+            j = i + Number(e.target.dataset.step);
+          if (j >= 0 && j < a.length) {
+            [a[i], a[j]] = [a[j], a[i]];
+            selected = new Map(a);
+          }
+        } else if (e.target.classList.contains("pick")) {
+          if (e.target.checked) selected.set(id, 1);
+          else selected.delete(id);
+        } else if (e.target.classList.contains("weight"))
+          selected.set(id, Number(e.target.value));
+        dirty = true;
+        render();
+        status("当前池有未保存修改");
+      });
+      $("#rows").addEventListener("click", (e) => {
+        if (e.target.classList.contains("move"))
+          e.target.dispatchEvent(new Event("change", { bubbles: true }));
+      });
+      $("#enabled").onchange = () => {
+        dirty = true;
+      };
+      $("#sourceFilter").onchange = () => {
+        if ($("#sourceFilter").value !== "boss") $("#chapterFilter").value = "";
+        if ($("#sourceFilter").value === "boss") $("#roleFilter").value = "";
+        render();
+      };
+      $("#chapterFilter").onchange = () => {
+        if ($("#chapterFilter").value) {
+          $("#roleFilter").value = "";
+        }
+        render();
+      };
+      $("#roleFilter").innerHTML =
+        '<option value="">全部角色</option>' +
+        names
+          .map((n, i) => `<option value="${101 + i}">${esc(n)}</option>`)
+          .join("");
+      $("#roleFilter").onchange = () => {
+        if ($("#roleFilter").value) {
+          $("#sourceFilter").value = "other";
+          $("#chapterFilter").value = "";
+        }
+        render();
+      };
+      $("#search").oninput = render;
+      $("#only").onchange = render;
+      $("#target").onchange = () => {
+        if (dirty && !confirm("放弃当前池未保存的修改并切换角色？")) {
+          $("#target").value = activeTarget;
+          return;
+        }
+        if (settingsDirty) {
+          data.settings.config = structuredClone(settingsBaseline);
+          settingsDirty = false;
+        }
+        activeTarget = $("#target").value;
+        loadTarget();
+      };
+      $("#allSource").onclick = () => {
+        data.catalog
+          .filter((e) => String(e.source) === activeTarget)
+          .forEach((e) =>
+            selected.set(
+              String(e.identity_id),
+              selected.get(String(e.identity_id)) ?? 1,
+            ),
+          );
+        dirty = true;
+        render();
+      };
+      $("#allBoss").onclick = async () => {
+        try {
+          let p = await api("boss-preview", {
+            profile: profile(),
+            chapter: $("#chapterFilter").value,
+          });
+          selected = new Map(
+            p.entries.map((e) => [String(e.identity_id), Number(e.weight)]),
+          );
+          dirty = true;
+          render();
+          status("已加入Boss，保留已有权重；保存当前池后生效");
+        } catch (e) {
+          status(e.message);
+        }
+      };
+      $("#clear").onclick = () => {
+        selected.clear();
+        dirty = true;
+        render();
+      };
+      $("#save").onclick = async () => {
+        try {
+          let p = profile(),
+            r = await api("save", {
+              target: activeTarget,
+              profile: p,
+              revision: data.revision,
+              ...(settingsDirty
+                ? {
+                    settingsConfig: data.settings.config,
+                    settingsRevision: data.settings.revision,
+                  }
+                : {}),
+            });
+          data.config = r.config;
+          data.revision = r.revision;
+          if (r.settings) data.settings = r.settings;
+          settingsBaseline = structuredClone(data.settings.config);
+          settingsDirty = false;
+          dirty = false;
+          status(
+            "已保存当前池，插件将自动更新成员与权重；新增外观需等待后台准备。",
+          );
+        } catch (e) {
+          status(e.message);
+        }
+      };
+      function enableCurrentRole() {
+        data.settings.config.enabled = true;
+        data.settings.config.characters ??= {};
+        data.settings.config.characters[activeTarget] = true;
+        settingsDirty = true;
+        dirty = true;
+      }
+      $("#uploadPortrait").onclick = () => {
+        if (!currentIdentity) {
+          status("请先用表格第一列选定当前人格");
+          return;
+        }
+        $("#portraitFile").click();
+      };
+      $("#portraitFile").onchange = async (e) => {
+        let file = e.target.files[0],
+          id = currentIdentity;
+        e.target.value = "";
+        if (!file || !id) return;
+        try {
+          if (
+            !["image/png", "image/jpeg", "image/webp"].includes(file.type) ||
+            file.size > 20 * 1024 * 1024
+          )
+            throw Error("请选择 20 MiB 内的 PNG、JPEG 或 WebP 图片");
+          let img = await createImageBitmap(file);
+          try {
+            let scale = Math.min(1, 384 / img.width, 384 / img.height),
+              canvas = document.createElement("canvas");
+            canvas.width = Math.max(1, Math.round(img.width * scale));
+            canvas.height = Math.max(1, Math.round(img.height * scale));
+            canvas
+              .getContext("2d")
+              .drawImage(img, 0, 0, canvas.width, canvas.height);
+            let encoded = canvas.toDataURL("image/png").split(",")[1];
+            let r = await api("portrait-save", {
+              identity: id,
+              image: encoded,
+            });
+            let row = data.catalog.find((x) => String(x.identity_id) === id);
+            if (row) row.portrait_url = r.portrait_url;
+            render();
+            status("图片已保存");
+          } finally {
+            img.close();
+          }
+        } catch (err) {
+          status("上传失败：" + err.message);
+        }
+      };
+      $("#resetPortrait").onclick = async () => {
+        let id = currentIdentity;
+        if (!id) {
+          status("请先用表格第一列选定当前人格");
+          return;
+        }
+        try {
+          let r = await api("portrait-reset", { identity: id });
+          let row = data.catalog.find((x) => String(x.identity_id) === id);
+          if (row) row.portrait_url = r.portrait_url;
+          render();
+          status(
+            r.portrait_url
+              ? "已恢复默认图片"
+              : "已移除自定义图片；当前没有默认头像",
+          );
+        } catch (err) {
+          status("恢复失败：" + err.message);
+        }
+      };
+      $("#onlyIdentity").onclick = () => {
+        if (!currentIdentity) {
+          status("请先用表格第一列选定当前人格");
+          return;
+        }
+        selected = new Map(
+          [...selected].map(([id]) => [id, id === currentIdentity ? 1 : 0]),
+        );
+        selected.set(currentIdentity, 1);
+        $("#enabled").checked = true;
+        enableCurrentRole();
+        render();
+        status("已设为仅抽中当前人格，点击保存当前池后生效");
+      };
+      $("#onlyRole").onclick = () => {
+        enableCurrentRole();
+        for (let n = 101; n <= 112; n++)
+          data.settings.config.characters[String(n)] =
+            String(n) === activeTarget;
+        status("已设为仅启用当前角色，点击保存当前池后生效");
+      };
+      $("#equalWeights").onclick = () => {
+        selected = new Map([...selected].map(([id]) => [id, 1]));
+        dirty = true;
+        render();
+        status("当前池所有已选人格权重已恢复为1，点击保存当前池后生效");
+      };
+      $("#moreActions").onclick = (e) => {
+        e.stopPropagation();
+        $("#moreMenu").classList.toggle("hidden");
+      };
+      document.addEventListener("click", (e) => {
+        if (!e.target.closest(".menu-wrap"))
+          $("#moreMenu").classList.add("hidden");
+      });
+      $("#legacy").onclick = async () => {
+        $("#moreMenu").classList.add("hidden");
+        try {
+          await api("legacy", {});
+          status("已打开原设置窗口");
+        } catch (e) {
+          status(e.message);
+        }
+      };
+      const portraitStageText = {
+        idle: "等待开始",
+        starting: "准备下载",
+        download: "正在下载",
+        verify: "正在校验",
+        install: "正在写入",
+        done: "已完成",
+        error: "下载失败",
+      };
+      let portraitTimer = null,
+        portraitActive = false;
+      function portraitRender(p = {}) {
+        let stage = p.stage || "idle",
+          pct = Math.max(0, Math.min(100, Number(p.percent) || 0)),
+          msg = p.message || portraitStageText[stage] || "";
+        $("#portraitBar").style.width = pct + "%";
+        $("#portraitMiniBar").style.width = pct + "%";
+        $("#portraitPercent").textContent = pct.toFixed(pct % 1 ? 1 : 0) + "%";
+        $("#portraitMiniPercent").textContent =
+          pct.toFixed(pct % 1 ? 1 : 0) + "%";
+        $("#portraitStatus").textContent = msg;
+        $("#portraitMiniLabel").textContent =
+          stage === "done"
+            ? "头像下载完成"
+            : stage === "error"
+              ? "头像下载失败"
+              : "下载头像 · " + (portraitStageText[stage] || "");
+        if (stage === "done") {
+          $("#portraitStart").disabled = false;
+          $("#portraitStart").textContent = "重新下载";
+        } else if (stage === "error") {
+          $("#portraitStart").disabled = false;
+          $("#portraitStart").textContent = "重试";
+        } else if (stage === "idle") {
+          $("#portraitStart").disabled = false;
+          $("#portraitStart").textContent = "开始下载";
+        } else {
+          $("#portraitStart").disabled = true;
+          $("#portraitStart").textContent = "下载中…";
+        }
+      }
+      async function portraitPoll() {
+        try {
+          let p = await api("portrait-progress");
+          portraitRender(p);
+          let running = ["starting", "download", "verify", "install"].includes(
+            p.stage,
+          );
+          if (running) {
+            portraitActive = true;
+            if (!portraitTimer) portraitTimer = setInterval(portraitPoll, 500);
+          } else if (portraitTimer) {
+            clearInterval(portraitTimer);
+            portraitTimer = null;
+          }
+          if (p.stage === "done") {
+            portraitActive = false;
+            try {
+              await refresh();
+            } catch (e) {}
+          }
+          if (p.stage === "error") portraitActive = false;
+        } catch (e) {
+          $("#portraitStatus").textContent = e.message;
+        }
+      }
+      function portraitStartPolling() {
+        portraitActive = true;
+        if (!portraitTimer) portraitTimer = setInterval(portraitPoll, 500);
+        portraitPoll();
+      }
+      function portraitShow() {
+        $("#portraitModal").classList.remove("hidden");
+        $("#portraitMini").classList.add("hidden");
+        portraitPoll();
+      }
+      function portraitHide() {
+        $("#portraitModal").classList.add("hidden");
+        if (portraitActive) $("#portraitMini").classList.remove("hidden");
+      }
+      async function initPortraitState() {
+        try {
+          let p = await api("portrait-progress");
+          portraitRender(p);
+          if (["starting", "download", "verify", "install"].includes(p.stage)) {
+            portraitStartPolling();
+            $("#portraitMini").classList.remove("hidden");
+          }
+        } catch (e) {}
+      }
+      $("#downloadPortraits").onclick = () => portraitShow();
+      $("#portraitClose").onclick = () => portraitHide();
+      $("#portraitHide").onclick = () => portraitHide();
+      $("#portraitMini").onclick = (e) => {
+        if (e.target.id !== "portraitMiniClose") portraitShow();
+      };
+      $("#portraitMiniClose").onclick = (e) => {
+        e.stopPropagation();
+        portraitActive = false;
+        if (portraitTimer) {
+          clearInterval(portraitTimer);
+          portraitTimer = null;
+        }
+        $("#portraitMini").classList.add("hidden");
+      };
+      $("#portraitStart").onclick = async () => {
+        let b = $("#portraitStart");
+        b.disabled = true;
+        b.textContent = "启动中…";
+        try {
+          let r = await api("portrait-download", {});
+          portraitRender(r.progress || {});
+          if (
+            r.started ||
+            ["starting", "download", "verify", "install"].includes(
+              r.progress?.stage,
+            )
+          )
+            portraitStartPolling();
+          else if (r.progress?.stage === "done") {
+            status("头像资源已下载");
+            await refresh();
+          }
+        } catch (e) {
+          $("#portraitStatus").textContent = e.message;
+          b.disabled = false;
+          b.textContent = "重试";
+        }
+      };
+      $("#updatePlugin").onclick = async () => {
+        let b = $("#updatePlugin");
+        b.disabled = true;
+        try {
+          status("正在检查 GitHub 发布版本…");
+          let r = await api("update-check", {});
+          if (!r.available) {
+            status(r.message || "当前没有可安装的新版本");
+            return;
+          }
+          let summary = r.message || `发现新版本 ${r.latest || ""}`;
+          if (
+            !confirm(
+              summary +
+                "\n\n安装前请退出游戏和启动器，保持本工作台打开。安装后请重新启动启动器和工作台。是否继续？",
+            )
+          ) {
+            status("已取消更新");
+            return;
+          }
+          status("正在下载并安装更新…");
+          let done = await api("update-install", {});
+          status(done.message || "更新已安装，请重启启动器和工作台");
+        } catch (e) {
+          status("更新未完成：" + e.message);
+        } finally {
+          b.disabled = false;
+        }
+      };
+      function chapterRank(id) {
+        let entry = data.catalog.find((e) => e.chapter === id);
+        return entry?.chapter_rank ?? 20000;
+      }
+      async function refresh() {
+        try {
+          data = await api("data");
+          settingsBaseline = structuredClone(data.settings.config);
+          settingsDirty = false;
+          let chapters = new Map(
+            data.catalog
+              .filter((e) => e.chapter)
+              .flatMap((e) =>
+                (
+                  e.chapter_memberships || [
+                    {
+                      chapter: e.chapter || "unassigned",
+                      label: e.chapter_label || "未归档",
+                    },
+                  ]
+                ).map((g) => [String(g.chapter), g.label]),
+              ),
+          );
+          $("#chapterFilter").innerHTML =
+            '<option value="">全部章节</option>' +
+            [...chapters]
+              .sort(
+                (a, b) =>
+                  chapterRank(a[0]) - chapterRank(b[0]) ||
+                  a[1].localeCompare(b[1], "zh-CN"),
+              )
+              .map(
+                ([id, label]) =>
+                  `<option value="${esc(id)}">${esc(label)}</option>`,
+              )
+              .join("");
+          $("#version").textContent =
+            "插件 " +
+            data.version +
+            " · 人格池：" +
+            data.runtime.pool +
+            " · 抽取规则：" +
+            data.runtime.draw;
+          loadTarget();
+          $("#prepareData").textContent = JSON.stringify(data.warmup, null, 2);
+          $("#formRows").innerHTML = Object.entries(data.formAnnotations || {})
+            .map(
+              ([id, p]) =>
+                `<h3>${esc(id)} · ${esc(p.forms)}</h3><p>${esc(p.method)}</p>`,
+            )
+            .join("");
+          status("已读取插件数据");
+        } catch (e) {
+          status(e.message);
+        }
+      }
+      $("#reload").onclick = () => {
+        if (!dirty || confirm("重新读取会放弃未保存修改，继续？")) refresh();
+      };
+      function renderEvents() {
+        let q = $("#eventSearch").value.toLowerCase();
+        $("#eventRows").innerHTML = events
+          .map((e, i) => ({ ...e, i }))
+          .filter((e) => e.raw.toLowerCase().includes(q))
+          .reverse()
+          .map(
+            (e) =>
+              `<tr data-index="${e.i}"><td>${esc(e.kind)}</td><td>${esc(e.fields.sinner || e.fields.unit || "—")}</td><td>${esc(e.fields.coin ?? "—")}</td><td>${esc(e.coin_type)}</td><td>${esc(e.fields.selected || e.fields.identity || "—")}</td><td>${esc(e.fields.shown || "—")}</td><td>${esc(e.fields.result || e.fields.metadata || "—")}</td></tr>`,
+          )
+          .join("");
+      }
+      $("#refreshEvents").onclick = async () => {
+        try {
+          events = await api("events");
+          renderEvents();
+          status(`已读取 ${events.length} 条演出记录`);
+        } catch (e) {
+          status(e.message);
+        }
+      };
+      $("#eventSearch").oninput = renderEvents;
+      $("#eventRows").onclick = (e) => {
+        let row = e.target.closest("tr");
+        if (row)
+          $("#eventDetail").textContent = events[Number(row.dataset.index)].raw;
+      };
+      function download(name, value) {
+        let a = document.createElement("a"),
+          u = URL.createObjectURL(
+            new Blob([JSON.stringify(value, null, 2)], {
+              type: "application/json",
+            }),
+          );
+        a.href = u;
+        a.download = name;
+        a.click();
+        setTimeout(() => URL.revokeObjectURL(u), 1000);
+      }
+      $("#exportEvents").onclick = () =>
+        download("演出反馈包.json", {
+          version: data.version,
+          generatedAt: new Date().toISOString(),
+          pools: data.config,
+          director: data.director.config,
+          warmup: data.warmup,
+          events,
+        });
+      $("#exportScheme").onclick = () =>
+        download("人格演出方案.json", {
+          schema: 2,
+          pools: data.config,
+          director: data.director.config,
+        });
+      $("#importFile").onchange = async (e) => {
+        pendingImport = null;
+        $("#applyImport").disabled = true;
+        try {
+          let p = JSON.parse(await e.target.files[0].text());
+          if (
+            !(
+              (p.schema === 1 && p.characters) ||
+              (p.schema === 2 && p.pools && p.director)
+            )
+          )
+            throw Error("方案格式不支持");
+          pendingImport = p;
+          $("#importPreview").textContent = JSON.stringify(p, null, 2);
+          $("#applyImport").disabled = false;
+        } catch (err) {
+          status(err.message);
+        }
+      };
+      $("#applyImport").onclick = async () => {
+        if (!confirm("用预览方案替换全部已保存自定义池？旧配置将备份。"))
+          return;
+        try {
+          let r = await api(pendingImport.schema === 2 ? "bundle" : "import", {
+            config: pendingImport,
+            revision: data.revision,
+            directorRevision: data.director.revision,
+          });
+          if (r.director) data.director = r.director;
+          data.config = r.config;
+          data.revision = r.revision;
+          data.settings.config = structuredClone(settingsBaseline);
+          settingsDirty = false;
+          loadTarget();
+          status("方案已应用，旧配置已备份，成员与权重自动热更新。");
+        } catch (e) {
+          status(e.message);
+        }
+      };
+      $("#refreshPrepare").onclick = async () => {
+        try {
+          let r = await api("data");
+          $("#prepareData").textContent = JSON.stringify(
+            { runtime: r.runtime, resources: r.warmup },
+            null,
+            2,
+          );
+        } catch (e) {
+          status(e.message);
+        }
+      };
+      document.querySelectorAll("nav button").forEach(
+        (b) =>
+          (b.onclick = () => {
+            document
+              .querySelectorAll("article section")
+              .forEach((s) =>
+                s.classList.toggle("hidden", s.id !== b.dataset.page),
+              );
+          }),
+      );
+      window.onbeforeunload = (e) => {
+        if (dirty) {
+          e.preventDefault();
+          e.returnValue = "";
+        }
+      };
+      names.forEach((n, i) => $("#target").add(new Option(n, String(101 + i))));
+      refresh().then(initPortraitState);
 
-function renderDirector(){$('#rulesTarget').textContent=who(activeTarget);let config=data.director.config,r=config.characters[activeTarget]||{};$('#ruleControls').innerHTML=['attack','clash','defense'].map((a,i)=>`<label>${['攻击','拼点','守备'][i]} <select data-action="${a}"><option value="independent">独立加权随机</option><option value="round">加权轮抽不重复</option><option value="sequence">按当前池顺序</option></select></label>`).join(' ');document.querySelectorAll('[data-action]').forEach(x=>x.value=r[x.dataset.action]?.mode||'independent');let old=$('#formIdentity').value;$('#formIdentity').innerHTML=data.catalog.filter(e=>data.formAnnotations?.[String(e.identity_id)]).map(e=>`<option value="${esc(e.identity_id)}">${esc(e.name||e.appearance_name||e.identity_id)}</option>`).join('');if(old)$('#formIdentity').value=old;loadForm()}
-function loadForm(){let r=data.director.config.forms[$('#formIdentity').value]||{mode:'native',threshold:1,stage:1,compare:0};$('#formMode').value=r.mode;$('#formThreshold').value=r.threshold;$('#formStage').value=r.stage;$('#formCompare').value=r.compare}
-async function saveDirector(config){let r=await api('director',{config,revision:data.director.revision});data.director=r;status('演出编排已保存，等待原生核心读取；可在准备状态页刷新确认。');renderDirector()}
-$('#saveRules').onclick=async()=>{try{let c=structuredClone(data.director.config);c.characters[activeTarget]={};document.querySelectorAll('[data-action]').forEach(x=>c.characters[activeTarget][x.dataset.action]={mode:x.value});await saveDirector(c)}catch(e){status(e.message)}};
-$('#formIdentity').onchange=loadForm;$('#saveForm').onclick=async()=>{try{let c=structuredClone(data.director.config);c.forms[$('#formIdentity').value]={mode:$('#formMode').value,threshold:Number($('#formThreshold').value),stage:Number($('#formStage').value),compare:Number($('#formCompare').value)};await saveDirector(c)}catch(e){status(e.message)}};
-</script></html>
+      function renderDirector() {
+        $("#rulesTarget").textContent = who(activeTarget);
+        let config = data.director.config,
+          r = config.characters[activeTarget] || {};
+        $("#ruleControls").innerHTML = ["attack", "clash", "defense"]
+          .map(
+            (a, i) =>
+              `<label>${["攻击", "拼点", "守备"][i]} <select data-action="${a}"><option value="independent">独立加权随机</option><option value="round">加权轮抽不重复</option><option value="sequence">按当前池顺序</option></select></label>`,
+          )
+          .join(" ");
+        document
+          .querySelectorAll("[data-action]")
+          .forEach(
+            (x) => (x.value = r[x.dataset.action]?.mode || "independent"),
+          );
+        let old = $("#formIdentity").value;
+        $("#formIdentity").innerHTML = data.catalog
+          .filter((e) => data.formAnnotations?.[String(e.identity_id)])
+          .map(
+            (e) =>
+              `<option value="${esc(e.identity_id)}">${esc(e.name || e.appearance_name || e.identity_id)}</option>`,
+          )
+          .join("");
+        if (old) $("#formIdentity").value = old;
+        loadForm();
+      }
+      function loadForm() {
+        let r = data.director.config.forms[$("#formIdentity").value] || {
+          mode: "native",
+          threshold: 1,
+          stage: 1,
+          compare: 0,
+        };
+        $("#formMode").value = r.mode;
+        $("#formThreshold").value = r.threshold;
+        $("#formStage").value = r.stage;
+        $("#formCompare").value = r.compare;
+      }
+      async function saveDirector(config) {
+        let r = await api("director", {
+          config,
+          revision: data.director.revision,
+        });
+        data.director = r;
+        status("演出编排已保存，等待原生核心读取；可在准备状态页刷新确认。");
+        renderDirector();
+      }
+      $("#saveRules").onclick = async () => {
+        try {
+          let c = structuredClone(data.director.config);
+          c.characters[activeTarget] = {};
+          document.querySelectorAll("[data-action]").forEach(
+            (x) =>
+              (c.characters[activeTarget][x.dataset.action] = {
+                mode: x.value,
+              }),
+          );
+          await saveDirector(c);
+        } catch (e) {
+          status(e.message);
+        }
+      };
+      $("#formIdentity").onchange = loadForm;
+      $("#saveForm").onclick = async () => {
+        try {
+          let c = structuredClone(data.director.config);
+          c.forms[$("#formIdentity").value] = {
+            mode: $("#formMode").value,
+            threshold: Number($("#formThreshold").value),
+            stage: Number($("#formStage").value),
+            compare: Number($("#formCompare").value),
+          };
+          await saveDirector(c);
+        } catch (e) {
+          status(e.message);
+        }
+      };
+    </script>
+  </body>
+</html>
