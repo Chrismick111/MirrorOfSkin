@@ -219,7 +219,7 @@ def report(session, previous):
 
 ROW = struct.Struct('<IIII d 64s 128s 64s')
 
-DEFAULT_SETTINGS = {'max_cached_skins': 3, 'enabled': True, 'characters': {str(i): True for i in range(101, 113)}}
+DEFAULT_SETTINGS = {'max_cached_skins': 3, 'prewarm_full_pool': False, 'enabled': True, 'characters': {str(i): True for i in range(101, 113)}}
 DEFAULT_CUSTOM_POOLS = {'schema': 1, 'characters': {}}
 DEFAULT_DIRECTOR = {'schema': 1, 'characters': {}, 'forms': {}}
 
@@ -266,10 +266,15 @@ def stopped_by_flag():
         return (ROOT / '停止随机运行.flag').exists()
 
 
-def max_cached_skins():
-    # User-selected full-pool prewarm; the old small-cache field is retained
-    # in user settings but is not used by this strategy.
-    return 256
+def prewarm_settings():
+    settings = load_user_json('随机设置.json', DEFAULT_SETTINGS)
+    try:
+        skins = int(settings.get('max_cached_skins', 3))
+    except (TypeError, ValueError):
+        skins = 3
+    skins = max(2, min(256, skins))
+    mode = 1 if settings.get('prewarm_full_pool', False) else 0
+    return mode, skins
 
 _pool_history = {}
 
@@ -389,7 +394,8 @@ def worker():
                         rows = prepare_native_pools()
                         published_config = prepare_native_pools.config_revision
                         revision = (revision + 1) & 0xffffffff or 1
-                        struct.pack_into('<I', session, OFF_TUNABLE + 4, max_cached_skins())
+                        mode, skins = prewarm_settings()
+                        struct.pack_into('<II', session, OFF_TUNABLE, mode, skins)
                         struct.pack_into('<I', session, OFF_TUNABLE + 8, revision)
                         pool_stamp = stamp
                         log('Probability update published revision=%d rows=%d' % (revision, rows))
@@ -439,7 +445,8 @@ def worker():
                                     access=mmap.ACCESS_WRITE)
                 session[:] = b'\0' * SIZE
                 struct.pack_into('<5I', session, 0, MAGIC, VERSION, SIZE, 0 if stopped_by_flag() else 1, K.GetTickCount())
-                struct.pack_into('<II', session, OFF_TUNABLE, 1, max_cached_skins())
+                mode, skins = prewarm_settings()
+                struct.pack_into('<II', session, OFF_TUNABLE, mode, skins)
                 import secrets
                 nonce = secrets.randbits(32) or 1
                 struct.pack_into('<I', session, OFF_TUNABLE + 16, nonce)
