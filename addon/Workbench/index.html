@@ -333,6 +333,102 @@
         width: 15px;
         height: 15px;
       }
+      .sinner-tabs {
+        display: flex;
+        gap: 6px;
+        flex-wrap: wrap;
+        margin-bottom: 18px;
+      }
+      .sinner-tab {
+        padding: 8px 14px;
+        border-radius: 999px;
+        border-color: #4b505a;
+      }
+      .sinner-tab.active {
+        background: #685125;
+        border-color: #deb970;
+        color: #fff;
+      }
+      .pool-toolbar {
+        justify-content: space-between;
+      }
+      .pool-heading {
+        display: flex;
+        align-items: baseline;
+        gap: 10px;
+        flex-wrap: wrap;
+      }
+      .save-state {
+        font-size: 12px;
+        color: #8fd49f;
+      }
+      .save-state.error {
+        color: #ff8d8d;
+      }
+      .hint {
+        margin: 0 0 10px;
+        color: #b4b8c1;
+        font-size: 13px;
+      }
+      .empty-row {
+        text-align: center;
+        color: #b4b8c1;
+        padding: 28px;
+      }
+      .context-menu {
+        position: fixed;
+        z-index: 120;
+        min-width: 190px;
+        background: #22252b;
+        border: 1px solid #565b66;
+        border-radius: 8px;
+        padding: 6px;
+        box-shadow: 0 16px 36px #000a;
+      }
+      .context-menu button {
+        display: flex;
+        width: 100%;
+        text-align: left;
+        border: 0;
+        background: transparent;
+        padding: 9px 10px;
+        border-radius: 5px;
+      }
+      .context-menu button:hover {
+        background: #333842;
+      }
+      .context-menu button:disabled {
+        opacity: 0.4;
+        cursor: default;
+      }
+      .context-menu .danger {
+        color: #ff8d8d;
+      }
+      .context-menu .sep {
+        height: 1px;
+        background: #3b4048;
+        margin: 5px 4px;
+      }
+      .context-title {
+        padding: 7px 10px 5px;
+        color: #b4b8c1;
+        font-size: 12px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+      .identity-modal {
+        width: min(920px, 96vw);
+      }
+      .identity-scroll {
+        max-height: 60vh;
+      }
+      .identity-count {
+        margin: 8px 0;
+      }
+      .identity-add {
+        white-space: nowrap;
+      }
     </style>
   </head>
   <body>
@@ -360,6 +456,9 @@
       </symbol>
       <symbol id="i-package" viewBox="0 0 24 24">
         <path d="M4 7l8-4 8 4-8 4-8-4zM4 7v10l8 4 8-4V7M12 11v10" />
+      </symbol>
+      <symbol id="i-plus" viewBox="0 0 24 24">
+        <path d="M12 5v14M5 12h14" />
       </symbol>
     </svg>
     <header>
@@ -396,62 +495,32 @@
       </nav>
       <article>
         <section id="pool">
-          <div class="bar">
-            <label
-              >出战角色
-              <select id="target"></select></label
-            ><label><input id="enabled" type="checkbox" />启用自定义池</label
-            ><input id="search" placeholder="搜索名字、ID或来源角色" /><label
-              ><input id="only" type="checkbox" />仅显示已选</label
-            ><button id="save" class="primary">保存当前池</button
-            ><button id="reload">重新载入</button>
+          <div id="sinnerTabs" class="sinner-tabs" role="tablist"></div>
+          <div class="bar pool-toolbar">
+            <div class="pool-heading">
+              <strong id="poolTitle"></strong>
+              <span id="summary" class="muted"></span>
+              <span id="saveState" class="save-state" aria-live="polite"></span>
+            </div>
+            <button id="addIdentity" class="primary">
+              <svg class="icon" aria-hidden="true">
+                <use href="#i-plus"></use>
+              </svg>
+              添加人格
+            </button>
           </div>
-          <div class="notice">
-            勾选成员后调整权重；表中占比仅表示独立随机时的归一化权重。轮抽权重决定本轮先后，顺序模式使用保存顺序，具体模式见“抽取编排”。成员选择、顺序和权重保存后自动热更新；新增外观在后台准备，准备完成后参与随机。正在播放的动作保持完成。
-          </div>
-          <div class="bar">
-            <span id="summary"></span
-            ><button id="allSource">加入本角色人格</button
-            ><button id="allBoss">加入Boss</button
-            ><label
-              >来源
-              <select id="sourceFilter">
-                <option value="">全部</option>
-                <option value="boss">Boss</option>
-                <option value="other">角色与剧情</option>
-              </select></label
-            ><label
-              >人格角色
-              <select id="roleFilter">
-                <option value="">全部角色</option>
-              </select></label
-            ><label
-              >Boss章节
-              <select id="chapterFilter">
-                <option value="">全部章节</option>
-              </select></label
-            ><button id="uploadPortrait">上传当前人格图片</button
-            ><button id="resetPortrait">恢复默认图片</button
-            ><input
-              id="portraitFile"
-              type="file"
-              accept="image/png,image/jpeg,image/webp"
-              hidden
-            /><button id="onlyIdentity">仅抽中当前人格</button
-            ><button id="onlyRole">仅启用当前角色</button
-            ><button id="equalWeights">当前角色恢复均等</button
-            ><button id="clear">清空选择</button>
-          </div>
+          <p class="hint">
+            右键点击人格可执行仅抽中、启停、移出等操作；所有修改自动保存。每个池最多
+            256 项。
+          </p>
           <div class="scroll">
-            <table>
+            <table class="pool-table">
               <thead>
                 <tr>
-                  <th>当前</th>
-                  <th>选择</th>
                   <th>图片</th>
                   <th>人格</th>
                   <th>权重</th>
-                  <th>独立抽取占比</th>
+                  <th>抽取占比</th>
                 </tr>
               </thead>
               <tbody id="rows"></tbody>
@@ -651,6 +720,69 @@
         <div id="portraitMiniBar" class="progress-bar"></div>
       </div>
     </div>
+    <div
+      id="identityModal"
+      class="modal-backdrop hidden"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="identityTitle"
+    >
+      <div class="modal identity-modal">
+        <div class="modal-title">
+          <h2 id="identityTitle">
+            <svg class="icon" aria-hidden="true">
+              <use href="#i-plus"></use>
+            </svg>
+            添加人格到 <span id="identityTargetName"></span>
+          </h2>
+          <button
+            id="identityClose"
+            class="icon-btn"
+            aria-label="关闭"
+            title="关闭"
+          >
+            <svg class="icon" aria-hidden="true">
+              <use href="#i-close"></use>
+            </svg>
+          </button>
+        </div>
+        <div class="bar identity-filters">
+          <input id="addSearch" placeholder="搜索名字、ID或来源" />
+          <select id="addSource">
+            <option value="">全部来源</option>
+            <option value="boss">Boss</option>
+            <option value="other">角色与剧情</option>
+          </select>
+          <select id="addRole">
+            <option value="">全部角色</option>
+          </select>
+          <select id="addChapter">
+            <option value="">全部章节</option>
+          </select>
+        </div>
+        <div id="addCount" class="identity-count muted"></div>
+        <div class="scroll identity-scroll">
+          <table>
+            <thead>
+              <tr>
+                <th>图片</th>
+                <th>人格</th>
+                <th>来源 / 章节</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody id="identityRows"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+    <div id="identityMenu" class="context-menu hidden" role="menu"></div>
+    <input
+      id="portraitFile"
+      type="file"
+      accept="image/png,image/jpeg,image/webp"
+      hidden
+    />
     <script>
       const $ = (s) => document.querySelector(s),
         names = [
@@ -674,8 +806,13 @@
         activeTarget = "101",
         pendingImport = null,
         currentIdentity = null,
+        contextIdentity = null,
         settingsDirty = false,
-        settingsBaseline = null;
+        settingsBaseline = null,
+        saveTimer = null,
+        saving = false,
+        savePending = false;
+      const POOL_LIMIT = 256;
       const token = location.pathname.split("/")[1];
       const esc = (v) =>
         String(v ?? "").replace(
@@ -711,222 +848,407 @@
       }
       function profile() {
         return {
-          enabled: $("#enabled").checked,
+          enabled: true,
           entries: [...selected].map(([identity_id, weight]) => ({
             identity_id,
-            weight,
+            weight: Number(weight) || 0,
           })),
         };
       }
+      function setSaveState(text, error = false) {
+        const el = $("#saveState");
+        el.textContent = text;
+        el.classList.toggle("error", error);
+      }
+      function poolTotal() {
+        return [...selected.values()].reduce(
+          (sum, value) =>
+            sum + (Number.isFinite(value) && value > 0 ? value : 0),
+          0,
+        );
+      }
+      function updatePoolSummary() {
+        const total = poolTotal();
+        $("#summary").textContent =
+          `${selected.size}/${POOL_LIMIT} 项 · 总权重 ${total}`;
+        document.querySelectorAll("#rows tr[data-id]").forEach((row) => {
+          const weight = selected.get(row.dataset.id) || 0;
+          const share = row.querySelector(".share");
+          if (share)
+            share.textContent =
+              (total > 0 ? ((100 * weight) / total).toFixed(2) : "0.00") + "%";
+        });
+      }
+      function renderSinners() {
+        $("#sinnerTabs").innerHTML = names
+          .map((name, index) => {
+            const id = String(101 + index);
+            return `<button class="sinner-tab${id === activeTarget ? " active" : ""}" data-target="${id}" role="tab" aria-selected="${id === activeTarget}">${esc(name)}</button>`;
+          })
+          .join("");
+        document.querySelectorAll(".sinner-tab").forEach((button) => {
+          button.onclick = () => switchTarget(button.dataset.target);
+        });
+      }
       function loadTarget() {
         currentIdentity = null;
-        let p = data.config.characters[activeTarget];
+        contextIdentity = null;
+        const profileData = data.config.characters[activeTarget];
+        const entries =
+          profileData?.entries || data.pools[activeTarget]?.entries || [];
         selected = new Map(
-          (p?.entries || data.pools[activeTarget]?.entries || []).map((e) => [
-            String(e.identity_id),
-            Number(e.weight ?? 1),
+          entries.map((entry) => [
+            String(entry.identity_id),
+            Number(entry.weight ?? 1),
           ]),
         );
-        $("#enabled").checked = !!p?.enabled;
-        dirty = false;
-        render();
-        if (data.director) renderDirector();
-      }
-      function render() {
-        const q = $("#search").value.toLowerCase(),
-          total = [...selected.values()].reduce(
-            (s, v) => s + (Number.isFinite(v) && v > 0 ? v : 0),
+        let needsSave = false;
+        if (selected.size > POOL_LIMIT) {
+          const hidden = selected.size - POOL_LIMIT;
+          selected = new Map([...selected].slice(0, POOL_LIMIT));
+          setTimeout(
+            () =>
+              status(
+                `当前池超过原生上限，已保留前 ${POOL_LIMIT} 项（隐藏 ${hidden} 项）`,
+              ),
             0,
           );
-        $("#summary").textContent =
-          `已选 ${selected.size} 项 · 总权重 ${total}`;
-        $("#rows").innerHTML = data.catalog
-          .slice()
-          .sort((a, b) => {
-            let ka = [...selected.keys()],
-              ia = ka.indexOf(String(a.identity_id)),
-              ib = ka.indexOf(String(b.identity_id));
-            return (ia < 0 ? 9999 : ia) - (ib < 0 ? 9999 : ib);
-          })
-          .filter(
-            (e) =>
-              (!$("#sourceFilter").value ||
-                ($("#sourceFilter").value === "boss") ===
-                  (e.category === "humanoid_boss")) &&
-              (!$("#roleFilter").value ||
-                (e.category !== "humanoid_boss" &&
-                  String(e.source) === $("#roleFilter").value)) &&
-              (!$("#chapterFilter").value ||
-                (
-                  e.chapter_memberships || [
-                    { chapter: e.chapter || "unassigned" },
-                  ]
-                ).some(
-                  (g) => String(g.chapter) === $("#chapterFilter").value,
-                )) &&
-              (!$("#only").checked || selected.has(String(e.identity_id))) &&
-              `${e.name} ${e.identity_id} ${who(e.source)} ${e.chapter_label || ""}`
-                .toLowerCase()
-                .includes(q),
-          )
-          .map((e) => {
-            let id = String(e.identity_id),
-              w = selected.get(id) ?? 0;
-            return `<tr data-id="${esc(id)}"><td><input class="currentIdentity" type="radio" name="currentIdentity" ${currentIdentity === id ? "checked" : ""} aria-label="将此人格设为当前操作对象"></td><td><input class="pick" type="checkbox" ${selected.has(id) ? "checked" : ""}></td><td>${e.portrait_url ? `<img class="avatar" src="${esc(e.portrait_url)}" alt="${esc(e.name)}的战斗头像" loading="lazy" decoding="async" onerror="this.remove()">` : ""}</td><td>${esc(e.name || e.appearance_name || id)} <small class="muted">${esc(id)}</small>${e.category === "humanoid_boss" ? `<details><summary class="muted">来源：${esc(e.chapter_label || "")}</summary><div>${esc(e.source_note || (e.chapter_sources || []).map((g) => g.label).join("；"))}</div>${e.source_evidence_level === "localized_unit_source" ? '<div class="muted">依据该章节的游戏单位文本；未找到此变体的直接初始编队引用。</div>' : ""}${e.source_battles?.length ? `<div class="muted">游戏战斗记录编号：${esc(e.source_battles.join("、"))}</div>` : ""}</details>` : ""}</td><td><input class="weight" type="number" min="0" max="1000000" step="0.1" value="${w}" ${selected.has(id) ? "" : "disabled"}></td><td>${selected.has(id) ? `<button class="move" data-step="-1">↑</button><button class="move" data-step="1">↓</button>` : ""} ${total > 0 ? ((100 * w) / total).toFixed(2) : "0.00"}%</td></tr>`;
-          })
-          .join("");
+          needsSave = true;
+        }
+        dirty = false;
+        setSaveState("");
+        renderSinners();
+        render();
+        if (profileData?.enabled === false) needsSave = true;
+        if (needsSave) autoSave();
+        if (data.director) renderDirector();
       }
-      $("#rows").addEventListener("change", (e) => {
-        let id = e.target.closest("tr")?.dataset.id;
-        if (!id) return;
-        if (e.target.classList.contains("currentIdentity")) {
-          currentIdentity = id;
-          status(
-            "当前操作人格：" +
-              (data.catalog.find((x) => String(x.identity_id) === id)?.name ||
-                id),
-          );
-          return;
-        }
-        if (e.target.classList.contains("move")) {
-          let a = [...selected],
-            i = a.findIndex((x) => x[0] === id),
-            j = i + Number(e.target.dataset.step);
-          if (j >= 0 && j < a.length) {
-            [a[i], a[j]] = [a[j], a[i]];
-            selected = new Map(a);
-          }
-        } else if (e.target.classList.contains("pick")) {
-          if (e.target.checked) selected.set(id, 1);
-          else selected.delete(id);
-        } else if (e.target.classList.contains("weight"))
-          selected.set(id, Number(e.target.value));
-        dirty = true;
-        render();
-        status("当前池有未保存修改");
-      });
-      $("#rows").addEventListener("click", (e) => {
-        if (e.target.classList.contains("move"))
-          e.target.dispatchEvent(new Event("change", { bubbles: true }));
-      });
-      $("#enabled").onchange = () => {
-        dirty = true;
-      };
-      $("#sourceFilter").onchange = () => {
-        if ($("#sourceFilter").value !== "boss") $("#chapterFilter").value = "";
-        if ($("#sourceFilter").value === "boss") $("#roleFilter").value = "";
-        render();
-      };
-      $("#chapterFilter").onchange = () => {
-        if ($("#chapterFilter").value) {
-          $("#roleFilter").value = "";
-        }
-        render();
-      };
-      $("#roleFilter").innerHTML =
-        '<option value="">全部角色</option>' +
-        names
-          .map((n, i) => `<option value="${101 + i}">${esc(n)}</option>`)
-          .join("");
-      $("#roleFilter").onchange = () => {
-        if ($("#roleFilter").value) {
-          $("#sourceFilter").value = "other";
-          $("#chapterFilter").value = "";
-        }
-        render();
-      };
-      $("#search").oninput = render;
-      $("#only").onchange = render;
-      $("#target").onchange = () => {
-        if (dirty && !confirm("放弃当前池未保存的修改并切换角色？")) {
-          $("#target").value = activeTarget;
-          return;
-        }
-        if (settingsDirty) {
-          data.settings.config = structuredClone(settingsBaseline);
-          settingsDirty = false;
-        }
-        activeTarget = $("#target").value;
+      async function switchTarget(id) {
+        if (id === activeTarget) return;
+        if (dirty || saveTimer) await flushSave();
+        activeTarget = id;
         loadTarget();
-      };
-      $("#allSource").onclick = () => {
-        data.catalog
-          .filter((e) => String(e.source) === activeTarget)
-          .forEach((e) =>
-            selected.set(
-              String(e.identity_id),
-              selected.get(String(e.identity_id)) ?? 1,
-            ),
-          );
-        dirty = true;
-        render();
-      };
-      $("#allBoss").onclick = async () => {
-        try {
-          let p = await api("boss-preview", {
-            profile: profile(),
-            chapter: $("#chapterFilter").value,
-          });
-          selected = new Map(
-            p.entries.map((e) => [String(e.identity_id), Number(e.weight)]),
-          );
-          dirty = true;
-          render();
-          status("已加入Boss，保留已有权重；保存当前池后生效");
-        } catch (e) {
-          status(e.message);
-        }
-      };
-      $("#clear").onclick = () => {
-        selected.clear();
-        dirty = true;
-        render();
-      };
-      $("#save").onclick = async () => {
-        try {
-          let p = profile(),
-            r = await api("save", {
-              target: activeTarget,
-              profile: p,
-              revision: data.revision,
-              ...(settingsDirty
-                ? {
-                    settingsConfig: data.settings.config,
-                    settingsRevision: data.settings.revision,
-                  }
-                : {}),
-            });
-          data.config = r.config;
-          data.revision = r.revision;
-          if (r.settings) data.settings = r.settings;
-          settingsBaseline = structuredClone(data.settings.config);
-          settingsDirty = false;
-          dirty = false;
-          status(
-            "已保存当前池，插件将自动更新成员与权重；新增外观需等待后台准备。",
-          );
-        } catch (e) {
-          status(e.message);
-        }
-      };
-      function enableCurrentRole() {
-        data.settings.config.enabled = true;
-        data.settings.config.characters ??= {};
-        data.settings.config.characters[activeTarget] = true;
-        settingsDirty = true;
-        dirty = true;
       }
-      $("#uploadPortrait").onclick = () => {
-        if (!currentIdentity) {
-          status("请先用表格第一列选定当前人格");
+      function render() {
+        $("#poolTitle").textContent = `${who(activeTarget)} 的人格池`;
+        const rows = [...selected]
+          .map(([id, weight]) => {
+            const entry = data.catalog.find(
+              (item) => String(item.identity_id) === id,
+            );
+            if (!entry) return "";
+            return `<tr data-id="${esc(id)}"><td>${entry.portrait_url ? `<img class="avatar" src="${esc(entry.portrait_url)}" alt="${esc(entry.name)}的战斗头像" loading="lazy" decoding="async" onerror="this.remove()">` : ""}</td><td><strong>${esc(entry.name || entry.appearance_name || id)}</strong> <small class="muted">${esc(id)}</small>${entry.category === "humanoid_boss" ? `<div class="muted">${esc(entry.chapter_label || "")}</div>` : ""}</td><td><input class="weight" type="number" min="0" max="1000000" step="0.1" value="${weight}"></td><td class="share"></td></tr>`;
+          })
+          .join("");
+        $("#rows").innerHTML =
+          rows ||
+          '<tr><td colspan="4" class="empty-row">池子为空，点击右上角“添加人格”</td></tr>';
+        updatePoolSummary();
+      }
+      function autoSave() {
+        dirty = true;
+        setSaveState("保存中…");
+        clearTimeout(saveTimer);
+        saveTimer = setTimeout(flushSave, 350);
+      }
+      async function flushSave() {
+        clearTimeout(saveTimer);
+        saveTimer = null;
+        if (saving) {
+          savePending = true;
           return;
         }
-        $("#portraitFile").click();
+        saving = true;
+        try {
+          const body = {
+            target: activeTarget,
+            profile: profile(),
+            revision: data.revision,
+          };
+          if (settingsDirty) {
+            body.settingsConfig = data.settings.config;
+            body.settingsRevision = data.settings.revision;
+          }
+          const result = await api("save", body);
+          data.config = result.config;
+          data.revision = result.revision;
+          if (result.settings) data.settings = result.settings;
+          if (settingsDirty) {
+            settingsBaseline = structuredClone(data.settings.config);
+            settingsDirty = false;
+          }
+          dirty = false;
+          setSaveState("已自动保存");
+        } catch (error) {
+          setSaveState("保存失败", true);
+          status("自动保存失败：" + error.message);
+          try {
+            await refresh();
+          } catch (ignored) {}
+        } finally {
+          saving = false;
+          if (savePending) {
+            savePending = false;
+            flushSave();
+          }
+        }
+      }
+      $("#rows").addEventListener("input", (event) => {
+        if (!event.target.classList.contains("weight")) return;
+        const id = event.target.closest("tr")?.dataset.id;
+        if (!id || event.target.value === "") return;
+        const weight = Number(event.target.value);
+        if (!Number.isFinite(weight) || weight < 0 || weight > 1000000) return;
+        selected.set(id, weight);
+        updatePoolSummary();
+        autoSave();
+      });
+      $("#rows").addEventListener("change", (event) => {
+        if (!event.target.classList.contains("weight")) return;
+        const id = event.target.closest("tr")?.dataset.id;
+        if (!id) return;
+        let weight = Number(event.target.value);
+        if (!Number.isFinite(weight) || weight < 0 || weight > 1000000) {
+          status("权重必须在 0 到 1000000 之间");
+          render();
+          return;
+        }
+        selected.set(id, weight);
+        render();
+      });
+      $("#rows").addEventListener("contextmenu", (event) => {
+        const row = event.target.closest("tr[data-id]");
+        if (!row) return;
+        event.preventDefault();
+        openIdentityMenu(row.dataset.id, event.clientX, event.clientY);
+      });
+      function closeIdentityMenu() {
+        $("#identityMenu").classList.add("hidden");
+      }
+      function openIdentityMenu(id, x, y) {
+        contextIdentity = id;
+        currentIdentity = id;
+        const entry = data.catalog.find(
+          (item) => String(item.identity_id) === id,
+        );
+        const index = [...selected.keys()].indexOf(id);
+        $("#identityMenu").innerHTML =
+          `<div class="context-title">${esc(entry?.name || entry?.appearance_name || id)}</div><button data-action="only">仅抽中此人格</button><button data-action="onlyRole">仅启用此角色</button><button data-action="equal">当前池恢复均等</button><div class="sep"></div><button data-action="up"${index <= 0 ? " disabled" : ""}>上移</button><button data-action="down"${index < 0 || index >= selected.size - 1 ? " disabled" : ""}>下移</button><div class="sep"></div><button data-action="upload">上传图片</button><button data-action="reset">恢复默认图片</button><div class="sep"></div><button data-action="remove" class="danger">移出池子</button><button data-action="clear" class="danger">清空当前池</button>`;
+        const menu = $("#identityMenu");
+        menu.classList.remove("hidden");
+        menu.style.left = "0px";
+        menu.style.top = "0px";
+        const rect = menu.getBoundingClientRect();
+        menu.style.left =
+          Math.max(8, Math.min(x, innerWidth - rect.width - 8)) + "px";
+        menu.style.top =
+          Math.max(8, Math.min(y, innerHeight - rect.height - 8)) + "px";
+        menu.querySelectorAll("button").forEach((button) => {
+          button.onclick = () => runIdentityAction(button.dataset.action);
+        });
+      }
+      async function runIdentityAction(action) {
+        const id = contextIdentity;
+        closeIdentityMenu();
+        if (!id) return;
+        if (action === "only") {
+          selected = new Map(
+            [...selected].map(([key]) => [key, key === id ? 1 : 0]),
+          );
+          selected.set(id, 1);
+          render();
+          autoSave();
+          status("已设为仅抽中此人格");
+        } else if (action === "onlyRole") {
+          data.settings.config.enabled = true;
+          data.settings.config.characters ??= {};
+          for (let n = 101; n <= 112; n++)
+            data.settings.config.characters[String(n)] =
+              String(n) === activeTarget;
+          settingsDirty = true;
+          autoSave();
+          status("已设为仅启用此角色");
+        } else if (action === "equal") {
+          selected = new Map([...selected].map(([key]) => [key, 1]));
+          render();
+          autoSave();
+          status("当前池权重已恢复均等");
+        } else if (action === "up" || action === "down") {
+          const entries = [...selected];
+          const index = entries.findIndex(([key]) => key === id);
+          const target = index + (action === "up" ? -1 : 1);
+          if (index >= 0 && target >= 0 && target < entries.length) {
+            [entries[index], entries[target]] = [
+              entries[target],
+              entries[index],
+            ];
+            selected = new Map(entries);
+            render();
+            autoSave();
+          }
+        } else if (action === "upload") {
+          currentIdentity = id;
+          $("#portraitFile").click();
+        } else if (action === "reset") {
+          await resetPortrait(id);
+        } else if (action === "remove") {
+          selected.delete(id);
+          render();
+          autoSave();
+          status("已移出当前池");
+        } else if (action === "clear") {
+          if (confirm("清空当前人格池？")) {
+            selected.clear();
+            render();
+            autoSave();
+            status("当前池已清空");
+          }
+        }
+      }
+      function fillAddFilters() {
+        $("#addRole").innerHTML =
+          '<option value="">全部角色</option>' +
+          names
+            .map(
+              (name, index) =>
+                `<option value="${101 + index}">${esc(name)}</option>`,
+            )
+            .join("");
+        const chapters = new Map(
+          data.catalog
+            .filter((entry) => entry.chapter)
+            .flatMap((entry) =>
+              (
+                entry.chapter_memberships || [
+                  {
+                    chapter: entry.chapter || "unassigned",
+                    label: entry.chapter_label || "未归档",
+                  },
+                ]
+              ).map((group) => [String(group.chapter), group.label]),
+            ),
+        );
+        $("#addChapter").innerHTML =
+          '<option value="">全部章节</option>' +
+          [...chapters]
+            .sort(
+              (a, b) =>
+                chapterRank(a[0]) - chapterRank(b[0]) ||
+                a[1].localeCompare(b[1], "zh-CN"),
+            )
+            .map(
+              ([id, label]) =>
+                `<option value="${esc(id)}">${esc(label)}</option>`,
+            )
+            .join("");
+      }
+      function addCandidates() {
+        const query = $("#addSearch").value.toLowerCase();
+        const source = $("#addSource").value;
+        const role = $("#addRole").value;
+        const chapter = $("#addChapter").value;
+        return data.catalog.filter((entry) => {
+          if (
+            source &&
+            (source === "boss") !== (entry.category === "humanoid_boss")
+          )
+            return false;
+          if (
+            role &&
+            (entry.category === "humanoid_boss" ||
+              String(entry.source) !== role)
+          )
+            return false;
+          if (
+            chapter &&
+            !(
+              entry.chapter_memberships || [
+                { chapter: entry.chapter || "unassigned" },
+              ]
+            ).some((group) => String(group.chapter) === chapter)
+          )
+            return false;
+          return `${entry.name} ${entry.identity_id} ${who(entry.source)} ${entry.chapter_label || ""}`
+            .toLowerCase()
+            .includes(query);
+        });
+      }
+      function renderAddList() {
+        const candidates = addCandidates();
+        $("#addCount").textContent =
+          `${candidates.length} 个可选人格 · 当前池 ${selected.size} 项`;
+        $("#identityRows").innerHTML =
+          candidates
+            .map((entry) => {
+              const id = String(entry.identity_id);
+              const added = selected.has(id);
+              return `<tr><td>${entry.portrait_url ? `<img class="avatar" src="${esc(entry.portrait_url)}" alt="${esc(entry.name)}的战斗头像" loading="lazy" decoding="async" onerror="this.remove()">` : ""}</td><td><strong>${esc(entry.name || entry.appearance_name || id)}</strong> <small class="muted">${esc(id)}</small></td><td class="muted">${esc(entry.category === "humanoid_boss" ? entry.chapter_label || "Boss" : who(entry.source))}</td><td><button class="identity-add${added ? "" : " primary"}" data-id="${esc(id)}"${added ? " disabled" : ""}>${added ? "已在池中" : "添加"}</button></td></tr>`;
+            })
+            .join("") ||
+          '<tr><td colspan="4" class="empty-row">没有符合条件的人格</td></tr>';
+        document.querySelectorAll(".identity-add").forEach((button) => {
+          button.onclick = () => addIdentity(button.dataset.id);
+        });
+      }
+      function openIdentityModal() {
+        $("#identityTargetName").textContent = who(activeTarget);
+        fillAddFilters();
+        renderAddList();
+        $("#identityModal").classList.remove("hidden");
+        $("#addSearch").focus();
+      }
+      function closeIdentityModal() {
+        $("#identityModal").classList.add("hidden");
+      }
+      function addIdentity(id) {
+        if (selected.has(id)) return;
+        if (selected.size >= POOL_LIMIT) {
+          status(`每个池最多 ${POOL_LIMIT} 项，请先移出部分人格`);
+          return;
+        }
+        selected.set(id, 1);
+        render();
+        autoSave();
+        renderAddList();
+        status("已添加到当前池");
+      }
+      $("#addIdentity").onclick = () => openIdentityModal();
+      $("#identityClose").onclick = () => closeIdentityModal();
+      $("#identityModal").onclick = (event) => {
+        if (event.target.id === "identityModal") closeIdentityModal();
       };
-      $("#portraitFile").onchange = async (e) => {
-        let file = e.target.files[0],
+      $("#addSearch").oninput = () => renderAddList();
+      $("#addSource").onchange = () => {
+        if ($("#addSource").value !== "boss") $("#addChapter").value = "";
+        if ($("#addSource").value === "boss") $("#addRole").value = "";
+        renderAddList();
+      };
+      $("#addChapter").onchange = () => {
+        if ($("#addChapter").value) $("#addRole").value = "";
+        renderAddList();
+      };
+      $("#addRole").onchange = () => {
+        if ($("#addRole").value) {
+          $("#addSource").value = "other";
+          $("#addChapter").value = "";
+        }
+        renderAddList();
+      };
+      document.addEventListener("click", (event) => {
+        if (!event.target.closest("#identityMenu")) closeIdentityMenu();
+      });
+      window.addEventListener("resize", closeIdentityMenu);
+      document.addEventListener("scroll", closeIdentityMenu, true);
+      document.addEventListener("keydown", (event) => {
+        if (event.key === "Escape") {
+          closeIdentityMenu();
+          closeIdentityModal();
+        }
+      });
+      $("#portraitFile").onchange = async (event) => {
+        let file = event.target.files[0],
           id = currentIdentity;
-        e.target.value = "";
+        event.target.value = "";
         if (!file || !id) return;
         try {
           if (
@@ -944,68 +1266,38 @@
               .getContext("2d")
               .drawImage(img, 0, 0, canvas.width, canvas.height);
             let encoded = canvas.toDataURL("image/png").split(",")[1];
-            let r = await api("portrait-save", {
+            let result = await api("portrait-save", {
               identity: id,
               image: encoded,
             });
             let row = data.catalog.find((x) => String(x.identity_id) === id);
-            if (row) row.portrait_url = r.portrait_url;
+            if (row) row.portrait_url = result.portrait_url;
             render();
+            renderAddList();
             status("图片已保存");
           } finally {
             img.close();
           }
-        } catch (err) {
-          status("上传失败：" + err.message);
+        } catch (error) {
+          status("上传失败：" + error.message);
         }
       };
-      $("#resetPortrait").onclick = async () => {
-        let id = currentIdentity;
-        if (!id) {
-          status("请先用表格第一列选定当前人格");
-          return;
-        }
+      async function resetPortrait(id) {
         try {
-          let r = await api("portrait-reset", { identity: id });
+          let result = await api("portrait-reset", { identity: id });
           let row = data.catalog.find((x) => String(x.identity_id) === id);
-          if (row) row.portrait_url = r.portrait_url;
+          if (row) row.portrait_url = result.portrait_url;
           render();
+          renderAddList();
           status(
-            r.portrait_url
+            result.portrait_url
               ? "已恢复默认图片"
               : "已移除自定义图片；当前没有默认头像",
           );
-        } catch (err) {
-          status("恢复失败：" + err.message);
+        } catch (error) {
+          status("恢复失败：" + error.message);
         }
-      };
-      $("#onlyIdentity").onclick = () => {
-        if (!currentIdentity) {
-          status("请先用表格第一列选定当前人格");
-          return;
-        }
-        selected = new Map(
-          [...selected].map(([id]) => [id, id === currentIdentity ? 1 : 0]),
-        );
-        selected.set(currentIdentity, 1);
-        $("#enabled").checked = true;
-        enableCurrentRole();
-        render();
-        status("已设为仅抽中当前人格，点击保存当前池后生效");
-      };
-      $("#onlyRole").onclick = () => {
-        enableCurrentRole();
-        for (let n = 101; n <= 112; n++)
-          data.settings.config.characters[String(n)] =
-            String(n) === activeTarget;
-        status("已设为仅启用当前角色，点击保存当前池后生效");
-      };
-      $("#equalWeights").onclick = () => {
-        selected = new Map([...selected].map(([id]) => [id, 1]));
-        dirty = true;
-        render();
-        status("当前池所有已选人格权重已恢复为1，点击保存当前池后生效");
-      };
+      }
       $("#moreActions").onclick = (e) => {
         e.stopPropagation();
         $("#moreMenu").classList.toggle("hidden");
@@ -1202,33 +1494,6 @@
           data = await api("data");
           settingsBaseline = structuredClone(data.settings.config);
           settingsDirty = false;
-          let chapters = new Map(
-            data.catalog
-              .filter((e) => e.chapter)
-              .flatMap((e) =>
-                (
-                  e.chapter_memberships || [
-                    {
-                      chapter: e.chapter || "unassigned",
-                      label: e.chapter_label || "未归档",
-                    },
-                  ]
-                ).map((g) => [String(g.chapter), g.label]),
-              ),
-          );
-          $("#chapterFilter").innerHTML =
-            '<option value="">全部章节</option>' +
-            [...chapters]
-              .sort(
-                (a, b) =>
-                  chapterRank(a[0]) - chapterRank(b[0]) ||
-                  a[1].localeCompare(b[1], "zh-CN"),
-              )
-              .map(
-                ([id, label]) =>
-                  `<option value="${esc(id)}">${esc(label)}</option>`,
-              )
-              .join("");
           $("#version").textContent =
             "插件 " +
             data.version +
@@ -1249,9 +1514,6 @@
           status(e.message);
         }
       }
-      $("#reload").onclick = () => {
-        if (!dirty || confirm("重新读取会放弃未保存修改，继续？")) refresh();
-      };
       function renderEvents() {
         let q = $("#eventSearch").value.toLowerCase();
         $("#eventRows").innerHTML = events
@@ -1368,12 +1630,12 @@
           }),
       );
       window.onbeforeunload = (e) => {
-        if (dirty) {
+        if (dirty || saveTimer) {
           e.preventDefault();
           e.returnValue = "";
         }
       };
-      names.forEach((n, i) => $("#target").add(new Option(n, String(101 + i))));
+      renderSinners();
       refresh().then(initPortraitState);
 
       function renderDirector() {
