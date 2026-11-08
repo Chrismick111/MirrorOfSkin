@@ -31,7 +31,7 @@ static void bootlog(const char *line);
 #define SR_SESSION_TEMPLATE L"Local\\FaustNativeSinners_v75_%lu"
 
 #define SR_POOL_MAGIC 0x34505253u /* 'SRP4' */
-#define SR_POOL_VERSION 3u
+#define SR_POOL_VERSION 4u
 #define SR_ROW_MAX 4096
 #define SR_UNIT_MAX 16
 #define SR_SKIN_MAX 256
@@ -53,6 +53,7 @@ typedef struct {
   char identity[64];
   char asset_key[128];
   char appearance_name[64];
+  char base_identity[64];
 } PoolRow;
 
 #define API_DOMAIN 0
@@ -300,12 +301,28 @@ typedef struct {
 
 static Unit g_units[SR_UNIT_MAX];
 static int candidateOrder[SR_ROW_MAX];static uint32_t candidateOrderCount;
+static int base_rule_match(Unit *u,const PoolRow *r){
+ if(!r->base_identity[0])return 0;
+ if(!u||!u->baseName[0])return 0;
+ size_t n=strlen(r->base_identity);
+ return !strncmp(u->baseName,r->base_identity,n)&&(u->baseName[n]=='\0'||u->baseName[n]=='_');
+}
 static void rebuild_candidates(Unit *u){
  u->ncand=0;memset(u->drawState,0,sizeof(u->drawState));
  uint32_t count=candidateOrderCount?candidateOrderCount:g_rowCount;
+ int specific=0;
+ for(uint32_t i=0;i<count;i++){
+  int k=candidateOrderCount?candidateOrder[i]:(int)i;
+  PoolRow *r=&g_rows[k];
+  if(r->sinner==u->sinner&&r->enabled&&r->weight>0&&base_rule_match(u,r)){specific=1;break;}
+ }
  for(uint32_t i=0;i<count&&u->ncand<SR_CAND_MAX;i++){
   int k=candidateOrderCount?candidateOrder[i]:(int)i;
-  PoolRow *r=&g_rows[k];if(r->sinner==u->sinner&&r->enabled&&r->weight>0)u->cand[u->ncand++]=k;
+  PoolRow *r=&g_rows[k];
+  if(r->sinner!=u->sinner||!r->enabled||r->weight<=0)continue;
+  if(specific){if(!base_rule_match(u,r))continue;}
+  else if(r->base_identity[0])continue;
+  u->cand[u->ncand++]=k;
  }
 }
 static Unit *introUnit;
@@ -1261,7 +1278,7 @@ static void unit_register(void *app,void *view){
   }
   for(int i=0;i<SR_UNIT_MAX;i++)if(g_units[i].used&&g_units[i].view==view){
     Unit *u=&g_units[i];
-    if(u->baseApp!=app&&!skin_for_app(u,app)){uintptr_t h=ui_root(app);if(h){ui_unroot(u->baseRoot);u->baseRoot=h;u->baseApp=app;identity_text(app,u->baseName,sizeof(u->baseName));}}
+    if(u->baseApp!=app&&!skin_for_app(u,app)){uintptr_t h=ui_root(app);if(h){ui_unroot(u->baseRoot);u->baseRoot=h;u->baseApp=app;identity_text(app,u->baseName,sizeof(u->baseName));rebuild_candidates(u);}}
     return;
   }
   uint32_t sinner=sinner_of(app);
@@ -2206,14 +2223,14 @@ static int hot_pool_compatible(const PoolRow *rows,uint32_t count){
  if(count<g_rowCount||count>SR_ROW_MAX)return 0;
  for(uint32_t i=0;i<count;i++){
   const PoolRow *r=&rows[i];
-  if(!memchr(r->identity,0,64)||!memchr(r->asset_key,0,128)||!memchr(r->appearance_name,0,64)||!isfinite(r->weight)||r->weight<0||r->weight>1000000)return 0;
-  for(uint32_t j=0;j<i;j++)if(r->sinner==rows[j].sinner&&!strcmp(r->identity,rows[j].identity))return 0;
-  int old=-1;for(uint32_t j=0;j<g_rowCount;j++)if(g_rows[j].sinner==r->sinner&&!strcmp(g_rows[j].identity,r->identity)){old=(int)j;break;}
+  if(!memchr(r->identity,0,64)||!memchr(r->asset_key,0,128)||!memchr(r->appearance_name,0,64)||!memchr(r->base_identity,0,64)||!isfinite(r->weight)||r->weight<0||r->weight>1000000)return 0;
+  for(uint32_t j=0;j<i;j++)if(r->sinner==rows[j].sinner&&!strcmp(r->base_identity,rows[j].base_identity)&&!strcmp(r->identity,rows[j].identity))return 0;
+  int old=-1;for(uint32_t j=0;j<g_rowCount;j++)if(g_rows[j].sinner==r->sinner&&!strcmp(g_rows[j].base_identity,r->base_identity)&&!strcmp(g_rows[j].identity,r->identity)){old=(int)j;break;}
   if(old<0){
    int catalogMatch=0;
    for(uint32_t j=0;j<g_rowCount;j++){
     const PoolRow *base=&g_rows[j];
-    if(!strcmp(base->identity,r->identity)&&base->story==r->story&&!strcmp(base->asset_key,r->asset_key)&&!strcmp(base->appearance_name,r->appearance_name)&&base->excluded==r->excluded){catalogMatch=1;break;}
+    if(!strcmp(base->identity,r->identity)&&base->story==r->story&&!strcmp(base->asset_key,r->asset_key)&&!strcmp(base->appearance_name,r->appearance_name)&&!strcmp(base->base_identity,r->base_identity)&&base->excluded==r->excluded){catalogMatch=1;break;}
    }
    if(catalogMatch)continue;
    char asset[128];snprintf(asset,sizeof(asset),"SD_Personality/%s.prefab",r->appearance_name);
@@ -2221,12 +2238,12 @@ static int hot_pool_compatible(const PoolRow *rows,uint32_t count){
    if(strlen(r->identity)!=5||!(r->excluded&SR_AUTO_FLAG)||r->story||strcmp(asset,r->asset_key)||!sr_auto_identity(id,(int)r->sinner-100,r->appearance_name,0))return 0;
   }else{
    const PoolRow *o=&g_rows[old];
-   if(r->sinner!=o->sinner||r->story!=o->story||strcmp(r->asset_key,o->asset_key)||strcmp(r->appearance_name,o->appearance_name))return 0;
+   if(r->sinner!=o->sinner||r->story!=o->story||strcmp(r->base_identity,o->base_identity)||strcmp(r->asset_key,o->asset_key)||strcmp(r->appearance_name,o->appearance_name))return 0;
   }
  }
  for(uint32_t old=0;old<g_rowCount;old++){
   incoming_for_old[old]=-1;
-  for(uint32_t i=0;i<count;i++)if(g_rows[old].sinner==rows[i].sinner&&!strcmp(g_rows[old].identity,rows[i].identity)){incoming_for_old[old]=(int)i;break;}
+  for(uint32_t i=0;i<count;i++)if(g_rows[old].sinner==rows[i].sinner&&!strcmp(g_rows[old].base_identity,rows[i].base_identity)&&!strcmp(g_rows[old].identity,rows[i].identity)){incoming_for_old[old]=(int)i;break;}
   if(incoming_for_old[old]<0)return 0;
  }
  return 1;
