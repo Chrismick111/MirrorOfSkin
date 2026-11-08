@@ -108,7 +108,6 @@ class Store:
    if identity not in known or identity in seen:raise ValueError('未知或重复人格：'+identity)
    if isinstance(w,bool) or not isinstance(w,(int,float)) or not math.isfinite(w) or not 0<=w<=1000000:raise ValueError('权重应为0至1000000的有限数字')
    seen.add(identity);total+=w
-  if p['enabled'] and total<=0:raise ValueError('启用的池至少需要一个正权重人格')
  def replace(self,config,revision,known):
   if config.get('schema')!=1 or not isinstance(config.get('characters'),dict):raise ValueError('方案格式不受支持')
   for target,p in config['characters'].items():self.validate(target,p,known)
