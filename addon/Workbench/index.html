@@ -510,7 +510,7 @@
             </button>
           </div>
           <p class="hint">
-            右键点击人格可执行仅抽中、启停、移出等操作；所有修改自动保存。每个池最多
+            只显示当前角色的自定义池内容。右键人格可执行仅抽中、移出等操作；修改自动保存，每个池最多
             256 项。
           </p>
           <div class="scroll">
@@ -849,10 +849,12 @@
       function profile() {
         return {
           enabled: true,
-          entries: [...selected].map(([identity_id, weight]) => ({
-            identity_id,
-            weight: Number(weight) || 0,
-          })),
+          entries: [...selected]
+            .filter(([, weight]) => Number(weight) > 0)
+            .map(([identity_id, weight]) => ({
+              identity_id,
+              weight: Number(weight) || 0,
+            })),
         };
       }
       function setSaveState(text, error = false) {
@@ -869,8 +871,11 @@
       }
       function updatePoolSummary() {
         const total = poolTotal();
+        const visible = [...selected.values()].filter(
+          (value) => Number(value) > 0,
+        ).length;
         $("#summary").textContent =
-          `${selected.size}/${POOL_LIMIT} 项 · 总权重 ${total}`;
+          `${visible}/${POOL_LIMIT} 项 · 总权重 ${total}`;
         document.querySelectorAll("#rows tr[data-id]").forEach((row) => {
           const weight = selected.get(row.dataset.id) || 0;
           const share = row.querySelector(".share");
@@ -894,8 +899,9 @@
         currentIdentity = null;
         contextIdentity = null;
         const profileData = data.config.characters[activeTarget];
-        const entries =
-          profileData?.entries || data.pools[activeTarget]?.entries || [];
+        const entries = (profileData?.entries || []).filter(
+          (entry) => Number(entry.weight ?? 1) > 0,
+        );
         selected = new Map(
           entries.map((entry) => [
             String(entry.identity_id),
@@ -903,6 +909,20 @@
           ]),
         );
         let needsSave = false;
+        if (profileData) {
+          const settingsConfig = data.settings.config;
+          if (settingsConfig.enabled !== true) {
+            settingsConfig.enabled = true;
+            settingsDirty = true;
+            needsSave = true;
+          }
+          settingsConfig.characters ??= {};
+          if (settingsConfig.characters[activeTarget] !== true) {
+            settingsConfig.characters[activeTarget] = true;
+            settingsDirty = true;
+            needsSave = true;
+          }
+        }
         if (selected.size > POOL_LIMIT) {
           const hidden = selected.size - POOL_LIMIT;
           selected = new Map([...selected].slice(0, POOL_LIMIT));
@@ -923,6 +943,7 @@
         if (needsSave) autoSave();
         if (data.director) renderDirector();
       }
+
       async function switchTarget(id) {
         if (id === activeTarget) return;
         if (dirty || saveTimer) await flushSave();
@@ -932,6 +953,7 @@
       function render() {
         $("#poolTitle").textContent = `${who(activeTarget)} 的人格池`;
         const rows = [...selected]
+          .filter(([, weight]) => Number(weight) > 0)
           .map(([id, weight]) => {
             const entry = data.catalog.find(
               (item) => String(item.identity_id) === id,
@@ -960,6 +982,16 @@
         }
         saving = true;
         try {
+          const settingsConfig = data.settings.config;
+          if (
+            settingsConfig.enabled !== true ||
+            settingsConfig.characters?.[activeTarget] !== true
+          ) {
+            settingsConfig.enabled = true;
+            settingsConfig.characters ??= {};
+            settingsConfig.characters[activeTarget] = true;
+            settingsDirty = true;
+          }
           const body = {
             target: activeTarget,
             profile: profile(),
@@ -1013,6 +1045,13 @@
           render();
           return;
         }
+        if (weight === 0) {
+          selected.delete(id);
+          render();
+          autoSave();
+          status("权重为 0，已移出当前池");
+          return;
+        }
         selected.set(id, weight);
         render();
       });
@@ -1052,10 +1091,7 @@
         closeIdentityMenu();
         if (!id) return;
         if (action === "only") {
-          selected = new Map(
-            [...selected].map(([key]) => [key, key === id ? 1 : 0]),
-          );
-          selected.set(id, 1);
+          selected = new Map([[id, 1]]);
           render();
           autoSave();
           status("已设为仅抽中此人格");
