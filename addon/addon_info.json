@@ -7,7 +7,7 @@
  "settings": {
   "enable": true
  },
- "version": "0.63.2",
+ "version": "0.63.3",
  "requires": [
   "WarpHook"
  ]
