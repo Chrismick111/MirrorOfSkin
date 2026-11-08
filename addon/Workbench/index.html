@@ -280,9 +280,88 @@
       .mini-close:hover {
         color: #fff;
       }
+      .icon {
+        width: 1em;
+        height: 1em;
+        display: inline-block;
+        vertical-align: -0.125em;
+        fill: none;
+        stroke: currentColor;
+        stroke-width: 2;
+        stroke-linecap: round;
+        stroke-linejoin: round;
+      }
+      .icon-btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        padding: 7px;
+        border-radius: 6px;
+        line-height: 1;
+        font-size: 18px;
+      }
+      .icon-btn .icon {
+        width: 18px;
+        height: 18px;
+      }
+      .icon-btn.hidden {
+        display: none;
+      }
+      .stage-icon {
+        display: flex;
+        justify-content: center;
+        margin: 18px 0 0;
+        color: #deb970;
+      }
+      .stage-icon .icon {
+        width: 46px;
+        height: 46px;
+        stroke-width: 1.6;
+      }
+      .stage-icon.done {
+        color: #7ddc9a;
+      }
+      .stage-icon.error {
+        color: #ff8d8d;
+      }
+      .mini-label {
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+      }
+      .mini-label .icon {
+        width: 15px;
+        height: 15px;
+      }
     </style>
   </head>
   <body>
+    <svg
+      aria-hidden="true"
+      style="position: absolute; width: 0; height: 0; overflow: hidden"
+    >
+      <symbol id="i-download" viewBox="0 0 24 24">
+        <path d="M12 3v12m0 0l-4-4m4 4l4-4M5 21h14" />
+      </symbol>
+      <symbol id="i-check" viewBox="0 0 24 24">
+        <path d="M5 13l4 4L19 7" />
+      </symbol>
+      <symbol id="i-alert" viewBox="0 0 24 24">
+        <path d="M12 3l9 16H3L12 3zM12 9v5M12 17h.01" />
+      </symbol>
+      <symbol id="i-close" viewBox="0 0 24 24">
+        <path d="M6 6l12 12M18 6L6 18" />
+      </symbol>
+      <symbol id="i-minimize" viewBox="0 0 24 24">
+        <path d="M5 12h14" />
+      </symbol>
+      <symbol id="i-refresh" viewBox="0 0 24 24">
+        <path d="M20 5v7h-7M20 12a8 8 0 11-2.34-5.66" />
+      </symbol>
+      <symbol id="i-package" viewBox="0 0 24 24">
+        <path d="M4 7l8-4 8 4-8 4-8-4zM4 7v10l8 4 8-4V7M12 11v10" />
+      </symbol>
+    </svg>
     <header>
       <h1>人格演出工作台 <small class="muted">人格与Boss外观</small></h1>
       <div class="header-actions">
@@ -488,22 +567,56 @@
     >
       <div class="modal">
         <div class="modal-title">
-          <h2 id="portraitTitle">下载默认头像</h2>
-          <button id="portraitClose" aria-label="关闭">关闭</button>
+          <h2 id="portraitTitle">
+            <svg class="icon" aria-hidden="true">
+              <use href="#i-download"></use>
+            </svg>
+            下载头像
+          </h2>
+          <button
+            id="portraitClose"
+            class="icon-btn"
+            aria-label="关闭"
+            title="关闭"
+          >
+            <svg class="icon" aria-hidden="true">
+              <use href="#i-close"></use>
+            </svg>
+          </button>
         </div>
-        <p class="muted">
-          头像包与核心版本独立，使用固定直链下载。下载过程中可以隐藏此窗口，进度会保留在右下角。
-        </p>
+        <div id="portraitStageIcon" class="stage-icon">
+          <svg class="icon" aria-hidden="true">
+            <use id="portraitIconUse" href="#i-download"></use>
+          </svg>
+        </div>
         <div class="progress-track">
           <div id="portraitBar" class="progress-bar"></div>
         </div>
         <div class="progress-meta">
-          <span id="portraitStatus">等待开始</span
+          <span id="portraitStatus">准备下载</span
           ><span id="portraitPercent">0%</span>
         </div>
         <div class="modal-actions">
-          <button id="portraitHide">隐藏</button
-          ><button id="portraitStart" class="primary">开始下载</button>
+          <button
+            id="portraitHide"
+            class="icon-btn"
+            aria-label="隐藏到右下角"
+            title="隐藏"
+          >
+            <svg class="icon" aria-hidden="true">
+              <use href="#i-minimize"></use>
+            </svg>
+          </button>
+          <button
+            id="portraitRetry"
+            class="icon-btn hidden"
+            aria-label="重试"
+            title="重试"
+          >
+            <svg class="icon" aria-hidden="true">
+              <use href="#i-refresh"></use>
+            </svg>
+          </button>
         </div>
       </div>
     </div>
@@ -514,17 +627,25 @@
       title="点击展开下载进度"
     >
       <div class="mini-top">
-        <span id="portraitMiniLabel">下载头像</span
-        ><span
-          ><span id="portraitMiniPercent">0%</span>
+        <span class="mini-label">
+          <svg class="icon" aria-hidden="true">
+            <use id="portraitMiniIconUse" href="#i-download"></use>
+          </svg>
+          <span id="portraitMiniLabel">下载头像</span>
+        </span>
+        <span>
+          <span id="portraitMiniPercent">0%</span>
           <button
             id="portraitMiniClose"
             class="mini-close"
             aria-label="关闭进度"
+            title="关闭"
           >
-            ×
-          </button></span
-        >
+            <svg class="icon" aria-hidden="true">
+              <use href="#i-close"></use>
+            </svg>
+          </button>
+        </span>
       </div>
       <div class="progress-track">
         <div id="portraitMiniBar" class="progress-bar"></div>
@@ -903,16 +1024,32 @@
         }
       };
       const portraitStageText = {
-        idle: "等待开始",
+        idle: "准备下载",
         starting: "准备下载",
         download: "正在下载",
         verify: "正在校验",
         install: "正在写入",
-        done: "已完成",
+        done: "下载完成",
         error: "下载失败",
       };
+      const portraitStageIcon = {
+        idle: "i-download",
+        starting: "i-download",
+        download: "i-download",
+        verify: "i-check",
+        install: "i-package",
+        done: "i-check",
+        error: "i-alert",
+      };
+      const portraitRunning = (stage) =>
+        ["starting", "download", "verify", "install"].includes(stage);
       let portraitTimer = null,
-        portraitActive = false;
+        portraitActive = false,
+        portraitDoneTimer = null;
+      function portraitDismiss() {
+        $("#portraitModal").classList.add("hidden");
+        $("#portraitMini").classList.add("hidden");
+      }
       function portraitRender(p = {}) {
         let stage = p.stage || "idle",
           pct = Math.max(0, Math.min(100, Number(p.percent) || 0)),
@@ -924,34 +1061,20 @@
           pct.toFixed(pct % 1 ? 1 : 0) + "%";
         $("#portraitStatus").textContent = msg;
         $("#portraitMiniLabel").textContent =
-          stage === "done"
-            ? "头像下载完成"
-            : stage === "error"
-              ? "头像下载失败"
-              : "下载头像 · " + (portraitStageText[stage] || "");
-        if (stage === "done") {
-          $("#portraitStart").disabled = false;
-          $("#portraitStart").textContent = "重新下载";
-        } else if (stage === "error") {
-          $("#portraitStart").disabled = false;
-          $("#portraitStart").textContent = "重试";
-        } else if (stage === "idle") {
-          $("#portraitStart").disabled = false;
-          $("#portraitStart").textContent = "开始下载";
-        } else {
-          $("#portraitStart").disabled = true;
-          $("#portraitStart").textContent = "下载中…";
-        }
+          portraitStageText[stage] || "下载头像";
+        const icon = portraitStageIcon[stage] || "i-download";
+        $("#portraitIconUse").setAttribute("href", "#" + icon);
+        $("#portraitMiniIconUse").setAttribute("href", "#" + icon);
+        $("#portraitStageIcon").classList.toggle("done", stage === "done");
+        $("#portraitStageIcon").classList.toggle("error", stage === "error");
+        $("#portraitRetry").classList.toggle("hidden", stage !== "error");
+        portraitActive = stage === "error" || portraitRunning(stage);
       }
       async function portraitPoll() {
         try {
           let p = await api("portrait-progress");
           portraitRender(p);
-          let running = ["starting", "download", "verify", "install"].includes(
-            p.stage,
-          );
-          if (running) {
-            portraitActive = true;
+          if (portraitRunning(p.stage)) {
             if (!portraitTimer) portraitTimer = setInterval(portraitPoll, 500);
           } else if (portraitTimer) {
             clearInterval(portraitTimer);
@@ -959,24 +1082,55 @@
           }
           if (p.stage === "done") {
             portraitActive = false;
+            clearTimeout(portraitDoneTimer);
             try {
               await refresh();
             } catch (e) {}
+            portraitDoneTimer = setTimeout(portraitDismiss, 1000);
           }
-          if (p.stage === "error") portraitActive = false;
+          if (p.stage === "error") portraitActive = true;
         } catch (e) {
-          $("#portraitStatus").textContent = e.message;
+          portraitRender({ stage: "error", message: e.message, percent: 0 });
         }
       }
       function portraitStartPolling() {
-        portraitActive = true;
         if (!portraitTimer) portraitTimer = setInterval(portraitPoll, 500);
         portraitPoll();
       }
-      function portraitShow() {
+      async function portraitBegin() {
+        clearTimeout(portraitDoneTimer);
+        portraitRender({ stage: "starting", percent: 0, message: "准备下载" });
+        try {
+          let r = await api("portrait-download", {});
+          portraitRender(r.progress || {});
+          if (r.started || portraitRunning(r.progress?.stage)) {
+            portraitStartPolling();
+          } else if (r.progress?.stage === "done") {
+            await portraitPoll();
+          }
+        } catch (e) {
+          portraitRender({ stage: "error", message: e.message, percent: 0 });
+        }
+      }
+      async function portraitShow(autoStart = true) {
+        clearTimeout(portraitDoneTimer);
         $("#portraitModal").classList.remove("hidden");
         $("#portraitMini").classList.add("hidden");
-        portraitPoll();
+        try {
+          let p = await api("portrait-progress");
+          if (p.stage === "error") {
+            portraitRender(p);
+            return;
+          }
+          if (autoStart && (p.stage === "idle" || p.stage === "done")) {
+            await portraitBegin();
+            return;
+          }
+          portraitRender(p);
+          if (portraitRunning(p.stage)) portraitStartPolling();
+        } catch (e) {
+          portraitRender({ stage: "error", message: e.message, percent: 0 });
+        }
       }
       function portraitHide() {
         $("#portraitModal").classList.add("hidden");
@@ -986,17 +1140,20 @@
         try {
           let p = await api("portrait-progress");
           portraitRender(p);
-          if (["starting", "download", "verify", "install"].includes(p.stage)) {
+          if (portraitRunning(p.stage)) {
             portraitStartPolling();
+            $("#portraitMini").classList.remove("hidden");
+          } else if (p.stage === "error") {
             $("#portraitMini").classList.remove("hidden");
           }
         } catch (e) {}
       }
       $("#downloadPortraits").onclick = () => portraitShow();
-      $("#portraitClose").onclick = () => portraitHide();
+      $("#portraitClose").onclick = () => portraitDismiss();
       $("#portraitHide").onclick = () => portraitHide();
+      $("#portraitRetry").onclick = () => portraitBegin();
       $("#portraitMini").onclick = (e) => {
-        if (e.target.id !== "portraitMiniClose") portraitShow();
+        if (!e.target.closest("#portraitMiniClose")) portraitShow(false);
       };
       $("#portraitMiniClose").onclick = (e) => {
         e.stopPropagation();
@@ -1006,30 +1163,6 @@
           portraitTimer = null;
         }
         $("#portraitMini").classList.add("hidden");
-      };
-      $("#portraitStart").onclick = async () => {
-        let b = $("#portraitStart");
-        b.disabled = true;
-        b.textContent = "启动中…";
-        try {
-          let r = await api("portrait-download", {});
-          portraitRender(r.progress || {});
-          if (
-            r.started ||
-            ["starting", "download", "verify", "install"].includes(
-              r.progress?.stage,
-            )
-          )
-            portraitStartPolling();
-          else if (r.progress?.stage === "done") {
-            status("头像资源已下载");
-            await refresh();
-          }
-        } catch (e) {
-          $("#portraitStatus").textContent = e.message;
-          b.disabled = false;
-          b.textContent = "重试";
-        }
       };
       $("#updatePlugin").onclick = async () => {
         let b = $("#updatePlugin");
