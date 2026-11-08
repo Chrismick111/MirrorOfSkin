@@ -5,6 +5,7 @@ from urllib.parse import unquote, quote
 from file_lock import FileLock
 import director
 import custom_portraits
+import rulesets
 import struct
 import subprocess
 import argparse,hashlib,json,math,os,pathlib,re,secrets,threading,time,webbrowser
@@ -42,6 +43,10 @@ def _portrait_start(root):
   _PORTRAIT_THREAD=threading.Thread(target=_portrait_run,args=(root,),name='PortraitDownload',daemon=True)
   _PORTRAIT_THREAD.start()
  return True
+
+def _ruleset_payload(store):
+ state, items, selected, entries, revision = store.ruleset_snapshot()
+ return {'state': state, 'rulesets': items, 'activeRule': selected, 'entries': entries, 'revision': revision}
 
 def read(path,default):
  try:return json.loads(path.read_text(encoding='utf-8-sig'))
@@ -152,7 +157,24 @@ class Store:
   if pool.get('config_revision')==self.snapshot()['revision']:
    status['pool']='核心已读取成员与权重' if pool.get('published') and pool.get('applied')==pool.get('published') else '已发布，等待核心读取'
   return status
+ def has_portrait(self, identity):
+  return identity in self.portraits or custom_portraits.path_for(self.root, identity).is_file()
+ def ruleset_snapshot(self):
+  state, items = rulesets.list_rulesets(self.root, self.has_portrait)
+  selected = None
+  wanted = (state.get('selected') or {}).get('id')
+  for item in items:
+   if item['id'] == wanted:
+    selected = item
+    break
+  if selected and selected.get('kind') == 'global':
+   selected = dict(selected)
+   selected['sinner'] = str((state.get('selected') or {}).get('sinner') or '101')
+  entries = rulesets.entries(self.root, selected) if selected else []
+  revision = rulesets.revision(self.root, selected) if selected else hashlib.sha256(b'').hexdigest()
+  return state, items, selected, entries, revision
  def data(self):
+  rule_state, rule_items, active_rule, rule_entries, rule_revision = self.ruleset_snapshot()
   pools=read(self.root/'Assets/runtime/all_sinners_pools.json',{})
   catalog={str(e['identity_id']):dict(e,source="Boss" if e.get("category")=="humanoid_boss" else key) for key,p in pools.items() for e in p.get('entries',[])}
   for e in read(self.root/'identity_catalog.json',{}).get('rows',[]):
@@ -165,7 +187,7 @@ class Store:
     group=chapters.get(identity,{})
     e.update(chapter=group.get('chapter','unassigned'),chapter_label=group.get('label','未归档'),chapter_memberships=group.get('memberships',[{'chapter':group.get('chapter','unassigned'),'label':group.get('label','未归档')}]))
     e.update(chapter_rank=group.get('rank',20000),chapter_sources=group.get('appearances_in',[]),source_note='；'.join(x.get('note','') for x in group.get('special_evidence',[])),source_evidence_level=group.get('confidence',''),source_battles=sorted({str(x['battle_id']) for x in group.get('battle_evidence',[]) if x.get('battle_id') is not None}))
-  return dict(self.snapshot(),settings=self.settings_snapshot(),runtime=self.runtime_status(),director=self.director_snapshot(),formAnnotations=self.form_annotations(),catalog=list(catalog.values()),pools=pools,forms=read(self.root/'native_forms.json',{}),warmup=read(self.root/'warmup_status.json',{}),version=read(self.root/'addon_info.json',{}).get('version','未知'))
+  return dict(self.snapshot(),rulesetState=rule_state,rulesets=rule_items,activeRule=active_rule,ruleEntries=rule_entries,ruleRevision=rule_revision,settings=self.settings_snapshot(),runtime=self.runtime_status(),director=self.director_snapshot(),formAnnotations=self.form_annotations(),catalog=list(catalog.values()),pools=pools,forms=read(self.root/'native_forms.json',{}),warmup=read(self.root/'warmup_status.json',{}),version=read(self.root/'addon_info.json',{}).get('version','未知'))
  def events(self):
   path=self.root/'native_runtime.log'
   if not path.exists():return []
@@ -191,6 +213,7 @@ def main():
    try:
     if route=='index':return self.send(html,ctype='text/html; charset=utf-8')
     if route=='portrait-progress':return self.send(_portrait_state())
+    if route=='rulesets':return self.send(_ruleset_payload(store))
     if route=='data':return self.send(store.data())
     if route=='events':return self.send(store.events())
     if route and route.startswith('portrait/'):
@@ -200,7 +223,7 @@ def main():
    except Exception as e:return self.send({'error':str(e)},500)
   def do_POST(self):
    route=self.route()
-   if route not in ('save','import','legacy','director','bundle','boss-preview','update-check','update-install','portrait-save','portrait-reset','portrait-download'):return self.send({'error':'未找到'},404)
+   if route not in ('save','import','legacy','director','bundle','boss-preview','update-check','update-install','portrait-save','portrait-reset','portrait-download','ruleset-activate','ruleset-save','ruleset-create','ruleset-only'):return self.send({'error':'未找到'},404)
    if self.headers.get('X-Workbench')!=token:return self.send({'error':'请求无效'},403)
    try:
     n=int(self.headers.get('Content-Length',0))
@@ -216,6 +239,18 @@ def main():
     if route=='legacy':
      subprocess.Popen(['powershell.exe','-NoProfile','-STA','-WindowStyle','Hidden','-ExecutionPolicy','Bypass','-File',str(store.root/'Settings.ps1')],cwd=store.root,creationflags=subprocess.CREATE_NO_WINDOW)
      return self.send({'opened':True})
+    if route=='ruleset-activate':
+     rulesets.activate(store.root, body.get('rule') or body)
+     return self.send(_ruleset_payload(store))
+    if route=='ruleset-save':
+     rulesets.save_entries(store.root, body['rule'], body.get('entries', []), body.get('revision', ''), {str(e['identity_id']) for e in rulesets.catalog(store.root).values()}, store.validate)
+     return self.send(_ruleset_payload(store))
+    if route=='ruleset-create':
+     rulesets.create_identity(store.root, body['sinner'], body['identity'], rulesets.catalog(store.root))
+     return self.send(_ruleset_payload(store))
+    if route=='ruleset-only':
+     rulesets.only(store.root, body.get('rule') or body)
+     return self.send(_ruleset_payload(store))
     known={str(e['identity_id']) for e in store.data()['catalog']}
     if route in ('portrait-save','portrait-reset'):
      identity=body.get('identity')
