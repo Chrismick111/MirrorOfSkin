@@ -223,7 +223,7 @@ def main():
    except Exception as e:return self.send({'error':str(e)},500)
   def do_POST(self):
    route=self.route()
-   if route not in ('save','import','legacy','director','bundle','boss-preview','update-check','update-install','portrait-save','portrait-reset','portrait-download','ruleset-activate','ruleset-save','ruleset-create','ruleset-only'):return self.send({'error':'未找到'},404)
+   if route not in ('save','import','legacy','director','bundle','boss-preview','update-check','update-install','portrait-save','portrait-reset','portrait-download','ruleset-activate','ruleset-save','ruleset-create','ruleset-only','ruleset-deactivate'):return self.send({'error':'未找到'},404)
    if self.headers.get('X-Workbench')!=token:return self.send({'error':'请求无效'},403)
    try:
     n=int(self.headers.get('Content-Length',0))
@@ -250,6 +250,9 @@ def main():
      return self.send(_ruleset_payload(store))
     if route=='ruleset-only':
      rulesets.only(store.root, body.get('rule') or body)
+     return self.send(_ruleset_payload(store))
+    if route=='ruleset-deactivate':
+     rulesets.deactivate(store.root, body.get('rule') or body)
      return self.send(_ruleset_payload(store))
     known={str(e['identity_id']) for e in store.data()['catalog']}
     if route in ('portrait-save','portrait-reset'):
