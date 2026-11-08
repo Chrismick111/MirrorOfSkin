@@ -437,6 +437,70 @@
       .ruleset-copy small {
         color: #b4b8c1;
       }
+      .ruleset-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(106px, 1fr));
+        gap: 14px;
+        max-height: 70vh;
+        overflow: auto;
+        align-content: start;
+      }
+      .ruleset-card {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 8px;
+        padding: 10px 6px;
+        border: 0;
+        background: transparent;
+        border-radius: 12px;
+        min-width: 0;
+      }
+      .ruleset-card:hover {
+        background: #24272d;
+      }
+      .ruleset-orb {
+        width: 72px;
+        height: 72px;
+        border-radius: 50%;
+        border: 2px solid #4b505a;
+        background: #202329;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        overflow: hidden;
+        color: #b4b8c1;
+        font-size: 18px;
+        font-weight: 700;
+        transition:
+          border-color 0.15s,
+          box-shadow 0.15s;
+      }
+      .ruleset-orb img {
+        width: 100%;
+        height: 100%;
+        object-fit: contain;
+      }
+      .ruleset-card.active .ruleset-orb {
+        border-color: #deb970;
+        box-shadow: 0 0 0 3px #deb97033;
+      }
+      .ruleset-name {
+        font-size: 12px;
+        line-height: 1.3;
+        text-align: center;
+        color: #d7d9dd;
+        max-width: 100%;
+        overflow: hidden;
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+        word-break: break-word;
+      }
+      .ruleset-card.active .ruleset-name {
+        color: #f0d79b;
+      }
+
       .mini-label .icon {
         width: 15px;
         height: 15px;
@@ -658,7 +722,7 @@
             点击规则集即启用；全局规则与其它规则冲突，同一罪人的规则集互斥，最后选择的优先。
           </p>
           <div class="ruleset-layout">
-            <div id="rulesetList" class="ruleset-list"></div>
+            <div id="rulesetList" class="ruleset-grid"></div>
           </div>
         </section>
         <section id="events" class="hidden">
@@ -915,6 +979,35 @@
       </div>
     </div>
     <div
+      id="rulePickerModal"
+      class="modal-backdrop hidden"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="rulePickerTitle"
+    >
+      <div class="modal identity-modal">
+        <div class="modal-title">
+          <h2 id="rulePickerTitle">选择规则集</h2>
+          <button
+            id="rulePickerClose"
+            class="icon-btn"
+            aria-label="关闭"
+            title="关闭"
+          >
+            <svg class="icon" aria-hidden="true">
+              <use href="#i-close"></use>
+            </svg>
+          </button>
+        </div>
+        <div class="bar">
+          <button id="rulePickerCreate" class="primary">
+            新建单人格规则集
+          </button>
+        </div>
+        <div id="rulePickerList" class="ruleset-grid"></div>
+      </div>
+    </div>
+    <div
       id="newRuleModal"
       class="modal-backdrop hidden"
       role="dialog"
@@ -1083,37 +1176,52 @@
           select.value = String(rule.sinner || "101");
         }
       }
-      function renderRulesets() {
-        const list = $("#rulesetList");
-        list.innerHTML =
-          (data.rulesets || [])
-            .map((item) => {
-              const icon = item.icon
-                ? `<img src="api/portrait/${encodeURIComponent(item.icon)}" alt="">`
-                : `<div class="ruleset-placeholder">${item.kind === "global" ? "全" : "?"}</div>`;
-              return `<button class="ruleset-item${item.active ? " active" : ""}${item.conflict ? " conflict" : ""}" data-id="${esc(item.id)}">${icon}<span class="ruleset-copy"><strong>${esc(item.name)}</strong><small>${item.active ? "已启用" : item.conflict ? "冲突" : "未启用"}</small></span></button>`;
-            })
-            .join("") || '<p class="muted">暂无规则集</p>';
-        list.querySelectorAll(".ruleset-item").forEach((button) => {
-          button.onclick = () => {
+      function rulesetCard(item) {
+        const orb = item.icon
+          ? `<span class="ruleset-orb"><img src="api/portrait/${encodeURIComponent(item.icon)}" alt=""></span>`
+          : `<span class="ruleset-orb">${item.kind === "global" ? "全" : "人"}</span>`;
+        return `<button class="ruleset-card${item.active ? " active" : ""}" data-id="${esc(item.id)}">${orb}<span class="ruleset-name">${esc(item.name)}</span></button>`;
+      }
+      function bindRulesetCards(container) {
+        container.querySelectorAll(".ruleset-card").forEach((button) => {
+          button.onclick = async () => {
             const item = (data.rulesets || []).find(
               (candidate) => candidate.id === button.dataset.id,
             );
-            if (item) activateRule(item);
+            if (item) await toggleRule(item);
           };
         });
       }
-      async function activateRule(item) {
+      function renderRulesets() {
+        const html =
+          (data.rulesets || []).map(rulesetCard).join("") ||
+          '<p class="muted">暂无规则集</p>';
+        const page = $("#rulesetList");
+        page.innerHTML = html;
+        bindRulesetCards(page);
+        const picker = $("#rulePickerList");
+        if (picker) {
+          picker.innerHTML = html;
+          bindRulesetCards(picker);
+        }
+      }
+      async function toggleRule(item) {
         try {
-          const rule = { ...item };
-          if (rule.kind === "global") rule.sinner = currentSinner();
-          await api("ruleset-activate", { rule });
+          if (item.active) {
+            await api("ruleset-deactivate", { rule: item });
+          } else {
+            const rule = { ...item };
+            if (rule.kind === "global") rule.sinner = currentSinner();
+            await api("ruleset-activate", { rule });
+          }
           await refresh();
-          status("已启用规则集：" + item.name);
+          $("#rulePickerModal").classList.add("hidden");
+          status(item.active ? "已禁用规则集" : "已启用规则集");
         } catch (error) {
           status(error.message);
         }
       }
+
       function fillDefault() {
         const sinner = currentSinner();
         const pool = data.pools[sinner];
@@ -1122,7 +1230,16 @@
           return;
         }
         const entries = (pool.entries || [])
-          .filter((entry) => Number(entry.weight ?? 1) > 0)
+          .filter((entry) => {
+            const identity = String(entry.identity_id || "");
+            return (
+              identity.length === 5 &&
+              identity.startsWith(sinner) &&
+              !entry.story_metadata &&
+              entry.category !== "humanoid_boss" &&
+              Number(entry.weight ?? 1) > 0
+            );
+          })
           .slice(0, POOL_LIMIT)
           .map((entry) => ({
             identity_id: String(entry.identity_id),
@@ -1133,7 +1250,7 @@
         );
         render();
         autoSave();
-        status("已填入默认全随机");
+        status("已填入本角色全部普通人格");
       }
       function loadTarget() {
         currentIdentity = null;
@@ -1466,8 +1583,20 @@
       $("#identityModal").onclick = (event) => {
         if (event.target.id === "identityModal") closeIdentityModal();
       };
-      $("#scopeGo").onclick = () =>
-        document.querySelector('nav button[data-page="rulesets"]').click();
+      $("#scopeGo").onclick = () => {
+        renderRulesets();
+        $("#rulePickerModal").classList.remove("hidden");
+      };
+      $("#rulePickerClose").onclick = () =>
+        $("#rulePickerModal").classList.add("hidden");
+      $("#rulePickerModal").onclick = (event) => {
+        if (event.target.id === "rulePickerModal")
+          $("#rulePickerModal").classList.add("hidden");
+      };
+      $("#rulePickerCreate").onclick = () => {
+        $("#rulePickerModal").classList.add("hidden");
+        openNewRule();
+      };
       $("#fillDefault").onclick = () => fillDefault();
       $("#scopeSinner").onchange = async () => {
         if (!data.activeRule || data.activeRule.kind !== "global") return;
@@ -1565,6 +1694,7 @@
           closeIdentityMenu();
           closeIdentityModal();
           closeNewRule();
+          $("#rulePickerModal").classList.add("hidden");
         }
       });
       $("#portraitFile").onchange = async (event) => {
