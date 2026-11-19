@@ -142,6 +142,7 @@ static void timeline_end_hook(void *app,void *director,void *mi){
  /* Capture happens during the callback; permit handoff only after it returns. */
  Unit *u=unit_for_app(app);
  if(u&&u->playbackGeneration==generation&&director&&director==rfield(app,"_playableDirector")&&!(motion_busy_mask(app)&7)){
+  Skin *skin=skin_for_app(u,app);if(skin&&skin->wedge)wedge_end(skin);
   u->endedApp=app;u->endedDirector=director;u->endedGeneration=generation;
  }
  if(u)for(int i=0;i<u->motionCount;i++)if(u->motions[i].source==app)u->motions[i].endReturned=1;

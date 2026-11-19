@@ -298,14 +298,17 @@ static int random_double(double *out){
 /* ---------------- units ---------------- */
 #include "segment_latch.h"
 #include "ordinary_body_index.h"
+typedef struct WedgePlayback WedgePlayback;
+static WedgePlayback *wedgeHead;
 typedef struct {
   int used,row;
   int formWarned,form;
   int internalStage,internalFailed,chapterApplied,chapterDefault;
   DWORD chapterRetry;
   int motionCounts[SR_MOTION_CACHE];
-  uint32_t ordinaryClips[SR_MOTION_CACHE];
+  uint32_t ordinaryClips[SR_MOTION_CACHE],pairOrdinary[SR_MOTION_CACHE],pairMetadata[SR_MOTION_CACHE];
   SrOrdinaryBodies *ordinaryBodies;
+  WedgePlayback *wedge;
   int nativeMotionDetail[SR_MOTION_CACHE];
   unsigned motionMapped[4],motionMissing[4];
   void *app,*go;
@@ -340,7 +343,7 @@ typedef struct {
   SrDrawState drawState[3];
   int coinKnown,coinLast,coinTier,coinMotion,coinIndex,dead;
   SrSegmentLatch segmentLatch;
-  uint32_t ordinarySourceClips[SR_MOTION_CACHE];
+  uint32_t ordinarySourceClips[SR_MOTION_CACHE],pairSourceOrdinary[SR_MOTION_CACHE];
   unsigned segmentSequence;
   int segmentPrewarmAttempted;
   DWORD segmentPrewarmAfter;
@@ -396,7 +399,7 @@ static int base_rule_match(Unit *u,const PoolRow *r){
  return !strncmp(u->baseName,r->base_identity,n)&&(u->baseName[n]=='\0'||u->baseName[n]=='_');
 }
 static void rebuild_candidates(Unit *u){
- u->ncand=0;u->segmentPrewarmAttempted=0;memset(u->ordinarySourceClips,0,sizeof(u->ordinarySourceClips));sr_segment_clear(&u->segmentLatch);memset(u->drawState,0,sizeof(u->drawState));
+ u->ncand=0;u->segmentPrewarmAttempted=0;memset(u->ordinarySourceClips,0,sizeof(u->ordinarySourceClips));memset(u->pairSourceOrdinary,0,sizeof(u->pairSourceOrdinary));sr_segment_clear(&u->segmentLatch);memset(u->drawState,0,sizeof(u->drawState));
  uint32_t count=candidateOrderCount?candidateOrderCount:g_rowCount;
  int wildHunt=sr_player_number(u->baseName)==10710;
  int specific=0;
@@ -887,6 +890,22 @@ static void cache_clash_roles(Skin *skin){
   skin->chapterRole[d]=available?1:-1;
  }
 }
+/* Check target metadata per part for both story and player receivers. */
+static void cache_pair_metadata(Skin *skin,void *target){
+ memset(skin->pairMetadata,0,sizeof(skin->pairMetadata));
+ void *groups=rfield(target,"motionList");
+ int n=groups?list_count(groups):0;
+ for(int g=0;g<n&&n<=128;g++){
+  void *group=list_item(groups,g);int d=-1;
+  if(!group||!story_int(group,"motionDetail",&d)||!is_skill_detail(d)||sr_clash_role(skin->look,d))continue;
+  void *parts=rfield(group,"motionTimelineDatas");int size=parts?list_count(parts):0;
+  if(size!=skin->motionCounts[d]||size>32)continue;
+  for(int j=0;j<size;j++){
+   void *item=list_item(parts,j);int index=-1;
+   if(item&&story_int(item,"motionIndex",&index)&&index==j)skin->pairMetadata[d]|=UINT32_C(1)<<j;
+  }
+ }
+}
 static void *skin_metadata(Unit *u,Skin *s){
   const SrChapterActor *actor=u&&g_rows[s->row].story&&!strcmp(s->look,g_rows[s->row].appearance_name)?
    sr_chapter_actor(u->baseName,s->look):NULL;
@@ -928,6 +947,8 @@ static void *skin_metadata(Unit *u,Skin *s){
   void *cargs[]={actor?target:source,target};
   if(!call_exc(ctor,container,cargs)){bootlog("metadata: container ctor failed");ui_unroot(root);return NULL;}
 
+  int pairReverse=0;
+  if(sr_find_counterpart(u->baseName,g_rows[s->row].identity,&pairReverse))cache_pair_metadata(s,target);
   ui_unroot(s->metaRoot);s->meta=container;s->metaRoot=root;s->chapterActor=actor;
   return container;
 }
@@ -972,8 +993,10 @@ static int director_playing(void *app){
  return m_directorState&&call_int(m_directorState,director,NULL)==1;
 }
 /* End evidence is scoped to the exact native playback generation/director. */
+static void wedge_end(Skin *);
 static void playback_begin(void *app){
  Unit *u=unit_for_app(app);if(!u)return;
+ if(wedgeHead){Skin *prior=skin_for_app(u,app);if(prior&&prior->wedge)wedge_end(prior);}
  ++u->playbackGeneration;u->endedApp=NULL;u->endedDirector=NULL;
 }
 static int presentation_busy(void *app){
@@ -1120,7 +1143,8 @@ static void retain_last_appearance(Unit *u){
  }
 }
 #include "animation_time_cache.h"
-static void cache_ordinary_clips(void *app,uint32_t mask[128],Skin *donor){
+static void cache_ordinary_clips(void *app,uint32_t mask[128],uint32_t pairOrdinary[128],Skin *donor){
+ memset(pairOrdinary,0,128*sizeof(*pairOrdinary));
  memset(mask,0,128*sizeof(*mask));
  void *list=rfield(app,"motionList");int count=list?list_count(list):0;
  if(count<1||count>1024)return;
@@ -1134,6 +1158,7 @@ static void cache_ordinary_clips(void *app,uint32_t mask[128],Skin *donor){
    void *text=getter?call_obj(getter,tl,NULL,&ok):NULL;
    if(!ok||!string_ascii(text,name,sizeof(name))||!sr_ordinary_timeline(name))continue;
    mask[d]|=UINT32_C(1)<<k;
+   if(sr_counterpart_ordinary(name))pairOrdinary[d]|=UINT32_C(1)<<k;
    if(donor){
     unsigned body=sr_ordinary_body_class(donor->look,d,k);
     if(body){
@@ -1156,6 +1181,8 @@ static const char *paired_source(Unit *unit,Skin *skin){
   return unit->nativeStage==1?form->alternate:form->normal;
  return unit->baseName;
 }
+static int g_creating;
+#include "wedge_stock_runtime.inc"
 static void cache_skin_motions(Skin *skin){
  void *list=rfield(skin->app,"motionList");int count=list_count(list);
  if(count<0||count>1024)return;
@@ -1188,7 +1215,6 @@ static char g_loadLook[64];
 static void *g_loadView;
 static int loading_row(Unit *u,int row){return g_loadActive && g_loadUnit==u && g_loadRow==row;}
 static int loading_form(Unit *u,int row,int form){return loading_row(u,row)&&g_loadForm==form;}
-static int g_creating;
 static int g_ready;
 typedef struct {void *go;void *handleBox;uintptr_t handleRoot;} Retire;
 static Retire g_retire[SR_RETIRE_MAX];
@@ -1203,6 +1229,7 @@ static void retire_slot(void *go,void *handleBox,uintptr_t handleRoot){
 }
 static void retire_skin(Skin *s){
   if(!s->used)return;
+  wedge_dispose(s);
   if(s->app)release_owned_appearance_camera(s->app);
   if(s->go){
     int ok=1;void *args[]={s->go};
@@ -1351,8 +1378,9 @@ static int build_skin(Unit *u,int row){
   }
   cache_clash_roles(slot);
   cache_native_motion_map(slot);
+  wedge_prepare(u,slot);
   if(!(entry->excluded&(SR_STATIC_APPEARANCE_FLAG|2))){
-   cache_ordinary_clips(app,slot->ordinaryClips,slot);
+   cache_ordinary_clips(app,slot->ordinaryClips,slot->pairOrdinary,slot);
    time_record(app,slot->look);
   }
   slot->handleBox=g_loadBox;slot->handleRoot=g_loadRoot;
@@ -1839,6 +1867,10 @@ static int clash_raw(void *app,int detail){
  return app&&g_clashPlayback.app==app&&g_clashPlayback.mapped==detail;
 }
 static void *motion_anim_item_hook(void *retbuf,void *app,int sourceDetail,int donorDetail,int donorIndex,int sourceIndex,uint8_t last,void *mi){
+ Unit *owner=wedgeHead?unit_for_app(app):NULL;
+ Skin *shown=owner?skin_for_app(owner,app):NULL;
+ if(shown&&shown->wedge&&shown->wedge->active&&shown->wedge->active==donorDetail&&enabled_now()&&!cleanup_pending)
+  return ((void *(*)(void *,void *,int,int,int,int,uint8_t,void *))orig_motionAnimItem)(retbuf,owner->baseApp,donorDetail,donorDetail,donorIndex,sourceIndex,last,mi);
  if(enabled_now()&&clash_raw(app,donorDetail)){
   if(g_clashPlayback.chapter){sourceDetail=donorDetail;sourceIndex=donorIndex;}
   else{
@@ -1846,8 +1878,8 @@ static void *motion_anim_item_hook(void *retbuf,void *app,int sourceDetail,int d
    if(g_clashPlayback.index>=0)sourceIndex=g_clashPlayback.index;
   }
  }else if(enabled_now()&&g_chapterPlaybackApp==app&&donorDetail==g_chapterPlaybackDetail){
-  sourceDetail=donorDetail;
-  sourceIndex=donorIndex;
+  sourceDetail=g_projection.app==app?g_projection.sourceDetail:donorDetail;
+  sourceIndex=g_projection.app==app?g_projection.sourceIndex:donorIndex;
  }else if(enabled_now()&&g_projection.app==app){
   sourceDetail=g_projection.sourceDetail;
   /* EvaluateRelativeSpeed reads default metadata at startIndex, donor at i. */
@@ -1857,9 +1889,36 @@ static void *motion_anim_item_hook(void *retbuf,void *app,int sourceDetail,int d
  if(enabled_now()&&g_projection.app==app){char line[192];snprintf(line,sizeof(line),"projection sourceDetail=%d sourceIndex=%d donorDetail=%d donorIndex=%d nativeReturn=%s",sourceDetail,sourceIndex,donorDetail,donorIndex,result?"buffer":"null");bootlog(line);}
  return result;
 }
+static int counterpart_visual_part(Unit *u,Skin *skin,int sourceDetail,int sourceIndex,int coin,enum SrPairScope scope,int *detail,int *index){
+ if(coin<0||coin>=SR_VARIETY_COINS||!is_skill_detail(sourceDetail)||sourceIndex<0||sourceIndex>=TC_COINS||
+    !(u->pairSourceOrdinary[sourceDetail]&(UINT32_C(1)<<sourceIndex))||
+    !u->observedAction||!u->viewerActive||!u->observedViewer||u->coinDefense||u->preserveSpecial)return 0;
+ SrSegmentLatch *l=&u->segmentLatch;
+ sr_segment_scope(l,u->observedAction,u->observedViewer,skin->app,skin->internalStage);
+ TimeRecord *src=NULL,*dst=NULL;
+ if(!l->seen[coin]){
+  const char *source=paired_source(u,skin);
+  for(int i=0;i<g_timeCount;i++){
+   if(!strcmp(g_timeRecords[i]->look,source))src=g_timeRecords[i];
+   if(!strcmp(g_timeRecords[i]->look,skin->look))dst=g_timeRecords[i];
+   if(src&&dst)break;
+  }
+ }
+ return sr_counterpart_choose(l,coin,sourceDetail,sourceIndex,scope,src?src->seconds[sourceDetail][sourceIndex]:0,
+    dst?dst->seconds:NULL,skin->motionCounts,skin->pairOrdinary,skin->pairMetadata,skin->ordinaryBodies,detail,index);
+}
 static void forward_projected_motion(void *app,int detail,uint8_t a1,int index,uint8_t a3,void *cb,uint8_t a5,void *mi,int sourceDetail,int sourceIndex,int coin,int validAction){
  ProjectionContext saved=g_projection;
  Unit *u=unit_for_app(app);
+ Skin *stock=wedge_selected(u,app,sourceDetail,sourceIndex);
+ if(stock){
+  playback_begin(stock->app);
+  wedge_begin(stock,sourceDetail,sourceIndex);
+  ProjectionContext outer=g_projection;g_projection=(ProjectionContext){0};
+  ((void (*)(void *,int,uint8_t,int,uint8_t,void *,uint8_t,void *))orig_changeMotion)(stock->app,sourceDetail,a1,sourceIndex,a3,cb,a5,mi);
+  g_projection=outer;
+  return;
+ }
  Skin *skin=u?skin_for_app(u,app):NULL;int chosen=-1;
  int specialDetail=-1,specialIndex=-1;
  if(enabled_now()&&!cleanup_pending&&!g_motionDepth&&skin&&introApp!=app&&validAction&&
@@ -1867,20 +1926,26 @@ static void forward_projected_motion(void *app,int detail,uint8_t a1,int index,u
     sourceIndex>=0&&sourceIndex<TC_COINS&&(u->ordinarySourceClips[sourceDetail]&(UINT32_C(1)<<sourceIndex))&&
     !(g_rows[skin->row].excluded&(SR_STATIC_APPEARANCE_FLAG|2))&&
     coin>=0&&coin<SR_VARIETY_COINS&&u->observedAction&&u->observedViewer&&u->viewerActive&&
-    sr_verified_paired_attack(skin->motionCounts,paired_source(u,skin),motion_identity(skin),sourceDetail,-1)<0&&
     !sr_salvador_s3(skin->motionCounts,u->baseName,motion_identity(skin),sourceDetail,coin,&specialDetail,&specialIndex)){
-  SrSegmentLatch *l=&u->segmentLatch;
-  if(sr_segment_scope(l,u->observedAction,u->observedViewer,app,skin->internalStage))u->segmentSequence++;
-  TimeRecord *src=NULL,*dst=NULL;
-  if(!l->seen[coin]){
-   for(int k=0;k<g_timeCount;k++){
-    if(!strcmp(g_timeRecords[k]->look,u->baseName))src=g_timeRecords[k];
-    if(!strcmp(g_timeRecords[k]->look,skin->look))dst=g_timeRecords[k];
-    if(src&&dst)break;
+  int reverse=0;
+  const SrCounterpart *pair=sr_find_counterpart(paired_source(u,skin),motion_identity(skin),&reverse);
+  if(pair){
+   int finish=u->coinLast&&sr_authored_pair_motion(skin->motionCounts,paired_source(u,skin),motion_identity(skin),sourceDetail,-1,0)==detail;
+   if(!sr_counterpart_choreography(pair)&&counterpart_visual_part(u,skin,sourceDetail,sourceIndex,coin,finish?SR_PAIR_KEEP_PART:SR_PAIR_ORDINARY,&detail,&index))chosen=detail;
+  }else if(sr_verified_paired_attack(skin->motionCounts,paired_source(u,skin),motion_identity(skin),sourceDetail,-1)<0){
+   SrSegmentLatch *l=&u->segmentLatch;
+   if(sr_segment_scope(l,u->observedAction,u->observedViewer,app,skin->internalStage))u->segmentSequence++;
+   TimeRecord *src=NULL,*dst=NULL;
+   if(!l->seen[coin]){
+    for(int k=0;k<g_timeCount;k++){
+     if(!strcmp(g_timeRecords[k]->look,u->baseName))src=g_timeRecords[k];
+     if(!strcmp(g_timeRecords[k]->look,skin->look))dst=g_timeRecords[k];
+     if(src&&dst)break;
+    }
    }
+   if(sr_segment_pick(l,coin,u->segmentSequence-1,src?src->seconds[sourceDetail][sourceIndex]:0,
+                      dst?dst->seconds:NULL,skin->motionCounts,skin->ordinaryClips,skin->ordinaryBodies,&detail,&index))chosen=detail;
   }
-  if(sr_segment_pick(l,coin,u->segmentSequence-1,src?src->seconds[sourceDetail][sourceIndex]:0,
-                     dst?dst->seconds:NULL,skin->motionCounts,skin->ordinaryClips,skin->ordinaryBodies,&detail,&index))chosen=detail;
  }
  if(u&&skin&&validAction&&coin>=0&&is_skill_detail(sourceDetail)){char msg[256];snprintf(msg,sizeof(msg),"segment actual look=%.95s source=%d:%d coin=%d target=%d:%d planned=%d",skin->look,sourceDetail,sourceIndex,coin,detail,index,chosen);bootlog(msg);}
  if(u&&skin&&is_skill_detail(sourceDetail))g_projection=(ProjectionContext){app,sourceDetail,sourceIndex,chosen};
@@ -1917,6 +1982,7 @@ static int single_skin_cycle_index(Unit *u,Skin *skin,int coin,int count,int *ou
 #include "native_order_runtime.h"
 static int counterpart_part(Unit *u,Skin *skin,void *action,int coin,int detail,int donorCount,int index,int last){
  if(index<0||donorCount<=0)return index;
+ if(detail==8&&donorCount==2&&index<2&&skin->wedge&&skin->wedge->reverseS2)return 1-index;
  int src=sr_counterpart_source_parts(paired_source(u,skin),motion_identity(skin),detail);
  if(src==donorCount&&index<donorCount)return index;
  int part=0;
@@ -1985,6 +2051,7 @@ static int special_playback(int slot,void *viewer,int detail,void *mi){
  if(!enabled_now()||cleanup_pending)return original;
  void *app=rfield(viewer,"_curAppearance");Unit *u=unit_for_app(app);
  Skin *skin=u?skin_for_app(u,app):NULL;if(!skin)return original;
+ if(wedge_selected(u,app,original,-1))return original;
  /* Keep source detail through the viewer. The final motion hook maps a
     verified pair once, with source detail intact for timing projection. */
  if(skin->chapterActor||sr_verified_paired_attack(skin->motionCounts,paired_source(u,skin),motion_identity(skin),original,-1)>=0)return original;
@@ -2323,6 +2390,11 @@ static void start_duel_hook(void *self,void *mi){
   ((void (*)(void *,void *))orig_startDuel)(target,mi);
 }
 static void *get_motion_hook(void *self,int detail,uint8_t flag,void *mi){
+ if(wedgeHead&&!g_creating&&!g_motionDepth&&enabled_now()&&!cleanup_pending&&g_projection.app!=self&&g_clashPlayback.app!=self){
+  Unit *owner=unit_for_app(self);
+  Skin *stock=wedge_selected(owner,self,detail,-1);
+  if(stock)return ((void *(*)(void *,int,uint8_t,void *))orig_getMotion)(owner->baseApp,detail,flag,mi);
+ }
   if(clash_raw(self,detail))return ((void *(*)(void *,int,uint8_t,void *))orig_getMotion)(self,detail,flag,mi);
   if(enabled_now()&&!cleanup_pending&&!g_creating&&!g_motionDepth){
    Unit *u=unit_for_app(self);Skin *skin=u?skin_for_app(u,self):NULL;
@@ -3025,6 +3097,7 @@ static void tick(void){
   if(frame<0){fatal("Unity frame count unavailable",7);return;}
   if(frame==g_lastUnityFrame)return;g_lastUnityFrame=frame;g_frame=frame;
   collect_retire();
+  wedge_tick();
   if(enabled_now()&&!cleanup_pending)voice_pump();else sr_voice_clear();
   draw_rules_tick();
   sr_wf_poll(g_self);
@@ -3074,7 +3147,7 @@ static void tick(void){
     Unit *u=&g_units[i];if(!u->used||u->dead||u->ncand<1)continue;
     if((LONG)(GetTickCount()-u->segmentPrewarmAfter)<0)continue;
     if(!u->segmentPrewarmAttempted){
-     if(time_record(u->baseApp,u->baseName)){cache_ordinary_clips(u->baseApp,u->ordinarySourceClips,NULL);u->segmentPrewarmAttempted=1;}
+     if(time_record(u->baseApp,u->baseName)){cache_ordinary_clips(u->baseApp,u->ordinarySourceClips,u->pairSourceOrdinary,NULL);u->segmentPrewarmAttempted=1;}
      else u->segmentPrewarmAfter=GetTickCount()+10000;
      break;
     }
@@ -3174,12 +3247,22 @@ static void *m_applicationQuit,*orig_applicationQuit;
 static void *m_observeSpriteCallback,*orig_observeSpriteCallback,*m_observeGetSprite,*m_observeObjectName;
 static volatile LONG g_spriteObserveCount;
 static _Thread_local int g_spriteObserving;
-/* Observation only: original callback always runs; no sprite is changed. */
+/* Native notification precedes the visible body handoff. */
 static void sprite_callback_observe(void *app,void *renderer,void *mi){
  ((void (*)(void *,void *,void *))orig_observeSpriteCallback)(app,renderer,mi);
- if(g_spriteObserving||!enabled_now()||!renderer)return;
- Unit *unit=unit_for_app(app);Skin *skin=unit?skin_for_app(unit,app):NULL;
- if(!unit||!skin||!sprite_observe_target(unit->baseName,skin->look))return;
+ if(wedgeHead&&!g_spriteObserving&&enabled_now()&&!cleanup_pending){
+  for(WedgePlayback *w=wedgeHead;w;w=w->next)if(w->active&&w->skin->app==app&&renderer==w->renderer){
+   g_spriteObserving=1;wedge_body(w);g_spriteObserving=0;break;
+  }
+ }
+ if(g_spriteObserving||!enabled_now()||!renderer||g_spriteObserveCount>=100)return;
+ Unit *unit=NULL;
+ for(int i=0;i<SR_UNIT_MAX;i++){
+  Unit *candidate=&g_units[i];if(!candidate->used||strncmp(candidate->baseName,"10315",5))continue;
+  Skin *shown=skin_for_app(candidate,app);
+  if(shown&&sprite_observe_target(candidate->baseName,shown->look)){unit=candidate;break;}
+ }
+ if(!unit)return;
  LONG sequence=InterlockedIncrement(&g_spriteObserveCount);if(sequence>100)return;
  g_spriteObserving=1;int ok=0;void *sprite=call_obj(m_observeGetSprite,renderer,NULL,&ok);uintptr_t sr=sprite?ui_root(sprite):0;
  void *name=(sprite&&sr)?call_obj(m_observeObjectName,sprite,NULL,&ok):NULL;uintptr_t nr=name?ui_root(name):0;char text[128]={0};
@@ -3208,7 +3291,6 @@ static int team_returns(void *method,const char *expected){
  void *t=((void *(*)(void *))api[API_RETURN_TYPE])(method);char *n=t?((char *(*)(void *))api[API_TYPE_NAME])(t):NULL;
  int ok=n&&!strcmp(n,expected);if(n)((void (*)(void *))api[API_FREE])(n);return ok;
 }
-#include "wedge_identity.h"
 static int visible_wedge_role(Unit *u){
  if(!u||!u->used||u->dead||!u->view)return 0;
  Skin *skin=skin_for_app(u,rfield(u->view,"_curAppearance"));

@@ -3,7 +3,7 @@
 适用于 [FaustLauncher](https://github.com/f0lkskill/FaustLauncher) 的《边狱巴士》(Limbus Company) 人格外观随机插件。
 通过 WarpHook 注入原生 DLL，在战斗中替换罪人外观、随机切换人格，并按原生触发条件播放 Boss 语音与气泡。
 
-当前版本 **1.0.0** · 协议 75 · 原生模块 `SinnersNative-v64.dll` · 适用启动器 `0.8.9-release.fix.4`
+当前版本 **1.0.1** · 协议 75 · 原生模块 `SinnersNative-v64.dll` · 适用启动器 `0.8.9-release.fix.4`
 
 ---
 
@@ -13,9 +13,11 @@
 
 | 文件 | 说明 |
 | --- | --- |
-| [标准安装包](https://github.com/Chrismick111/faust-random-identity/releases/download/v1.0.0/FaustRandomIdentity-WarpHook.zip) | 插件本体，946,708 字节，适合启动器分发与工作台更新 |
-| [通用 ZIP 安装包](https://github.com/Chrismick111/faust-random-identity/releases/download/v1.0.0/FaustRandomIdentity-WarpHook-Deflate.zip) | 解压工具不支持标准包时选用，与标准包内容相同，只需安装其中一个 |
+| [标准安装包](https://github.com/Chrismick111/faust-random-identity/releases/download/v1.0.1/FaustRandomIdentity-WarpHook.zip) | 插件本体，956,446 字节，适合启动器分发与工作台更新 |
+| [通用 ZIP 安装包](https://github.com/Chrismick111/faust-random-identity/releases/download/v1.0.1/FaustRandomIdentity-WarpHook-Deflate.zip) | 解压工具不支持标准包时选用，与标准包内容相同，只需安装其中一个 |
 | [默认图像包](https://github.com/Chrismick111/faust-random-identity/releases/download/v0.79.1/FaustRandomIdentity-Portraits.zip) | 可选，623 张图片，覆盖 693 个外观条目，工作台也可单独下载 |
+
+1.0.1 调整了楔子对应外观和人格对应外观的动作播放。已装 1.0.0 的用户可在工作台中点击「检查并更新」。
 
 将选用的安装包解压到下面的插件目录。手动安装的图像包也解压到同一目录。
 
