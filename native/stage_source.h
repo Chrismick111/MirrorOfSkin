@@ -4,7 +4,7 @@
 /* Director-initiated transitions preserve the group that won the draw. */
 static int sr_stage_source_commit(char source[64],int wanted,int director_wanted,unsigned kind,const char *group){
  if(wanted==director_wanted)return 0;
- if(kind==1&&group){memcpy(source,group,64);source[63]=0;}else source[0]=0;
+ if(kind==1&&group){strncpy(source,group,63);source[63]=0;}else source[0]=0;
  return 1;
 }
 /* A repeated draw of the same group keeps its actually displayed stage. */

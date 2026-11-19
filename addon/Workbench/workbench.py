@@ -2,7 +2,6 @@ import sys
 from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import prepare_view
-import merged_appearances
 import chapter_nine
 import chapter_cards
 import chapter_categories
@@ -12,7 +11,7 @@ import walpurgis_catalog
 from urllib.parse import unquote, quote
 from file_lock import FileLock
 import director
-import stage_director
+import stage_files
 import custom_portraits
 import rulesets
 import group_entries
@@ -132,8 +131,10 @@ def add_boss_members(profile,catalog,chapter=None):
 
 class Store:
  def __init__(self,root):
+  self.evidence=prepare_view.SessionEvidence(pathlib.Path(root)/'native_runtime.log')
   self.root=pathlib.Path(root);self.lock=FileLock(self.root/'workbench-save.lock');self.portraits=read(self.root/'Workbench/portrait_manifest.json',{});self.local_portraits=local_portraits.load(self.root)
-  with self.lock:stage_director.migrate_legacy_groups(self.root)
+  with self.lock:
+   chapter_nine.migrate(self.root,stage_files)
  def _refresh_local_portraits(self):
   path=self.root/'Workbench/local_portraits/local_portraits.json'
   try:stamp=path.stat().st_mtime_ns
@@ -179,20 +180,19 @@ class Store:
      else:
       tmp=self.root/(name+'.rollback');tmp.write_bytes(blob);os.replace(tmp,p)
     raise
- def validate(self,target,p,known,stage_groups=None):
+ def validate(self,target,p,known):
   if target not in {str(i) for i in range(101,113)}:raise ValueError('无效出战角色')
   if not isinstance(p.get('enabled'),bool):raise ValueError('启用状态无效')
   entries=p.get('entries',[])
   if not isinstance(entries,list) or len(entries)>256:raise ValueError('每池最多256项')
-  if stage_groups is None:stage_groups=stage_director.snapshot(self.root)['config'].get('groups',[])
-  groups={g.get('id'):g for g in stage_groups if isinstance(g,dict)}
   for entry in entries:
    w=entry.get('weight',1) if isinstance(entry,dict) else None
    if isinstance(w,bool) or not isinstance(w,(int,float)) or not math.isfinite(w) or not 0<=w<=1000000:raise ValueError('权重应为0至1000000的有限数字')
-  group_entries.validate_entries([e for e in entries if e.get('weight',1)>0],{str(x):{} for x in known},groups)
- def replace(self,config,revision,known,stage_groups=None):
+   if entry.get('entry_kind','appearance')!='appearance':raise ValueError('人格池仅接受外观条目')
+  group_entries.validate_entries(entries,{str(x):{} for x in known},{})
+ def replace(self,config,revision,known):
   if config.get('schema')!=1 or not isinstance(config.get('characters'),dict):raise ValueError('方案格式不受支持')
-  for target,p in config['characters'].items():self.validate(target,p,known,stage_groups)
+  for target,p in config['characters'].items():self.validate(target,p,known)
   with self.lock:
    old=self.snapshot()
    if old['revision']!=revision:raise ValueError('配置已在其他窗口更改，请重新载入后保存')
@@ -216,13 +216,12 @@ class Store:
   supported=self.form_annotations()
   if any(k not in supported for k in config.get('forms',{})):raise ValueError('所选人格没有已确认可用的形态资源')
   with self.lock:return director.save(self.root,config,revision,known)
- def runtime_status(self):
+ def runtime_status(self,pool=None,tail=None):
   compat=read(self.root/'compatibility.json',{});status={'protocol':compat.get('protocol'),'draw':'尚未保存','forms':'尚未保存'}
-  log=self.root/'native_runtime.log';tail=''
-  if log.exists():
-   with log.open('rb') as f:f.seek(0,2);size=f.tell();f.seek(max(0,size-1024*1024));tail=f.read().decode('utf8','replace')
-  pool=read(self.root/'pool_update_status.json',{});pid=pool.get('pid')
-  tail='\n'.join(prepare_view.session_lines(tail,pid)) if prepare_view.process_alive(pid) else ''
+  if pool is None:pool=read(self.root/'pool_update_status.json',{})
+  if tail is None:
+   pid=pool.get('pid')
+   tail=self.evidence.read(pid) if prepare_view.process_alive(pid) else ''
   path=self.root/'workbench_rules.bin'
   if path.exists():
    tick=path.stat().st_mtime_ns//100+116444736000000000;key=f"{tick>>32}:{tick&0xffffffff}"
@@ -231,21 +230,30 @@ class Store:
   if formPath.exists():
    raw=formPath.read_bytes();revision=struct.unpack_from('<I',raw,8)[0] if len(raw)>=16 else None
    status['forms']='核心已读取' if revision is not None and f'workbench forms loaded revision={revision} rules=' in tail else '已保存，等待核心读取确认'
-  status['pool']='等待运行中的插件读取'
-  if tail and pool.get('config_revision')==prepare_view.config_digest(self.root):
-   status['pool']='核心已读取成员与权重' if pool.get('published') and pool.get('applied')==pool.get('published') else '已发布，等待核心读取'
+  status['pool']=prepare_view.pool_status(pool,tail,self.root)
   return status
- def has_portrait(self, identity):
+ def portrait_lookup(self):
+  """Share one view of all three portrait folders throughout a catalog request."""
   self._refresh_local_portraits()
-  if custom_portraits.path_for(self.root,identity).is_file():return True
-  for folder,entry in (('portraits',self.portraits.get(identity,{})),('local_portraits',self.local_portraits.get(identity,{}))):
-   name=entry.get('file','') if isinstance(entry,dict) else ''
-   if isinstance(name,str) and re.fullmatch(r'[0-9a-f]{24}\.png',name) and (self.root/'Workbench'/folder/name).is_file():return True
-  return False
- def ruleset_snapshot(self,pool_data=None):
+  def filenames(folder):
+   try:
+    with os.scandir(folder) as files:
+     return {entry.name.lower() for entry in files if entry.name.lower().endswith('.png') and entry.is_file()}
+   except FileNotFoundError:
+    return set()
+  available=set()
+  for folder,manifest in (('portraits',self.portraits),('local_portraits',self.local_portraits)):
+   names=filenames(self.root/'Workbench'/folder)
+   for identity,row in manifest.items():
+    name=row.get('file') if isinstance(row,dict) else None
+    if isinstance(name,str) and re.fullmatch(r'[0-9a-f]{24}\.png',name) and name in names:
+     available.add(identity)
+  user=filenames(custom_portraits.folder_for(self.root))
+  if not user:return available.__contains__
+  return lambda identity: identity in available or custom_portraits.filename(identity) in user
+ def ruleset_snapshot(self,pool_data=None,portrait_ok=None):
   if pool_data is None:pool_data=rulesets.pools(self.root)
-  state, items = rulesets.list_rulesets(self.root, self.has_portrait, pool_data)
-  items.extend(chapter_nine.rule_items(self.root, state, items, self.has_portrait))
+  state, items = rulesets.list_rulesets(self.root, portrait_ok or self.portrait_lookup(), pool_data)
   selected = None
   wanted = (state.get('selected') or {}).get('id')
   for item in items:
@@ -255,21 +263,20 @@ class Store:
   if selected and selected.get('kind') == 'global':
    selected = dict(selected)
    selected['sinner'] = str((state.get('selected') or {}).get('sinner') or '101')
-  if selected and selected['kind']=='chapter':
-   return state,items,selected,[dict(entry_kind='group',group_id='ch9_'+selected['identity'],weight=1)],''
   entries = rulesets.entries(self.root, selected, pool_data) if selected else []
   revision = rulesets.revision(self.root, selected) if selected else hashlib.sha256(b'').hexdigest()
   return state, items, selected, entries, revision
  def data(self):
   pools=read(self.root/'Assets/runtime/all_sinners_pools.json',{})
-  rule_state, rule_items, active_rule, rule_entries, rule_revision = self.ruleset_snapshot(pools)
+  portrait_ok=self.portrait_lookup()
+  rule_state, rule_items, active_rule, rule_entries, rule_revision = self.ruleset_snapshot(pools,portrait_ok)
   catalog={str(e['identity_id']):dict(e,source="Boss" if e.get("category")=="humanoid_boss" else key) for key,p in pools.items() for e in p.get('entries',[])}
   for e in read(self.root/'identity_catalog.json',{}).get('rows',[]):
    catalog.setdefault(str(e['id']),{'identity_id':str(e['id']),'name':e['appearance'],'source':str(100+int(e['character']))})
   translations=name_translations.load(self.root)
   for identity,e in catalog.items():
    e['name']=name_translations.name(identity,e.get('name',''),translations)
-   if self.has_portrait(identity):e['portrait_url']='api/portrait/'+quote(identity,safe='')
+   if portrait_ok(identity):e['portrait_url']='api/portrait/'+quote(identity,safe='')
   chapters=read(self.root/'boss_chapters.json',{})
   for identity,e in catalog.items():
    if identity in chapters:
@@ -277,11 +284,14 @@ class Store:
     e.update(chapter=group.get('chapter','unassigned'),chapter_label=group.get('label','未归档'),chapter_memberships=chapter_categories.memberships(group))
     e.update(chapter_rank=group.get('rank',20000),chapter_sources=group.get('appearances_in',[]),source_note='；'.join(x.get('note','') for x in group.get('special_evidence',[])),source_evidence_level=group.get('confidence',''),source_battles=sorted({str(x['battle_id']) for x in group.get('battle_evidence',[]) if x.get('battle_id') is not None}))
   walpurgis_catalog.apply(catalog,walpurgis_catalog.load(self.root))
+  for pair in read(self.root/'Workbench/appearance_pairs.json',{}).get('pairs',[]):
+   entry=catalog.get(pair.get('pool_id') or pair['appearance'])
+   if entry is not None:entry.setdefault('paired_identities',[]).append(str(pair['identity']))
   native_forms=read(self.root/'native_forms.json',{})
-  for entry in catalog.values():entry['director_forms']=stage_director.director_forms(entry,native_forms)
   pool_status=read(self.root/'pool_update_status.json',{});pid=pool_status.get('pid');alive=prepare_view.process_alive(pid)
-  preparation=prepare_view.summarize(prepare_view.read_tail(self.root/'native_runtime.log'),pid,alive,list(catalog.values()))
-  return dict(self.snapshot(),preparation=preparation,rulesetState=rule_state,rulesets=rule_items,activeRule=active_rule,ruleEntries=rule_entries,ruleRevision=rule_revision,stageGroups=stage_director.snapshot(self.root)['config']['groups'],settings=self.settings_snapshot(),runtime=self.runtime_status(),director=self.director_snapshot(),formAnnotations=self.form_annotations(),catalog=list(catalog.values()),chapterArt=chapter_cards.load(self.root),pools=pools,forms=native_forms,warmup=read(self.root/'warmup_status.json',{}),version=read(self.root/'addon_info.json',{}).get('version','未知'))
+  evidence=self.evidence.read(pid) if alive else ''
+  preparation=prepare_view.summarize(evidence,pid,alive,list(catalog.values()))
+  return dict(self.snapshot(),preparation=preparation,rulesetState=rule_state,rulesets=rule_items,activeRule=active_rule,ruleEntries=rule_entries,ruleRevision=rule_revision,settings=self.settings_snapshot(),runtime=self.runtime_status(pool_status,evidence),director=self.director_snapshot(),formAnnotations=self.form_annotations(),catalog=list(catalog.values()),chapterArt=chapter_cards.load(self.root),pools=pools,forms=native_forms,warmup=read(self.root/'warmup_status.json',{}),version=read(self.root/'addon_info.json',{}).get('version','未知'))
  def known_appearances(self):
   """pool 里的外观名集合，按文件 mtime 缓存：扫描期间页面每 5 秒轮询，1.5 MB 的池文件不该重复解析。"""
   path=self.root/'Assets/runtime/all_sinners_pools.json'
@@ -334,7 +344,7 @@ SCAN={'running':False,'started':None,'finished':None,'error':None,'log':None}
 SCAN_LOCK=threading.Lock()
 # scan_units 用固定退出码表达失败原因（2=缺 UnityPy，3=找不到缓存，4=已有扫描），
 # 不去猜 stderr 的内容——UnityPy 自己抛的异常也带这个词，会误报成「没装」。
-SCAN_EXIT={'2':'未安装 UnityPy：python -m pip install UnityPy','3':'找不到 Addressables 缓存，先启动一次游戏','4':'已有扫描在进行','5':'无法在工作台目录创建扫描锁','6':'人格池文件缺失或损坏，请检查插件安装'}
+SCAN_EXIT={'2':'资源读取组件准备失败，请检查网络后重试；详情见 Workbench/scan_last_error.txt','3':'找不到 Addressables 缓存，先启动一次游戏','4':'已有扫描在进行','5':'无法在工作台目录创建扫描锁','6':'人格池文件缺失或损坏，请检查插件安装'}
 def should_scan_on_start(catalog_now, catalog_before):
  # Downloads can arrive after the catalog update; bundle fingerprints make an
  # unchanged-catalog pass incremental rather than skipping new cache contents.
@@ -409,12 +419,9 @@ def main():
     if route=='portrait-progress':return self.send(_portrait_state())
     if route=='rulesets':return self.send(_ruleset_payload(store))
     if route=='data':return self.send(store.data())
-    if route=='form-merged':return self.send({'families':merged_appearances.families(store.data()['catalog']),'native_supported':True})
-    if route=='form-director':
-     state=stage_director.snapshot(store.root);state['candidates']=stage_director.candidates(store.data()['catalog'],store.form_annotations());return self.send(state)
     if route=='events':return self.send(store.events())
     if route=='discovered':return self.send(store.discovered())
-    if route=='schemes':return self.send({'schemes':schemes.listing(store.root),'chapter_nine':chapter_nine.profiles(store.root)})
+    if route=='schemes':return self.send({'schemes':schemes.listing(store.root)})
     if route=='effect-schemes':return self.send({'schemes':effect_schemes.listing(store.root)})
     if route=='effect-selection':return self.send(fx_activation.read_selection(store.root))
     if route and route.startswith('chapter-image/'):
@@ -435,7 +442,7 @@ def main():
    except Exception as e:return self.send({'error':str(e)},500)
   def do_POST(self):
    route=self.route()
-   if route not in ('save','import','director','form-director','form-merged-set','form-preview','form-trace','form-compare','form-group-to-pool','bundle','boss-preview','update-check','update-install','portrait-save','portrait-reset','portrait-download','images-delete','ruleset-activate','ruleset-save','ruleset-create','ruleset-only','ruleset-deactivate','scan','scheme-save','scheme-load','scheme-delete','scheme-import','scheme-get','effect-scheme-save','effect-scheme-get','effect-scheme-delete','effect-timelines','effect-live-start','effect-live-status','effect-plan-preview','effect-selection','effect-sprites','effect-sprites-start','effect-sprites-status','effect-sprites-cancel','effect-sprite-export','instance-shutdown','instance-attach','instance-release'):return self.send({'error':'未找到'},404)
+   if route not in ('save','import','director','bundle','boss-preview','update-check','update-install','portrait-save','portrait-reset','portrait-download','images-delete','ruleset-activate','ruleset-save','ruleset-create','ruleset-only','ruleset-deactivate','scan','scheme-save','scheme-load','scheme-delete','scheme-import','scheme-get','effect-scheme-save','effect-scheme-get','effect-scheme-delete','effect-timelines','effect-live-start','effect-live-status','effect-plan-preview','effect-selection','effect-sprites','effect-sprites-start','effect-sprites-status','effect-sprites-cancel','effect-sprite-export','instance-shutdown','instance-attach','instance-release'):return self.send({'error':'未找到'},404)
    if self.headers.get('X-Workbench')!=token:return self.send({'error':'请求无效'},403)
    try:
     n=int(self.headers.get('Content-Length',0))
@@ -469,83 +476,6 @@ def main():
     if route=='effect-scheme-delete':
      with store.lock:
       effect_schemes.delete(store.root,body.get('name'));return self.send({'schemes':effect_schemes.listing(store.root)})
-    if route=='form-director':
-     with store.lock:
-      catalog=store.data()['catalog'];stage_director.validate(body['config'],catalog)
-      warnings=stage_director.pool_link_warnings(store.root,body['config'])
-      result=stage_director.save(store.root,body['config'],body['revision'],catalog);result['warnings']=warnings;return self.send(result)
-    if route=='form-merged-set':
-     with store.lock:
-      catalog=store.data()['catalog'];families=merged_appearances.families(catalog)
-      family=next((f for f in families if f['id']==body.get('family_id')),None)
-      if not family:raise ValueError('该外观组不可用')
-      group=merged_appearances.make_group(family,body.get('mode'))
-      _,_,rule,entries,revision=store.ruleset_snapshot()
-      incoming=body.get('rule') or {}; expected_id=body.get('rule_id') or incoming.get('id'); expected_sinner=body.get('sinner') or incoming.get('sinner')
-      if not rule or rule['id']!=expected_id or str(rule.get('sinner'))!=str(expected_sinner):raise ValueError('当前规则集已改变，请刷新')
-      if revision!=body.get('revision'):raise ValueError('规则池已改变，请刷新')
-      selected=body.get('identity_id') or family['members'][0]
-      if selected not in family['members']:raise ValueError('外观不属于此形态组')
-      old_group=body.get('group_id')
-      if old_group and old_group not in family['group_ids']:raise ValueError('形态组不属于此外观')
-      idx=next((i for i,e in enumerate(entries) if (e.get('entry_kind')=='group' and old_group and e.get('group_id')==old_group) or (not old_group and e.get('entry_kind','appearance')=='appearance' and e.get('identity_id')==selected)),None)
-      merge=body.get('merge_members',False)
-      if type(merge) is not bool:raise ValueError('合并选项无效')
-      indices=[i for i,e in enumerate(entries) if merge and e.get('entry_kind','appearance')=='appearance' and e.get('identity_id') in family['members']]
-      if idx is not None and idx not in indices:indices.append(idx)
-      indices.sort()
-      if idx is None and indices:idx=indices[0]
-      if idx is None and not body.get('add_if_missing'):raise ValueError('该外观不在当前规则池')
-      if any(i not in indices and e.get('entry_kind')=='group' and e.get('group_id')==group['id'] for i,e in enumerate(entries)):raise ValueError('当前规则池已有该形态组')
-      weight=sum(entries[i]['weight'] for i in indices) if indices else 1
-      if weight>1000000:raise ValueError('合并后的权重超过上限，请先调整')
-      item={'entry_kind':'group','group_id':group['id'],'weight':weight}
-      if not indices:updated=list(entries)+[item]
-      else:updated=[item if i==indices[0] else e for i,e in enumerate(entries) if i==indices[0] or i not in indices]
-      if len(updated)>rulesets.MAX_ENTRIES:raise ValueError('规则池已满')
-      before=stage_director.snapshot(store.root);config=merged_appearances.upgrade_legacy_groups({'schema':1,'groups':list(before['config'].get('groups',[]))})
-      existing=next((g for g in config['groups'] if g.get('id')==group['id']),None)
-      if existing and existing!=group:raise ValueError('已有同编号的自定义形态组，请先在形态导演中处理')
-      if not existing:config['groups'].append(group)
-      stage_director.validate(config,catalog)
-      paths=[store.root/stage_director.FILE,store.root/'native_stage_groups.bin']; originals=[p.read_bytes() if p.exists() else None for p in paths]
-      try:
-       if config!=before['config']:stage_director.save(store.root,config,before['revision'],catalog)
-       rulesets.save_entries(store.root,rule,updated,revision,{str(e['identity_id']) for e in catalog},store.validate,store.lock)
-      except Exception:
-       for path,data in zip(paths,originals):
-        if data is None:path.unlink(missing_ok=True)
-        else:
-         tmp=path.with_name(path.name+'.merged-rollback');tmp.write_bytes(data);tmp.replace(path)
-       raise
-      return self.send(_ruleset_payload(store))
-    if route=='form-preview':
-     group=body['group'];stage_director.validate({'schema':1,'groups':[group]},store.data()['catalog'])
-     return self.send(stage_director.preview(group,body['health'],body['sanity'],body['defense'],body.get('current_stage',0)))
-    if route=='form-trace':
-     group=body['group'];stage_director.validate({'schema':1,'groups':[group]},store.data()['catalog'])
-     return self.send(stage_director.trace(group,body.get('steps'),body.get('current_stage',0)))
-    if route=='form-compare':
-     left=body['left'];right=body['right'];catalog=store.data()['catalog']
-     stage_director.validate({'schema':1,'groups':[left]},catalog);stage_director.validate({'schema':1,'groups':[right]},catalog)
-     steps=body.get('steps');return self.send({'left':stage_director.trace(left,steps,body.get('left_current',0)),'right':stage_director.trace(right,steps,body.get('right_current',0))})
-    if route=='form-group-to-pool':
-     with store.lock:
-      group=next((g for g in stage_director.snapshot(store.root)['config'].get('groups',[]) if g.get('id')==body.get('group_id')),None)
-      if not group or not group.get('enabled'):raise ValueError('请先保存并启用形态组')
-      stage_director.validate({'schema':1,'groups':[group]},store.data()['catalog'])
-      weight=body.get('weight')
-      if isinstance(weight,bool) or not isinstance(weight,(int,float)) or not math.isfinite(weight) or not 0<weight<=1000000:raise ValueError('权重应大于 0 且不超过 1000000')
-      _,_,rule,entries,revision=store.ruleset_snapshot()
-      if not rule or rule['kind']=='chapter':raise ValueError('请先选择可编辑的规则集和目标角色')
-      if rule['id']!=body.get('rule_id') or str(rule.get('sinner'))!=str(body.get('sinner')):raise ValueError('当前选择的规则集或目标角色已变化，请刷新后重试')
-      if revision!=body.get('revision'):raise ValueError('规则池已变化，请刷新后重试')
-      if any(e.get('entry_kind')=='group' and e.get('group_id')==group['id'] for e in entries):raise ValueError('规则池中已有该形态组')
-      if len(entries)>=rulesets.MAX_ENTRIES:raise ValueError('规则池已满')
-      entries.append({'entry_kind':'group','group_id':group['id'],'weight':weight})
-      known={str(e['identity_id']) for e in store.data()['catalog']}
-      rulesets.save_entries(store.root,rule,entries,revision,known,store.validate,store.lock)
-      return self.send(_ruleset_payload(store))
     if route=='portrait-download':
      return self.send({'started':_portrait_start(store.root),'progress':_portrait_state()})
     if route=='images-delete':
@@ -557,12 +487,7 @@ def main():
      return self.send(github_update.check(store.root) if route=='update-check' else github_update.install(store.root))
     if route=='boss-preview':return self.send(add_boss_members(body['profile'],store.data()['catalog'],body.get('chapter')))
     if route.startswith('ruleset-') and (body.get('rule') or body).get('kind')=='chapter':
-     op={'ruleset-activate':'enable','ruleset-deactivate':'disable','ruleset-only':'only'}.get(route)
-     if not op:raise ValueError('第九章内置规则的外观池固定')
-     ident=(body.get('rule') or body).get('identity')
-     if not isinstance(ident,str):raise ValueError('缺少第九章人格编号')
-     chapter_nine.activate(store,ident,op)
-     return self.send(_ruleset_payload(store))
+     raise ValueError('父辈与子辈演出已改为按人格和覆盖外观自动匹配')
     if route=='ruleset-activate':
      rulesets.activate(store.root, body.get('rule') or body)
      return self.send(_ruleset_payload(store))
@@ -589,10 +514,8 @@ def main():
     known={str(e['identity_id']) for e in store.data()['catalog']}
     if route=='scheme-load':
      with store.lock:
-      old=stage_director.snapshot(store.root)['config']
-      loaded=chapter_nine.activate(store) if body.get('builtin')=='chapter-nine' else schemes.load(store,body.get('name'),known)
-      warnings=stage_director.pool_link_warnings(store.root,stage_director.snapshot(store.root)['config'],old)
-      return self.send({'loaded':loaded,'schemes':schemes.listing(store.root),'warnings':warnings})
+      loaded=schemes.load(store,body.get('name'),known)
+      return self.send({'loaded':loaded,'schemes':schemes.listing(store.root)})
     if route in ('portrait-save','portrait-reset'):
      identity=body.get('identity')
      if not isinstance(identity,str) or identity not in known:raise ValueError('未知人格')
@@ -628,6 +551,7 @@ def main():
    except (ValueError,KeyError,TypeError) as e:return self.send({'error':str(e)},400)
    except Exception as e:return self.send({'error':str(e)},500)
  server=ThreadingHTTPServer(('127.0.0.1',0),Handler);server.daemon_threads=False;lifetime.watch(server);url=f'http://127.0.0.1:{server.server_port}/{token}/';instance.publish(url);print(url,flush=True)
+ resource_catalog.resource_tools.prepare_in_background()
  if not args.no_browser:webbrowser.open(url)
  try:server.serve_forever()
  except KeyboardInterrupt:pass

@@ -1,11 +1,17 @@
 """User portraits stored separately from distributed portraits and manifests."""
 import base64, binascii, hashlib, os, pathlib, struct, zlib
 MAX_BYTES=1024*1024
-def path_for(root, identity):
- if not isinstance(identity,str) or not identity or len(identity)>128:raise ValueError('无效人格')
+def folder_for(root):
  base=pathlib.Path(root).resolve();folder=base/'Workbench'/'user_portraits'
  if not folder.resolve().is_relative_to(base):raise ValueError('头像目录无效')
- return folder/(hashlib.sha256(identity.encode('utf8')).hexdigest()+'.png')
+ return folder
+
+def filename(identity):
+ if not isinstance(identity,str) or not identity or len(identity)>128:raise ValueError('无效人格')
+ return hashlib.sha256(identity.encode('utf8')).hexdigest()+'.png'
+
+def path_for(root, identity):
+ return folder_for(root)/filename(identity)
 def validate_png(blob):
  if len(blob)>MAX_BYTES or not blob.startswith(b'\x89PNG\r\n\x1a\n'):raise ValueError('图片格式无效或超过 1 MiB')
  pos=8;first=True;idat=False;ended=False;encoded=[];raw_size=0

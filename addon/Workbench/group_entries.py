@@ -21,7 +21,7 @@ def normalize_entry(raw):
         raise ValueError('entry must be an object')
     kind = raw.get('entry_kind', 'appearance')
     weight = raw.get('weight', 1)
-    if isinstance(weight, bool) or not isinstance(weight, (int, float)) or not math.isfinite(weight) or not 0 < weight <= 1000000:
+    if isinstance(weight, bool) or not isinstance(weight, (int, float)) or not math.isfinite(weight) or not 0 <= weight <= 1000000:
         raise ValueError('invalid weight')
     if kind == 'appearance':
         identity = raw.get('identity_id')

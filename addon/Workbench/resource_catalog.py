@@ -6,10 +6,7 @@ config file written next to the workbench."""
 import json
 import os
 import pathlib
-import sys
-_vendor = pathlib.Path(__file__).resolve().parent / 'timeline_vendor'
-if sys.version_info[:2] == (3, 9) and _vendor.is_dir():
-    sys.path.insert(0, str(_vendor))
+import resource_tools
 
 HERE = pathlib.Path(__file__).resolve().parent
 
@@ -277,7 +274,7 @@ def build_index(resource_root, index_dir, full=False, unity_py=None, progress=No
     disk is required to be present.
     """
     if unity_py is None:
-        import UnityPy as unity_py
+        unity_py = resource_tools.unity()
     _ensure_unity_config(unity_py)
     root = pathlib.Path(resource_root).resolve()
     index_dir = pathlib.Path(index_dir)

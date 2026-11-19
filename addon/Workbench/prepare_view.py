@@ -1,5 +1,5 @@
 """Human-readable, session-scoped preparation evidence."""
-import ctypes, os, re, hashlib
+import ctypes, os, re, hashlib, threading
 
 def process_alive(pid):
     if not isinstance(pid,int) or pid<=0:return False
@@ -18,12 +18,15 @@ def process_alive(pid):
         return bool(kernel.QueryFullProcessImageNameW(handle,0,buffer,ctypes.byref(size))) and os.path.basename(buffer.value).lower()=='limbuscompany.exe'
     finally:kernel.CloseHandle(handle)
 
-def config_digest(root):
-    paths=[root/'stage_director.json',root/'随机设置.json',root/'自定义人格池.json',root/'规则集状态.json',root/'Assets/runtime/all_sinners_pools.json']
+def config_paths(root):
+    paths=[root/'随机设置.json',root/'自定义人格池.json',root/'规则集状态.json',root/'Assets/runtime/all_sinners_pools.json']
     directory=root/'规则集'
     if directory.exists():paths.extend(sorted(directory.glob('*.json')))
+    return paths
+
+def config_digest(root):
     h=hashlib.sha256()
-    for path in paths:
+    for path in config_paths(root):
         try:h.update(path.read_bytes())
         except OSError:pass
         h.update(b'\0')
@@ -58,8 +61,65 @@ def summarize(log,pid,alive,catalog):
         if m:add(shown,m.group(1),'look')
     return {'connected':True,'ready':any('hooks installed' in line for line in lines),'loaded':list(loaded.values()),'shown':list(shown.values()),'evidence_missing':False}
 
-def read_tail(path):
-    try:
-        with path.open('rb') as f:
-            f.seek(0,2);size=f.tell();f.seek(max(0,size-4*1024*1024));return f.read().decode('utf8','replace')
-    except OSError:return ''
+_MARKERS = re.compile(r'\] (hooks installed|pool rows=|workbench draw rules applied revision=|workbench forms loaded revision=|skin ready |battle start appearance |visual event |apply look=)')
+_APPEARANCE = re.compile(r'\b(?:look|identity|selected)=(\S+)')
+
+class SessionEvidence:
+    """Keep only the most recent session's preparation events, across log polls."""
+    def __init__(self, path):
+        self.path = path
+        self.lock = threading.Lock()
+        self.key = None
+        self.position = 0
+        self.events = {}
+
+    def read(self, pid):
+        if type(pid) is not int or pid <= 0:
+            return ''
+        tag = (' pid=%d ' % pid).encode()
+        with self.lock:
+            try:
+                with self.path.open('rb') as stream:
+                    stat = os.fstat(stream.fileno())
+                    key = (pid, stat.st_dev, stat.st_ino)
+                    if self.key != key or stat.st_size < self.position:
+                        self.events.clear()
+                        self.position = 0
+                        self.key = key
+                    stream.seek(self.position)
+                    while stream.tell() < stat.st_size:
+                        raw = stream.readline()
+                        if not raw.endswith(b'\n'):
+                            break
+                        self.position = stream.tell()
+                        if tag not in raw:
+                            continue
+                        if b'] native worker started' in raw:
+                            self.events = {'start': raw.decode('utf8','replace').rstrip()}
+                            continue
+                        if not self.events:
+                            continue
+                        line = raw.decode('utf8','replace').rstrip()
+                        mark = _MARKERS.search(line)
+                        if not mark:
+                            continue
+                        event = mark.group(1)
+                        if event in ('skin ready ', 'battle start appearance ', 'visual event ', 'apply look='):
+                            match = _APPEARANCE.search(line)
+                            if not match or (event=='visual event ' and ' shown=1' not in line):
+                                continue
+                            event = (event, match.group(1))
+                        self.events[event] = line
+            except OSError:
+                self.key = None
+                return ''
+            return '\n'.join(self.events.values())
+
+def pool_status(pool, evidence, root):
+    if not evidence or pool.get('config_revision') != config_digest(root):
+        return '等待运行中的插件读取'
+    published, applied = pool.get('published'), pool.get('applied')
+    if (isinstance(published,int) and applied == published and
+            (published > 0 or published == 0 and re.search(r'\] pool rows=\d+', evidence))):
+        return '核心已读取成员与权重'
+    return '已发布，等待核心读取'

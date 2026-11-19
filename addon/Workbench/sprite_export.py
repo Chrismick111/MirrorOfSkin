@@ -1,6 +1,7 @@
 """Export a verified Sprite slice at its original resolution to a local cache."""
 import hashlib,os,pathlib,re,tempfile
 import resource_catalog
+from resource_tools import unity
 
 def export_path(index_dir,name):
     if not isinstance(name,str) or not re.fullmatch(r'[0-9a-f]{64}\.png',name):return None
@@ -25,7 +26,7 @@ def export_original(entry,roots,unity_py=None):
     name=hashlib.sha256(fingerprint.encode('utf8')).hexdigest()+'.png'
     existing=export_path(roots['index_dir'],name)
     if existing:return name
-    if unity_py is None:import UnityPy as unity_py
+    if unity_py is None:unity_py=unity()
     resource_catalog._ensure_unity_config(unity_py)
     env=unity_py.load(str(bundle));obj=next((o for o in env.objects if o.type.name=='Sprite' and o.path_id==path_id and o.assets_file.name==cab),None)
     if obj is None:raise ValueError('资源包中找不到该素材，请重新读取')

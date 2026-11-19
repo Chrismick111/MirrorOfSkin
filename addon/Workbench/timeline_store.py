@@ -6,11 +6,11 @@ import zlib
 
 MAX_RECORD_BYTES = 4 * 1024 * 1024
 
-def _load_compressed(path):
+def _load_compressed(path, limit=MAX_RECORD_BYTES):
     compressed = pathlib.Path(path).read_bytes()
     unpacker = zlib.decompressobj()
-    raw = unpacker.decompress(compressed, MAX_RECORD_BYTES + 1)
-    if len(raw) > MAX_RECORD_BYTES or unpacker.unconsumed_tail or not unpacker.eof or unpacker.unused_data:
+    raw = unpacker.decompress(compressed, limit + 1)
+    if len(raw) > limit or unpacker.unconsumed_tail or not unpacker.eof or unpacker.unused_data:
         raise ValueError('外观时间线资料已损坏或过大')
     return json.loads(raw.decode('utf-8-sig'))
 

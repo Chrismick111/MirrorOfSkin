@@ -8,13 +8,15 @@ bundle also holds atlases and UI art that a skill never draws.
 import hashlib
 import pathlib
 import time
+import tempfile
 
 import resource_catalog
+from resource_tools import unity
 import sequence_catalog
 
 THUMB_DIRNAME = 'sprite-thumbs'
 CLIP_INDEX_NAME = 'sprite-clip-index.json'
-CLIP_INDEX_VERSION = 1
+CLIP_INDEX_VERSION = 2
 THUMB_SIZE = (256, 256)
 
 
@@ -61,42 +63,61 @@ def build_clip_index(resource_root, index_dir, force=False, unity_py=None, progr
     import json
     index_dir = pathlib.Path(index_dir)
     target = clip_index_path(index_dir)
+    root = pathlib.Path(resource_root).resolve()
+    previous = {}
     if not force and target.is_file():
         try:
             cached = json.loads(target.read_text(encoding='utf-8'))
-            if cached.get('__version__') == CLIP_INDEX_VERSION and cached.get('resource_root') == str(pathlib.Path(resource_root).resolve()):
-                return cached, 'cached'
+            if cached.get('__version__') == CLIP_INDEX_VERSION and cached.get('resource_root') == str(root):
+                previous = cached.get('sources', {})
+                if not isinstance(previous, dict):previous = {}
         except (OSError, ValueError):
             pass
-    if unity_py is None:
-        import UnityPy as unity_py
-    resource_catalog._ensure_unity_config(unity_py)
-    root = pathlib.Path(resource_root).resolve()
     clips = {}
+    sources = {}
     bundles = resource_catalog.bundle_files(root)
     for position, bundle in enumerate(bundles, 1):
         relative = bundle.relative_to(root).as_posix()
         try:
-            env = unity_py.load(str(bundle))
-        except Exception:
+            mark = resource_catalog.fingerprint(bundle)
+        except OSError:
             continue
-        for obj in env.objects:
+        info = previous.get(relative, {})
+        if not isinstance(info,dict) or info.get('fingerprint') != mark or not isinstance(info.get('clips'),list):
+            if unity_py is None:
+                unity_py = unity()
+            resource_catalog._ensure_unity_config(unity_py)
             try:
-                if obj.type.name != 'AnimationClip':
-                    continue
-                name = obj.read().m_Name
+                env = unity_py.load(str(bundle))
             except Exception:
                 continue
-            if isinstance(name, str) and name:
-                clips.setdefault(name, relative)
+            names = set()
+            for obj in env.objects:
+                try:
+                    if obj.type.name == 'AnimationClip':
+                        name = obj.read().m_Name
+                        if isinstance(name,str) and name:names.add(name)
+                except Exception:
+                    continue
+            info = {'fingerprint': mark, 'clips':sorted(names)}
+        sources[relative] = info
+        for name in info['clips']:
+            clips.setdefault(name, relative)
         if progress:
             progress(position, len(bundles))
     payload = {'__version__': CLIP_INDEX_VERSION, 'resource_root': str(root),
-               'bundles': len(bundles), 'clips': len(clips), 'entries': clips}
+               'bundles': len(bundles), 'clips': len(clips), 'entries': clips, 'sources':sources}
+    if not force and sources and sources == previous:
+        return payload, 'cached'
     index_dir.mkdir(parents=True, exist_ok=True)
-    temp = target.with_name(target.name + '.tmp')
-    temp.write_text(json.dumps(payload, ensure_ascii=False, separators=(',', ':')), encoding='utf-8')
-    temp.replace(target)
+    stream = tempfile.NamedTemporaryFile(mode='w',encoding='utf8',dir=index_dir,suffix='.tmp',delete=False)
+    temp = pathlib.Path(stream.name)
+    try:
+        with stream:
+            json.dump(payload,stream,ensure_ascii=False,separators=(',', ':'))
+        temp.replace(target)
+    finally:
+        temp.unlink(missing_ok=True)
     return payload, 'built'
 
 
@@ -163,7 +184,7 @@ def collect(appearance, roots=None, make_thumbs=True, limit=240, progress=None):
     if not roots.get('resource_root'):
         result['notes'].append('没有找到游戏资源目录')
         return result
-    import UnityPy
+    UnityPy = unity()
     resource_catalog._ensure_unity_config(UnityPy)
     clip_index, clip_source = build_clip_index(roots['resource_root'], roots['index_dir'],
                                                unity_py=UnityPy, progress=(lambda done,total: progress('index',done,total)) if progress else None)

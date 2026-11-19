@@ -9,7 +9,7 @@ static enum SrChapterSignal sr_chapter_signal(const char *base,const char *group
   {"10314",CH_DON},{"10215",CH_FAUST},{"10415",CH_ECHO},{"10916",CH_EYE},{"11015",CH_AURA}};
  if(!base||!group||strncmp(group,"ch9_",4))return CH_NONE;
  for(unsigned i=0;i<sizeof(owners)/sizeof(owners[0]);i++){
-  if(!strcmp(group+4,owners[i].id)&&!strncmp(base,owners[i].id,5)&&(base[5]==0||base[5]=='_'))return owners[i].signal;
+  if((!strncmp(group+4,owners[i].id,5)&&(!group[9]||!strcmp(group+9,"_alt")))&&!strncmp(base,owners[i].id,5)&&(base[5]==0||base[5]=='_'))return owners[i].signal;
  }
  return CH_NONE;
 }

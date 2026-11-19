@@ -1,107 +1,154 @@
-"""Build the chapter nine identity rules using the installed appearance catalog."""
+"""Upgrade old appearance-group selections to ordinary appearance entries."""
+import importlib.util
 import json
+import os
+import re
+from functools import lru_cache
 from pathlib import Path
 
-import schemes
-import rulesets
-import stage_director
 
-NAME = '第九章 · 五指父辈与子辈'
+def _read(path):
+    return json.loads(path.read_bytes()) if path.is_file() else {}
 
 
-def profiles(root):
-    rows = json.loads((Path(root) / 'Workbench/chapter_nine_profiles.json').read_text(encoding='utf8'))
+@lru_cache(maxsize=1)
+def _template_appearances():
+    # FaustLauncher imports this module by filename without adding Workbench to sys.path.
+    path = Path(__file__).with_name('merged_appearances.py')
+    spec = importlib.util.spec_from_file_location('_retired_appearance_presets', path)
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    result = {}
+    for key, name, members in module.FAMILIES:
+        family = module.family_info(key, name, members)
+        for group_id in [family['group_id'], *family['group_ids']]:
+            result[group_id] = members[0]
+    return result
+
+
+def _definitions(config):
+    result = {}
+    if not isinstance(config, dict):
+        return result
+    for group in (config or {}).get('groups', []):
+        stages = group.get('stages') if isinstance(group, dict) else None
+        if stages and isinstance(stages[0], dict) and stages[0].get('identity_id'):
+            result[group['id']] = (stages[0]['identity_id'], group.get('enabled', True))
+    return result
+
+
+def defaults(root):
+    path = Path(root) / 'Workbench/chapter_nine_profiles.json'
+    return {'ch9_' + row['identity']: row['stages'][0]['identity_id']
+            for row in (_read(path) or [])}
+
+
+def _convert_entries(profile, definitions):
+    rows = profile.get('entries', [])
+    if not any(isinstance(row, dict) and row.get('entry_kind') == 'group' for row in rows):
+        return
+    converted, by_identity = [], {}
     for row in rows:
-        row['sinner_name'] = rulesets.SINNER_NAMES[int(row['identity'][:3]) - 101]
-    return rows
-
-
-def rule_items(root, state, existing, has_portrait):
-    items = []
-    for row in profiles(root):
-        identity = row['identity']
-        sinner = identity[:3]
-        key = 'chapter:' + identity
-        current = state['active'].get(sinner)
-        # 0.77 represented the same presets as editable personal rules. Recognize
-        # that exact one-group selection without relabeling custom appearance pools.
-        legacy = 'identity:' + identity
-        enabled = current == key
-        if current == legacy and not state['global']:
-            old = next((r for r in existing if r['id'] == legacy), None)
-            if old:
-                entries = rulesets.entries(root, old)
-                enabled = len(entries) == 1 and entries[0].get('group_id') == 'ch9_' + identity
-        items.append(dict(id=key, kind='chapter', identity=identity, sinner=sinner,
-                          name=row['sinner_name'] + ' → ' + row['enemy'], role=row['role'],
-                          condition=row['condition'], icon=identity if has_portrait(identity) else None,
-                          active=not state['global'] and enabled))
-    return items
-
-
-def activate(store, identity=None, mode='enable'):
-    # The launcher and workbench share this lock. The scheme loader handles
-    # backup and rollback for the whole switch, including the native files.
-    with store.lock:
-        doc = schemes.capture(store.root)
-        stage_config = doc['stage_director']
-        rules = doc['rulesets']
-        active = rules['state'].setdefault('active', {})
-        before = json.dumps(doc, ensure_ascii=False, sort_keys=True)
-        chapter = profiles(store.root)
-        if identity is not None:
-            chapter = [row for row in chapter if row['identity'] == identity]
-            if not chapter:
-                raise ValueError('未知的第九章专属人格')
-        if mode not in ('enable', 'only', 'disable') or (mode != 'enable' and identity is None):
-            raise ValueError('未知的第九章规则操作')
-        if mode == 'only':
-            active.clear()
-            doc['settings']['characters'] = {str(i): False for i in range(101, 113)}
-        for row in chapter:
-            identity = str(row['identity'])
-            sinner = identity[:3]
-            group_id = 'ch9_' + identity
-            key = 'chapter:' + identity
-            if mode == 'disable':
-                current = active.get(sinner)
-                personal = rules['files'].get('人格-' + identity + '.json') or {}
-                entries = personal.get('entries') or []
-                legacy = (current == 'identity:' + identity and len(entries) == 1 and
-                          entries[0].get('group_id') == group_id and entries[0].get('weight', 1) > 0)
-                if rules['state']['global'] or (current != key and not legacy):
-                    return row['enemy']
-                active[sinner] = 'none'
-                doc['settings']['characters'][sinner] = False
-                if (rules['state'].get('selected') or {}).get('id') in (current, key):
-                    rules['state']['selected'] = None
-                continue
-            group = dict(id=group_id, name=row['role'] + ' · ' + row['enemy'], enabled=True,
-                         hold=row.get('hold', False), stages=row['stages'])
-            groups = stage_config['groups']
-            for i, previous in enumerate(groups):
-                if previous['id'] == group_id:
-                    groups[i] = group
-                    break
+        if not isinstance(row, dict):
+            converted.append(row)
+            continue
+        if row.get('entry_kind') == 'group':
+            group_id = row.get('group_id', '')
+            if group_id in definitions:
+                identity, enabled = definitions[group_id]
+            elif isinstance(group_id, str) and group_id.startswith('merged_'):
+                identity, enabled = _template_appearances().get(group_id), True
             else:
-                groups.append(group)
-            active[sinner] = key
-            doc['settings']['characters'][sinner] = True
-        if mode != 'disable':
-            rules['state']['global'] = False
-            first = str(chapter[0]['identity'])
-            rules['state']['selected'] = dict(id='chapter:' + first, kind='chapter',
-                                              sinner=int(first[:3]), identity=first)
-            doc['settings']['enabled'] = True
-        if before != json.dumps(doc, ensure_ascii=False, sort_keys=True):
-            root = store.root
-            stage = stage_director.snapshot(root)
-            paths = [root / name for name in (rulesets.STATE, '随机设置.json', '停止随机运行.flag')]
-            if stage['config'] != stage_config:
-                paths.extend((root / stage_director.FILE, root / 'native_stage_groups.bin'))
-            with schemes.backed_up_switch(root, paths):
-                if stage['config'] != stage_config:
-                    stage_director.save(root, stage_config, stage['revision'], store.data()['catalog'])
-                rulesets.save_state(root, rules['state'])
-                schemes.apply_switches(root, doc['settings'])
-        return NAME
+                identity, enabled = row.get('identity_id'), True
+            if not identity:
+                # A deleted group with no representative was already skipped by the launcher.
+                continue
+            row = dict(row, entry_kind='appearance', identity_id=identity)
+            row.pop('group_id', None)
+            if not enabled:
+                row['weight'] = 0
+        identity = row.get('identity_id')
+        if identity and identity in by_identity:
+            first = by_identity[identity]
+            first['weight'] = first.get('weight', 1) + row.get('weight', 1)
+        else:
+            converted.append(row)
+            if identity:
+                by_identity[identity] = row
+    peak = max((row.get('weight', 1) for row in by_identity.values()), default=0)
+    if peak > 1000000:
+        # Keep the same selection probabilities when merged weights exceed the per-entry limit.
+        for row in by_identity.values():
+            row['weight'] = 1000000 * (row.get('weight', 1) / peak)
+    profile['entries'] = converted
+
+
+def clean_document(doc, retired, legacy=None):
+    definitions = {key: (identity, True) for key, identity in retired.items()}
+    definitions.update(_definitions(legacy))
+    definitions.update(_definitions(doc.pop('stage_director', None)))
+    rules = doc.get('rulesets') or {}
+    files = rules.get('files') or {}
+    removed = {'chapter:' + key[4:] for key in retired if key.startswith('ch9_')}
+    for name, rule in list(files.items()):
+        identity = str(rule.get('identity', ''))
+        group_id = 'ch9_' + identity
+        rows = rule.get('entries') or []
+        if (name == '人格-' + identity + '.json' and len(rows) == 1 and
+                rows[0].get('entry_kind') == 'group' and rows[0].get('group_id') == group_id and group_id in retired):
+            del files[name]
+            removed.add('identity:' + identity)
+        else:
+            _convert_entries(rule, definitions)
+            for profile in rule.get('pools', {}).values():
+                _convert_entries(profile, definitions)
+    pools = doc.get('pools') or doc
+    for profile in pools.get('characters', {}).values():
+        _convert_entries(profile, definitions)
+    state = rules.get('state') or {}
+    for sinner, key in list(state.get('active', {}).items()):
+        if key in removed:
+            del state['active'][sinner]
+    if (state.get('selected') or {}).get('id') in removed:
+        state['selected'] = None
+    return doc
+
+
+def _save_if_changed(path, data):
+    if data == _read(path):
+        return
+    tmp = path.with_suffix('.migration-tmp')
+    tmp.write_text(json.dumps(data, ensure_ascii=False, indent=2, allow_nan=False) + '\n', encoding='utf8')
+    os.replace(tmp, path)
+
+
+def migrate(root, stage_files):
+    """Caller holds the common save lock. Remove definitions only after all live references are migrated."""
+    root = Path(root)
+    retired = defaults(root)
+    old_file = root / 'stage_director.json'
+    legacy = _read(old_file)
+    for path in (root / '方案').glob('*.json'):
+        try:
+            doc = _read(path)
+            if not isinstance(doc, dict) or doc.get('schema') not in (1, 2, 3):
+                continue
+            clean_document(doc, retired, legacy)
+        except (ValueError, TypeError, AttributeError, KeyError):
+            # An unreadable preset should stay available for repair without blocking game startup.
+            continue
+        _save_if_changed(path, doc)
+    folder = root / '规则集'
+    paths = [p for p in folder.glob('*.json') if re.fullmatch(r'全局\.json|人格-\d+\.json', p.name)]
+    files = {p.name: _read(p) for p in paths}
+    state, pools = root / '规则集状态.json', root / '自定义人格池.json'
+    doc = clean_document({'pools': _read(pools), 'rulesets': {'files': files, 'state': _read(state)}}, retired, legacy)
+    _save_if_changed(state, doc['rulesets']['state'])
+    _save_if_changed(pools, doc['pools'])
+    for path in paths:
+        if path.name in files:
+            _save_if_changed(path, files[path.name])
+        else:
+            path.unlink()
+    stage_files.ensure_runtime(root)
+    old_file.unlink(missing_ok=True)

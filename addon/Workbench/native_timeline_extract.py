@@ -1,7 +1,5 @@
-"""Read game Unity bundles only. Requires Python 3.12 and UnityPy; no Archive data."""
+"""Read the player's installed Unity bundles."""
 import argparse,json,math,pathlib,sys
-import UnityPy
-UnityPy.config.FALLBACK_UNITY_VERSION='6000.3.0f1'
 def scalar(v,depth=0):
  if v is None or isinstance(v,(str,bool,int)):return v
  if isinstance(v,float):return v if math.isfinite(v) else None
@@ -32,6 +30,9 @@ def tracks(timeline,script_resolver=None):
  for i,ref in enumerate(getattr(timeline,'m_Tracks',[]) or []):walk(ref,None,(i,))
  return out
 def extract(bundle,appearance,script_resolver=None):
+ from resource_tools import unity
+ UnityPy=unity()
+ UnityPy.config.FALLBACK_UNITY_VERSION='6000.3.0f1'
  env=UnityPy.load(bundle);variants=[];errors=[]
  for obj in env.objects:
   try:

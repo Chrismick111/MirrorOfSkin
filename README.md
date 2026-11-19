@@ -3,7 +3,7 @@
 适用于 [FaustLauncher](https://github.com/f0lkskill/FaustLauncher) 的《边狱巴士》(Limbus Company) 人格外观随机插件。
 通过 WarpHook 注入原生 DLL，在战斗中替换罪人外观、随机切换人格，并按原生触发条件播放 Boss 语音与气泡。
 
-当前版本 **0.79.1** · 协议 75 · 原生模块 `SinnersNative-v64.dll` · 测试于启动器 `0.8.9-release.fix.4`
+当前版本 **1.0.0** · 协议 75 · 原生模块 `SinnersNative-v64.dll` · 适用启动器 `0.8.9-release.fix.4`
 
 ---
 
@@ -13,10 +13,11 @@
 
 | 文件 | 说明 |
 | --- | --- |
-| `FaustRandomIdentity-WarpHook.zip` | 插件本体（必需） |
-| `FaustRandomIdentity-Portraits.zip` | 默认图像包，623 张图片，覆盖 693 个外观条目 |
+| [标准安装包](https://github.com/Chrismick111/faust-random-identity/releases/download/v1.0.0/FaustRandomIdentity-WarpHook.zip) | 插件本体，946,708 字节，适合启动器分发与工作台更新 |
+| [通用 ZIP 安装包](https://github.com/Chrismick111/faust-random-identity/releases/download/v1.0.0/FaustRandomIdentity-WarpHook-Deflate.zip) | 解压工具不支持标准包时选用，与标准包内容相同，只需安装其中一个 |
+| [默认图像包](https://github.com/Chrismick111/faust-random-identity/releases/download/v0.79.1/FaustRandomIdentity-Portraits.zip) | 可选，623 张图片，覆盖 693 个外观条目，工作台也可单独下载 |
 
-两个压缩包内部都是**扁平结构**（路径相对插件根目录），解压到同一个插件文件夹即可：
+将选用的安装包解压到下面的插件目录。手动安装的图像包也解压到同一目录。
 
 ```
 FaustLauncher/addons/人格演出工作台/
@@ -80,13 +81,17 @@ FaustLauncher/addons/人格演出工作台/
 
 ---
 
-## 0.79.1 图像更新与 0.79.0 原生模块
+## 1.0.0 的本机资源与外观适配
 
-工作台支持分章节外观池、单独启用第九章人格规则、编辑特效时间线和逐帧预览。运行插件需要对应版本的 FaustLauncher、WarpHook 和游戏客户端，玩家无需另装 LimbusArchive。
+选中外观后，特效编辑器从本机已经下载的游戏资源读取动作、时长和特效轨道，生成可复用的缓存。若某个外观缺少资源，在游戏里下载后回到编辑器点击“读取本机资源”。战斗覆盖使用的基础动作表随核心包提供。玩家无需安装 LimbusArchive。
 
-本次修复 437 个被旧配置跳过的拼点条目。动作选择区分准备、胜利和失败，也能读取位于技能槽里的专用拼点动作。语音按当前可见形态匹配，气泡跟随实际出战角色。核对的 741 个外观中，339 个有关联的角色录音事件，310 个有关联的本地化台词。这些数字是资源核对结果。
+工作台优先使用启动器已有的资源解析、纹理和音频组件。启动器的 64 位 Python 3.9 缺少组件时，工作台会从 Python 官方包仓库下载约 7.31 MB 并校验，之后复用本地副本。启动器作者只需托管上面的标准安装包。
 
-0.79.1 更新图像包及下载清单，沿用 0.79.0 的原生模块。11 月 19 日中午更新后的游戏主程序超出该版本兼容范围，战斗插件会停止加载。
+选用对应人格并覆盖对应敌方外观时，工作台会自动应用配对适配，包括第九章父辈与子辈。楔子连携沿用原生演出，保留对应外观适配。
+
+拼点动作区分准备、胜利和失败，也能读取位于技能槽里的专用拼点动作。语音按当前可见形态匹配，气泡跟随实际出战角色。
+
+本版沿用 0.79.1 的独立图像包，更新插件后可以继续使用已安装的立绘。游戏兼容检查使用安装包内 `compatibility.json` 记录的文件摘要。
 
 ### 从源码编译
 

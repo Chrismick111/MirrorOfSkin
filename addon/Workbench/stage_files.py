@@ -1,16 +1,9 @@
-"""Read and publish the JSON and binary stage definitions used by the workbench and launcher."""
-import hashlib
+"""Build the internal stage table for automatic appearance matching."""
+
 import json
 import os
 import struct
 import zlib
-
-FILE = 'stage_director.json'
-
-def snapshot(root):
- path = root / FILE
- data = path.read_bytes() if path.exists() else b''
- return {'revision': hashlib.sha256(data).hexdigest(), 'config': json.loads(data.decode('utf-8-sig')) if data else {'schema': 1, 'groups': []}}
 
 def binary(config):
  groups = []
@@ -32,28 +25,65 @@ def binary(config):
  payload = b''.join(group['id'].encode('ascii').ljust(64,b'\0') + blob for group,blob in zip(config['groups'],groups))
  return struct.pack('<4I', 0x3247534e, 2, zlib.crc32(payload) & 0xffffffff, len(groups)) + payload
 
-def publish(root, config):
- # Publish the binary first. An interrupted legacy migration can then retry from the old JSON.
- blobs = {'native_stage_groups.bin': binary(config), FILE: json.dumps(config, ensure_ascii=False, indent=2, allow_nan=False).encode('utf8')}
- originals = {name: (root / name).read_bytes() if (root / name).exists() else None for name in blobs}
- written = []
- try:
-  for name, data in blobs.items():
-   tmp = root / (name + '.tmp'); tmp.write_bytes(data); os.replace(tmp, root / name); written.append(name)
- except Exception:
-  for name in reversed(written):
-   if originals[name] is None: (root / name).unlink(missing_ok=True)
-   else:
-    tmp = root / (name + '.rollback'); tmp.write_bytes(originals[name]); os.replace(tmp, root / name)
-  raise
- return snapshot(root)
+def automatic_groups(root):
+ path=root/'Workbench/chapter_nine_profiles.json'
+ profiles=json.loads(path.read_bytes()) if path.exists() else []
+ groups=[]
+ for row in profiles:
+  key='ch9_'+row['identity']
+  group=dict(id=key,enabled=True,hold=row.get('hold',False),stages=row['stages'])
+  groups.append(group)
+  alternate={'10314':['story_1355_Index_Disciple_NormalAppearance','story_1355_Index_DiscipleAppearance'],
+             '10215':['story_1354_RingFinger_DiscipleAppearance','story_1336_RingFinger_Disciple_CastoffAppearance'],
+             '11015':['story_1353_Pinky_DiscipleAppearance']}.get(row['identity'])
+  if alternate:
+   stages=[dict(stage,identity_id=identity) for stage,identity in zip(group['stages'],alternate)]
+   groups.append(dict(group,id=key+'_alt',stages=stages))
+ pair_path = root / 'Workbench/appearance_pairs.json'
+ if pair_path.exists():
+  groups.extend(_paired_form_groups(json.loads(pair_path.read_bytes())))
+ return groups
 
-def migrate(root, upgrade):
- """Caller holds workbench-save.lock across the read, compare and publication."""
- try:
-  current = snapshot(root)['config']
- except (ValueError, UnicodeError):
-  return
- updated = upgrade(current)
- if updated is not current:
-  publish(root, updated)
+
+def _paired_form_groups(registry):
+    def key(value):
+        return isinstance(value, str) and 0 < len(value) < 64 and value.isascii() and '\0' not in value
+
+    def two_keys(values):
+        return (isinstance(values, list) and len(values) == 2 and
+                all(key(value) for value in values) and values[0] != values[1])
+
+    verified = set()
+    for pair in registry.get('pairs', []):
+        base = pair.get('personality')
+        for variant in pair.get('aliases', []):
+            verified.add((pair.get('identity'), base, variant, pair.get('pool_id')))
+    groups = []
+    seen = set()
+    for mapping in registry.get('native_forms', []):
+        identity = mapping.get('identity')
+        player, looks = mapping.get('player'), mapping.get('appearances')
+        if type(identity) is not int or identity in seen or not two_keys(player) or not two_keys(looks):
+            continue
+        if not all((identity, player[0], player[1], look) in verified for look in looks):
+            continue
+        seen.add(identity)
+        groups.append({
+            'id': 'pair' + str(identity), 'enabled': True, 'hold': False,
+            'stages': [
+                {'identity_id': looks[0], 'conditions': []},
+                {'identity_id': looks[1], 'conditions': [{'metric': 'native', 'op': 'gte', 'value': 1}]},
+            ],
+        })
+    return groups
+
+def runtime_binary(root):
+ return binary({'groups': automatic_groups(root)})
+
+def ensure_runtime(root):
+ path = root / 'native_stage_groups.bin'
+ data = runtime_binary(root)
+ if not path.is_file() or path.read_bytes() != data:
+  temp = path.with_suffix('.stage-tmp')
+  temp.write_bytes(data)
+  os.replace(temp, path)

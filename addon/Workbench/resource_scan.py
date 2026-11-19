@@ -67,12 +67,14 @@ def main():
     parser=argparse.ArgumentParser();parser.add_argument('--addon',required=True);parser.add_argument('--cache');parser.add_argument('--game')
     args=parser.parse_args();root=pathlib.Path(args.addon)
     try:
-        import UnityPy,scan_units
-        UnityPy.config.FALLBACK_UNITY_VERSION='6000.3.0f1'
+        import scan_units
+        from resource_tools import unity
         cache=scan_units.cache_root(args.game or scan_units.find_game_dir(),args.cache)
         if cache is None:raise RuntimeError('未找到本地游戏资源，请先启动一次游戏')
         with FileLock(root/'Workbench/image_resources.lock'):
             (root/'Workbench/images_disabled.flag').unlink(missing_ok=True)
+            UnityPy=unity()
+            UnityPy.config.FALLBACK_UNITY_VERSION='6000.3.0f1'
             scan(root,cache,UnityPy)
         return 0
     except Exception as exc:

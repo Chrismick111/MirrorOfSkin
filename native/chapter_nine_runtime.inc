@@ -11,7 +11,7 @@ static int chapter_skill_id(Unit *u,void *action){
   const char *names[]={"GetSkillID","GetSkillId","get_SkillID","get_SkillId","GetID","get_ID"};
   for(unsigned i=0;i<sizeof(names)/sizeof(*names);i++){
    void *method=find_method(klass,names[i],0);
-   if(method&&track_return_is(method,"System.Int32")){getter=method;break;}
+   if(method&&team_returns(method,"System.Int32")){getter=method;break;}
   }
   const char *fields[]={"_skillID","_skillId","skillID","skillId","<SkillID>k__BackingField"};
   for(unsigned i=0;i<sizeof(fields)/sizeof(*fields);i++){

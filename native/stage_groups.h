@@ -5,7 +5,7 @@
 #include <stddef.h>
 #define SR_SG_MAGIC 0x3147534eu
 #define SR_SG_MAGIC_V2 0x3247534eu
-#define SR_SG_MAX 64
+#define SR_SG_MAX (64 + 13) /* User groups plus the ten chapter profiles and three alternate resources. */
 #define SR_SG_STAGES 8
 #define SR_SG_CONDS 4
 typedef struct { uint32_t type,compare; int32_t threshold; uint32_t reserved; } SrSgCondition;

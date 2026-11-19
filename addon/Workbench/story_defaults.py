@@ -2,23 +2,24 @@
 import os
 import re
 import tempfile
-import zipfile
+import tarfile
 from pathlib import Path
 
 
 def restore(root):
-    runtime = Path(root) / 'Assets/runtime'
-    folder = runtime / 'story_native'
-    folder.mkdir(exist_ok=True)
-    with zipfile.ZipFile(runtime / 'story_defaults.zip') as source:
-        for name in source.namelist():
-            if not re.fullmatch(r'story_[A-Za-z0-9_]+\.bin', name):
-                raise ValueError('Invalid bundled appearance: ' + name)
-            destination = folder / name
+    root = Path(root)
+    runtime = root / 'Assets/runtime'
+    with tarfile.open(runtime/'motion-defaults.tar.xz', mode='r|xz') as source:
+        for member in source:
+            if not member.isfile() or not re.fullmatch(
+                    r'(story_native/story_[A-Za-z0-9_]+|archive-times-candidate/[0-9a-f]{16})\.bin',member.name):
+                raise ValueError('Invalid bundled animation: '+member.name)
+            destination = (runtime if member.name.startswith('story_native/') else root)/member.name
             if destination.is_file():
                 continue
-            data = source.read(name)
-            fd, tmp = tempfile.mkstemp(dir=folder, suffix='.tmp')
+            destination.parent.mkdir(exist_ok=True)
+            data = source.extractfile(member).read()
+            fd, tmp = tempfile.mkstemp(dir=destination.parent, suffix='.tmp')
             try:
                 with os.fdopen(fd, 'wb') as stream:
                     stream.write(data)

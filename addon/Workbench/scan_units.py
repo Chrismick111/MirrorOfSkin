@@ -416,9 +416,10 @@ def main(argv=None):
     args = ap.parse_args(argv)
 
     try:
-        import UnityPy
-    except ImportError:
-        print('UnityPy is required: python -m pip install UnityPy', file=sys.stderr)
+        from resource_tools import unity
+        UnityPy = unity()
+    except ImportError as exc:
+        print(str(exc), file=sys.stderr)
         return 2
     UnityPy.config.FALLBACK_UNITY_VERSION = '6000.3.0f1'
 

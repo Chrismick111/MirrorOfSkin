@@ -1,9 +1,8 @@
-import datetime, json, os, pathlib, re, tempfile
+import copy, datetime, json, os, pathlib, re, tempfile
 from contextlib import contextmanager
 import director
-import stage_director
-import merged_appearances
 import rulesets
+import chapter_nine
 
 DIR = '方案'
 BACKUP = '读取前自动备份'
@@ -34,7 +33,7 @@ def capture(root):
             data = rulesets._read(path, None)
             if data is not None and _RULE_FILE.match(path.name):
                 files[path.name] = data
-    return {'schema': 3, 'pools': rulesets.custom(root), 'director': director.snapshot(root)['config'], 'stage_director': stage_director.snapshot(root)['config'],
+    return {'schema': 3, 'pools': rulesets.custom(root), 'director': director.snapshot(root)['config'],
             'rulesets': {'state': rulesets.state(root), 'files': files}, 'settings': _switches(rulesets.settings(root))}
 
 
@@ -43,9 +42,11 @@ def _switches(cfg):
     return {'enabled': bool(cfg.get('enabled', True)), 'characters': {str(k): bool(v) for k, v in chars.items()}}
 
 
-def normalize(doc):
+def normalize(doc, root=None):
     if not isinstance(doc, dict):
         raise ValueError('方案格式不支持')
+    doc = copy.deepcopy(doc)
+    legacy = doc.pop('stage_director', None)
     if doc.get('schema') == 1 and isinstance(doc.get('characters'), dict):
         doc = {'schema': 3, 'pools': doc, 'director': None, 'rulesets': None}
     elif doc.get('schema') == 2 and isinstance(doc.get('pools'), dict):
@@ -76,7 +77,8 @@ def normalize(doc):
     settings = doc.get('settings')
     if settings is not None and not isinstance(settings, dict):
         raise ValueError('方案中的随机开关格式无效')
-    return {'schema': 3, 'pools': doc['pools'], 'director': doc.get('director'), 'stage_director': merged_appearances.upgrade_legacy_groups(doc.get('stage_director')), 'rulesets': rules, 'settings': settings}
+    normalized = {'schema': 3, 'pools': doc['pools'], 'director': doc.get('director'), 'rulesets': rules, 'settings': settings}
+    return chapter_nine.clean_document(normalized, chapter_nine.defaults(root) if root is not None else {}, legacy)
 
 
 def _names(root):
@@ -95,7 +97,7 @@ def _items(entries, names):
             continue
         if weight > 0:
             identity = str(entry.get('identity_id', ''))
-            items.append('形态组 · '+str(entry.get('group_id')) if entry.get('entry_kind') == 'group' else names.get(identity, identity))
+            items.append(names.get(identity, identity))
     return items
 
 
@@ -113,14 +115,6 @@ def summary(root, doc, names=None):
     rules = doc.get('rulesets') or {}
     state = rules.get('state') or {}
     active = state.get('active') or {}
-    stages = {g['id']:g for g in (doc.get('stage_director') or {}).get('groups', [])}
-    for sinner, key in sorted(active.items()):
-        if key.startswith('chapter:'):
-            identity = key.split(':', 1)[1]
-            group = stages.get('ch9_' + identity)
-            if group:
-                groups.append({'label': _who(sinner) + ' · 第九章专属', 'active': not state.get('global'),
-                               'items': [group['name']]})
     for sinner, profile in sorted((doc['pools'].get('characters') or {}).items()):
         items = _items((profile or {}).get('entries'), names)
         if items:
@@ -149,7 +143,7 @@ def listing(root):
     for path in sorted(folder.glob('*.json'), key=lambda p: p.stat().st_mtime, reverse=True):
         try:
             raw = json.loads(path.read_text(encoding='utf-8-sig'))
-            doc = normalize(raw)
+            doc = normalize(raw, root)
         except (OSError, ValueError):
             continue
         if names is None:
@@ -163,17 +157,15 @@ def get(root, name):
     if not path.is_file():
         raise ValueError('方案不存在：' + name)
     doc = json.loads(path.read_text(encoding='utf-8-sig'))
-    normalized = normalize(doc)
-    if 'stage_director' in doc:
-        doc['stage_director'] = normalized['stage_director']
-    return doc
+    normalize(doc, root)
+    return chapter_nine.clean_document(doc, chapter_nine.defaults(root))
 
 
 def save(root, name, overwrite=False, doc=None):
     path, name = _path(root, name)
     if path.exists() and not overwrite:
         raise ValueError('已存在同名方案：' + name)
-    doc = normalize(doc) if doc is not None else capture(root)
+    doc = normalize(doc, root) if doc is not None else capture(root)
     doc.update(name=name, saved_at=datetime.datetime.now().strftime('%Y-%m-%d %H:%M'))
     _write(path, doc)
     return name
@@ -190,22 +182,18 @@ def load(store, name, known):
 
 def load_document(store, name, data, known):
     root = pathlib.Path(store.root)
-    doc = normalize(data)
+    doc = normalize(data, root)
     pools = doc['pools']
     if pools.get('schema') != 1 or not isinstance(pools.get('characters'), dict):
         raise ValueError('方案中的人格池格式不支持')
-    staged = doc['stage_director'] if doc['stage_director'] is not None else stage_director.snapshot(root)['config']
-    catalog = store.data()['catalog']
-    stage_director.validate(staged, catalog)
-    groups = staged.get('groups',[])
     for target, profile in pools['characters'].items():
-        store.validate(target, profile, known, groups)
+        store.validate(target, profile, known)
     for filename, data in ((doc.get('rulesets') or {}).get('files') or {}).items():
         if filename == '全局.json':
             for target, profile in (data.get('pools') or {}).items():
-                store.validate(str(target), dict(profile, enabled=True), known, groups)
+                store.validate(str(target), dict(profile, enabled=True), known)
         else:
-            store.validate(str(data.get('sinner','')), dict(data, enabled=True), known, groups)
+            store.validate(str(data.get('sinner','')), dict(data, enabled=True), known)
     if doc['director'] is not None:
         director.validate(doc['director'], known)
         if any(k not in store.form_annotations() for k in doc['director'].get('forms', {})):
@@ -214,8 +202,6 @@ def load_document(store, name, data, known):
         paths = {root / p for p in ('自定义人格池.json', '自定义人格池.workbench.bak')}
         if doc['director'] is not None:
             paths.update(root / p for p in ('演出编排.json', '演出编排.workbench.bak', 'workbench_rules.bin', 'workbench_forms.bin'))
-        if doc['stage_director'] is not None:
-            paths.update((root / stage_director.FILE, root / 'native_stage_groups.bin'))
         if doc['settings'] is not None:
             paths.update((root / '随机设置.json', root / '停止随机运行.flag'))
         if doc['rulesets'] is not None:
@@ -224,7 +210,7 @@ def load_document(store, name, data, known):
             paths.update(p for p in folder.glob('*.json') if _RULE_FILE.fullmatch(p.name))
             paths.update(folder / p for p in doc['rulesets'].get('files', {}))
         with backed_up_switch(root, paths):
-            _apply(store, root, doc, pools, known, groups, catalog)
+            _apply(store, root, doc, pools, known)
     return name
 
 
@@ -250,13 +236,10 @@ def backed_up_switch(root, paths):
         raise
 
 
-def _apply(store, root, doc, pools, known, groups, catalog):
-    store.replace(pools, store.snapshot()['revision'], known, groups)
+def _apply(store, root, doc, pools, known):
+    store.replace(pools, store.snapshot()['revision'], known)
     if doc['director'] is not None:
         store.save_director(doc['director'], store.director_snapshot()['revision'], known)
-    if doc['stage_director'] is not None:
-        with store.lock:
-            stage_director.save(root, doc['stage_director'], stage_director.snapshot(root)['revision'], catalog)
     rules = doc['rulesets']
     if rules is not None:
         folder = root / rulesets.DIR

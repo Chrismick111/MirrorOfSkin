@@ -398,6 +398,7 @@ static int base_rule_match(Unit *u,const PoolRow *r){
 static void rebuild_candidates(Unit *u){
  u->ncand=0;u->segmentPrewarmAttempted=0;memset(u->ordinarySourceClips,0,sizeof(u->ordinarySourceClips));sr_segment_clear(&u->segmentLatch);memset(u->drawState,0,sizeof(u->drawState));
  uint32_t count=candidateOrderCount?candidateOrderCount:g_rowCount;
+ int wildHunt=sr_player_number(u->baseName)==10710;
  int specific=0;
  for(uint32_t i=0;i<count;i++){
   int k=candidateOrderCount?candidateOrder[i]:(int)i;
@@ -410,6 +411,11 @@ static void rebuild_candidates(Unit *u){
   if(r->sinner!=u->sinner||!r->enabled||r->weight<=0)continue;
   if(specific){if(!base_rule_match(u,r))continue;}
   else if(r->base_identity[0])continue;
+  if(wildHunt){
+   int reverse=0;
+   const SrCounterpart *pair=sr_find_counterpart(u->baseName,r->identity,&reverse);
+   if(!pair||reverse||!r->story||strcmp(pair->story,r->appearance_name))continue;
+  }
   u->cand[u->ncand++]=k;
  }
 }
@@ -1047,6 +1053,7 @@ static void sync_visibility(Unit *u){
 }
 static void mark_bad(Unit *u,int row);
 static void disable_failed_form(Unit *u,int row,int form);
+static void poll_paired_native(Unit *u);
 static void *unit_switch(Unit *u,Skin *skin){
   if(!u||!u->view||!m_changeAppearance)return NULL;
   if(g_presentationGate&&enabled_now())return NULL;
@@ -1059,6 +1066,8 @@ static void *unit_switch(Unit *u,Skin *skin){
   void *current=rfield(u->view,"_curAppearance");
   if(!desired)return NULL;
   if(current==desired){if(skin)u->last=(int)(skin-u->skins);return desired;}
+  /* A draw can replace the native appearance before the first periodic poll. */
+  if(skin&&current&&!u->nativeValid)poll_paired_native(u);
   u->switching=1;
   void *result=NULL;
   /* At a verified duel-owned camera boundary, keep the duel camera alive.
@@ -1090,7 +1099,8 @@ static void retain_last_appearance(Unit *u){
  void *action=rfield(u->view,"_currentActionLog");
  int repeated=0; /* Native idle selection may restore the base more than once per action. */
  int isPairedNative=u->nativeValid && current==u->nativeAppearance && held->row>=0 && (uint32_t)held->row<g_rowCount &&
-  ((!strncmp(u->baseName,"10314",5)&&(!strcmp(g_rows[held->row].identity,"story_1325_Index_Disciple_NormalAppearance")||!strcmp(g_rows[held->row].identity,"story_1325_Index_discipleAppearance"))) ||
+  (sr_counterpart_member(sr_counterpart_form(u->baseName),g_rows[held->row].identity)||
+   (!strncmp(u->baseName,"10314",5)&&(!strcmp(g_rows[held->row].identity,"story_1325_Index_Disciple_NormalAppearance")||!strcmp(g_rows[held->row].identity,"story_1325_Index_discipleAppearance"))) ||
    (!strncmp(u->baseName,"10215",5)&&(!strcmp(g_rows[held->row].identity,"story_1319_RingFinger_DiscipleAppearance")||!strcmp(g_rows[held->row].identity,"story_1336_RingFinger_Disciple_CastoffAppearance"))));
  if(!sr_idle_restore_ready(u->viewerActive||g_presentationGate,current==u->baseApp||isPairedNative,
      ((motion_busy_mask(current)&7)!=0),((motion_busy_mask(held->app)&7)!=0),repeated,&u->idleRestoreFrames)){
@@ -1139,6 +1149,12 @@ static void cache_ordinary_clips(void *app,uint32_t mask[128],Skin *donor){
 static const char *motion_identity(Skin *skin){
  PoolRow *row=&g_rows[skin->row];
  return strcmp(skin->look,row->appearance_name)?"":row->identity;
+}
+static const char *paired_source(Unit *unit,Skin *skin){
+ const SrCounterpartForm *form=sr_counterpart_form(unit->baseName);
+ if(unit->nativeValid&&sr_counterpart_member(form,motion_identity(skin)))
+  return unit->nativeStage==1?form->alternate:form->normal;
+ return unit->baseName;
 }
 static void cache_skin_motions(Skin *skin){
  void *list=rfield(skin->app,"motionList");int count=list_count(list);
@@ -1541,7 +1557,7 @@ static void unit_register(void *app,void *view){
   if(!identity_text(app,u->baseName,sizeof(u->baseName)))lstrcpynA(u->baseName,"unknown",96);
   rebuild_candidates(u);
   {char line[192];wsprintfA(line,"unit registered sinner=%lu base=%.48s candidates=%d",(unsigned long)sinner,u->baseName,u->ncand);bootlog(line);}
-  u->preserveSpecial=sr_scissors_suspend(u->baseName,playback_originals[1]!=NULL)||!strncmp(u->baseName,"10710",5);
+  u->preserveSpecial=sr_scissors_suspend(u->baseName,playback_originals[1]!=NULL);
   if(sr_is_scissors_source(u->baseName)&&!u->preserveSpecial)bootlog("10917 random enabled: native playback hook ready; source timing and camera gates retained");
   if(u->preserveSpecial){u->ncand=0;bootlog("special source 10917: preserve original appearance/skill effects; random appearance suspended for this unit");return;}
   int preload=g_cfg&&g_cfg->mode==1?0:(g_cfg&&g_cfg->max_skins? (int)g_cfg->max_skins : 3);
@@ -1615,23 +1631,68 @@ static void set_speed(void *app,float speed){
 static void *g_speedApp;static float g_speedValue;
 static int g_switchGate[SR_UNIT_MAX];
 
+/* Phase selection belongs to the exact identity and the selected resource. */
+static const char *effective_stage_source(Unit *u,const PoolRow *row){
+ if(row->kind||!row->story||strncmp(row->identity,"story_",6))return NULL;
+ const SrCounterpartForm *form=sr_counterpart_form(u->baseName);
+ if(sr_counterpart_member(form,row->identity)){
+  int reverse=0;
+  const SrCounterpart *pair=sr_find_counterpart(u->baseName,row->identity,&reverse);
+  if(pair&&!strcmp(pair->story,row->appearance_name)&&sr_sg_find_id(&g_stageGroups,form->group)>=0)return form->group;
+ }
+ if(strcmp(row->identity+6,row->appearance_name)||!sr_chapter_actor(u->baseName,row->appearance_name))return NULL;
+ char id[32];snprintf(id,sizeof(id),"ch9_%.5s",u->baseName);
+ for(int variant=0;variant<2;variant++){
+  if(variant)strcat(id,"_alt");
+  int n=sr_sg_find_id(&g_stageGroups,id);if(n<0)continue;
+  const SrSgGroup *g=&g_stageGroups.group[n];
+  for(unsigned j=0;j<g->count;j++)if(!strcmp(g->stage[j].identity,row->identity))return g_stageGroups.id[n];
+ }
+ return NULL;
+}
 static void stage_commit_source(Unit *u,int row){
  unsigned kind=0;const char *id=NULL;
- if(row>=0&&(uint32_t)row<g_rowCount){kind=g_rows[row].kind;id=g_rows[row].group_id;}
+ if(row>=0&&(uint32_t)row<g_rowCount){id=effective_stage_source(u,&g_rows[row]);kind=id!=NULL;}
  if(!sr_stage_source_commit(u->stageSource,row,u->stageWanted,kind,id))return;
  u->stageGroup=0;u->stageShown=-1;u->stageChoice=-1;
 }
 
+static int visible_stage_form(const Skin *skin){
+ const char *id=g_rows[skin->row].identity;
+ if(sr_chapter_visual(id)||sr_internal_policy(id)||auto_internal(skin->row)||!strcmp(id,"10312")||!strcmp(id,"10913"))
+  return skin->internalStage;
+ return skin->form;
+}
+static int stage_uses_native_pair(Unit *u,const SrSgGroup *g){
+ if(!strncmp(u->stageSource,"pair",4))return 1;
+ enum SrChapterSignal signal=sr_chapter_signal(u->baseName,u->stageSource);
+ if(signal==CH_DON||signal==CH_FAUST)return 1;
+ if(g->count!=2)return 0;
+ const char *first=g->stage[0].identity,*second=g->stage[1].identity;
+ return (!strncmp(u->baseName,"10314",5)&&!strcmp(first,"story_1325_Index_Disciple_NormalAppearance")&&!strcmp(second,"story_1325_Index_discipleAppearance"))||
+        (!strncmp(u->baseName,"10215",5)&&!strcmp(first,"story_1319_RingFinger_DiscipleAppearance")&&!strcmp(second,"story_1336_RingFinger_Disciple_CastoffAppearance"));
+}
+/* Prefer the personality rule, then the first unrestricted row for this sinner. */
+static int stage_target_row(const Unit *u,const char *identity,const char *base){
+ int fallback=-1;
+ for(uint32_t i=0;i<g_rowCount;i++){
+  const PoolRow *r=&g_rows[i];
+  if(r->sinner!=u->sinner||r->kind||strcmp(r->identity,identity))continue;
+  if(!strcmp(r->base_identity,base))return (int)i;
+  if(fallback<0&&!r->base_identity[0])fallback=(int)i;
+ }
+ return fallback;
+}
 static int stage_keep_visible(Unit *u,int row,int director_owned){
  if(!u||row<0||(uint32_t)row>=g_rowCount)return 0;
  PoolRow *picked=&g_rows[row];int gi=sr_sg_find_id(&g_stageGroups,u->stageSource);
  void *app=rfield(u->view,"_curAppearance");Skin *shown=skin_for_app(u,app);int presented=-1;
  if(gi>=0&&shown&&shown->row>=0&&(uint32_t)shown->row<g_rowCount){
   const char *id=g_rows[shown->row].identity;
-  int internal=sr_chapter_visual(id)!=NULL||sr_internal_policy(id)!=NULL||auto_internal(shown->row)!=NULL||!strcmp(id,"10312")||!strcmp(id,"10913");
-  presented=sr_sg_presented(&g_stageGroups.group[gi],id,internal?shown->internalStage:shown->form,u->stageShown);
+  presented=sr_sg_presented(&g_stageGroups.group[gi],id,visible_stage_form(shown),u->stageShown);
  }
- return sr_stage_reselect_keep(u->stageSource,picked->kind,picked->group_id,director_owned,gi>=0,presented);
+ const char *source=effective_stage_source(u,picked);
+ return sr_stage_reselect_keep(u->stageSource,source!=NULL,source,director_owned,gi>=0,presented);
 }
 /* Return -2 for an ordinary draw, -1 if the known stage row is unavailable. */
 static void chapter_cached_status(Unit *u,SrSgStatus *state);
@@ -1641,22 +1702,22 @@ static int stage_reselect_row(Unit *u,int row,void *current,int director_owned){
  int valid=gi>=0&&g_stageGroups.group[gi].enabled&&u->stageGroup==gi+1&&u->stageRevision==g_stageGroups.revision;
  int atNative=current==u->baseApp||(u->nativeValid&&u->nativeAppearance==current);
  int selected=u->stageChoice;
- if(valid&&atNative&&g_rows[row].kind==1&&!strcmp(u->stageSource,g_rows[row].group_id)){
+ const char *source=effective_stage_source(u,&g_rows[row]);
+ if(valid&&atNative&&source&&!strcmp(u->stageSource,source)){
   const SrSgGroup *g=&g_stageGroups.group[gi];
-  int pair=g->count==2&&((!strncmp(u->baseName,"10314",5)&&!strcmp(g->stage[0].identity,"story_1325_Index_Disciple_NormalAppearance")&&!strcmp(g->stage[1].identity,"story_1325_Index_discipleAppearance"))||(!strncmp(u->baseName,"10215",5)&&!strcmp(g->stage[0].identity,"story_1319_RingFinger_DiscipleAppearance")&&!strcmp(g->stage[1].identity,"story_1336_RingFinger_Disciple_CastoffAppearance")));
-  if(pair&&sr_sg_has_native(g)){
+  if(sr_sg_has_native(g)&&stage_uses_native_pair(u,g)){
    SrSgStatus state={u->formHp,u->formMaxHp,u->sanity,u->sanityValid,u->formState.evades,u->nativeStage,u->nativeValid};
    chapter_cached_status(u,&state);
    selected=sr_sg_reselect_stage(g,&state,u->stageChoice,u->stageShown,state.chapterValid||u->nativeAppearance==current);
    if(selected<0){bootlog("stage reselect waiting for current native state");return -1;}
   }
  }
- int choice=sr_stage_reselect_choice(u->stageSource,g_rows[row].kind,g_rows[row].group_id,atNative,valid,valid?g_stageGroups.group[gi].count:0,selected);
+ int choice=sr_stage_reselect_choice(u->stageSource,source!=NULL,source,atNative,valid,valid?g_stageGroups.group[gi].count:0,selected);
  if(choice<0)return -2;
- const char *id=g_stageGroups.group[gi].stage[choice].identity;int found=-1;
- for(uint32_t i=0;i<g_rowCount;i++)if(g_rows[i].sinner==u->sinner&&g_rows[i].kind==0&&!strcmp(g_rows[i].identity,id)){
-  if(!strcmp(g_rows[i].base_identity,g_rows[row].base_identity)){char line[192];snprintf(line,sizeof(line),"stage reselect group=%.40s choice=%d row=%.64s",u->stageSource,choice,id);bootlog(line);return (int)i;}
-  if(found<0&&!g_rows[i].base_identity[0])found=(int)i;
+ const char *id=g_stageGroups.group[gi].stage[choice].identity;
+ int found=stage_target_row(u,id,g_rows[row].base_identity);
+ if(found>=0&&!strcmp(g_rows[found].base_identity,g_rows[row].base_identity)){
+  char line[192];snprintf(line,sizeof(line),"stage reselect group=%.40s choice=%d row=%.64s",u->stageSource,choice,id);bootlog(line);
  }
  return found;
 }
@@ -1737,9 +1798,6 @@ static void decide_and_apply(void **pself,int *pdetail,int *pindex){
       if(!random_double(&random))return;
       row=unit_draw(u,(uint32_t)action,random);
     }
-    if(row>=0&&detail==7&&!strncmp(u->baseName,"10710",5)){
-      for(int bi=0;bi<g_rowCount;bi++)if(g_rows[bi].sinner==u->sinner&&!strcmp(g_rows[bi].appearance_name,u->baseName)){row=bi;break;}
-    }
     if(action==2){
       u->pending=-1;
       if(attackAction&&sourceCoin>=0){u->attackDrawValid=1;u->attackDrawAction=attackAction;u->attackDrawViewer=u->observedViewer;u->attackDrawIndex=sourceCoin;u->attackDrawRow=row;}
@@ -1772,7 +1830,7 @@ typedef struct {void *app;int sourceDetail,sourceIndex,segmentDetail;} Projectio
 static ProjectionContext g_projection;
 #include "fx_plan_support.inc"
 static void *m_motionAnimItem,*orig_motionAnimItem;
-static int track_return_is(void *m,const char *expected);
+static int team_returns(void *method,const char *expected);
 static _Thread_local void *g_chapterPlaybackApp;
 static _Thread_local int g_chapterPlaybackDetail;
 typedef struct {void *app;int mapped,source,index,chapter;} ClashPlayback;
@@ -1809,6 +1867,7 @@ static void forward_projected_motion(void *app,int detail,uint8_t a1,int index,u
     sourceIndex>=0&&sourceIndex<TC_COINS&&(u->ordinarySourceClips[sourceDetail]&(UINT32_C(1)<<sourceIndex))&&
     !(g_rows[skin->row].excluded&(SR_STATIC_APPEARANCE_FLAG|2))&&
     coin>=0&&coin<SR_VARIETY_COINS&&u->observedAction&&u->observedViewer&&u->viewerActive&&
+    sr_verified_paired_attack(skin->motionCounts,paired_source(u,skin),motion_identity(skin),sourceDetail,-1)<0&&
     !sr_salvador_s3(skin->motionCounts,u->baseName,motion_identity(skin),sourceDetail,coin,&specialDetail,&specialIndex)){
   SrSegmentLatch *l=&u->segmentLatch;
   if(sr_segment_scope(l,u->observedAction,u->observedViewer,app,skin->internalStage))u->segmentSequence++;
@@ -1856,6 +1915,14 @@ static int single_skin_cycle_index(Unit *u,Skin *skin,int coin,int count,int *ou
  u->cycleCoin=coin;*out=u->cycleOrdinal%count;return 1;
 }
 #include "native_order_runtime.h"
+static int counterpart_part(Unit *u,Skin *skin,void *action,int coin,int detail,int donorCount,int index,int last){
+ if(index<0||donorCount<=0)return index;
+ int src=sr_counterpart_source_parts(paired_source(u,skin),motion_identity(skin),detail);
+ if(src==donorCount&&index<donorCount)return index;
+ int part=0;
+ if(native_order_index(u,action,coin,donorCount,&part)&&part>=-1&&part<donorCount)return part;
+ return sr_counterpart_fallback_part(index,src,donorCount,last);
+}
 /* ParryingOnly returns the game's original decision. Only its visible
    receiver and the authored visual slot may change. Keep scope receiver-local. */
 static _Thread_local void *g_clashOwner;
@@ -1882,7 +1949,6 @@ static void bind_clash_results(void *method){
 }
 #include "clash_render.inc"
 #include "chapter_nine_runtime.inc"
-static void wedge_probe_end(void *app,void *director,unsigned generation);
 #include "coin_boundary_runtime.h"
 /* ---------------- generic binding ---------------- */
 static void *close_generic(void *definition,void *declaring,void *elementClass,void *elementType){
@@ -1921,191 +1987,21 @@ static int special_playback(int slot,void *viewer,int detail,void *mi){
  Skin *skin=u?skin_for_app(u,app):NULL;if(!skin)return original;
  /* Keep source detail through the viewer. The final motion hook maps a
     verified pair once, with source detail intact for timing projection. */
- if(skin->chapterActor||sr_verified_paired_attack(skin->motionCounts,u->baseName,motion_identity(skin),original,-1)>=0)return original;
+ if(skin->chapterActor||sr_verified_paired_attack(skin->motionCounts,paired_source(u,skin),motion_identity(skin),original,-1)>=0)return original;
  int mapped=sr_resolve_attack(skin->motionCounts,original,u->coinKnown,u->coinTier,u->coinMotion,u->coinDefense,introApp==app);
  mapped=sr_native_motion_detail(skin->motionCounts,skin->nativeMotionDetail,original,mapped);
- mapped=sr_verified_paired_attack(skin->motionCounts,u->baseName,motion_identity(skin),original,mapped);
+ mapped=sr_verified_paired_attack(skin->motionCounts,paired_source(u,skin),motion_identity(skin),original,mapped);
  if(mapped!=original)InterlockedIncrement(&playback_fallbacks);
  return mapped;
 }
 #define PLAYBACK_WRAPPER(N) static int playback##N(void *self,int detail,void *mi){return special_playback(N,self,detail,mi);}
 PLAYBACK_WRAPPER(0) PLAYBACK_WRAPPER(1) PLAYBACK_WRAPPER(2) PLAYBACK_WRAPPER(3)
 static void *playback_detours[]={playback0,playback1,playback2,playback3};
-#include "pair_timeline_identity.h"
-#include "link_authored_timing.h"
-static void wedge_presentation_clear(void);
-static void pair_roster_begin(Unit *actor,void *app);
-static void pair_roster_finish(void *nextPresentation);
-static void pair_roster_tick(void);
-static _Thread_local int g_wedgeBoundMotion=-1;
-static void *wedge_presentation_owner(void *,int);
-#include "wedge_borrow.h"
-#include "wedge_track_map.h"
-static _Thread_local WedgeBorrow g_wedgeBorrow;
-static _Thread_local WedgeMap g_wedgeTrackMap;
-static _Thread_local void *g_wedgeMapApp;
-static _Thread_local int g_wedgeMapDetail;
-static _Thread_local char g_wedgeTrackName[100];
-static void *wedge_children(void *x){return rfield(x,"m_Children");}
-static const char *wedge_name(void *x){
- int ok=0;
- void *method=find_method(ui_class(x),"get_name",0);
- void *s=method?call_obj(method,x,NULL,&ok):NULL;
- uintptr_t root=s?fx_tree_root(s):0;
- if(!root)return "<unreadable>";
- int length=*(int*)((char*)s+16),written=0;
- if(length>0&&length<(int)sizeof(g_wedgeTrackName))
-  written=WideCharToMultiByte(CP_UTF8,WC_ERR_INVALID_CHARS,(const wchar_t*)((char*)s+20),
-                              length,g_wedgeTrackName,sizeof(g_wedgeTrackName)-1,NULL,NULL);
- ui_unroot(root);
- if(!written&&length)return "<unreadable>";
- g_wedgeTrackName[written]=0;
- return g_wedgeTrackName;
-}
-static WedgeMapOps g_wedgeMapOps={fx_tree_root,ui_unroot,wedge_children,list_count,list_item,wedge_name};
-static int wedge_map_prepare(void *motion,int index){
- if(!motion||index<0)return 0;void *list=rfield(motion,"timelineAssets");uintptr_t lr=list?fx_tree_root(list):0;int found=0;
- if(lr){int n=list_count(list);if(n>=0&&index<n){void *timeline=list_item(list,index);uintptr_t tr=timeline?fx_tree_root(timeline):0;
-   if(tr){void *tracks=rfield(timeline,"m_Tracks");found=tracks?wedge_map_build(&g_wedgeTrackMap,&g_wedgeMapOps,tracks):0;ui_unroot(tr);}}ui_unroot(lr);}return found;
-}
-static int wedge_count_and_prepare(void *base,int detail,int index,int last,int diagnostic,int *actual,int *mapped){
- *mapped=0;if(!diagnostic||g_wedgeTrackMap.count)return motion_count(base,detail,actual);
- if(!base||!m_getMotion)return -1;int query=detail,ok=1;uint8_t flag=0;void *args[]={&query,&flag};g_motionDepth++;void *motion=call_obj(m_getMotion,base,args,&ok);g_motionDepth--;
- if(!ok||!motion)return -1;uintptr_t root=fx_tree_root(motion);int got=-1,count=timeline_count(motion,&got);if(actual)*actual=got;
- if(root&&got==detail){int idx=wedge_borrow_index(index,count,last);if(idx>=0)*mapped=wedge_map_prepare(motion,idx);}if(root)ui_unroot(root);
- return got==detail?count:-1;
-}
-static int track_diag_enabled(void);
-static int wedge_borrow_enabled(void){wchar_t p[32768];DWORD n=GetModuleFileNameW(g_self,p,32768);wchar_t *q=n&&n<32768?wcsrchr(p,L'\\'):NULL;if(!q)return 0;lstrcpyW(q+1,L"wedge-borrow-native.enable");DWORD a=GetFileAttributesW(p);return a!=INVALID_FILE_ATTRIBUTES&&!(a&FILE_ATTRIBUTE_DIRECTORY);}
-#include "director_stack_probe.h"
-#include "link_visual_clock.h"
-static double link_clock_now(LinkVisualClock *clock,void *director);
-static int director_observe_enabled(void);
-static int team_instance_method(void *,void *);
-static int team_returns(void *,const char *);
-/* Canvas.SendWillRenderCanvases is the existing main-thread pump. Do not
-   assume an identity before it has run; contradictory pump threads disable
-   the diagnostic for the rest of this process. */
-static volatile LONG g_wedge_canvas_thread,g_wedge_canvas_conflict;
-static int wedge_probe_main_thread(void){LONG id=InterlockedCompareExchange(&g_wedge_canvas_thread,0,0);return id&&!InterlockedCompareExchange(&g_wedge_canvas_conflict,0,0)&&(DWORD)id==GetCurrentThreadId();}
-static void *wedge_probe_asset_method(void *klass){
- void *found=NULL;unsigned matches=0;
- for(void*k=klass;k;k=ui_parent(k)){
-  void *it=NULL,*m;unsigned scanned=0;
-  while((m=((void *(*)(void *,void **))api[API_METHODS])(k,&it))&&++scanned<=4096){
-   const char *name=((const char *(*)(void *))api[API_METHOD_NAME])(m);
-   if(!name||strcmp(name,"get_playableAsset")||((uint32_t (*)(void *))api[API_PARAM_COUNT])(m)!=0)continue;
-   matches++;if(team_instance_method(k,m)&&team_returns(m,"UnityEngine.Playables.PlayableAsset"))found=m;
-  }
-  if(scanned>4096)return NULL;
- }
- return matches==1?found:NULL;
-}
-typedef struct {void *target,*callback,*mi;int detail,index;uint8_t a1,a3,a5;uint64_t sequence;void *visualDirector;int singleCoin;char scene[128];int visualCoin;} WedgeProbeCtx;
-static void wedge_probe_bindings(void *app,void *director);
-static void wedge_rebind_followers(void *actor,void *director);
-static uintptr_t wedge_probe_root(void *ctx,uintptr_t object){(void)ctx;return ui_root((void*)object);}
-static void wedge_probe_unroot(void *ctx,uintptr_t root){(void)ctx;ui_unroot(root);}
-static void wedge_probe_original(void *ctx);
-static int wedge_probe_snapshot(void *ctx,uintptr_t *app,uintptr_t *director,uintptr_t *asset,uint64_t *sequence){
- WedgeProbeCtx*c=ctx;if(!wedge_probe_main_thread())return 0;Unit*u=unit_for_app(c->target);if(!u||!u->view||rfield(u->view,"_curAppearance")!=c->target)return 0;
- void*d=rfield(c->target,"_playableDirector");uintptr_t dr=d?ui_root(d):0;if(!dr)return 0;
- void*getter=wedge_probe_asset_method(ui_class(d));int ok=0;void*a=getter?call_obj(getter,d,NULL,&ok):NULL;
- *app=(uintptr_t)c->target;*director=(uintptr_t)d;*asset=(uintptr_t)a;*sequence=c->sequence;ui_unroot(dr);return ok&&a;
-}
-static void follower_frames_begin(void*,void*,uint64_t);
-static void follower_frames_sample(double);
-static void follower_frames_end(void);
-static void sprite_playback_watch(void*,void*,void*);
-static void sprite_playback_watch_end(void);
-static void link_visual_begin(void *app,void *director,void *asset);
-static void link_visual_tick(void);
-static void link_overlay_tick(void);
-static void link_adopt_selected_s6(void);
-static void link_overlay_end(void);
-static void link_visual_end(void);
-static void wedge_probe_report(void *ctx,int ok,uintptr_t director,uintptr_t asset,uint64_t sequence){
- WedgeProbeCtx*c=ctx;
- if(ok){
-  wedge_rebind_followers(c->target,(void*)director);
-  c->visualDirector=(void*)director;
- }
- if(!director_observe_enabled())return;
- char line[240];snprintf(line,sizeof(line),"wedge director post-call verified=%d detail=%d index=%d app=%p director=%p asset=%p diagnosticSeq=%llu",ok,c->detail,c->index,c->target,(void*)director,(void*)asset,(unsigned long long)sequence);bootlog(line);
- if(ok){
-  sprite_playback_watch(c->target,(void*)director,(void*)asset);
-  follower_frames_begin(c->target,(void*)director,sequence);
-  wedge_probe_bindings(c->target,(void*)director);
- }
-}
-static void *wedge_probe_timeline(void *base,int detail,int index,uintptr_t *timelineRoot){
- *timelineRoot=0;int query=detail,ok=0;uint8_t flag=0;void*args[]={&query,&flag};g_motionDepth++;
- void*motion=call_obj(m_getMotion,base,args,&ok);g_motionDepth--;uintptr_t mr=ok&&motion?ui_root(motion):0;if(!mr)return NULL;
- void*list=rfield(motion,"timelineAssets");uintptr_t lr=list?ui_root(list):0;void*timeline=NULL;
- if(lr){int count=list_count(list);if(index>=0&&index<count){timeline=list_item(list,index);if(timeline)*timelineRoot=ui_root(timeline);}ui_unroot(lr);}
- ui_unroot(mr);return *timelineRoot?timeline:NULL;
-}
-#include "link_attack_clips.inc"
-/* Director reflection handles, resolved once at install time and read from
-   bind-time and per-frame code further down. */
-static void *director_binding_method,*director_time_method,*director_renderer_getter,*director_class;
-/* sprite evidence counters live further down; summary is called from director end. */
-static void sprite_evidence_summary(const char *phase);
-static void sprite_playback_summary(const char *phase);
-static void sprite_playback_clear(void);
-static void sprite_playback_sample(void *app,void *director,void *rendererList);
-/* Set when a wedge track binds, cleared when the director ends; read by tick(). */
-static void *g_playbackWatchApp,*g_playbackWatchDirector;
-static void sprite_playback_tick(void);
-static void sprite_renderer_state(void *renderer,const char *label);
-static void sprite_playback_dump_list(void *list,const char *phase);
-static void sprite_walk_tree(void *app,const char *phase);
-static void sprite_playback_watch(void *app,void *director,void *asset);
-static void sprite_playback_watch_end(void);
-static void sprite_playback_note_error(void);
-static volatile LONG64 g_wedge_probe_sequence;
-static void wedge_probe_end(void *app,void *director,unsigned generation){
- if(!wedge_probe_main_thread()||!app||!director||!g_playbackWatchApp)return;Unit*u=unit_for_app(app);
- if(!u || u->playbackGeneration != generation || app != g_playbackWatchApp || director != g_playbackWatchDirector || director != rfield(app,"_playableDirector"))return;
- if(!director_observe_enabled()){sprite_playback_watch_end();return;}
- static LONG count;if(InterlockedIncrement(&count)>128){sprite_playback_watch_end();return;}
- char line[220];snprintf(line,sizeof(line),"wedge director end unpaired app=%p director=%p current=%p playbackGeneration=%u",app,director,rfield(app,"_playableDirector"),generation);bootlog(line);
- if(g_playbackWatchApp){
-  sprite_walk_tree(g_playbackWatchApp,"replaced");
-  Unit *wu=unit_for_app(g_playbackWatchApp);
-  if(wu && wu->baseApp && wu->baseApp != g_playbackWatchApp)sprite_walk_tree(wu->baseApp,"base");
- }
- sprite_playback_watch_end();
-}
 /* ---------------- hooks ---------------- */
 static void hook_canvas(void *mi);
 static volatile LONG g_busy;
 
 static int g_visualEventDepth;
-static void trace_wedge_camera(Unit *u,void *target,const char *phase,int detail,int index){
- if(!u||!u->coinKnown||!u->coinLast||(u->sinner!=103&&u->sinner!=110))return;
- void *m=camera_manager(),*cur=m?rfield(m,"_curCam"):NULL;
- void *tc=target?rfield(target,"_camController"):NULL,*bc=u->baseApp?rfield(u->baseApp,"_camController"):NULL;
- char line[600];snprintf(line,sizeof(line),"wedge camera diagnostic %s sinner=%lu tier=%d detail=%d index=%d base=%p target=%p current=%p manager=%p camera=%p owner=%p trigger=%p zoomController=%p targetController=%p targetActor=%p targetEnemy=%p baseController=%p baseActor=%p baseEnemy=%p",phase,(unsigned long)u->sinner,u->coinTier,detail,index,u->baseApp,target,rfield(u->view,"_curAppearance"),m,cur,m?rfield(m,"_zoomActorAloneV2Owner"):NULL,m?rfield(m,"_zoomActorAloneV2TriggerSource"):NULL,m?rfield(m,"_zoomActorAloneV2AppearanceCamController"):NULL,tc,tc?rfield(tc,"camera_Actor"):NULL,tc?rfield(tc,"camera_Enemy"):NULL,bc,bc?rfield(bc,"camera_Actor"):NULL,bc?rfield(bc,"camera_Enemy"):NULL);bootlog(line);
-}
-static void pair_trace_motion(void *self,int detail,int index);
-static int native_actor_has_donor(Unit *actor,void *app,int detail){
- if(!actor||app!=actor->baseApp||g_wedgeBoundMotion!=detail||!wedge_probe_main_thread())return 0;
- const int ids[]={10316,11017,11216,10216};
- int partner=pair_partner_identity(actor->baseName);
- int outis=!strncmp(actor->baseName,"11116",5)&&(actor->baseName[5]==0||actor->baseName[5]=='_');
- if(!partner&&(!outis||(detail!=11&&detail!=12&&detail!=15&&detail!=16)))return 0;
- if(partner&&pair_visual_motion(actor->baseName,detail,detail)<0)return 0;
- for(unsigned i=0;i<sizeof(ids)/sizeof(ids[0]);i++){
-  int id=ids[i];
-  if(partner&&id!=partner)continue;
-  if(outis&&!outis_follower_role(detail,id))continue;
-  void *visible=wedge_presentation_owner(app,id);
-  Unit *unit=visible?unit_for_app(visible):NULL;
-  if(unit&&unit!=actor&&unit->baseApp!=visible&&skin_for_app(unit,visible))return 1;
- }
- return 0;
-}
 static void change_motion_hook(void *self,int detail,uint8_t a1,int index,uint8_t a3,void *callback,uint8_t a5,void *mi){
   if(enabled_now()&&!g_creating&&!g_motionDepth&&!cleanup_pending){
    Unit *u=unit_for_app(self);int role=u?clash_request(u,detail):0;
@@ -2133,7 +2029,6 @@ static void change_motion_hook(void *self,int detail,uint8_t a1,int index,uint8_
     }
    }
   }
-  pair_trace_motion(self,detail,index);
   void *target=self;int targetDetail=detail,targetIndex=index;
   if(g_visualEventDepth&&enabled_now()&&detail!=0&&detail!=18){
    Unit *owner=unit_for_app(self);void *current=owner?rfield(owner->view,"_curAppearance"):NULL;
@@ -2175,67 +2070,6 @@ static void change_motion_hook(void *self,int detail,uint8_t a1,int index,uint8_
                   current_unit->coinKnown&&current_unit->coinLast,a1,a3,callback,a5,mi);
    return;
   }
-  int nativeActor=!current_skin&&enabled_now()&&!cleanup_pending&&!g_motionDepth&&native_actor_has_donor(current_unit,target,detail);
-  int pairLink=0,pairDetail=detail,pairIndex=index;
-  if(enabled_now()&&!cleanup_pending&&!g_motionDepth&&current_unit&&(nativeActor||(current_skin&&target!=current_unit->baseApp))){
-    const char *base=current_unit->baseName;
-    int other=pair_partner_identity(base);
-    int visual=pair_visual_motion(base,g_wedgeBoundMotion,detail);
-    if(visual>=0&&other&&wedge_probe_main_thread()&&wedge_presentation_owner(target,other)&&wedge_borrow_enabled()&&m_getMotion){
-      int actual=-1,count=motion_count(current_unit->baseApp,visual,&actual);
-      int part=index;
-      if(visual!=detail&&current_unit->coinKnown&&current_unit->coinIndex>=0)part=current_unit->coinIndex;
-      part=wedge_borrow_index(part,count,current_unit->coinKnown&&current_unit->coinLast);
-      uintptr_t root=0;
-      void *asset=actual==visual&&part>=0?wedge_probe_timeline(current_unit->baseApp,visual,part,&root):NULL;
-      if(asset)pairLink=pair_timeline_identity(base,wedge_name(asset));
-      ui_unroot(root);
-      if(pairLink){pairDetail=visual;pairIndex=part;}
-    }
-  }
-  int outisNative=0;
-  int outisSkin=current_skin&&(detail==11||detail==12||detail==15||detail==16)&&!strncmp(current_unit->baseName,"11116_",6);
-  if((nativeActor||(outisSkin&&enabled_now()&&!cleanup_pending&&!g_motionDepth&&wedge_probe_main_thread()))&&
-      !pairLink&&!pair_partner_identity(current_unit->baseName)){
-    int actual=-1,count=motion_count(current_unit->baseApp,detail,&actual);
-    int part=wedge_borrow_index(index,count,current_unit->coinKnown&&current_unit->coinLast);
-    uintptr_t root=0;
-    void *asset=part>=0&&actual==detail?wedge_probe_timeline(current_unit->baseApp,detail,part,&root):NULL;
-    outisNative=asset&&outis_visual_asset(detail,part,wedge_name(asset));ui_unroot(root);
-  }
-  if(enabled_now()&&!cleanup_pending&&!g_motionDepth&&current_unit&&wedge_borrow_enabled()&&
-     (pairLink||outisNative||(current_skin&&wedge_borrow_allowed(current_unit->baseName,g_rows[current_skin->row].identity,detail,target,current_unit->baseApp)))){
-    int requestedDetail=detail,requestedIndex=index;
-    int detail=pairDetail,index=pairIndex;
-    int actual=-1,mapped=0,count=wedge_count_and_prepare(current_unit->baseApp,detail,index,current_unit->coinKnown&&current_unit->coinLast,wedge_borrow_enabled(),&actual,&mapped);
-    int borrowIndex=wedge_borrow_index(index,count,current_unit->coinKnown&&current_unit->coinLast);
-    if(actual==detail&&borrowIndex>=0){
-      WedgeBorrow saved=g_wedgeBorrow;g_wedgeBorrow=nativeActor?(WedgeBorrow){0}:(WedgeBorrow){target,current_unit->baseApp,detail,0};
-      if(mapped){g_wedgeMapApp=target;g_wedgeMapDetail=detail;if(wedge_probe_main_thread())sprite_playback_watch_end();if(track_diag_enabled()){char line[100];snprintf(line,sizeof(line),"wedge track map prepared detail=%d index=%d count=%d",detail,borrowIndex,g_wedgeTrackMap.count);bootlog(line);}}
-      uintptr_t expectedRoot=0;void *expected=mapped&&wedge_probe_main_thread()?wedge_probe_timeline(current_unit->baseApp,detail,borrowIndex,&expectedRoot):NULL;
-      WedgeProbeCtx probe={target,callback,mi,detail,borrowIndex,a1,a3,a5,(uint64_t)InterlockedIncrement64(&g_wedge_probe_sequence)};
-      probe.singleCoin=expected&&link_authored_known(wedge_name(expected));
-      if(probe.singleCoin){
-       snprintf(probe.scene,sizeof(probe.scene),"%s",wedge_name(expected));
-       probe.visualCoin=current_unit->observedViewer&&current_unit->observedCoinField?
-        *(int*)((char*)current_unit->observedViewer+current_unit->observedCoinOffset):borrowIndex;
-      }
-      if(nativeActor){probe.detail=requestedDetail;probe.index=requestedIndex;}
-      DiProbeOps probeOps={wedge_probe_root,wedge_probe_unroot,wedge_probe_snapshot,wedge_probe_original,wedge_probe_report};
-      if(expected){
-       if(pairLink)pair_roster_begin(current_unit,target);
-       di_probe_run(&probeOps,&probe,(uintptr_t)target,(uintptr_t)expected,probe.sequence);
-       /* The actor's authored scene was selected before ChangeMotion. Its visual
-          schedule is usable even if the native director discarded that asset. */
-       link_visual_begin(target,probe.visualDirector,expected);
-      }else wedge_probe_original(&probe);
-      if(expectedRoot)ui_unroot(expectedRoot);
-      if(mapped){wedge_map_clear(&g_wedgeTrackMap,&g_wedgeMapOps);g_wedgeMapApp=NULL;} wedge_presentation_clear();
-      if(track_diag_enabled()){char line[160];snprintf(line,sizeof(line),"wedge borrow detail=%d index=%d->%d queries=%d",detail,index,borrowIndex,g_wedgeBorrow.hits);bootlog(line);}
-      g_wedgeBorrow=saved;return;
-    }
-    if(mapped){wedge_map_clear(&g_wedgeTrackMap,&g_wedgeMapOps);g_wedgeMapApp=NULL;} wedge_presentation_clear();
-  }
   if(enabled_now()&&!cleanup_pending&&!g_motionDepth&&current_skin&&!current_unit->coinDefense&&
      sr_attack_detail(targetDetail,current_unit->coinKnown,current_unit->coinMotion,current_unit->coinDefense,introApp==target)){
     int requested=targetDetail;
@@ -2243,9 +2077,10 @@ static void change_motion_hook(void *self,int detail,uint8_t a1,int index,uint8_
     if(g_rows[current_skin->row].story)targetDetail=sr_donor_tier_detail(current_skin->motionCounts,targetDetail,current_unit->coinTier);
     targetDetail=sr_native_motion_detail(current_skin->motionCounts,current_skin->nativeMotionDetail,requested,targetDetail);
     if(g_rows[current_skin->row].story)targetDetail=sr_donor_coin_fit(current_skin->motionCounts,targetDetail,native_order_coin_count(current_unit));
-    targetDetail=sr_verified_paired_attack(current_skin->motionCounts,current_unit->baseName,motion_identity(current_skin),requested,targetDetail);
-    if(sr_preserve_oscar_link_index(current_unit->baseName,motion_identity(current_skin),requested,targetDetail,index,current_skin->motionCounts[targetDetail])){targetIndex=index;}
-    else if(current_unit->coinKnown&&!current_unit->coinDefense&&index>=0&&single_skin_cycle_index(current_unit,current_skin,current_unit->coinIndex,current_skin->motionCounts[targetDetail],&targetIndex)){}
+    int paired=sr_verified_paired_attack(current_skin->motionCounts,paired_source(current_unit,current_skin),motion_identity(current_skin),requested,-1);
+    if(paired>=0)targetDetail=paired;
+    if(paired>=0)targetIndex=counterpart_part(current_unit,current_skin,current_unit->observedAction,current_unit->coinIndex,requested,current_skin->motionCounts[paired],index,current_unit->coinKnown&&current_unit->coinLast);
+    else if(paired<0&&current_unit->coinKnown&&!current_unit->coinDefense&&index>=0&&single_skin_cycle_index(current_unit,current_skin,current_unit->coinIndex,current_skin->motionCounts[targetDetail],&targetIndex)){}
     else if(!native_order_index(current_unit,current_unit->observedAction,current_unit->coinIndex,current_skin->motionCounts[targetDetail],&targetIndex))
       targetIndex=sr_playback_index(targetIndex,current_skin->motionCounts[targetDetail],current_unit->coinKnown&&current_unit->coinLast);
     if(current_unit->coinKnown)sr_salvador_s3(current_skin->motionCounts,current_unit->baseName,motion_identity(current_skin),detail,current_unit->coinIndex,&targetDetail,&targetIndex);
@@ -2256,9 +2091,7 @@ static void change_motion_hook(void *self,int detail,uint8_t a1,int index,uint8_
       snprintf(line,sizeof(line),"attack playback %s look=%.63s detail=%d->%d index=%d->%d known=%d tier=%d",targetDetail!=requested?"fallback":"unavailable",current_skin->look,requested,targetDetail,index,targetIndex,current_unit->coinKnown,current_unit->coinTier);bootlog(line);
     }
   }
-  trace_wedge_camera(current_unit,target,"before",targetDetail,targetIndex);
   forward_projected_motion(target,targetDetail,a1,targetIndex,a3,callback,a5,mi,detail,index,current_attack_coin(current_unit),current_unit&&current_unit->coinKnown);
-  trace_wedge_camera(current_unit,target,"after",targetDetail,targetIndex);
   if(enabled_now()&&current_unit&&!g_motionDepth&&detail!=0&&detail!=18&&detail!=5){
    char line[320];snprintf(line,sizeof(line),"motion forwarded sinner=%lu source=%p receiver=%p visible=%p detail=%d->%d index=%d->%d coin=%d viewer=%d eventDepth=%d camera=%d",(unsigned long)current_unit->sinner,self,target,rfield(current_unit->view,"_curAppearance"),detail,targetDetail,index,targetIndex,current_unit->coinIndex,current_unit->viewerActive,g_visualEventDepth,g_presentationGate);bootlog(line);
   }
@@ -2499,10 +2332,6 @@ static void *get_motion_hook(void *self,int detail,uint8_t flag,void *mi){
     return ((void *(*)(void *,int,uint8_t,void *))orig_getMotion)(self,mapped>=0?mapped:detail,flag,mi);
    }
   }
-  if(enabled_now()&&!cleanup_pending&&wedge_borrow_match(&g_wedgeBorrow,self,detail)){
-    g_wedgeBorrow.hits++;
-    return ((void *(*)(void *,int,uint8_t,void *))orig_getMotion)(g_wedgeBorrow.base,detail,flag,mi);
-  }
   /* Only change the scalar request to an existing cached donor attack.
      One native call, no recursion, allocations, resource loads or reflection. */
   if(enabled_now()&&!cleanup_pending&&!g_creating&&!g_motionDepth){
@@ -2528,7 +2357,7 @@ static void *get_motion_hook(void *self,int detail,uint8_t flag,void *mi){
       if(sr_salvador_s3(skin->motionCounts,u->baseName,motion_identity(skin),g_projection.sourceDetail,u->coinIndex,&mapped,&index)&&detail==mapped)
        return ((void *(*)(void *,int,uint8_t,void *))orig_getMotion)(self,detail,flag,mi);
      }
-     if(g_projection.app==self&&sr_verified_paired_attack(skin->motionCounts,u->baseName,motion_identity(skin),g_projection.sourceDetail,-1)>=0)
+     if(g_projection.app==self&&sr_verified_paired_attack(skin->motionCounts,paired_source(u,skin),motion_identity(skin),g_projection.sourceDetail,-1)>=0)
       return ((void *(*)(void *,int,uint8_t,void *))orig_getMotion)(self,detail,flag,mi);
      int requested=detail;
      int attack=!u->coinDefense&&sr_attack_detail(detail,u->coinKnown,u->coinMotion,0,introApp==self);
@@ -2537,7 +2366,7 @@ static void *get_motion_hook(void *self,int detail,uint8_t flag,void *mi){
      if(attack&&g_rows[skin->row].story)detail=sr_donor_tier_detail(skin->motionCounts,detail,u->coinTier);
      if(attack)detail=sr_native_motion_detail(skin->motionCounts,skin->nativeMotionDetail,requested,detail);
      if(attack&&g_rows[skin->row].story)detail=sr_donor_coin_fit(skin->motionCounts,detail,native_order_coin_count(u));
-     if(attack)detail=sr_verified_paired_attack(skin->motionCounts,u->baseName,motion_identity(skin),requested,detail);
+     if(attack)detail=sr_verified_paired_attack(skin->motionCounts,paired_source(u,skin),motion_identity(skin),requested,detail);
     }
   }
   return ((void *(*)(void *,int,uint8_t,void *))orig_getMotion)(self,detail,flag,mi);
@@ -2645,13 +2474,26 @@ static int paired_native_stage(const char *base, const char *observed){
  const char *normal=NULL,*alternate=NULL;
  if(!strncmp(base,"10314",5)){normal="10314_Donquixote_Index_DiscipleAppearance";alternate="10314_Donquixote_Index_Disciple_AwakenAppearance";}
  else if(!strncmp(base,"10215",5)){normal="10215_Faust_Ring_DiscipleAppearance";alternate="10215_Faust_Ring_Disciple_CastOffAppearance";}
- if(!normal)return -1;
+ if(!normal){
+  const SrCounterpartForm *f=sr_counterpart_form(base);
+  if(!f)return -1;
+  normal=f->normal;alternate=f->alternate;
+ }
  size_t len=strlen(observed);const char *suffix="(Clone)";size_t tail=strlen(suffix);
  if(len>=tail&&!strcmp(observed+len-tail,suffix))len-=tail;
  while(len && observed[len-1]==' ')len--;
  if(strlen(normal)==len&&!strncmp(observed,normal,len))return 0;
  if(strlen(alternate)==len&&!strncmp(observed,alternate,len))return 1;
  return -1;
+}
+static int object_native_stage(const char *base,void *actual,char identity[128],char objectName[128]){
+ int stage=identity_text(actual,identity,128)?paired_native_stage(base,identity):-1;
+ if(stage>=0)return stage;
+ void *getter=find_method(ui_class(actual),"get_gameObject",0);int ok=1;
+ void *go=getter?call_obj(getter,actual,NULL,&ok):NULL;
+ void *getName=go?find_method(ui_class(go),"get_name",0):NULL;
+ void *name=getName?call_obj(getName,go,NULL,&ok):NULL;
+ return ok&&name&&string_ascii(name,objectName,128)?paired_native_stage(base,objectName):-1;
 }
 static void change_appearance_hook(void *view,void *name,uint8_t flag,void *mi){
   void *previous=view?rfield(view,"_curAppearance"):NULL;
@@ -2663,18 +2505,11 @@ static void change_appearance_hook(void *view,void *name,uint8_t flag,void *mi){
   for(int i=0;i<SR_UNIT_MAX;i++)if(g_units[i].used&&g_units[i].view==view){
     Unit *u=&g_units[i];
     void *actual=rfield(view,"_curAppearance");
-    if(!u->switching && actual && !skin_for_app(u,actual) && (!strncmp(u->baseName,"10314",5)||!strncmp(u->baseName,"10215",5))){
+    if(!u->switching && actual && !skin_for_app(u,actual) && (!strncmp(u->baseName,"10314",5)||!strncmp(u->baseName,"10215",5)||sr_counterpart_form(u->baseName))){
       char requested[128]={0},identity[128]={0},objectName[128]={0};
       int native=-1;
       if(string_ascii(name,requested,sizeof(requested)) && actual!=previous)native=paired_native_stage(u->baseName,requested);
-      if(native<0 && identity_text(actual,identity,sizeof(identity)))native=paired_native_stage(u->baseName,identity);
-      if(native<0){
-        void *getter=find_method(ui_class(actual),"get_gameObject",0);int ok=1;
-        void *go=getter?call_obj(getter,actual,NULL,&ok):NULL;
-        void *getName=go?find_method(ui_class(go),"get_name",0):NULL;
-        void *got=getName?call_obj(getName,go,NULL,&ok):NULL;
-        if(ok&&got&&string_ascii(got,objectName,sizeof(objectName)))native=paired_native_stage(u->baseName,objectName);
-      }
+      if(native<0)native=object_native_stage(u->baseName,actual,identity,objectName);
       {char line[512];snprintf(line,sizeof(line),"source form observed base=%.64s request=%.100s identity=%.100s object=%.100s stage=%d",u->baseName,requested,identity,objectName,native);bootlog(line);}
       if(native>=0){u->nativeStage=native;u->nativeValid=1;u->nativeAppearance=actual;}
 
@@ -2730,63 +2565,7 @@ static void metadata_begin(void){
  g_metadataDB=db;g_metadataPhase=3;bootlog("metadata: asynchronously ready");
 }
 
-#include "wedge_metadata_gate.h"
-/* This additional inventory reads class metadata only, never scene objects. */
-static void wedge_unit_metadata(void *context){
- void *image=context;HMODULE ga=GetModuleHandleW(L"GameAssembly.dll");
- void *(*fields)(void*,void**)=ga?(void*)GetProcAddress(ga,"il2cpp_class_get_fields"):NULL;
- const char *(*fname)(void*)=ga?(void*)GetProcAddress(ga,"il2cpp_field_get_name"):NULL;
- const char *names[]={"BattleUnitView","BattleUnitModel"};
- for(int i=0;i<2;i++){
-  void *klass=((void *(*)(void *,const char *,const char *))api[API_CLASS])(image,"",names[i]);char line[512];
-  snprintf(line,sizeof(line),"wedge unit metadata class=%s found=%d",names[i],klass!=NULL);bootlog(line);if(!klass)continue;
-  void *it=NULL,*m;unsigned total=0;
-  while(total<300&&(m=((void *(*)(void *,void **))api[API_METHODS])(klass,&it))){
-   total++;const char *n=((const char *(*)(void *))api[API_METHOD_NAME])(m);unsigned argc=((unsigned (*)(void *))api[API_PARAM_COUNT])(m);
-   void *rt=((void *(*)(void *))api[API_RETURN_TYPE])(m);char *rn=rt?((char *(*)(void *))api[API_TYPE_NAME])(rt):NULL;
-   snprintf(line,sizeof(line),"wedge unit method class=%s name=%.120s argc=%u return=%.120s",names[i],n?n:"?",argc,rn?rn:"?");bootlog(line);if(rn)((void (*)(void *))api[API_FREE])(rn);
-   for(unsigned j=0;j<argc&&j<16;j++){void *pt=((void *(*)(void *,uint32_t))api[API_PARAM])(m,j);char *pn=pt?((char *(*)(void *))api[API_TYPE_NAME])(pt):NULL;
-    snprintf(line,sizeof(line),"wedge unit param class=%s method=%.100s index=%u type=%.180s",names[i],n?n:"?",j,pn?pn:"?");bootlog(line);if(pn)((void (*)(void *))api[API_FREE])(pn);}
-  }
-  if(total==300)bootlog("wedge unit methods truncated at 300");
-  it=NULL;void *f;total=0;while(fields&&fname&&total<300&&(f=fields(klass,&it))){
-   total++;void *type=((void *(*)(void *))api[API_FIELD_TYPE])(f);char *tn=type?((char *(*)(void *))api[API_TYPE_NAME])(type):NULL;
-   const char *name=fname(f);snprintf(line,sizeof(line),"wedge unit field class=%s name=%.120s type=%.180s",names[i],name?name:"?",tn?tn:"?");bootlog(line);if(tn)((void (*)(void *))api[API_FREE])(tn);
-  }
-  if(total==300)bootlog("wedge unit fields truncated at 300");
-  if(!fields||!fname)bootlog("wedge unit fields unavailable");
- }
-}
-/* Opt-in linked-skill diagnostics: metadata and scene object counts only. */
-static void linked_diagnostics(void){
- static int done=0;static uintptr_t previous[9]={0};if(!g_game||!m_findAll)return;
- wchar_t path[32768];if(!GetModuleFileNameW(g_self,path,32768))return;wchar_t *slash=wcsrchr(path,L'\\');if(!slash)return;
- lstrcpyW(slash+1,L"linked-diagnostics.enabled");if(GetFileAttributesW(path)==INVALID_FILE_ATTRIBUTES)return;
- static int unitDone=0;wedge_metadata_once(1,&unitDone,wedge_unit_metadata,g_game);
- HMODULE ga=GetModuleHandleW(L"GameAssembly.dll");
- void *(*fields)(void*,void**)=ga?(void*)GetProcAddress(ga,"il2cpp_class_get_fields"):NULL;
- const char *(*fname)(void*)=ga?(void*)GetProcAddress(ga,"il2cpp_field_get_name"):NULL;
- {char line[128];snprintf(line,sizeof(line),"linked field exports available=%d",!!fields&&!!fname);if(!done)bootlog(line);}
- const char *names[]={"LinkedSkillTimelineBinding","LinkedSkillUnitBinding","LinkedSkillPresentation","LinkedSkillParticipation","LinkedSkillGrabPresentation","LinkedSkillStartPositionSettings","LinkedSkillFollowerPositionSettings","LinkedSkillFollowPositioning","BattleDuelViewer_Linked"};
- for(int i=0;i<9;i++){
-  void *k=((void *(*)(void *,const char *,const char *))api[API_CLASS])(g_game,"",names[i]);
-  char line[512];if(!done){snprintf(line,sizeof(line),"linked diagnostic class=%s found=%d",names[i],!!k);bootlog(line);}if(!k)continue;
-  void *it=NULL,*m;while(!done&&(m=((void *(*)(void *,void **))api[API_METHODS])(k,&it))){
-   const char *n=((const char *(*)(void *))api[API_METHOD_NAME])(m);unsigned count=((unsigned (*)(void *))api[API_PARAM_COUNT])(m);
-      void *rt=((void *(*)(void *))api[API_RETURN_TYPE])(m);char *rtn=rt?((char *(*)(void *))api[API_TYPE_NAME])(rt):NULL;
-   snprintf(line,sizeof(line),"linked method class=%s name=%.160s argc=%u return=%.120s",names[i],n?n:"?",count,rtn?rtn:"?");bootlog(line);if(rtn)((void (*)(void *))api[API_FREE])(rtn);
-   for(unsigned a=0;a<count;a++){void *pt=((void *(*)(void *,uint32_t))api[API_PARAM])(m,a);char *pn=pt?((char *(*)(void *))api[API_TYPE_NAME])(pt):NULL;snprintf(line,sizeof(line),"linked param class=%s method=%.100s index=%u type=%.200s",names[i],n?n:"?",a,pn?pn:"?");bootlog(line);if(pn)((void (*)(void *))api[API_FREE])(pn);}
-  }
-  it=NULL;void *f;while(!done&&fields&&fname&&(f=fields(k,&it))){void *t=((void *(*)(void *))api[API_FIELD_TYPE])(f);char *tn=t?((char *(*)(void *))api[API_TYPE_NAME])(t):NULL;
-   snprintf(line,sizeof(line),"linked field class=%s name=%.120s type=%.180s",names[i],fname(f),tn?tn:"?");bootlog(line);if(tn)((void (*)(void *))api[API_FREE])(tn);
-  }
-  void *t=((void *(*)(void *))api[API_TYPE_OBJECT])(((void *(*)(void *))api[API_CLASS_TYPE])(k));void *args[]={t};int ok=1;void *arr=t?call_obj(m_findAll,NULL,args,&ok):NULL;
-  uintptr_t count=ok&&arr?*(uintptr_t *)((char *)arr+24):0;if(!done||previous[i]!=count){snprintf(line,sizeof(line),"linked objects class=%s count=%llu",names[i],(unsigned long long)count);bootlog(line);previous[i]=count;if(arr&&count<=10000)for(uintptr_t j=0;j<count&&j<8;j++){void *obj=((void**)((char*)arr+32))[j];snprintf(line,sizeof(line),"linked object class=%s index=%llu instance=%p",names[i],(unsigned long long)j,obj);bootlog(line);}}
- }
- done=1;
-}
 static void register_existing(void){
-  linked_diagnostics();
   if(!m_findAll)return;
   void *args[]={t_appearance};int ok=1;
   void *array=call_obj(m_findAll,NULL,args,&ok);
@@ -3103,18 +2882,11 @@ static void update_sanity(Unit *u){
 /* Group changes share the existing async loader and wait for the normal idle
    switch gate. Group state is scoped to the currently displayed appearance. */
 static void poll_paired_native(Unit *u){
- if(!u||!u->used||u->dead||!u->view||u->switching||(strncmp(u->baseName,"10314",5) && strncmp(u->baseName,"10215",5)))return;
+ if(!u||!u->used||u->dead||!u->view||u->switching||(strncmp(u->baseName,"10314",5) && strncmp(u->baseName,"10215",5)&&!sr_counterpart_form(u->baseName)))return;
  void *actual=rfield(u->view,"_curAppearance");
  if(!actual||skin_for_app(u,actual))return;
- char identity[128]={0},objectName[128]={0};int native=-1;
- if(identity_text(actual,identity,sizeof(identity)))native=paired_native_stage(u->baseName,identity);
- if(native<0){
-  void *getter=find_method(ui_class(actual),"get_gameObject",0);int ok=1;
-  void *go=getter?call_obj(getter,actual,NULL,&ok):NULL;
-  void *getName=go?find_method(ui_class(go),"get_name",0):NULL;
-  void *got=getName?call_obj(getName,go,NULL,&ok):NULL;
-  if(ok&&got&&string_ascii(got,objectName,sizeof(objectName)))native=paired_native_stage(u->baseName,objectName);
- }
+ char identity[128]={0},objectName[128]={0};
+ int native=object_native_stage(u->baseName,actual,identity,objectName);
  if(native>=0){if(!u->nativeValid||u->nativeStage!=native||u->nativeAppearance!=actual){char line[300];snprintf(line,sizeof(line),"source form polled base=%.60s identity=%.80s object=%.80s stage=%d",u->baseName,identity,objectName,native);bootlog(line);}u->nativeValid=1;u->nativeStage=native;u->nativeAppearance=actual;}
  else {static DWORD last[SR_UNIT_MAX];int slot=(int)(u-g_units);DWORD now=GetTickCount();if(slot>=0&&slot<SR_UNIT_MAX&&(DWORD)(now-last[slot])>=10000){last[slot]=now;char line[300];snprintf(line,sizeof(line),"source form poll unmatched base=%.60s identity=%.80s object=%.80s",u->baseName,identity,objectName);bootlog(line);}}
 }
@@ -3124,8 +2896,10 @@ static void update_stage_group(Unit *u){
  int nativeCurrent=u->nativeValid&&u->nativeAppearance==app;
  int atBase=app&&app==u->baseApp;
  if(!skin&&(nativeCurrent||(atBase&&u->stageSource[0])))skin=held_appearance(u);
- if(!skin){if(u->stageWanted>=0&&u->wanted==u->stageWanted)u->wanted=-1;u->stageWanted=-1;u->stageGroup=0;u->stageShown=-1;return;}
- int gi=g_stageGroups.count&&g_stageGroups.id[0][0]?sr_sg_find_id(&g_stageGroups,u->stageSource):sr_sg_find(&g_stageGroups,g_rows[skin->row].identity);
+ int gi=-1;
+ if(skin){
+  gi=g_stageGroups.count&&g_stageGroups.id[0][0]?sr_sg_find_id(&g_stageGroups,u->stageSource):sr_sg_find(&g_stageGroups,g_rows[skin->row].identity);
+ }
  if(gi<0){if(u->stageWanted>=0&&u->wanted==u->stageWanted)u->wanted=-1;u->stageWanted=-1;u->stageGroup=0;u->stageShown=-1;return;}
  const SrSgGroup *g=&g_stageGroups.group[gi];
  if(u->stageGroup!=gi+1||u->stageRevision!=g_stageGroups.revision){
@@ -3133,22 +2907,18 @@ static void update_stage_group(Unit *u){
   u->stageWanted=-1;u->stageShown=-1;u->stageGroup=gi+1;u->stageChoice=-1;u->stageRevision=g_stageGroups.revision;
  }
  const char *id=g_rows[skin->row].identity;
- int internal=sr_chapter_visual(id)!=NULL||sr_internal_policy(id)!=NULL||auto_internal(skin->row)!=NULL||!strcmp(id,"10312")||!strcmp(id,"10913");
- int visibleForm=internal?skin->internalStage:skin->form;
+ int visibleForm=visible_stage_form(skin);
  u->stageShown=sr_sg_presented(g,id,visibleForm,u->stageShown);
  /* A separately selected appearance always owns its own pending request. */
  if(u->wanted>=0&&u->wanted!=u->stageWanted)return;
- int nativePair=g->count==2 && ((!strncmp(u->baseName,"10314",5)&&!strcmp(g->stage[0].identity,"story_1325_Index_Disciple_NormalAppearance")&&!strcmp(g->stage[1].identity,"story_1325_Index_discipleAppearance"))||(!strncmp(u->baseName,"10215",5)&&!strcmp(g->stage[0].identity,"story_1319_RingFinger_DiscipleAppearance")&&!strcmp(g->stage[1].identity,"story_1336_RingFinger_Disciple_CastoffAppearance")));
+ int nativePair=stage_uses_native_pair(u,g);
  SrSgStatus v={u->formHp,u->formMaxHp,u->sanity,u->sanityValid,u->formState.evades,u->nativeStage,u->nativeValid&&nativePair};
  chapter_status(u,&v);
  if(!nativePair)v.nativeValid=0;
  int stage=sr_sg_select(g,&v,u->stageShown);
  if(stage<0){if(u->stageWanted>=0&&u->wanted==u->stageWanted)u->wanted=-1;u->stageWanted=-1;u->stageChoice=u->stageShown;return;}
- const SrSgStage *target=&g->stage[stage];int targetRow=-1;
- for(uint32_t i=0;i<g_rowCount;i++)if(g_rows[i].sinner==u->sinner&&g_rows[i].kind==0&&!strcmp(g_rows[i].identity,target->identity)){
-  if(!strcmp(g_rows[i].base_identity,g_rows[skin->row].base_identity)){targetRow=(int)i;break;}
-  if(targetRow<0&&!g_rows[i].base_identity[0])targetRow=(int)i;
- }
+ const SrSgStage *target=&g->stage[stage];
+ int targetRow=stage_target_row(u,target->identity,g_rows[skin->row].base_identity);
  if(targetRow<0){static DWORD missingAt[SR_UNIT_MAX];int slot=(int)(u-g_units);DWORD now=GetTickCount();if(slot>=0&&slot<SR_UNIT_MAX&&(DWORD)(now-missingAt[slot])>=5000){missingAt[slot]=now;char line[192];snprintf(line,sizeof(line),"stage target missing group=%.40s target=%.64s",u->stageSource,target->identity);bootlog(line);}if(u->stageWanted>=0&&u->wanted==u->stageWanted)u->wanted=-1;u->stageWanted=-1;u->stageChoice=u->stageShown;return;}
  /* The loader marks permanently unavailable rows bad.  Do not requeue a
     target that has already failed; leave the currently displayed skin alone. */
@@ -3249,14 +3019,11 @@ static int resume_pending_cleanup(void){
 }
 #include "voice_dispatch.h"
 
-static void wedge_team_observe_tick(void);
 static void tick(void){
   if(g_quitting)return;
-  wedge_team_observe_tick();
   int frame=m_frameCount?call_int(m_frameCount,NULL,NULL):-1;
   if(frame<0){fatal("Unity frame count unavailable",7);return;}
   if(frame==g_lastUnityFrame)return;g_lastUnityFrame=frame;g_frame=frame;
-  if(g_playbackWatchApp)sprite_playback_tick();
   collect_retire();
   if(enabled_now()&&!cleanup_pending)voice_pump();else sr_voice_clear();
   draw_rules_tick();
@@ -3356,10 +3123,6 @@ static void tick(void){
   }
 }
 static void cleanup_all(void){
- pair_roster_finish(NULL);
- link_visual_end();
- sprite_playback_watch_end();
- wedge_presentation_clear();
   fx_plan_close_all();
   sr_voice_clear();
   startup_assets_clear();
@@ -3381,13 +3144,11 @@ static void cleanup_all(void){
 }
 static _Thread_local int ur_in_canvas;
 static void canvas_tick(void *mi){
-  LONG thread=(LONG)GetCurrentThreadId(),previous=InterlockedCompareExchange(&g_wedge_canvas_thread,thread,0);
-  if(previous&&previous!=thread)InterlockedExchange(&g_wedge_canvas_conflict,1);
   orig_canvas(mi);
   if(InterlockedCompareExchange(&g_busy,1,0))return;
 
   if(g_cfg&&enabled_now()==0&&g_cfg->enabled==0)cleanup_pending=1;
-  ur_in_canvas=1;tick();pair_roster_tick();link_adopt_selected_s6();link_visual_tick();link_overlay_tick();ur_in_canvas=0;
+  ur_in_canvas=1;tick();ur_in_canvas=0;
   InterlockedExchange(&g_busy,0);
 }
 
@@ -3426,277 +3187,6 @@ static void sprite_callback_observe(void *app,void *renderer,void *mi){
  char line[320];snprintf(line,sizeof(line),"sprite callback observed n=%ld app=%p renderer=%p sprite=%p name=%.110s detail=%d coin=%d",sequence,app,renderer,sprite,text,unit->coinMotion,unit->coinIndex);bootlog(line);
  if(nr)ui_unroot(nr);if(sr)ui_unroot(sr);g_spriteObserving=0;
 }
-/* >>> sprite evidence block >>> */
-/* Sprite evidence keeps three questions apart that the first probe merged:
-   1. did the replacement appearance's own renderer receive a write at all;
-   2. did the sprite value actually change, since rewriting the same sprite is
-      not an animation frame;
-   3. how many calls happened, even after the detail budget is exhausted.
-   Target identity is the appearance GameObject itself, matched by walking the
-   renderer's transform chain, not by looking for "Appearance" in a name. */
-static void *m_setSprite,*orig_setSprite;
-static void *g_spriteTargetGameObject;
-static volatile LONG g_spriteTotal,g_spriteTargetCalls,g_spriteChanged,g_spriteDetail;
-static void *g_spriteLast;
-#define SPRITE_DETAIL_BUDGET 64
-static void sprite_evidence_set_target(void *app){g_spriteTargetGameObject=app;}
-static void sprite_evidence_set_target_from_app(void *app){
- if(!app){g_spriteTargetGameObject=NULL;return;}
- void *g=find_method(ui_class(app),"get_gameObject",0);int ok=0;
- void *go=g?call_obj(g,app,NULL,&ok):NULL;
- if(ok&&go)g_spriteTargetGameObject=go;
-}
-static void sprite_evidence_reset(void){
- InterlockedExchange(&g_spriteTotal,0);InterlockedExchange(&g_spriteTargetCalls,0);
- InterlockedExchange(&g_spriteChanged,0);InterlockedExchange(&g_spriteDetail,0);g_spriteLast=NULL;}
-static long sprite_evidence_total(void){return (long)g_spriteTotal;}
-static long sprite_evidence_target_calls(void){return (long)g_spriteTargetCalls;}
-static long sprite_evidence_changed(void){return (long)g_spriteChanged;}
-static int renderer_in_target_tree(void *renderer){
- if(!renderer||!g_spriteTargetGameObject)return 0;
- void *tr=find_method(ui_class(renderer),"get_transform",0);int ok=0;
- void *t=tr?call_obj(tr,renderer,NULL,&ok):NULL;if(!ok||!t)return 0;
- uintptr_t root=ui_root(t);int hit=0;
- for(int d=0;t&&d<12&&!hit;d++){
-  void *g=find_method(ui_class(t),"get_gameObject",0);ok=0;
-  void *go=g?call_obj(g,t,NULL,&ok):NULL;
-  if(ok&&go==g_spriteTargetGameObject)hit=1;
-  void *pg=find_method(ui_class(t),"get_parent",0);ok=0;
-  void *par=pg?call_obj(pg,t,NULL,&ok):NULL;t=(ok&&par)?par:NULL;
- }
- if(root)ui_unroot(root);return hit;
-}
-/* Renderers observed receiving writes under the target appearance. The Parts
-   list is empty all battle, so this is the only real source of renderer identity. */
-typedef struct {void *renderer,*lastSprite,*lastRead;uintptr_t root;LONG calls,changed,reads;} SpriteTrack;
-#define SPRITE_TRACK_MAX 8
-static SpriteTrack g_spriteTracks[SPRITE_TRACK_MAX];
-static volatile LONG g_spriteTrackCount,g_spriteTrackDropped;
-static void sprite_track_reset(void){
- for(LONG i=0;i<g_spriteTrackCount;i++)ui_unroot(g_spriteTracks[i].root);
- InterlockedExchange(&g_spriteTrackCount,0);InterlockedExchange(&g_spriteTrackDropped,0);
- memset(g_spriteTracks,0,sizeof(g_spriteTracks));}
-static SpriteTrack *sprite_track_for(void *renderer){
- LONG n=g_spriteTrackCount;
- for(LONG i=0;i<n;i++)if(g_spriteTracks[i].renderer==renderer)return &g_spriteTracks[i];
- LONG slot=g_spriteTrackCount;
- if(slot<0||slot>=SPRITE_TRACK_MAX){InterlockedIncrement(&g_spriteTrackDropped);return NULL;}
- uintptr_t root=ui_root(renderer);if(!root){++g_spriteTrackDropped;return NULL;}
- ++g_spriteTrackCount;g_spriteTracks[slot].root=root;
- g_spriteTracks[slot].renderer=renderer;g_spriteTracks[slot].lastSprite=NULL;
- g_spriteTracks[slot].calls=0;g_spriteTracks[slot].changed=0;
- return &g_spriteTracks[slot];
-}
-static void set_sprite_hook(void *renderer,void *sprite,void *mi){
- ((void (*)(void *,void *,void *))orig_setSprite)(renderer,sprite,mi);
- if(!wedge_probe_main_thread()||!g_playbackWatchApp||!enabled_now())return;
- InterlockedIncrement(&g_spriteTotal);
- if(!renderer_in_target_tree(renderer))return;
- SpriteTrack *track=sprite_track_for(renderer);
- LONG calls=InterlockedIncrement(&g_spriteTargetCalls);
- LONG changed=0;
- if(track){
-  if(track->calls&&sprite!=track->lastSprite){++track->changed;changed=InterlockedIncrement(&g_spriteChanged);}
-  ++track->calls;track->lastSprite=sprite;
- }
- LONG detail=InterlockedIncrement(&g_spriteDetail);
- if(detail<=SPRITE_DETAIL_BUDGET){
-  char line[240];
-  snprintf(line,sizeof(line),"wedge sprite change n=%ld renderer=%p sprite=%p calls=%ld seq=%ld",changed,renderer,sprite,calls,detail);
-  bootlog(line);
- }
-}
-static void sprite_evidence_summary(const char *phase){
- char line[280];
- snprintf(line,sizeof(line),"sprite evidence %s total=%ld targetCalls=%ld changed=%ld detail=%ld budget=%d",
-  phase,(long)g_spriteTotal,(long)g_spriteTargetCalls,(long)g_spriteChanged,(long)g_spriteDetail,SPRITE_DETAIL_BUDGET);
- bootlog(line);
-}
-/* Playback-time read, independent of the set_sprite counter: sample the target
-   renderer list while a wedge action is live and report timeline time next to
-   the first sprite pointer. This separates "timeline advanced but sprite never
-   changed" from "sprite did change, so look at visibility instead". */
-static void *g_playbackLastSprite;static double g_playbackTimeFirst,g_playbackTimeLast;
-static volatile LONG g_playbackSamples,g_playbackChanges,g_playbackLogs,g_playbackErrors;
-static void sprite_playback_clear(void){
- InterlockedExchange(&g_playbackSamples,0);InterlockedExchange(&g_playbackChanges,0);
- InterlockedExchange(&g_playbackLogs,0);InterlockedExchange(&g_playbackErrors,0);
- g_playbackLastSprite=NULL;g_playbackTimeFirst=0;g_playbackTimeLast=0;}
-static void sprite_playback_sample(void *app,void *director,void *rendererList){
- if(!app||!director){InterlockedIncrement(&g_playbackErrors);return;}
- if(!g_spriteTargetGameObject)sprite_evidence_set_target_from_app(app);
- InterlockedIncrement(&g_playbackSamples);
- double when=-1;
- if(director&&director_time_method){
-  void *exc=NULL;void *box=ui_invoke(director_time_method,director,NULL,&exc);
-  if(!exc&&box&&ui_unbox(box))when=*(double*)ui_unbox(box);
- }
- if(when>0){if(g_playbackTimeFirst==0)g_playbackTimeFirst=when;g_playbackTimeLast=when;}
- follower_frames_sample(when);
- (void)rendererList;
- long changed=0;int seen=0;
- LONG total=g_spriteTrackCount;
- for(LONG i=0;i<total&&i<SPRITE_TRACK_MAX;i++){
-  void *r=g_spriteTracks[i].renderer;if(!r)continue;seen++;
-  void *g=find_method(ui_class(r),"get_sprite",0);int o2=0;void *sp=g?call_obj(g,r,NULL,&o2):NULL;
-  if(!o2){InterlockedIncrement(&g_playbackErrors);continue;}
-  SpriteTrack *track=&g_spriteTracks[i];
-  if(track->reads&&sp!=track->lastRead)++g_playbackChanges;
-  ++track->reads;track->lastRead=sp;
- }
- changed=(long)g_playbackChanges;
- LONG n=InterlockedIncrement(&g_playbackLogs);
- if(n<=48||n%30==0){
-  char line[220];snprintf(line,sizeof(line),"sprite playback n=%ld time=%.3f tracks=%d seen=%d changes=%ld",n,when,(int)g_spriteTrackCount,seen,changed);bootlog(line);
- }
-}
-static void sprite_playback_note_error(void){InterlockedIncrement(&g_playbackErrors);}
-/* g_wedgeMapApp is set and cleared inside one synchronous borrow block, so the
-   per-frame tick never observes it (measured: sprite playback samples=0 across a
-   whole battle). Keep a separate watch handle that lives from the moment a wedge
-   action binds until the director reports the end, and sample from that. */
-static uintptr_t watchAppRoot,watchDirectorRoot,watchGoRoot,watchAssetRoot;
-static void *watchAsset,*watchAssetGetter;
-static DWORD watchLastProgress;
-static void sprite_playback_watch_end(void){
- follower_frames_end();
- if(g_playbackWatchApp){
-  sprite_evidence_summary("end");
-  sprite_playback_summary("end");
- }
- g_playbackWatchApp=NULL;g_playbackWatchDirector=NULL;g_spriteTargetGameObject=NULL;
- watchAsset=NULL;watchAssetGetter=NULL;
- sprite_track_reset();
- ui_unroot(watchGoRoot);ui_unroot(watchDirectorRoot);ui_unroot(watchAppRoot);
- ui_unroot(watchAssetRoot);watchAssetRoot=0;
- watchGoRoot=watchDirectorRoot=watchAppRoot=0;
-}
-static void sprite_playback_watch(void *app,void *director,void *asset){
- sprite_playback_watch_end();
- if(!asset||!director)return;
- watchAssetGetter=wedge_probe_asset_method(ui_class(director));
- if(!watchAssetGetter)return;
- watchAssetRoot=ui_root(asset);if(!watchAssetRoot)return;
- watchAsset=asset;
- watchAppRoot=ui_root(app);watchDirectorRoot=ui_root(director);
- if(watchAppRoot&&watchDirectorRoot){
-  sprite_evidence_set_target_from_app(app);
-  watchGoRoot=ui_root(g_spriteTargetGameObject);
- }
- if(!watchGoRoot){sprite_playback_watch_end();return;}
- sprite_evidence_reset();sprite_playback_clear();
- watchLastProgress=GetTickCount();
- g_playbackWatchApp=app;g_playbackWatchDirector=director;
-}
-/* Measured: the target appearance's renderers DID receive sprite writes
-   (targetCalls=22 changed=10 in one battle) while the character stayed still.
-   That moves the question from "is the animation writing" to "is the renderer
-   receiving the writes actually visible". */
-static void sprite_renderer_state(void *renderer,const char *label){
- if(!renderer)return;
- int ok=0;void *eg=find_method(ui_class(renderer),"get_enabled",0);
- int enabled=-1;if(eg){ok=0;void *box=call_obj(eg,renderer,NULL,&ok);if(ok&&box&&ui_unbox(box))enabled=*(uint8_t*)ui_unbox(box);}
- void *og=find_method(ui_class(renderer),"get_sortingOrder",0);
- int order=0;if(og){ok=0;void *box=call_obj(og,renderer,NULL,&ok);if(ok&&box&&ui_unbox(box))order=*(int*)ui_unbox(box);}
- void *cg=find_method(ui_class(renderer),"get_color",0);
- int alpha=-1;if(cg){ok=0;void *box=call_obj(cg,renderer,NULL,&ok);
-  if(ok&&box&&ui_unbox(box)){float *c=(float*)ui_unbox(box);alpha=(int)(c[3]*100.0f);}}
- void *mg=find_method(ui_class(renderer),"get_maskInteraction",0);
- int mask=-1;if(mg){ok=0;void *box=call_obj(mg,renderer,NULL,&ok);if(ok&&box&&ui_unbox(box))mask=*(int*)ui_unbox(box);}
- char line[280];snprintf(line,sizeof(line),"sprite renderer state %s renderer=%p enabled=%d alphaPct=%d sortingOrder=%d maskInteraction=%d",
-  label,renderer,enabled,alpha,order,mask);bootlog(line);
-}
-/* Decisive question: which SpriteRenderers actually exist under the replaced
-   appearance, and is the base appearance still visible behind it? The setter
-   proved sprites change on ONE renderer while the character looks still, so the
-   visible character is probably a different renderer. Walk the hierarchy and
-   name every renderer with its sorting order and enabled flag. */
-static void sprite_walk_node(void *transform,int depth,int *budget,const char *phase){
- if(!transform||depth>5||!budget||*budget<=0)return;
- uintptr_t tr=ui_root(transform);if(!tr)return;
- (*budget)--;
- char path[160];path[0]=0;size_t used=0;
- void *g=find_method(ui_class(transform),"get_gameObject",0);int ok=0;
- void *go=g?call_obj(g,transform,NULL,&ok):NULL;
- const char *goName="?";char nameBuf[80];nameBuf[0]=0;
- if(ok&&go){void *ng=find_method(ui_class(go),"get_name",0);ok=0;
-  void *ns=ng?call_obj(ng,go,NULL,&ok):NULL;
-  if(ok&&ns){uintptr_t nr=ui_root(ns);if(nr){if(string_ascii(ns,nameBuf,sizeof(nameBuf)))goName=nameBuf;ui_unroot(nr);}}}
- /* does this GameObject carry a SpriteRenderer */
- if(go&&m_getComponent){
-  void *srClass=((void *(*)(void *,const char *,const char *))api[API_CLASS])(g_core,"UnityEngine","SpriteRenderer");
-  void *srType=srClass?((void *(*)(void *))api[API_TYPE_OBJECT])(((void *(*)(void *))api[API_CLASS_TYPE])(srClass)):NULL;
-  if(srType){void *args[]={srType};void *exc=NULL;void *sr=ui_invoke(m_getComponent,go,args,&exc);
-   if(!exc&&sr){uintptr_t srr=ui_root(sr);
-    int enabled=-1;void *eg=find_method(ui_class(sr),"get_enabled",0);
-    if(eg){ok=0;void *b=call_obj(eg,sr,NULL,&ok);if(ok&&b&&ui_unbox(b))enabled=*(uint8_t*)ui_unbox(b);}
-    int order=0,orderRead=0;void *og=find_method(ui_class(sr),"get_sortingOrder",0);
-    if(og){ok=0;void *b=call_obj(og,sr,NULL,&ok);if(ok&&b&&ui_unbox(b)){order=*(int*)ui_unbox(b);orderRead=1;}}
-    void *spg=find_method(ui_class(sr),"get_sprite",0);void *sprite=NULL;
-    int spriteRead=0;if(spg){sprite=call_obj(spg,sr,NULL,&spriteRead);}
-    int active=-1;void *ag=find_method(ui_class(go),"get_activeInHierarchy",0);
-    if(ag){ok=0;void *b=call_obj(ag,go,NULL,&ok);if(ok&&b&&ui_unbox(b))active=*(uint8_t*)ui_unbox(b);}
-    char line[300];snprintf(line,sizeof(line),"sprite tree %s depth=%d go=%.60s renderer=%p enabled=%d sortingOrder=%d sprite=%p activeInHierarchy=%d orderRead=%d spriteRead=%d",
-     phase,depth,goName,sr,enabled,order,sprite,active,orderRead,spriteRead);bootlog(line);
-    if(srr)ui_unroot(srr);}}
- }
- int count=0;void *cc=find_method(ui_class(transform),"get_childCount",0);
- if(cc){int o2=0;void *b=call_obj(cc,transform,NULL,&o2);if(o2&&b&&ui_unbox(b))count=*(int*)ui_unbox(b);}
- void *gc=find_method(ui_class(transform),"GetChild",1);
- for(int i=0;i<count&&*budget>0;i++){int o3=0;void *a[]={&i};void *ch=gc?call_obj(gc,transform,a,&o3):NULL;
-  if(o3&&ch)sprite_walk_node(ch,depth+1,budget,phase);}
- ui_unroot(tr);
-}
-static void sprite_walk_tree(void *app,const char *phase){
- if(!app)return;
- void *g=find_method(ui_class(app),"get_gameObject",0);int ok=0;
- void *go=g?call_obj(g,app,NULL,&ok):NULL;
- if(!ok||!go){char l[120];snprintf(l,sizeof(l),"sprite tree %s app=%p no-gameobject",phase,app);bootlog(l);return;}
- uintptr_t gr=ui_root(go);
- void *tr=find_method(ui_class(go),"get_transform",0);ok=0;
- void *t=tr?call_obj(tr,go,NULL,&ok):NULL;
- if(!ok||!t){char l[120];snprintf(l,sizeof(l),"sprite tree %s app=%p no-transform",phase,app);bootlog(l);}
- else{int budget=160;char l[120];snprintf(l,sizeof(l),"sprite tree %s begin app=%p budget=%d",phase,app,budget);bootlog(l);
-  sprite_walk_node(t,0,&budget,phase);}
- if(gr)ui_unroot(gr);
-}
-static void sprite_playback_dump_list(void *list,const char *phase){
- (void)list;
- LONG n=g_spriteTrackCount;if(n>SPRITE_TRACK_MAX)n=SPRITE_TRACK_MAX;
- char line[160];snprintf(line,sizeof(line),"sprite track %s count=%d dropped=%ld",phase,(int)n,(long)g_spriteTrackDropped);bootlog(line);
- for(LONG i=0;i<n;i++){
-  SpriteTrack *t=&g_spriteTracks[i];if(!t->renderer)continue;
-  uintptr_t rr=ui_root(t->renderer);
-  char lbl[32];snprintf(lbl,sizeof(lbl),"track%ld calls=%ld changed=%ld",i,(long)t->calls,(long)t->changed);
-  sprite_renderer_state(t->renderer,lbl);
-  if(rr)ui_unroot(rr);
- }
-}
-static void sprite_playback_tick(void){
- if(!wedge_probe_main_thread()||!g_playbackWatchApp)return;
- if(!enabled_now()||!director_observe_enabled()||rfield(g_playbackWatchApp,"_playableDirector")!=g_playbackWatchDirector){
-  sprite_playback_watch_end();return;
- }
- int ok=0;
- void *current=call_obj(watchAssetGetter,g_playbackWatchDirector,NULL,&ok);
- if(!ok||current!=watchAsset||!director_playing(g_playbackWatchApp)){
-  sprite_playback_watch_end();return;
- }
- double before=g_playbackTimeLast;
- sprite_playback_sample(g_playbackWatchApp,g_playbackWatchDirector,NULL);
- DWORD now=GetTickCount();
- if(before!=g_playbackTimeLast)watchLastProgress=now;
- else if((DWORD)(now-watchLastProgress)>=3000){
-  bootlog("sprite observation closed: director time stalled for 3 seconds");
-  sprite_playback_watch_end();return;
- }
- if(g_playbackSamples<=4)sprite_playback_dump_list(NULL,"during");
-}
-static void sprite_playback_summary(const char *phase){
- char line[240];snprintf(line,sizeof(line),"sprite playback %s samples=%ld changes=%ld timeFirst=%.3f timeLast=%.3f errors=%ld",
-  phase,(long)g_playbackSamples,(long)g_playbackChanges,g_playbackTimeFirst,g_playbackTimeLast,(long)g_playbackErrors);
- bootlog(line);}
-/* <<< sprite evidence block <<< */
 static void application_quit_hook(void *mi){
  InterlockedExchange(&g_quitting,1);
  /* No Destroy, Addressables release, managed calls or disk flush during shutdown. */
@@ -3705,13 +3195,10 @@ static void application_quit_hook(void *mi){
 /* Opt-in observation of verified static linked binding methods. */
 static void *orig_link_matches,*orig_link_resolve;
 static void *method_by_types_one(void *klass,const char *name,const char **types,int count);
-static int link_diag_enabled(void){wchar_t p[32768];if(!GetModuleFileNameW(g_self,p,32768))return 0;wchar_t *q=wcsrchr(p,L'\\');if(!q)return 0;lstrcpyW(q+1,L"linked-diagnostics.enabled");return GetFileAttributesW(p)!=INVALID_FILE_ATTRIBUTES;}
 static int linked_is_static(void *klass,void *method){
  void *obj=((void *(*)(void *,void *))api[API_METHOD_OBJECT])(method,klass);if(!obj)return 0;uintptr_t root=ui_root(obj);
  void *get=find_method(ui_class(obj),"get_IsStatic",0);int result=get?call_bool(get,obj,NULL):0;ui_unroot(root);return result==1;
 }
-#include "team_observe.h"
-static void *team_model_getter,*team_ally_method;
 static int team_instance_method(void *klass,void *method){
  void *obj=((void *(*)(void *,void *))api[API_METHOD_OBJECT])(method,klass);if(!obj)return 0;
  uintptr_t root=ui_root(obj);if(!root)return 0;void *get=find_method(ui_class(obj),"get_IsStatic",0);
@@ -3721,764 +3208,38 @@ static int team_returns(void *method,const char *expected){
  void *t=((void *(*)(void *))api[API_RETURN_TYPE])(method);char *n=t?((char *(*)(void *))api[API_TYPE_NAME])(t):NULL;
  int ok=n&&!strcmp(n,expected);if(n)((void (*)(void *))api[API_FREE])(n);return ok;
 }
-static int team_compare(void *left,void *right){
- Unit *a=left,*b=right;if(!a||!b||!a->used||!b->used||a->dead||b->dead||!a->view||!b->view)return -1;
- int ok=0;void *ma=call_obj(team_model_getter,a->view,NULL,&ok);uintptr_t ar=ma?ui_root(ma):0;if(!ok||!ar)return -1;
- void *mb=call_obj(team_model_getter,b->view,NULL,&ok);uintptr_t br=mb?ui_root(mb):0;int value=-1;
- if(ok&&br){void *args[]={mb};value=call_bool(team_ally_method,ma,args);}if(br)ui_unroot(br);ui_unroot(ar);return value;
-}
-static void team_log(const char *a,const char *b,int value){char s[320];snprintf(s,sizeof(s),"wedge team comparison left=%.90s right=%.90s isAlly=%d",a?a:"?",b?b:"?",value);bootlog(s);}
-static void wedge_team_observe_tick(void){
- static int scans=0;static uintptr_t previous=0;static DWORD last=0;if(scans>=4||!enabled_now()||!g_game||(DWORD)(GetTickCount()-last)<1000)return;last=GetTickCount();
- wchar_t path[32768];DWORD n=GetModuleFileNameW(g_self,path,32768);wchar_t *slash=n&&n<32768?wcsrchr(path,L'\\'):NULL;if(!slash)return;
- lstrcpyW(slash+1,L"wedge-team-observe.enable");if(GetFileAttributesW(path)==INVALID_FILE_ATTRIBUTES)return;
- TeamObserveRow rows[SR_UNIT_MAX];int count=0,hasWedge=0;uintptr_t signature=1469598103934665603ULL;
- for(int i=0;i<SR_UNIT_MAX;i++){Unit *u=&g_units[i];if(!u->used||u->dead||!u->view)continue;rows[count++]=(TeamObserveRow){u,u->baseName};signature=(signature^(uintptr_t)u->view)*1099511628211ULL;
-  if((!strncmp(u->baseName,"10316",5)||!strncmp(u->baseName,"11017",5)||!strncmp(u->baseName,"11116",5))&&(u->baseName[5]==0||u->baseName[5]=='_'))hasWedge=1;}
- if(count<2||!hasWedge||(scans&&signature==previous))return;
- void *view=((void *(*)(void *,const char *,const char *))api[API_CLASS])(g_game,"","BattleUnitView");
- void *model=((void *(*)(void *,const char *,const char *))api[API_CLASS])(g_game,"","BattleUnitModel");
- const char *types[]={"BattleUnitModel"};team_model_getter=view?method_by_types_one(view,"get_unitModel",NULL,0):NULL;
- team_ally_method=model?method_by_types_one(model,"IsAlly",types,1):NULL;
- if(!team_model_getter||!team_ally_method||!team_returns(team_model_getter,"BattleUnitModel")||!team_returns(team_ally_method,"System.Boolean")||!team_instance_method(view,team_model_getter)||!team_instance_method(model,team_ally_method)){scans=4;bootlog("wedge team observation unavailable: signature or static verification");return;}
- TeamObserveOps ops={team_compare,team_log};int logged=team_observe_run(1,rows,count,&ops);previous=signature;scans++;
- char msg[160];snprintf(msg,sizeof(msg),"wedge team observation completed scan=%d units=%d logged=%d possible=%d capped=%d",scans,count,logged,count*(count-1)/2,count*(count-1)/2>logged);bootlog(msg);
-}
-static int linked_pair_id(const char *base,const char *look,int id){
- const char *b=id==1583?"11116":id==1584?"11017":id==1585?"10316":NULL;
- const char *l=id==1583?"story_1583_OscarAppearance":id==1584?"story_1584_PamelyAppearance":id==1585?"story_1585_PamelaAppearance":NULL;
- return base&&look&&b&&strlen(base)>=5&&!strncmp(base,b,5)&&!strcmp(look,l);
-}
-static int linked_alias_id(Unit *u,int id){
+#include "wedge_identity.h"
+static int visible_wedge_role(Unit *u){
  if(!u||!u->used||u->dead||!u->view)return 0;
- void *current=rfield(u->view,"_curAppearance");Skin *skin=current?skin_for_app(u,current):NULL;
- return skin&&skin->row>=0&&linked_pair_id(u->baseName,g_rows[skin->row].identity,id);
+ Skin *skin=skin_for_app(u,rfield(u->view,"_curAppearance"));
+ if(!skin||skin->row<0||(uint32_t)skin->row>=g_rowCount)return 0;
+ const PoolRow *row=&g_rows[skin->row];
+ if(strcmp(skin->look,row->appearance_name))return 0;
+ return wedge_role(u->baseName,row->identity);
 }
 static uint8_t linked_matches_hook(void *app,int id,uint8_t flag,void *mi){
- uint8_t result=((uint8_t (*)(void *,int,uint8_t,void *))orig_link_matches)(app,id,flag,mi);
- if(enabled_now()&&!result&&linked_alias_id(unit_for_app(app),id))result=1;
- static LONG match_logs; if(link_diag_enabled()&&InterlockedIncrement(&match_logs)<=80&&((id>=1580&&id<=1585)||id==10316||id==11017||id==11116||id==10216||id==11216)){Unit *u=unit_for_app(app);char line[300];snprintf(line,sizeof(line),"linked matches app=%p base=%.80s id=%d flag=%u result=%u",app,u?u->baseName:"unknown",id,(unsigned)flag,(unsigned)result);bootlog(line);}return result;
+ uint8_t matched=((uint8_t (*)(void *,int,uint8_t,void *))orig_link_matches)(app,id,flag,mi);
+ if(matched||!enabled_now()||cleanup_pending||!wedge_role_id(id))return matched;
+ return visible_wedge_role(unit_for_app(app))==id;
 }
-#include "visible_resolve.h"
-static void *vr_original(void *a,int id,void *mi){return ((void *(*)(void *,int,void *))orig_link_resolve)(a,id,mi);}
-static void *vr_lookup(void *a){return unit_for_app(a);}
-static void *vr_base(void *u){return ((Unit *)u)->baseApp;}
-static void *vr_visible(void *u){Unit *x=(Unit *)u;return x->view?rfield(x->view,"_curAppearance"):NULL;}
-static int vr_skin(void *u,void *a){return skin_for_app((Unit *)u,a)!=NULL;}
-static int vr_scope(void *a){Unit *u=unit_for_app(a);if(!u)return 0;int id=!strncmp(u->baseName,"11116_",6)?1583:!strncmp(u->baseName,"10316_",6)?1585:!strncmp(u->baseName,"11017_",6)?1584:0;if(!id)return 0;void *cur=u->view?rfield(u->view,"_curAppearance"):NULL;Skin *skin=cur?skin_for_app(u,cur):NULL;if(skin&&skin->row>=0&&skin->row<g_rowCount&&linked_pair_id(u->baseName,g_rows[skin->row].identity,id))return 0;return 1;}
 static void *linked_resolve_hook(void *app,int id,void *mi){
- VisibleResolveOps ops={vr_original,vr_lookup,vr_base,vr_visible,vr_skin,vr_scope};void *result=visible_resolve(&ops,app,id,mi,enabled_now()&&!cleanup_pending);
- if(enabled_now()&&!result&&unit_for_app(app)){for(int i=0;i<SR_UNIT_MAX;i++)if(linked_alias_id(&g_units[i],id)){result=rfield(g_units[i].view,"_curAppearance");break;}}
- static LONG resolve_logs; if(link_diag_enabled()&&InterlockedIncrement(&resolve_logs)<=80&&((id>=1580&&id<=1585)||id==10316||id==11017||id==11116||id==10216||id==11216)){Unit *u=unit_for_app(app),*v=unit_for_app(result);char line[300];snprintf(line,sizeof(line),"linked resolve app=%p base=%.80s id=%d result=%p resultBase=%.80s",app,u?u->baseName:"unknown",id,result,v?v->baseName:"unknown");bootlog(line);}return result;
-}
-/* Optional, bounded trace only; return values and arguments are unchanged. */
-static void *orig_track_owner,*orig_track_special;
-static volatile LONG g_track_owner_logs,g_track_special_logs;
-static void track_diag_app(void *app,char *out,size_t size){
- Unit *u=app?unit_for_app(app):NULL;void *visible=u&&u->view?rfield(u->view,"_curAppearance"):NULL;
- Skin *skin=u&&visible?skin_for_app(u,visible):NULL;const char *identity=skin&&skin->row>=0&&skin->row<g_rowCount?g_rows[skin->row].identity:"base-or-unknown";snprintf(out,size,"app=%p base=%.48s baseApp=%p visible=%p look=%.56s",app,u?u->baseName:"unknown",u?u->baseApp:NULL,visible,identity);
-}
-static int track_target(void *app){Unit *u=app?unit_for_app(app):NULL;return u&&!strncmp(u->baseName,"11116",5)&&(u->baseName[5]==0||u->baseName[5]=='_');}
-static int track_detail(void *app){return app&&g_projection.app==app?g_projection.sourceDetail:-1;}
-/* Measured: the replaced appearance in a linked attack was 11116_Outis_*, but the
-   movement receiver can be the donor itself. Accept any appearance that owns a skin
-   row, so a followed movement is not invisible only because the id differs. */
-/* Why this used to log nothing: the only log line sat inside
-   "if(director_observe_enabled()&&movement_scope_target(app))", so a gate that
-   never opened produced zero lines and looked identical to a hook that was
-   never installed. The entry is now counted and printed unconditionally, and
-   the gate is reported as a reason string instead of swallowing the call. */
-static const char *movement_scope_reason(void *app,void **viewOut,void **visibleOut){
- Unit *u=app?unit_for_app(app):NULL;if(viewOut)*viewOut=NULL;if(visibleOut)*visibleOut=NULL;
- if(!app)return "app-null";
- if(!u)return "unit-missing";
- if(!u->used)return "unit-unused";
- if(u->dead)return "unit-dead";
- if(!u->view)return "view-missing";
- if(viewOut)*viewOut=u->view;
- void *visible=rfield(u->view,"_curAppearance");if(visibleOut)*visibleOut=visible;
- if(!visible)return "visible-missing";
- Skin *skin=skin_for_app(u,visible);if(!skin)return "skin-missing";
- if(skin->row<0)return "row-negative";
- return "pass";
-}
-static int movement_scope_target(void *app){return !strcmp(movement_scope_reason(app,NULL,NULL),"pass");}
-static void *orig_movement_follower;
-static volatile LONG g_movementEntered,g_movementLogged,g_movementPass,g_movementPassLogged,g_movementDisabled;
-static uint8_t movement_follower_observe(void *app,void *controller,void *track,int32_t *index,void *mi){
- uint8_t result=((uint8_t (*)(void*,void*,void*,int32_t*,void*))orig_movement_follower)(app,controller,track,index,mi);
- LONG entered=InterlockedIncrement(&g_movementEntered);
- int enabled=director_observe_enabled();
- void *view=NULL,*visible=NULL;const char *reason=movement_scope_reason(app,&view,&visible);
- if(!enabled){InterlockedIncrement(&g_movementDisabled);if(!strcmp(reason,"pass"))reason="observation-disabled";}
- if(!strcmp(reason,"pass"))InterlockedIncrement(&g_movementPass);
- int passes=!strcmp(reason,"pass");
- LONG n=InterlockedIncrement(&g_movementLogged);
- LONG pn=passes?InterlockedIncrement(&g_movementPassLogged):0;
- if(n<=96||(passes&&pn<=128)){
-  const char *trackClass=track?((const char *(*)(void *))api[API_CLASS_NAME])(ui_class(track)):"null";
-  char line[480];
-  snprintf(line,sizeof(line),"wedge movement follower entry=%ld pass=%ld reason=%s enabled=%d app=%p view=%p visible=%p controller=%p track=%p trackClass=%.80s index=%d hasIndex=%d result=%u",
-   entered,pn,reason,enabled,app,view,visible,controller,track,trackClass?trackClass:"unknown",index?*index:-1,index!=NULL,(unsigned)result);
-  bootlog(line);
+ void *stock=((void *(*)(void *,int,void *))orig_link_resolve)(app,id,mi);
+ if(stock||!enabled_now()||cleanup_pending||!wedge_role_id(id))return stock;
+ Unit *owner=unit_for_app(app);
+ if(!owner||!owner->used||owner->dead||!owner->view)return NULL;
+ void *visible=rfield(owner->view,"_curAppearance");
+ if(!wedge_native_actor(owner->baseName)||!visible||(visible!=owner->baseApp&&!visible_wedge_role(owner)))return NULL;
+ void *match=NULL;
+ for(int i=0;i<SR_UNIT_MAX;i++){
+  Unit *u=&g_units[i];if(visible_wedge_role(u)!=id)continue;
+  if(match)return NULL;
+  match=rfield(u->view,"_curAppearance");
  }
- return result;
+ return match;
 }
-static void director_owner_observe(void *app,void *track,void *result);
-static void director_observe(void *arg,int phase);
-static int director_observe_enabled(void);
-typedef struct {void *director,*track,*app,*other,*mi;} DirectorObserveCtx;
-static const char *follower_component_one(void *app,void *type,void **result);
-/* Walk an object's transform chain upward and print the names, so ownership of a
-   binding can be read off the log without guessing from pointers. */
-/* List the direct children of the GameObject that owns a binding, so the log shows
-   whether the animation path prefix (ScaleAndPositionPivot/...) actually exists
-   under the binding root. */
-static void go_children(void *obj,char *out,size_t size){
- out[0]=0;if(!obj){snprintf(out,size,"null");return;}
- void *tr=find_method(ui_class(obj),"get_transform",0);int ok=0;
- void *t=tr?call_obj(tr,obj,NULL,&ok):NULL;if(!ok||!t){snprintf(out,size,"no-transform");return;}
- uintptr_t troot=ui_root(t);size_t used=0;
- int count=((int (*)(void *))api[API_PARAM_COUNT])(t);
- (void)count;
- void *childCount=find_method(ui_class(t),"get_childCount",0);
- void *getChild=find_method(ui_class(t),"GetChild",1);
- int n=0;if(childCount){ok=0;void *box=call_obj(childCount,t,NULL,&ok);if(ok&&box&&ui_unbox(box))n=*(int*)ui_unbox(box);}
- if(!getChild||n<0)n=0;if(n>6)n=6;
- for(int i=0;i<n;i++){
-  void *args[]={&i};ok=0;void *c=getChild?call_obj(getChild,t,args,&ok):NULL;
-  const char *nm="?";if(ok&&c){uintptr_t cr=ui_root(c);void *g=find_method(ui_class(c),"get_gameObject",0);ok=0;
-   void *go=g?call_obj(g,c,NULL,&ok):NULL;
-   if(ok&&go){void *ng=find_method(ui_class(go),"get_name",0);ok=0;void *ns=ng?call_obj(ng,go,NULL,&ok):NULL;
-    if(ok&&ns){uintptr_t sr=ui_root(ns);static _Thread_local char buf[80];if(sr){if(string_ascii(ns,buf,sizeof(buf)))nm=buf;ui_unroot(sr);}}}
-   if(cr)ui_unroot(cr);}
-  int w=snprintf(out+used,size>used?size-used:0,"%s%s",i?",":"",nm);if(w<0)break;used+=(size_t)w;if(size&&used>=size-1)break;
- }
- if(troot)ui_unroot(troot);
-}
-static void go_chain(void *obj,char *out,size_t size){
- out[0]=0;if(!obj){snprintf(out,size,"null");return;}
- void *tr=find_method(ui_class(obj),"get_transform",0);
- int ok=0;void *t=tr?call_obj(tr,obj,NULL,&ok):NULL;if(!ok||!t){snprintf(out,size,"no-transform");return;}
- uintptr_t troot=ui_root(t);size_t used=0;
- for(int depth=0;t&&depth<4;depth++){
-  void *getter=find_method(ui_class(t),"get_gameObject",0);ok=0;
-  void *go=getter?call_obj(getter,t,NULL,&ok):NULL;
-  const char *name="?";if(ok&&go){void *ng=find_method(ui_class(go),"get_name",0);ok=0;void *ns=ng?call_obj(ng,go,NULL,&ok):NULL;
-  if(ok&&ns){uintptr_t sr=ui_root(ns);static _Thread_local char buf[96];
-   if(sr){int valid=string_ascii(ns,buf,sizeof(buf));if(valid)name=buf;ui_unroot(sr);}}}
-  int n=snprintf(out+used,size>used?size-used:0,"%s%s",depth?"<":"",name);
-  if(n<0)break;used+=(size_t)n;if(size&&used>=size-1)break;
-  void *parentGetter=find_method(ui_class(t),"get_parent",0);ok=0;
-  void *parent=parentGetter?call_obj(parentGetter,t,NULL,&ok):NULL;t=(ok&&parent)?parent:NULL;
- }
- if(troot)ui_unroot(troot);
-}
-/* Animator lives in UnityEngine.AnimationModule, not in the core image, so a
-   g_core lookup returns null. Scan every assembly for the namespace/class pair. */
-static void *unity_class_anywhere(const char *ns,const char *name){
- void *direct=((void *(*)(void *,const char *,const char *))api[API_CLASS])(g_core,ns,name);
- if(direct)return direct;
- void *domain=((void *(*)(void))api[API_DOMAIN])();size_t n=0;
- const void **asms=((const void **(*)(void *,size_t *))api[API_ASSEMBLIES])(domain,&n);
- for(size_t i=0;asms&&i<n;i++){
-  void *img=((void *(*)(const void *))api[API_IMAGE])(asms[i]);if(!img)continue;
-  void *k=((void *(*)(void *,const char *,const char *))api[API_CLASS])(img,ns,name);
-  if(k)return k;
- }
- return NULL;
-}
-static double link_clock_now(LinkVisualClock *clock,void *director){
- static void *frameGetter,*deltaGetter;
- static int resolved;
- if(!resolved){
-  void *clockClass=unity_class_anywhere("UnityEngine","Time");
-  void *f=find_method(clockClass,"get_frameCount",0),*d=find_method(clockClass,"get_deltaTime",0);
-  if(f&&linked_is_static(clockClass,f)&&team_returns(f,"System.Int32"))frameGetter=f;
-  if(d&&linked_is_static(clockClass,d)&&team_returns(d,"System.Single"))deltaGetter=d;
-  resolved=1;
- }
- int frame=frameGetter?call_int(frameGetter,NULL,NULL):-1,ok=0;
- void *box=deltaGetter?call_obj(deltaGetter,NULL,NULL,&ok):NULL;
- float *value=ok&&box?(float *)ui_unbox(box):NULL;
- double delta=value?*value:0;
- ok=0;box=director&&director_time_method?call_obj(director_time_method,director,NULL,&ok):NULL;
- double *time=ok&&box?(double *)ui_unbox(box):NULL;
- return link_clock_step(clock,frame,delta,time?*time:NAN);
-}
-/* GetOwner is the only linked-track entry the game actually calls (measured:
-   222 calls vs 0 BindSpecial calls in one battle). Observe the playable binding
-   from here, once per distinct track, so the binding fact does not depend on a
-   path the game never takes. */
-static void director_observe_from_owner(void *app,void *track){
- if(!director_binding_method||!app||!track||!director_observe_enabled())return;
- static void *seen[96];static int seenCount;
- for(int i=0;i<seenCount;i++)if(seen[i]==track)return;
- if(seenCount>=96)return;seen[seenCount++]=track;
- void *director=rfield(app,"_playableDirector");if(!director)return;
- void *klass=ui_class(director);while(klass&&klass!=director_class)klass=ui_parent(klass);if(!klass)return;
- uintptr_t dr=ui_root(director);if(!dr)return;
- DirectorObserveCtx ctx={director,track,app,NULL,NULL};director_observe(&ctx,1);
- ui_unroot(dr);
-}
-static void *track_owner_hook(void *app,void *track,void *mi){
- void *ret=((void *(*)(void *,void *,void *))orig_track_owner)(app,track,mi);
- director_observe_from_owner(app,track);
- const WedgeTrack *identity=(app==g_wedgeMapApp&&g_wedgeBorrow.detail==g_wedgeMapDetail)?wedge_map_find(&g_wedgeTrackMap,track):NULL;
- if(identity&&!ret)ret=wedge_presentation_owner(app,identity->owner);
- if(identity&&track_diag_enabled()){static LONG mapLogs;if(InterlockedIncrement(&mapLogs)<=250){char line[320];snprintf(line,sizeof(line),"wedge track identity detail=%d track=%p path=%s owner=%d name=%.95s",g_wedgeBorrow.detail,track,identity->path,identity->owner,identity->name);bootlog(line);}}
- if(!ret&&wedge_borrow_match(&g_wedgeBorrow,app,g_wedgeBorrow.detail)){
-  void *fallback=((void *(*)(void *,void *,void *))orig_track_owner)(g_wedgeBorrow.base,track,mi);
-  Unit *resolved=fallback?unit_for_app(fallback):NULL;
-  void *visible=resolved&&resolved->view?rfield(resolved->view,"_curAppearance"):NULL;
-  if(visible&&unit_for_app(visible)==resolved)ret=visible;
-  else if(resolved)ret=fallback;
-  static LONG fallbackLogs;if(track_diag_enabled()&&InterlockedIncrement(&fallbackLogs)<=120){char line[250];snprintf(line,sizeof(line),"wedge owner fallback detail=%d donor=%p base=%p track=%p resolved=%p visible=%p result=%p",g_wedgeBorrow.detail,app,g_wedgeBorrow.base,track,fallback,visible,ret);bootlog(line);}
- }
- if(track_diag_enabled()&&(track_target(app)||track_target(ret))&&InterlockedIncrement(&g_track_owner_logs)<=250){char a[180],b[180],line[480];track_diag_app(app,a,sizeof(a));track_diag_app(ret,b,sizeof(b));snprintf(line,sizeof(line),"linked track owner detail=%d track=%p input={%s} result={%s}",track_detail(app),track,a,b);bootlog(line);}director_owner_observe(app,track,ret);return ret;
-}
-#include "observe_policy.h"
-static int director_observe_enabled(void){wchar_t p[32768];DWORD n=GetModuleFileNameW(g_self,p,32768);wchar_t *q=n&&n<32768?wcsrchr(p,L'\\'):NULL;if(!q)return 0;lstrcpyW(q+1,L"wedge-director-observe.enabled");DWORD a=GetFileAttributesW(p);return a!=INVALID_FILE_ATTRIBUTES&&!(a&FILE_ATTRIBUTE_DIRECTORY);}
-/* The binding returned by GetGenericBinding can be a CharacterAppearance, an
-   Animator, or a Transform. The name decides whether comparing it with a
-   SpriteRenderer list is even meaningful. */
-static const char *director_binding_kind(void *binding){
- if(!binding)return "null";
- for(void *k=ui_class(binding);k;k=ui_parent(k)){
-  const char *n=((const char *(*)(void *))api[API_CLASS_NAME])(k);if(!n)continue;
-  if(strstr(n,"CharacterAppearance"))return "appearance";
-  if(strstr(n,"Animator"))return "animator";
-  if(strstr(n,"Transform"))return "transform";
-  if(strstr(n,"GameObject"))return "gameobject";
-  if(strstr(n,"SpriteRenderer"))return "renderer";
- }
- return "other";
-}
-static int director_renderer_contains(void *list,void *binding,int *size){
- *size=-1;if(!list)return 0;uintptr_t lr=ui_root(list);if(!lr)return 0;
- void *k=ui_class(list);const char *types[]={"System.Int32"};
- void *countMethod=k?method_by_types_one(k,"get_Count",NULL,0):NULL,*itemMethod=k?method_by_types_one(k,"get_Item",types,1):NULL;
- int same=0,ok=0;void *box=NULL;void *spriteClass=((void *(*)(void *,const char *,const char *))api[API_CLASS])(g_core,"UnityEngine","SpriteRenderer");if(!spriteClass)goto done;
- if(!countMethod||!itemMethod||!team_instance_method(k,countMethod)||!team_instance_method(k,itemMethod)||!team_returns(countMethod,"System.Int32")||!team_returns(itemMethod,"UnityEngine.SpriteRenderer"))goto done;
- box=call_obj(countMethod,list,NULL,&ok);if(!ok||!box||!ui_unbox(box))goto done;
- int n=*(int*)ui_unbox(box);if(n<0||n>128)goto done;*size=n;
- for(int i=0;i<n;i++){void *args[]={&i};void *item=call_obj(itemMethod,list,args,&ok);if(!ok){*size=-1;same=0;goto done;}void *ik=item?ui_class(item):NULL,*parent=ik;while(parent&&parent!=spriteClass)parent=ui_parent(parent);int valid=!item||parent!=NULL;if(i<8||!valid||(item&&item==binding)){const char *name=ik?((const char *(*)(void *))api[API_CLASS_NAME])(ik):NULL;char line[240];snprintf(line,sizeof(line),"director renderer item index=%d object=%p class=%.100s valid=%d binding=%p same=%d",i,item,name?name:"null",valid,binding,valid&&item&&item==binding);bootlog(line);}if(!valid){*size=-1;same=0;goto done;}if(item&&item==binding)same=1;}
-done:ui_unroot(lr);return same;
-}
-static void director_observe(void *arg,int phase){
- DirectorObserveCtx*c=arg;int ok=0;void *args[]={c->track};void *exc=NULL;
- void *binding=ui_invoke(director_binding_method,c->director,args,&exc);uintptr_t br=binding&&!exc?ui_root(binding):0;
- /* Split the three ways this can fail instead of collapsing them into one flag:
-    the invoke can throw, it can return null, or it can return a box whose
-    payload is not a double. "time=unavailable" alone hid which one happened. */
- void *timeExc=NULL;void *timeBox=NULL;double when=0;int timeok=0;
- if(director_time_method){timeBox=ui_invoke(director_time_method,c->director,NULL,&timeExc);
-  if(!timeExc&&timeBox&&ui_unbox(timeBox)){when=*(double*)ui_unbox(timeBox);timeok=isfinite(when);}}
- void *renderer=NULL;if(director_renderer_getter&&c->app){ok=0;renderer=call_obj(director_renderer_getter,c->app,NULL,&ok);if(!ok)renderer=NULL;}
- const char *klass=br?((const char *(*)(void *))api[API_CLASS_NAME])(ui_class(binding)):NULL;char line[620];int rendererCount=-1;int same=director_renderer_contains(renderer,binding,&rendererCount);
- int baseParts=-2,curParts=-2;
- {Unit *pu=c->app?unit_for_app(c->app):NULL;
-  if(pu&&pu->baseApp&&director_renderer_getter){int o=0;void *bl=call_obj(director_renderer_getter,pu->baseApp,NULL,&o);if(o&&bl){int sz=-1;director_renderer_contains(bl,NULL,&sz);baseParts=sz;}}
-  if(c->app&&director_renderer_getter){int o=0;void *cl=call_obj(director_renderer_getter,c->app,NULL,&o);if(o&&cl){int sz=-1;director_renderer_contains(cl,NULL,&sz);curParts=sz;}}}
- char bindChain[220],appChain[220],bindKids[220],appKids[220];
- go_children(binding,bindKids,sizeof(bindKids));go_children(c->app,appKids,sizeof(appKids));
- go_chain(binding,bindChain,sizeof(bindChain));go_chain(c->app,appChain,sizeof(appChain));
- void *animClass=unity_class_anywhere("UnityEngine","Animator");
- void *animType=animClass?((void *(*)(void *))api[API_TYPE_OBJECT])(((void *(*)(void *))api[API_CLASS_TYPE])(animClass)):NULL;
- uintptr_t atr=animType?ui_root(animType):0;void *baseAnim=NULL,*curAnim=NULL;const char *baseAnimStatus="none",*curAnimStatus="none";
- if(atr){Unit *u=c->app?unit_for_app(c->app):NULL;if(u&&u->baseApp)baseAnimStatus=follower_component_one(u->baseApp,animType,&baseAnim);else baseAnimStatus="no-base-app";if(c->app)curAnimStatus=follower_component_one(c->app,animType,&curAnim);else curAnimStatus="no-app";}else{baseAnimStatus="no-animator-type";curAnimStatus="no-animator-type";}
- /* Two lines on purpose: a single line with every field overflowed char[620]
-    and silently lost rendererCount/time/animator status after the paths. */
- snprintf(line,sizeof(line),"director binding phase=%s director=%p track=%p app=%p other=%p binding=%p class=%.100s kind=%s bindIsApp=%d bindIsOther=%d baseParts=%d curParts=%d",phase?"after":"before",c->director,c->track,c->app,c->other,binding,klass?klass:"unknown",director_binding_kind(binding),binding==c->app,binding==c->other,baseParts,curParts);bootlog(line);
- snprintf(line,sizeof(line),"director path phase=%s track=%p bindGo=%.110s appGo=%.110s bindKids=%.110s appKids=%.110s",phase?"after":"before",c->track,bindChain,appChain,bindKids,appKids);bootlog(line);
- snprintf(line,sizeof(line),"director state phase=%s track=%p rendererList=%p rendererCount=%d same=%d time=%s%.6f timeOk=%d timeBox=%p timeExc=%p exception=%d animClass=%p animType=%p baseAnim=%p baseAnimStatus=%s curAnim=%p curAnimStatus=%s bindIsBaseAnim=%d bindIsCurAnim=%d",phase?"after":"before",c->track,renderer,rendererCount,same,timeok?"":"unavailable:",when,timeok,timeBox,timeExc,exc!=NULL,animClass,animType,baseAnim,baseAnimStatus,curAnim,curAnimStatus,(binding&&baseAnim&&binding==baseAnim),(binding&&curAnim&&binding==curAnim));bootlog(line);
- if(br)ui_unroot(br);if(atr)ui_unroot(atr);
-}
-static void wedge_probe_bindings(void *app,void *director){
- if(!director_binding_method||!director_observe_enabled()||!wedge_probe_main_thread()||!app||app!=g_wedgeMapApp||!director||rfield(app,"_playableDirector")!=director)return;
- uintptr_t dr=ui_root(director);if(!dr)return;static LONG budget;
- for(int i=0;i<g_wedgeTrackMap.count;i++){
-  WedgeTrack *track=&g_wedgeTrackMap.rows[i];if(!track->ptr||!track->root)continue;
-  if(InterlockedIncrement(&budget)>512)break;
-  char line[240];snprintf(line,sizeof(line),"wedge post-bind track=%p owner=%d path=%s name=%.95s",track->ptr,track->owner,track->path,track->name);bootlog(line);
-  DirectorObserveCtx ctx={director,track->ptr,app,NULL,NULL};director_observe(&ctx,1);
- }
- ui_unroot(dr);
-}
-static void director_owner_observe(void *app,void *track,void *result){
- static LONG observed;if(!director_binding_method||!app||!track||!director_observe_enabled())return;
- if(app!=g_wedgeMapApp||!wedge_map_find(&g_wedgeTrackMap,track))return;
- static LONG unavailable;void *director=rfield(app,"_playableDirector");if(!director){if(InterlockedIncrement(&unavailable)<=32)bootlog("director owner candidate unavailable: app director null");return;}
- void *klass=ui_class(director);while(klass&&klass!=director_class)klass=ui_parent(klass);if(!klass){if(InterlockedIncrement(&unavailable)<=32)bootlog("director owner candidate unavailable: director type mismatch");return;}
- if(InterlockedIncrement(&observed)>512)return;
- char line[180];snprintf(line,sizeof(line),"director owner candidate app=%p result=%p directorSource=app._playableDirector",app,result);bootlog(line);
- DirectorObserveCtx ctx={director,track,app,result,NULL};director_observe(&ctx,1);
-}
-static unsigned char director_original(void *arg){DirectorObserveCtx*c=arg;return ((uint8_t (*)(void *,void *,void *,void *,void *))orig_track_special)(c->director,c->track,c->app,c->other,c->mi);}
-static uint8_t track_special_hook(void *director,void *track,void *app,void *other,void *mi){
- static LONG observed;int relevant=track&&wedge_map_find(&g_wedgeTrackMap,track)!=NULL;
- int observe=director_binding_method&&director&&relevant&&director_observe_enabled()&&InterlockedIncrement(&observed)<=512;
- DirectorObserveCtx ctx={director,track,app,other,mi};ObservePolicy ops={director_observe,director_original};uint8_t ret=observe_policy_run(&ctx,observe,&ops);
- if(track_diag_enabled()&&(track_target(app)||track_target(other))&&InterlockedIncrement(&g_track_special_logs)<=250){char a[180],b[180],line[500];track_diag_app(app,a,sizeof(a));track_diag_app(other,b,sizeof(b));snprintf(line,sizeof(line),"linked track special detail=%d director=%p track=%p first={%s} second={%s} result=%u",track_detail(track_target(app)?app:other),director,track,a,b,(unsigned)ret);bootlog(line);}return ret;
-}
-static int track_diag_enabled(void){wchar_t p[32768];DWORD n=GetModuleFileNameW(g_self,p,32768);wchar_t *q=n&&n<32768?wcsrchr(p,L'\\'):NULL;if(!q)return 0;lstrcpyW(q+1,L"linked-track-observe.enable");DWORD a=GetFileAttributesW(p);return a!=INVALID_FILE_ATTRIBUTES&&!(a&FILE_ATTRIBUTE_DIRECTORY);}
-static int track_return_is(void *m,const char *expected){void *t=((void *(*)(void *))api[API_RETURN_TYPE])(m);char *n=t?((char *(*)(void *))api[API_TYPE_NAME])(t):NULL;int ok=n&&!strcmp(n,expected);if(n)((void (*)(void *))api[API_FREE])(n);return ok;}
-/* Opt-in, synchronous observation of the actual presentation follower list. */
-#include "followers_observe.h"
-static void *follower_getter,*follower_view_class,*follower_presentation_class,*follower_original;
-static int slot_optin(void);static void slot_snapshot(void*,int);
-typedef struct {void *self,*mi,*list,*item_method;uintptr_t root;int motion,phase;uint8_t flag;const char *error;} FollowerContext;
-static int follower_count(void *arg){
- FollowerContext *c=arg;if(slot_optin())slot_snapshot(c->self,c->phase++);c->list=NULL;c->root=0;c->item_method=NULL;c->error=NULL;
- void *exc=NULL;void *list=ui_invoke(follower_getter,c->self,NULL,&exc);
- if(exc){c->error="getter exception";return -1;}if(!list){c->error="getter returned null";return -1;}
- c->root=ui_root(list);if(!c->root){c->error="root failed";return -1;}c->list=list;
- void *k=ui_class(list);const char *it[]={"System.Int32"};
- void *count=k?method_by_types_one(k,"get_Count",NULL,0):NULL,*item=k?method_by_types_one(k,"get_Item",it,1):NULL;
- if(!count||!item||!team_instance_method(k,count)||!team_instance_method(k,item)||!team_returns(count,"System.Int32")||!team_returns(item,"BattleUnitView")){c->error="list signature";return -1;}
- c->item_method=item;void *box=ui_invoke(count,list,NULL,&exc);
- if(exc||!box){c->error=exc?"count exception":"count null";return -1;}
- void *unboxed=ui_unbox(box);if(!unboxed){c->error="count unbox";return -1;}int n=*(int*)unboxed;
- if(n<0){c->error="negative count";return -1;}return n;
-}
-static void *follower_item(void *arg,int i){
- FollowerContext *c=arg;void *exc=NULL,*args[]={&i};void *view=ui_invoke(c->item_method,c->list,args,&exc);
- if(exc){c->error="item exception";return NULL;}if(!view){c->error="item null";return NULL;}
- void *k=ui_class(view);while(k&&k!=follower_view_class)k=ui_parent(k);
- if(!k){c->error="item type mismatch";return NULL;}return view;
-}
-static void follower_log(void *arg,int phase,int index,void *view){
- FollowerContext *c=arg;char line[400];
- if(index>=0){Unit *u=view?event_unit_for_view(view):NULL;void *current=u?rfield(u->view,"_curAppearance"):NULL;Skin *skin=current?skin_for_app(u,current):NULL;const char *look=skin&&skin->row>=0&&(uint32_t)skin->row<g_rowCount?g_rows[skin->row].identity:"unknown";
- snprintf(line,sizeof(line),"followers phase=%s index=%d view=%p base=%.80s look=%.80s current=%p status=%s",phase?"after":"before",index,view,u?u->baseName:"unknown",look,current,c->error?c->error:"ok");bootlog(line);c->error=NULL;}
- else {int n=(int)(intptr_t)view;snprintf(line,sizeof(line),"followers phase=%s count=%d shown=%d capped=%d status=%s",phase?"after":"before",n,n<0?0:(n>8?8:n),n>8,c->error?c->error:"ok");bootlog(line);if(c->root)ui_unroot(c->root);c->root=0;c->list=NULL;}
-}
-static _Thread_local void *g_wedgePresentation;
-static _Thread_local void *g_wedgePresentationAction;
-static _Thread_local uintptr_t g_wedgePresentationRoot;
-static void wedge_presentation_clear(void){if(g_wedgePresentationRoot)ui_unroot(g_wedgePresentationRoot);g_wedgePresentationRoot=0;g_wedgePresentation=NULL;g_wedgePresentationAction=NULL;g_wedgeBoundMotion=-1;}
-static void wedge_presentation_capture(void *presentation,Unit *actor,int motion){
- wedge_presentation_clear();if(!presentation||!actor||!actor->observedViewer||!actor->viewerActive)return;
- if(rfield(presentation,"_actor")!=actor->view||rfield(presentation,"_viewer")!=actor->observedViewer)return;
- uintptr_t h=ui_root(presentation);if(h){g_wedgePresentation=presentation;g_wedgePresentationRoot=h;g_wedgePresentationAction=actor->observedAction;g_wedgeBoundMotion=motion;}
-}
-static int wedge_view_identity(Unit *u,int id){char b[16];if(!u||!u->used||u->dead||!u->view||id<10000||id>99999)return 0;snprintf(b,sizeof(b),"%05d",id);return !strncmp(u->baseName,b,5)&&(u->baseName[5]==0||u->baseName[5]=='_');}
-static void *wedge_presentation_owner(void *app,int id){
- void *p=g_wedgePresentation;Unit *actor=unit_for_app(app);if(!p||!actor||!actor->viewerActive||!actor->observedViewer||id<=0||rfield(p,"_actor")!=actor->view||rfield(p,"_viewer")!=actor->observedViewer)return NULL;
- if(actor->observedAction!=g_wedgePresentationAction)return NULL;
- void *found=NULL;int matches=0;if(wedge_view_identity(actor,id)){found=rfield(actor->view,"_curAppearance");if(found&&unit_for_app(found)==actor)matches++;}
- FollowerContext c={0};c.self=p;int n=follower_count(&c);if(n<0||n>8){if(c.root)ui_unroot(c.root);return NULL;}
- for(int i=0;i<n;i++){void *view=follower_item(&c,i);Unit *u=view?event_unit_for_view(view):NULL;if(u&&u->view==view&&view!=actor->view&&wedge_view_identity(u,id)){void *visible=rfield(view,"_curAppearance");if(visible&&unit_for_app(visible)==u){found=visible;matches++;}}}
- if(c.root)ui_unroot(c.root);
- if(matches)return matches==1?found:NULL;
- /* This is a visual role only. Keep the game's follower list and mask intact. */
- int eligible=pair_partner_identity(actor->baseName)==id&&pair_visual_motion(actor->baseName,g_wedgeBoundMotion,g_wedgeBoundMotion)>=0;
- int outis=wedge_view_identity(actor,11116)&&outis_follower_role(g_wedgeBoundMotion,id);
- if(!eligible&&!outis)return NULL;
- void *choices=rfield(p,"_candidates");
- int count=choices?list_count(choices):0;
- if(count<1||count>8||(!outis&&count!=1))return NULL;
- for(int i=0;i<count;i++){
-  void *view=list_item(choices,i);
-  Unit *partner=view?event_unit_for_view(view):NULL;
-  if(!partner||partner->view!=view||view==actor->view||!wedge_view_identity(partner,id))continue;
-  void *visible=rfield(view,"_curAppearance");
-  if(visible&&unit_for_app(visible)==partner){found=visible;matches++;}
- }
- return matches==1?found:NULL;
-}
-#include "pair_visual_roster.inc"
-static void follower_call_original(void *arg){FollowerContext *c=arg;((void (*)(void*,int,uint8_t,void*))follower_original)(c->self,c->motion,c->flag,c->mi);}
-static const char *follower_component_one(void *app,void *type,void **result){
- *result=NULL;if(!app)return "app-null";
- void *getter=find_method(ui_class(app),"get_gameObject",0);
- if(!getter||!team_instance_method(ui_class(app),getter)||!team_returns(getter,"UnityEngine.GameObject"))return "gameobject-signature";
- int ok=0;void *go=call_obj(getter,app,NULL,&ok);if(!ok||!go)return "gameobject-null-or-exception";
- uintptr_t gr=ui_root(go);if(!gr)return "gameobject-root";
- void *args[]={type};void *exc=NULL;void *obj=ui_invoke(m_getComponent,go,args,&exc);ui_unroot(gr);
- if(exc)return "component-exception";if(!obj)return "component-null";
- uintptr_t objRoot=ui_root(obj);if(!objRoot)return "component-root";
- void *objectClass=((void *(*)(void *,const char *,const char *))api[API_CLASS])(g_core,"UnityEngine","Object");
- const char *types[]={"UnityEngine.Object"};void *alive=objectClass?method_by_types_one(objectClass,"op_Implicit",types,1):NULL;
- if(!alive||!linked_is_static(objectClass,alive)||!team_returns(alive,"System.Boolean")){ui_unroot(objRoot);return "unity-liveness-unavailable";}
- void *aliveArgs[]={obj};int valid=call_bool(alive,NULL,aliveArgs);ui_unroot(objRoot);
- if(valid<0)return "unity-liveness-exception";if(!valid)return "component-destroyed";
- *result=obj;return "component-present";
-}
-#include "follower_frame_probe.inc"
-#include "wedge_camera_cues.inc"
-#include "link_sound_playback.inc"
-#include "link_direct_visual.inc"
-#include "link_body_overlay.inc"
-/* S6 is present in the asset bundle and in formation 12, but the current
-   stock motionList does not list it. Accept only a director already playing
-   this exact sequence for a live Oscar presentation. */
-static void link_adopt_selected_s6(void){
- static void *lastAsset,*lastAction,*lastViewer;
- if(g_wedgeBoundMotion!=12||!g_wedgePresentation||!enabled_now()||cleanup_pending){
-  lastAsset=lastAction=lastViewer=NULL;return;
- }
- if(g_wedgeTrackMap.count)return;
- void *view=rfield(g_wedgePresentation,"_actor");Unit *u=view?event_unit_for_view(view):NULL;
- if(!u||!wedge_view_identity(u,11116)||!u->viewerActive||!u->observedViewer||!u->observedAction||
-    u->observedAction!=g_wedgePresentationAction||rfield(g_wedgePresentation,"_viewer")!=u->observedViewer)return;
- void *app=rfield(view,"_curAppearance");if(!app||unit_for_app(app)!=u)return;
- void *apps[]={app,u->baseApp};
- for(int i=0;i<2;i++){
-  if(!apps[i]||(i&&app==apps[i])||!director_playing(apps[i]))continue;
-  void *director=rfield(apps[i],"_playableDirector"),*getter=wedge_probe_asset_method(ui_class(director));
-  int ok=0;void *asset=getter?call_obj(getter,director,NULL,&ok):NULL;
-  if(!ok||!asset||(asset==lastAsset&&u->observedViewer==lastViewer&&u->observedAction==lastAction))continue;
-  const char *name=wedge_name(asset);
-  if(!outis_visual_asset(12,0,name)&&!outis_visual_asset(12,1,name)&&!outis_visual_asset(12,2,name))continue;
-  if(!wedge_map_build(&g_wedgeTrackMap,&g_wedgeMapOps,rfield(asset,"m_Tracks")))return;
-  lastAsset=asset;lastAction=u->observedAction;lastViewer=u->observedViewer;
-  void *savedMapApp=g_wedgeMapApp;int savedMapDetail=g_wedgeMapDetail;
-  g_wedgeMapApp=app;g_wedgeMapDetail=12;
-  if(i==0)wedge_rebind_followers(app,director);
-  link_visual_begin(app,director,asset);
-  wedge_map_clear(&g_wedgeTrackMap,&g_wedgeMapOps);
-  g_wedgeMapApp=savedMapApp;g_wedgeMapDetail=savedMapDetail;
-  return;
- }
-}
-#include "pair_camera.inc"
-#include "follower_move.inc"
-static void wedge_rebind_followers(void *actor,void *director){
- if(!actor||!director||actor!=g_wedgeMapApp||!director_binding_method||
-    !wedge_probe_main_thread()||rfield(actor,"_playableDirector")!=director)return;
- const char *types[]={"UnityEngine.Object","UnityEngine.Object"};
- void *klass=ui_class(director);
- void *setter=method_by_types_one(klass,"SetGenericBinding",types,2);
- if(!setter||!team_instance_method(klass,setter)||!team_returns(setter,"System.Void")){
-  bootlog("wedge follower binding SetGenericBinding unavailable");return;
- }
- void *refresh=method_by_types_one(klass,"RebindPlayableGraphOutputs",NULL,0);
- if(!refresh||!team_instance_method(klass,refresh)||!team_returns(refresh,"System.Void")){
-  bootlog("wedge follower binding RebindPlayableGraphOutputs unavailable");return;
- }
- int changed=0,tracks=0,owners=0,matched=0;
- void *animClass=unity_class_anywhere("UnityEngine","Animator");
- void *animType=animClass?((void *(*)(void *))api[API_TYPE_OBJECT])(((void *(*)(void *))api[API_CLASS_TYPE])(animClass)):NULL;
- uintptr_t typeRoot=animType?ui_root(animType):0;
- void *actorAnimator=NULL;
- if(typeRoot)follower_component_one(actor,animType,&actorAnimator);
- for(int i=0;i<g_wedgeTrackMap.count;i++){
-  const WedgeTrack *track=&g_wedgeTrackMap.rows[i];
-  if(!track->root||!track->owner||!link_standard_track(track->name)||!link_instance(track->ptr,"AnimationTrack"))continue;
-  ++tracks;
-  void *owner=wedge_presentation_owner(actor,track->owner);
-  if(!owner||owner==actor)continue;
-  ++owners;
-  void *args[]={track->ptr},*exc=NULL;
-  void *bound=ui_invoke(director_binding_method,director,args,&exc);
-  if(exc||!actorAnimator||bound!=actorAnimator)continue;
-  ++matched;
-  void *target=NULL;
-  follower_component_one(owner,animType,&target);
-  if(!target||target==bound)continue;
-  void *setArgs[]={track->ptr,target};
-  ui_invoke(setter,director,setArgs,&exc);
-  int accepted=0;
-  if(!exc){void *actual=ui_invoke(director_binding_method,director,args,&exc);accepted=!exc&&actual==target;}
-  changed+=accepted;
-  char line[240];
-  snprintf(line,sizeof(line),"wedge follower binding owner=%d track=%p name=%s old=%p target=%p accepted=%d",track->owner,track->ptr,track->name,bound,target,accepted);
-  bootlog(line);
- }
- int movement=wedge_rebind_movement(actor,director,setter);
- int camera=wedge_rebind_camera_owners(actor,director,setter);
- if(changed||movement||camera){
-  void *exc=NULL;
-  ui_invoke(refresh,director,NULL,&exc);
-  bootlog(exc?"wedge follower output refresh failed":"wedge follower outputs refreshed");
- }
- if(typeRoot)ui_unroot(typeRoot);
- char summary[180];
- snprintf(summary,sizeof(summary),"wedge follower summary animationTracks=%d resolvedFollowers=%d boundToActor=%d accepted=%d",tracks,owners,matched,changed);
- bootlog(summary);
-}
-static void follower_component_side(void *presentation,const char *phase){
- static LONG calls;if(InterlockedIncrement(&calls)>256)return;
- void *view=presentation?rfield(presentation,"_actor"):NULL;Unit *u=view?event_unit_for_view(view):NULL;
- void *klass=((void *(*)(void *,const char *,const char *))api[API_CLASS])(g_game,"","CharacterAppearanceFollowControllerV2");
- void *type=klass?((void *(*)(void *))api[API_TYPE_OBJECT])(((void *(*)(void *))api[API_CLASS_TYPE])(klass)):NULL;
- uintptr_t tr=type?ui_root(type):0;void *apps[2]={u?u->baseApp:NULL,view?rfield(view,"_curAppearance"):NULL};void *result[2]={0};
- const char *status[2]={"type-unavailable","type-unavailable"};
- void *goClass=((void *(*)(void *,const char *,const char *))api[API_CLASS])(g_core,"UnityEngine","GameObject");
- if(tr&&m_getComponent&&goClass&&team_instance_method(goClass,m_getComponent)&&team_returns(m_getComponent,"UnityEngine.Component"))for(int i=0;i<2;i++)status[i]=follower_component_one(apps[i],type,&result[i]);
- char line[480];snprintf(line,sizeof(line),"component side phase=%s presentation=%p actor=%p base=%.80s baseApp=%p current=%p baseController=%p baseStatus=%s currentController=%p currentStatus=%s",phase,presentation,view,u?u->baseName:"unknown",apps[0],apps[1],result[0],status[0],result[1],status[1]);bootlog(line);ui_unroot(tr);
-}
-typedef struct {void *donor,*base;int hits;} ComponentBorrow;
-static _Thread_local ComponentBorrow g_componentBorrow;
-static void *orig_component_generic;static void **g_componentExpectedSlot;static _Thread_local int g_componentValidation;
-static int slot_game_hash(void);
-static int narrow_component_optin(void){wchar_t p[32768];DWORD n=GetModuleFileNameW(g_self,p,32768);wchar_t *q=n&&n<32768?wcsrchr(p,L'\\'):NULL;if(!q)return 0;lstrcpyW(q+1,L"wedge-component-borrow.enable");DWORD a=GetFileAttributesW(p);return a!=INVALID_FILE_ATTRIBUTES&&!(a&FILE_ATTRIBUTE_DIRECTORY);}
-static int narrow_component_method_valid(void *mi){
- if(!mi||g_componentValidation)return 0;g_componentValidation=1;
- const char *name=((const char *(*)(void *))api[API_METHOD_NAME])(mi);
- unsigned count=((unsigned (*)(void *))api[API_PARAM_COUNT])(mi);
- void *klass=((void *(*)(void *,const char *,const char *))api[API_CLASS])(g_core,"UnityEngine","Component");
- int ok=name&&!strcmp(name,"GetComponent")&&count==0&&team_returns(mi,"CharacterAppearanceFollowControllerV2")&&klass&&team_instance_method(klass,mi);
- g_componentValidation=0;return ok;
-}
-static void *narrow_component_hook(void *self,void *mi){
- void *result=((void *(*)(void *,void *))orig_component_generic)(self,mi);
- if(!result&&g_componentExpectedSlot&&mi&&mi==*g_componentExpectedSlot&&g_componentBorrow.donor==self&&g_componentBorrow.base&&narrow_component_method_valid(mi)){
-  void *candidate=((void *(*)(void *,void *))orig_component_generic)(g_componentBorrow.base,mi);
-  if(candidate){g_componentBorrow.hits++;return candidate;}
- }
- return result;
-}
-static int follower_trace_enabled;
-static void follower_bind_hook(void *self,int motion,uint8_t flag,void *mi){
- pair_roster_finish(self);
- static LONG seen;LONG n=InterlockedIncrement(&seen);
- int trace=follower_trace_enabled&&n<=512;if(follower_trace_enabled&&n==513)bootlog("followers observation truncated after 512 bind events");
- void *klass=self?ui_class(self):NULL;while(klass&&klass!=follower_presentation_class)klass=ui_parent(klass);if(!klass){wedge_presentation_clear();bootlog("followers observation instance type mismatch");((void (*)(void*,int,uint8_t,void*))follower_original)(self,motion,flag,mi);return;}
- FollowerContext c={0};c.self=self;c.motion=motion;c.flag=flag;c.mi=mi;
- if(trace){char line[200];snprintf(line,sizeof(line),"followers bind event=%ld presentation=%p motion=%d flag=%u",n,self,motion,(unsigned)flag);bootlog(line);}
- FollowersOps ops={follower_count,follower_item,follower_log,follower_call_original};
- void *view=self?rfield(self,"_actor"):NULL;Unit *unit=view?event_unit_for_view(view):NULL;void *current=view?rfield(view,"_curAppearance"):NULL;void *base=unit?unit->baseApp:NULL;
- int is_outis=unit&&!strncmp(unit->baseName,"11116",5)&&(unit->baseName[5]==0||unit->baseName[5]=='_');
- int is_pair=unit&&(!strncmp(unit->baseName,"10316",5)||!strncmp(unit->baseName,"11017",5))&&(unit->baseName[5]==0||unit->baseName[5]=='_');
- ComponentBorrow saved=g_componentBorrow;int active=enabled_now()&&!cleanup_pending&&unit&&current&&base&&(is_outis||is_pair);
- uintptr_t curRoot=active?ui_root(current):0,baseRoot=active?ui_root(base):0;
- int owned=active&&curRoot&&baseRoot,borrowed=owned&&current!=base&&orig_component_generic;
- if(borrowed)g_componentBorrow=(ComponentBorrow){current,base,0};else memset(&g_componentBorrow,0,sizeof(g_componentBorrow));
- if(trace){follower_component_side(self,"before");followers_run(&c,&ops);follower_component_side(self,"after");}else follower_call_original(&c);if(owned)wedge_presentation_capture(self,unit,motion);else wedge_presentation_clear();
- if(borrowed&&trace){char line[160];snprintf(line,sizeof(line),"narrow component borrow detail=%d hits=%d",motion,g_componentBorrow.hits);bootlog(line);}
- g_componentBorrow=saved;ui_unroot(baseRoot);ui_unroot(curRoot);
-}
-static int follower_optin(void){wchar_t p[32768];DWORD n=GetModuleFileNameW(g_self,p,32768);wchar_t *q=n&&n<32768?wcsrchr(p,L'\\'):NULL;if(!q)return 0;lstrcpyW(q+1,L"wedge-followers-observe.enabled");return GetFileAttributesW(p)!=INVALID_FILE_ATTRIBUTES;}
-
-
-
-/* Optional read-only participant eligibility observations. */
-#include "participation_observe.h"
-static void *participation_class[4],*participation_original[4];
-static int participation_optin(void){wchar_t p[32768];DWORD n=GetModuleFileNameW(g_self,p,32768);wchar_t *q=n&&n<32768?wcsrchr(p,L'\\'):NULL;if(!q)return 0;lstrcpyW(q+1,L"wedge-participation-observe.enabled");return GetFileAttributesW(p)!=INVALID_FILE_ATTRIBUTES;}
-static int participation_instance(void *obj,void *klass){void *k=obj?ui_class(obj):NULL;while(k&&k!=klass)k=ui_parent(k);return k!=NULL;}
-static void participation_view(void *view,char *out,size_t size){
- if(!view){snprintf(out,size,"view=null");return;}
- if(!participation_instance(view,follower_view_class)){snprintf(out,size,"view=%p type=mismatch",view);return;}
- Unit *u=event_unit_for_view(view);void *cur=u?rfield(u->view,"_curAppearance"):NULL;Skin *skin=cur?skin_for_app(u,cur):NULL;
- const char *look=skin&&skin->row>=0&&(uint32_t)skin->row<g_rowCount?g_rows[skin->row].identity:"unknown";
- snprintf(out,size,"view=%p base=%.80s look=%.80s current=%p",view,u?u->baseName:"unknown",look,cur);
-}
-static void participation_init_hook(void *self,void *viewer,void *actor,void *mi){
- ((void (*)(void *,void *,void *,void *))participation_original[0])(self,viewer,actor,mi);
- static LONG hits;LONG n=InterlockedIncrement(&hits);if(n>256){if(n==257)bootlog("participation init observation truncated after 256 events");return;}
- char view[256],line[440];participation_view(actor,view,sizeof(view));
- snprintf(line,sizeof(line),"participation Init event=%ld presentation=%p instance=%s skillViewer=%p actor={%s}",n,self,participation_instance(self,participation_class[0])?"ok":"mismatch",viewer,view);bootlog(line);
-}
-typedef struct {int kind;void *self,*view,*mi;} ParticipationCtx;
-static uint8_t participation_call(void *arg){ParticipationCtx *c=arg;return ((uint8_t (*)(void *,void *,void *))participation_original[c->kind])(c->self,c->view,c->mi);}
-static void participation_log(void *arg,uint8_t result){
- ParticipationCtx *c=arg;static const char *names[]={"Init","Presentation.CanParticipate","Participation.CanParticipate","Duel.CanParticipateLinkedSkill"};char v[256],line[500];participation_view(c->view,v,sizeof(v));
- snprintf(line,sizeof(line),"participation %s instance=%p instanceType=%s target={%s} result=%u",names[c->kind],c->self,participation_instance(c->self,participation_class[c->kind])?"ok":"mismatch",v,(unsigned)result);bootlog(line);
-}
-static uint8_t participation_common(int kind,void *self,void *view,void *mi){
- static LONG hits[4];LONG n=InterlockedIncrement(&hits[kind]);int record=n<=512;if(n==513)bootlog("participation eligibility observation truncated after 512 events for one method");
- ParticipationCtx c={kind,self,view,mi};return participation_run(&c,record,participation_call,participation_log);
-}
-static uint8_t participation_presentation_hook(void *s,void *v,void *m){return participation_common(1,s,v,m);}
-static uint8_t participation_participation_hook(void *s,void *v,void *m){return participation_common(2,s,v,m);}
-static uint8_t participation_duel_hook(void *s,void *v,void *m){return participation_common(3,s,v,m);}
-
-
-static void participation_log_rva(const char *klass,const char *name,void *method,int validated){
- uintptr_t base=(uintptr_t)GetModuleHandleW(L"GameAssembly.dll"),ptr=validated&&method?(uintptr_t)*(void**)method:0;HMODULE module=NULL;
- int in_game=ptr&&GetModuleHandleExW(GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS|GET_MODULE_HANDLE_EX_FLAG_UNCHANGED_REFCOUNT,(LPCWSTR)ptr,&module)&&module==(HMODULE)base;
- char line[300];snprintf(line,sizeof(line),"participation method address class=%s method=%s validated=%d in_game=%d game_rva=%llx",klass,name,validated,in_game,(unsigned long long)(in_game?ptr-base:0));bootlog(line);
-}
-
-
-#include "slot_observe.h"
-#include "pair_timeline_identity.h"
-static void *slot_select_original,*slot_has_original,*slot_type,*slot_fields[3];
-static int slot_hash_ok,slot_candidate_ok,slot_mask_ok,slot_followers_ok;
-static int slot_optin(void){wchar_t p[32768];DWORD n=GetModuleFileNameW(g_self,p,32768);wchar_t *q=n&&n<32768?wcsrchr(p,L'\\'):NULL;if(!q)return 0;lstrcpyW(q+1,L"wedge-slot-observe.enabled");return GetFileAttributesW(p)!=INVALID_FILE_ATTRIBUTES;}
-static int slot_game_hash(void){
- static const unsigned char expected[32]={0x1e,0xcc,0xa0,0x1a,0xf7,0xea,0xf9,0x2c,0x5d,0x6d,0x6d,0x00,0x0c,0x10,0x5d,0xf7,0x76,0x8b,0xe0,0xe6,0x89,0xa7,0xeb,0x27,0x36,0xca,0x1a,0x56,0x6e,0x36,0x1c,0xe1};
- wchar_t p[32768];HMODULE mod=GetModuleHandleW(L"GameAssembly.dll");DWORD n=mod?GetModuleFileNameW(mod,p,32768):0;if(!n||n>=32768)return 0;
- HANDLE f=CreateFileW(p,GENERIC_READ,FILE_SHARE_READ|FILE_SHARE_WRITE|FILE_SHARE_DELETE,NULL,OPEN_EXISTING,FILE_FLAG_SEQUENTIAL_SCAN,NULL);if(f==INVALID_HANDLE_VALUE)return 0;
- BCRYPT_ALG_HANDLE alg=NULL;BCRYPT_HASH_HANDLE hash=NULL;unsigned char digest[32],buf[65536];DWORD got=0;int ok=0;
- if(BCryptOpenAlgorithmProvider(&alg,BCRYPT_SHA256_ALGORITHM,NULL,0)<0)goto done;
- if(BCryptCreateHash(alg,&hash,NULL,0,NULL,0,0)<0)goto done;
- for(;;){if(!ReadFile(f,buf,sizeof(buf),&got,NULL))goto done;if(!got)break;if(BCryptHashData(hash,buf,got,0)<0)goto done;}
- if(BCryptFinishHash(hash,digest,32,0)<0)goto done;ok=!memcmp(digest,expected,32);
- done:if(hash)BCryptDestroyHash(hash);if(alg)BCryptCloseAlgorithmProvider(alg,0);CloseHandle(f);return ok;
-}
-/* Reflection enumerates names/types; offsets are verified against this exact game. */
-static void slot_metadata_init(void){
- slot_hash_ok=slot_game_hash();bootlog(slot_hash_ok?"slot game sha256 verified":"slot game sha256 unavailable or mismatch");
- slot_type=((void *(*)(void *,const char *,const char *))api[API_CLASS])(g_game,"","LinkedSkillPresentation");
- void *typ=slot_type?((void *(*)(void *))api[API_TYPE_OBJECT])(((void *(*)(void *))api[API_CLASS_TYPE])(slot_type)):NULL;uintptr_t tr=typ?ui_root(typ):0;
- if(!tr){bootlog("slot reflection unavailable: type");return;}
- const char *argsig[]={"System.Reflection.BindingFlags"};void *get=NULL;
- for(void *k=ui_class(typ);k&&!get;k=ui_parent(k))get=method_by_types_one(k,"GetFields",argsig,1);
- if(!get||!team_returns(get,"System.Reflection.FieldInfo[]")){bootlog("slot reflection unavailable: GetFields signature");ui_unroot(tr);return;}
- int flags=54;void *args[]={&flags},*exc=NULL,*array=ui_invoke(get,typ,args,&exc);uintptr_t ar=array&&!exc?ui_root(array):0;
- if(!ar){bootlog("slot reflection unavailable: GetFields failed");ui_unroot(tr);return;}
- uintptr_t count=*(uintptr_t *)((char*)array+24);if(count>256){bootlog("slot reflection unavailable: field count");goto done;}
- int seen[3]={0};const size_t wanted[]={0x28,0x74,0x80};
- for(uintptr_t i=0;i<count;i++){
-  void *info=((void**)((char*)array+32))[i];void *nameMethod=info?find_method(ui_class(info),"get_Name",0):NULL;int ok=0;
-  void *str=nameMethod?call_obj(nameMethod,info,NULL,&ok):NULL;char name[160];if(!ok||!string_ascii(str,name,sizeof(name)))continue;
-  void *field=((void *(*)(void *,const char *))api[API_FIELD])(slot_type,name);if(!field)continue;
-  size_t off=((size_t (*)(void *))api[API_FIELD_OFFSET])(field);void *t=((void *(*)(void *))api[API_FIELD_TYPE])(field);char *tn=t?((char *(*)(void *))api[API_TYPE_NAME])(t):NULL;
-  char line[420];snprintf(line,sizeof(line),"slot metadata field name=%.150s type=%.150s offset=%llu",name,tn?tn:"?",(unsigned long long)off);bootlog(line);
-  for(int j=0;j<3;j++)if(off==wanted[j]){seen[j]++;int typeok=tn&&(j==1?(!strcmp(tn,"System.Int32")||!strcmp(tn,"System.UInt32")):!strcmp(tn,"System.Collections.Generic.List<BattleUnitView>"));if(typeok)slot_fields[j]=field;}
-  if(tn)((void (*)(void *))api[API_FREE])(tn);
- }
- slot_candidate_ok=slot_hash_ok&&seen[0]==1&&slot_fields[0];slot_mask_ok=slot_hash_ok&&seen[1]==1&&slot_fields[1];slot_followers_ok=slot_hash_ok&&seen[2]==1&&slot_fields[2];
- {char status[160];snprintf(status,sizeof(status),"slot metadata verified candidates=%d mask=%d followers=%d",slot_candidate_ok,slot_mask_ok,slot_followers_ok);bootlog(status);}
- done:ui_unroot(ar);ui_unroot(tr);
-}
-static void slot_snapshot(void *self,int phase){
- if(!slot_hash_ok||!participation_instance(self,slot_type)){bootlog("slot snapshot unavailable: hash or instance; component=unavailable");return;}
- void *maskbox=slot_mask_ok?((void *(*)(void *,void *))api[API_FIELD_VALUE])(slot_fields[1],self):NULL;void *mv=maskbox?ui_unbox(maskbox):NULL;uint32_t mask=mv?*(uint32_t*)mv:0;int mask_ok=mv!=NULL;
- void *list=slot_candidate_ok?((void *(*)(void *,void *))api[API_FIELD_VALUE])(slot_fields[0],self):NULL;uintptr_t root=list?ui_root(list):0;int n=root?list_count(list):-1;
- char line[350];snprintf(line,sizeof(line),"slot snapshot phase=%s presentation=%p mask=%s%08x candidates=%d component=unavailable",phase?"after":"before",self,mask_ok?"":"unavailable-",mask,n);bootlog(line);
- if(root&&n>=0&&n<=64){for(int i=0;i<n&&i<8;i++){void *v=list_item(list,i);char desc[256];participation_view(v,desc,sizeof(desc));snprintf(line,sizeof(line),"slot candidate phase=%s index=%d %s",phase?"after":"before",i,desc);bootlog(line);}}
- if(root)ui_unroot(root);
-}
-static uint8_t slot_has_hook(void *self,int id,void *mi){uint8_t r=((uint8_t (*)(void*,int,void*))slot_has_original)(self,id,mi);static LONG hits;LONG n=InterlockedIncrement(&hits);if(n<=512){char line[200];snprintf(line,sizeof(line),"slot HasAvailableFollower event=%ld presentation=%p id=%d result=%u",n,self,id,(unsigned)r);bootlog(line);}else if(n==513)bootlog("slot HasAvailableFollower truncated");return r;}
-typedef struct {void *self,*mi;int motion,index;} SlotCtx;
-static int pair_trace_unit(Unit *u){return u&&(!strncmp(u->baseName,"10316",5)||!strncmp(u->baseName,"11017",5))&&(u->baseName[5]==0||u->baseName[5]=='_');}
-static void pair_trace_stack(const char *kind,void *object){
- void *frames[24];unsigned short n=CaptureStackBackTrace(0,24,frames,NULL);HMODULE game=GetModuleHandleW(L"GameAssembly.dll");
- char line[512];int pos=snprintf(line,sizeof(line),"pair stack kind=%s thread=%lu object=%p rva=",kind,(unsigned long)GetCurrentThreadId(),object);int shown=0;
- for(unsigned i=0;game&&i<n&&shown<8;i++){HMODULE owner=NULL;if(GetModuleHandleExW(GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS|GET_MODULE_HANDLE_EX_FLAG_UNCHANGED_REFCOUNT,(LPCWSTR)frames[i],&owner)&&owner==game){int added=snprintf(line+pos,sizeof(line)-(size_t)pos,"%s%llx",shown?",":"",(unsigned long long)((uintptr_t)frames[i]-(uintptr_t)game));if(added<0||added>=(int)(sizeof(line)-(size_t)pos))break;pos+=added;shown++;}}
- bootlog(line);
-}
-static void pair_trace_motion(void *self,int detail,int index){
- if(!slot_optin()||!self)return;Unit *u=unit_for_app(self);if(!pair_trace_unit(u)||!u->view)return;
- static LONG hits[2][2];int which=!strncmp(u->baseName,"11017",5);int skill=is_skill_detail(detail);
- LONG n=InterlockedIncrement(&hits[which][skill]);if(n>(skill?512:64))return;
- void *cur=rfield(u->view,"_curAppearance");Skin *skin=cur?skin_for_app(u,cur):NULL;const char *look=skin&&skin->row>=0&&(uint32_t)skin->row<g_rowCount?g_rows[skin->row].identity:"base-or-unknown";
- char line[512];snprintf(line,sizeof(line),"pair motion thread=%lu actor=%p viewer=%p action=%p receiver=%p visible=%p base=%.80s look=%.100s detail=%d index=%d",(unsigned long)GetCurrentThreadId(),u->view,u->observedViewer,u->observedAction,self,cur,u->baseName,look,detail,index);bootlog(line);pair_trace_stack("motion",self);
-}
-static void *slot_select_call(void *arg,int *a,int *b){SlotCtx *c=arg;return ((void *(*)(void*,int,int,int*,int*,void*))slot_select_original)(c->self,c->motion,c->index,a,b,c->mi);}
-static void slot_select_rejection(const char *reason,void *self,void *view){
- static LONG count;if(InterlockedIncrement(&count)>32)return;
- char line[240];snprintf(line,sizeof(line),"slot SelectMotion observation rejected reason=%s presentation=%p actor=%p",reason,self,view);bootlog(line);
-}
-static void slot_select_log(void *arg,int a,int b,void *result){
- SlotCtx *c=arg;if(!c||!slot_type||!participation_instance(c->self,slot_type)){slot_select_rejection("presentation-type",c?c->self:NULL,NULL);return;}void *view=rfield(c->self,"_actor");Unit *u=view?event_unit_for_view(view):NULL;
- if(!u||u->view!=view){slot_select_rejection("actor-not-tracked",c->self,view);return;}
- if(!pair_trace_unit(u))return;
- static LONG hits[2];int which=!strncmp(u->baseName,"11017",5);LONG n=InterlockedIncrement(&hits[which]);
- if(n>512){if(n==513)bootlog("slot SelectMotion pair observation truncated");return;}
- char name[128]="<unavailable>";uintptr_t root=result?ui_root(result):0;
- if(root){const char *found=wedge_name(result);if(found)snprintf(name,sizeof(name),"%s",found);}
- void *viewer=rfield(c->self,"_viewer");
- char line[600];snprintf(line,sizeof(line),"slot SelectMotion pair thread=%lu presentation=%p actor=%p base=%.96s viewer=%p observedViewer=%p action=%p motion=%d index=%d outMotion=%d outIndex=%d result=%p name=%.127s classified=%d",(unsigned long)GetCurrentThreadId(),c->self,view,u->baseName,viewer,u->observedViewer,u->observedAction,c->motion,c->index,a,b,result,name,pair_timeline_identity(u->baseName,name));bootlog(line);pair_trace_stack("select",c->self);
- if(root)ui_unroot(root);
-}
-static void *slot_select_hook(void *self,int motion,int index,int *a,int *b,void *mi){static LONG seen;LONG n=InterlockedIncrement(&seen);if(n<=32){char line[240];snprintf(line,sizeof(line),"slot SelectMotion entered event=%ld presentation=%p motion=%d index=%d",n,self,motion,index);bootlog(line);}else if(n==33)bootlog("slot SelectMotion entry observation truncated");SlotCtx c={self,mi,motion,index};return slot_select_run(&c,1,a,b,slot_select_call,slot_select_log);}
-
-
-#include "component_scan.h"
-static int component_optin(void){wchar_t p[32768];DWORD n=GetModuleFileNameW(g_self,p,32768);wchar_t *q=n&&n<32768?wcsrchr(p,L'\\'):NULL;if(!q)return 0;lstrcpyW(q+1,L"wedge-component-identify.enabled");return GetFileAttributesW(p)!=INVALID_FILE_ATTRIBUTES;}
-static void component_fullname(void *klass,char *out,int cap){
- out[0]=0;void *type=klass?((void *(*)(void *))api[API_TYPE_OBJECT])(((void *(*)(void *))api[API_CLASS_TYPE])(klass)):NULL;uintptr_t root=type?ui_root(type):0;
- if(root){void *getter=find_method(ui_class(type),"get_FullName",0);int ok=0;void *str=getter?call_obj(getter,type,NULL,&ok):NULL;if(ok)string_ascii(str,out,cap);ui_unroot(root);}
- if(!out[0]){const char *name=klass?((const char *(*)(void *))api[API_CLASS_NAME])(klass):NULL;snprintf(out,cap,"%s",name?name:"unknown");}
-}
-static int component_is_static(void *klass,void *method){
- void *obj=((void *(*)(void *,void *))api[API_METHOD_OBJECT])(method,klass);uintptr_t root=obj?ui_root(obj):0;if(!root)return -1;
- void *get=find_method(ui_class(obj),"get_IsStatic",0);int result=get?call_bool(get,obj,NULL):-1;ui_unroot(root);return result;
-}
-static void component_log_match(void *klass,void *method,int id){
- char cls[200],line[512];component_fullname(klass,cls,sizeof(cls));const char *name=((const char *(*)(void *))api[API_METHOD_NAME])(method);
- unsigned argc=((unsigned (*)(void *))api[API_PARAM_COUNT])(method);void *rt=((void *(*)(void *))api[API_RETURN_TYPE])(method);char *tn=rt?((char *(*)(void *))api[API_TYPE_NAME])(rt):NULL;
- snprintf(line,sizeof(line),"component match=%d class=%.160s method=%.120s argc=%u return=%.120s static=%d",id,cls,name?name:"?",argc,tn?tn:"?",component_is_static(klass,method));bootlog(line);if(tn)((void (*)(void *))api[API_FREE])(tn);
- for(unsigned j=0;j<argc&&j<64;j++){void *t=((void *(*)(void *,uint32_t))api[API_PARAM])(method,j);char *type=t?((char *(*)(void *))api[API_TYPE_NAME])(t):NULL;snprintf(line,sizeof(line),"component match=%d param=%u type=%.200s",id,j,type?type:"?");bootlog(line);if(type)((void (*)(void *))api[API_FREE])(type);}
- if(argc>64)bootlog("component method parameters truncated at 64");
-}
-static void component_log_fields(void *klass){
- const char *sig[]={"System.Reflection.BindingFlags"};
- for(int depth=0;klass&&depth<16;depth++,klass=ui_parent(klass)){
-  char cname[200],line[500];component_fullname(klass,cname,sizeof(cname));void *typ=((void *(*)(void *))api[API_TYPE_OBJECT])(((void *(*)(void *))api[API_CLASS_TYPE])(klass));uintptr_t tr=typ?ui_root(typ):0;
-  if(!tr){bootlog("component fields unavailable: reflection type");continue;}
-  void *get=NULL;for(void *k=ui_class(typ);k&&!get;k=ui_parent(k))get=method_by_types_one(k,"GetFields",sig,1);
-  if(!get||!team_returns(get,"System.Reflection.FieldInfo[]")){bootlog("component fields unavailable: GetFields signature");ui_unroot(tr);continue;}
-  int flags=54;void *args[]={&flags},*exc=NULL,*array=ui_invoke(get,typ,args,&exc);uintptr_t ar=array&&!exc?ui_root(array):0;
-  if(!ar){bootlog("component fields unavailable: GetFields invocation");ui_unroot(tr);continue;}
-  uintptr_t count=*(uintptr_t*)((char*)array+24);if(count>512){bootlog("component fields truncated: over 512 in one class");count=512;}
-  for(uintptr_t j=0;j<count;j++){
-   void *fieldinfo=((void**)((char*)array+32))[j],*getter=fieldinfo?find_method(ui_class(fieldinfo),"get_Name",0):NULL;int ok=0;void *str=getter?call_obj(getter,fieldinfo,NULL,&ok):NULL;char name[160];
-   if(!ok||!string_ascii(str,name,sizeof(name)))continue;
-   void *field=((void *(*)(void *,const char *))api[API_FIELD])(klass,name);if(!field)continue;size_t off=((size_t (*)(void *))api[API_FIELD_OFFSET])(field);
-   void *ft=((void *(*)(void *))api[API_FIELD_TYPE])(field);char *tn=ft?((char *(*)(void *))api[API_TYPE_NAME])(ft):NULL;
-   snprintf(line,sizeof(line),"component view field class=%.160s name=%.120s type=%.150s offset=%llu",cname,name,tn?tn:"?",(unsigned long long)off);bootlog(line);if(tn)((void (*)(void *))api[API_FREE])(tn);
-  }
-  ui_unroot(ar);ui_unroot(tr);
- }
- if(klass)bootlog("component fields truncated: parent depth");
-}
-static void component_identify(void){
- DWORD started=GetTickCount();if(!slot_game_hash()){bootlog("component identify unavailable: game hash mismatch or unreadable");return;}
- bootlog("component identify game hash verified; image=Assembly-CSharp.dll");
- void *view=((void *(*)(void *,const char *,const char *))api[API_CLASS])(g_game,"","BattleUnitView");if(view)component_log_fields(view);else bootlog("component view class unavailable");
- size_t total=((size_t (*)(void *))api[API_CLASS_COUNT])(g_game),limit=total>100000?100000:total;uint64_t methods=0,matches=0;size_t scanned=0;int truncated=0;
- uintptr_t base=(uintptr_t)GetModuleHandleW(L"GameAssembly.dll");
- for(size_t i=0;i<limit&&!truncated;i++){
-  void *klass=((void *(*)(void *,size_t))api[API_IMAGE_CLASS])(g_game,i);scanned++;if(!klass)continue;void *it=NULL,*m;unsigned local=0;
-  while((m=((void *(*)(void *,void **))api[API_METHODS])(klass,&it))){
-   if(++methods>3000000||++local>100000){truncated=1;break;}
-   uintptr_t ptr=(uintptr_t)*(void**)m;if(!component_entry_matches(base,ptr,0x163b640,1))continue;HMODULE module=NULL;
-   int in_game=GetModuleHandleExW(GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS|GET_MODULE_HANDLE_EX_FLAG_UNCHANGED_REFCOUNT,(LPCWSTR)ptr,&module)&&module==(HMODULE)base;
-   if(!component_entry_matches(base,ptr,0x163b640,in_game))continue;matches++;if(matches<=256)component_log_match(klass,m,(int)matches);
-  }
- }
- if(total>limit)truncated=1;char line[300];snprintf(line,sizeof(line),"component identify done classes=%llu total=%llu methods=%llu matches=%llu scanTruncated=%d matchesLogged=%llu matchLogTruncated=%d elapsedMs=%lu",(unsigned long long)scanned,(unsigned long long)total,(unsigned long long)methods,(unsigned long long)matches,truncated,(unsigned long long)(matches>256?256:matches),matches>256,(unsigned long)(GetTickCount()-started));bootlog(line);
-}
-
-static int sprite_signatures_optin(void){wchar_t p[32768];DWORD n=GetModuleFileNameW(g_self,p,32768);wchar_t *q=n&&n<32768?wcsrchr(p,L'\\'):NULL;if(!q)return 0;lstrcpyW(q+1,L"wedge-sprite-methods.enabled");DWORD a=GetFileAttributesW(p);return a!=INVALID_FILE_ATTRIBUTES&&!(a&FILE_ATTRIBUTE_DIRECTORY);}
-static void sprite_signatures_scan(void){
- const char *classes[]={"Texture2D","Sprite","ImageConversion","SpriteRenderer","Texture2D","Texture2D","SpriteRenderer","Object"};const char *methods[]={".ctor","Create","LoadImage","set_sprite","LoadRawTextureData","Apply","get_sprite","Destroy"};
- void *domain=((void *(*)(void))api[API_DOMAIN])();size_t n=0;const void **all=((const void **(*)(void *,size_t *))api[API_ASSEMBLIES])(domain,&n);if(!all){bootlog("sprite signatures assembly list unavailable");return;}
- unsigned found=0;for(size_t a=0;a<n;a++){void *im=((void *(*)(const void *))api[API_IMAGE])(all[a]);const char *img=im?((const char *(*)(void *))api[API_IMAGE_NAME])(im):NULL;if(!img)continue;
-  for(int i=0;i<8;i++){void *k=((void *(*)(void *,const char *,const char *))api[API_CLASS])(im,"UnityEngine",classes[i]);if(!k)continue;
-   void *it=NULL,*m;unsigned scanned=0;while((m=((void *(*)(void *,void **))api[API_METHODS])(k,&it))){if(++scanned>4096){bootlog("sprite signatures class method limit");break;}const char *name=((const char *(*)(void *))api[API_METHOD_NAME])(m);if(!name||strcmp(name,methods[i]))continue;
-    char line[200];snprintf(line,sizeof(line),"sprite signatures image=%s class=%s method=%s match=%u",img,classes[i],name,++found);bootlog(line);component_log_match(k,m,(int)found);
-   }
-  }
- }
- char line[120];snprintf(line,sizeof(line),"sprite signatures done matches=%u",found);bootlog(line);
-}
-static void director_log_named(void *klass,const char *wanted,int *id){
- if(!klass||!wanted||!id)return;void *it=NULL,*m;unsigned scanned=0,matched=0;
- while((m=((void *(*)(void *,void **))api[API_METHODS])(klass,&it))&&++scanned<=4096){
-  const char *name=((const char *(*)(void *))api[API_METHOD_NAME])(m);
-  if(name&&!strcmp(name,wanted)&&++matched<=16)component_log_match(klass,m,++*id);
- }
- char line[192];snprintf(line,sizeof(line),"director named signatures method=%s matches=%u scanned=%u",wanted,matched,scanned);bootlog(line);
-}
-static void director_unique_candidate(void *candidate,void **first,unsigned *unique){if(!candidate)return;if(!*first){*first=candidate;*unique=1;}else if(candidate!=*first)*unique=2;}
-static void *movement_follower_method(void *k){
- if(!k)return NULL;const char *types[]={"SD.CharacterAppearance","CharacterAppearanceFollowController","UnityEngine.Timeline.TrackAsset","System.Int32&"};
- void *it=NULL,*m,*found=NULL;unsigned hits=0,scanned=0;
- while((m=((void *(*)(void *,void **))api[API_METHODS])(k,&it))){
-  if(++scanned>4096)return NULL;const char *name=((const char *(*)(void *))api[API_METHOD_NAME])(m);
-  if(!name||strcmp(name,"TryGetMovementFollower")||((uint32_t (*)(void *))api[API_PARAM_COUNT])(m)!=4)continue;
-  int ok=1;for(unsigned i=0;i<4;i++){void *t=((void *(*)(void *,uint32_t))api[API_PARAM])(m,i);char *name=t?((char *(*)(void *))api[API_TYPE_NAME])(t):NULL;if(!name||strcmp(name,types[i]))ok=0;if(name)((void (*)(void *))api[API_FREE])(name);}
-  if(ok){hits++;if(linked_is_static(k,m)&&team_returns(m,"System.Boolean"))found=m;}
- }
- return hits==1?found:NULL;
-}
-#include "link_camera_submit.inc"
 static int install_hooks(void){
   MH_STATUS status=MH_Initialize();
   if(status!=MH_OK&&status!=MH_ERROR_ALREADY_INITIALIZED)return 0;
-  if(narrow_component_optin()&&slot_game_hash()){
-   uintptr_t base=(uintptr_t)GetModuleHandleW(L"GameAssembly.dll");
-   if(base){void *target=(void *)(base+0x395aa90);g_componentExpectedSlot=(void **)(base+0x91bf280);void *fake=target;
-    if(add_hook(&fake,narrow_component_hook,&orig_component_generic))bootlog("narrow component borrow hook registered");else{g_componentExpectedSlot=NULL;bootlog("narrow component borrow hook unavailable");}}
-  }
   void *canvasClass=((void *(*)(void *,const char *,const char *))api[API_CLASS])(g_ui,"UnityEngine","Canvas");
   void *canvasMethod=canvasClass?((void *(*)(void *,const char *,int))api[API_METHOD])(canvasClass,"SendWillRenderCanvases",0):NULL;
   if(!canvasMethod)return 0;
@@ -4527,12 +3288,6 @@ static int install_hooks(void){
    int unique=m_observeSpriteCallback&&m_observeGetSprite&&m_observeObjectName&&*(void**)m_observeSpriteCallback;
    for(int i=0;i<g_hookCount&&unique;i++)if(g_targets[i]==*(void**)m_observeSpriteCallback)unique=0;
    if(unique&&add_hook(m_observeSpriteCallback,sprite_callback_observe,&orig_observeSpriteCallback))bootlog("sprite callback observation registered");
-   {void *srClass=((void *(*)(void *,const char *,const char *))api[API_CLASS])(g_core,"UnityEngine","SpriteRenderer");
-    m_setSprite=srClass?find_method(srClass,"set_sprite",1):NULL;
-    if(m_setSprite&&*(void**)m_setSprite&&g_hookCount<HOOK_MAX){int dup=0;
-     for(int i=0;i<g_hookCount;i++)if(g_targets[i]==*(void**)m_setSprite)dup=1;
-     if(!dup&&add_hook(m_setSprite,set_sprite_hook,&orig_setSprite))bootlog("sprite set hook registered");
-     else bootlog("sprite set hook unavailable");}}
   }
   {
    void *k=((void *(*)(void *,const char *,const char *))api[API_CLASS])(g_game,"","LinkedSkillUnitBinding");
@@ -4541,91 +3296,10 @@ static int install_hooks(void){
    int distinct=m&&r&&*(void**)m&&*(void**)r&&*(void**)m!=*(void**)r;
    for(int i=0;i<g_hookCount&&distinct;i++)if(g_targets[i]==*(void**)m||g_targets[i]==*(void**)r)distinct=0;
    int ms=m?linked_is_static(k,m):0,rs=r?linked_is_static(k,r):0; char dbg[160];snprintf(dbg,sizeof(dbg),"linked hook check class=%d matches=%d resolve=%d distinct=%d static=%d/%d used=%d cap=%d",k!=NULL,m!=NULL,r!=NULL,distinct,ms,rs,g_hookCount,HOOK_MAX);bootlog(dbg); if(distinct&&ms&&rs&&g_hookCount+2<=HOOK_MAX){
-    if(add_hook(m,linked_matches_hook,&orig_link_matches)&&add_hook(r,linked_resolve_hook,&orig_link_resolve))bootlog("linked binding diagnostic hooks registered");
+    if(add_hook(m,linked_matches_hook,&orig_link_matches)&&add_hook(r,linked_resolve_hook,&orig_link_resolve))bootlog("matched Wedge appearance aliases registered");
    }else bootlog("linked binding diagnostic hooks skipped: static ABI or capacity unavailable");
   }
 
-  follower_trace_enabled=follower_optin()||participation_optin()||slot_optin();
-  if(wedge_borrow_enabled()||follower_trace_enabled){
-   void *k=((void *(*)(void *,const char *,const char *))api[API_CLASS])(g_game,"","LinkedSkillPresentation");
-   follower_presentation_class=k;follower_view_class=((void *(*)(void *,const char *,const char *))api[API_CLASS])(g_game,"","BattleUnitView");
-   const char *pt[]={"MOTION_DETAIL","System.Boolean"};void *m=k?method_by_types_one(k,"BindFollowers",pt,2):NULL;
-   follower_getter=k?method_by_types_one(k,"get_Followers",NULL,0):NULL;
-   int ok=k&&follower_view_class&&m&&follower_getter&&*(void**)m&&team_instance_method(k,m)&&team_instance_method(k,follower_getter)&&team_returns(m,"System.Void")&&team_returns(follower_getter,"System.Collections.Generic.List<BattleUnitView>")&&g_hookCount<HOOK_MAX;
-   participation_log_rva("LinkedSkillPresentation","BindFollowers",m,ok);
-   participation_log_rva("LinkedSkillPresentation","get_Followers",follower_getter,ok);
-   for(int i=0;i<g_hookCount&&ok;i++)if(g_targets[i]==*(void**)m)ok=0;
-   if(ok&&add_hook(m,follower_bind_hook,&follower_original))bootlog("followers observation hook registered");else bootlog("followers observation unavailable: signature, static, target or capacity");
-  }
-
-  if(participation_optin()||slot_optin()){
-   const char *classes[]={"LinkedSkillPresentation","LinkedSkillPresentation","LinkedSkillParticipation","BattleDuelViewer_Linked"};
-   const char *names[]={"Init","CanParticipate","CanParticipate","CanParticipateLinkedSkill"};
-   void *detours[]={participation_init_hook,participation_presentation_hook,participation_participation_hook,participation_duel_hook};
-   const char *initTypes[]={"BattleSkillViewer","BattleUnitView"},*argTypes[]={"BattleUnitView"};
-   for(int j=0;j<4;j++){
-    void *k=((void *(*)(void *,const char *,const char *))api[API_CLASS])(g_game,"",classes[j]);participation_class[j]=k;
-    void *m=k?method_by_types_one(k,names[j],j?argTypes:initTypes,j?1:2):NULL;
-    int ok=k&&follower_view_class&&m&&*(void**)m&&team_instance_method(k,m)&&team_returns(m,j?"System.Boolean":"System.Void")&&g_hookCount<HOOK_MAX;
-    participation_log_rva(classes[j],names[j],m,ok);
-    for(int i=0;i<g_hookCount&&ok;i++)if(g_targets[i]==*(void**)m)ok=0;
-    char line[260];if(ok&&add_hook(m,detours[j],&participation_original[j]))snprintf(line,sizeof(line),"participation observation registered class=%s method=%s",classes[j],names[j]);
-    else snprintf(line,sizeof(line),"participation observation unavailable class=%s method=%s",classes[j],names[j]);bootlog(line);
-   }
-  }
-
-  if(slot_optin()){
-   slot_metadata_init();void *k=slot_type;const char *sel[]={"MOTION_DETAIL","System.Int32","MOTION_DETAIL&","System.Int32&"},*has[]={"System.Int32"};
-   void *methods[]={k?method_by_types_one(k,"SelectMotion",sel,4):NULL,k?method_by_types_one(k,"HasAvailableFollower",has,1):NULL};
-   const char *names[]={"SelectMotion","HasAvailableFollower"},*returns[]={"UnityEngine.Timeline.TimelineAsset","System.Boolean"};void *detours[]={slot_select_hook,slot_has_hook};void **originals[]={&slot_select_original,&slot_has_original};
-   for(int j=0;j<2;j++){void *m=methods[j];int ok=k&&m&&*(void**)m&&team_instance_method(k,m)&&team_returns(m,returns[j])&&g_hookCount<HOOK_MAX;
-    participation_log_rva("LinkedSkillPresentation",names[j],m,ok);for(int i=0;i<g_hookCount&&ok;i++)if(g_targets[i]==*(void**)m)ok=0;
-    char line[200];snprintf(line,sizeof(line),"slot hook method=%s %s",names[j],ok&&add_hook(m,detours[j],originals[j])?"registered":"unavailable");bootlog(line);}
-  }
-  if(director_observe_enabled()){
-   void *k=((void *(*)(void *,const char *,const char *))api[API_CLASS])(g_game,"","LinkedSkillUnitBinding");
-   void *m=movement_follower_method(k);
-   int ok=m&&*(void**)m&&linked_is_static(k,m)&&team_returns(m,"System.Boolean")&&g_hookCount<HOOK_MAX;
-   for(int i=0;i<g_hookCount&&ok;i++)if(g_targets[i]==*(void**)m)ok=0;
-   participation_log_rva("LinkedSkillUnitBinding","TryGetMovementFollower",m,ok);
-   bootlog(ok&&add_hook(m,movement_follower_observe,&orig_movement_follower)?"wedge movement follower observation registered":"wedge movement follower observation unavailable");
-  }
-  if(component_optin())component_identify();
-  if(sprite_signatures_optin())sprite_signatures_scan();
-  if(wedge_borrow_enabled()||director_observe_enabled()){
-   void *domain=((void *(*)(void))api[API_DOMAIN])();size_t imageCount=0;
-   const void **assemblies=((const void **(*)(void *,size_t *))api[API_ASSEMBLIES])(domain,&imageCount);
-   void *d=NULL;unsigned directorMatches=0,directorUnique=0;
-   for(size_t i=0;assemblies&&i<imageCount;i++){
-    void *image=((void *(*)(const void *))api[API_IMAGE])(assemblies[i]);
-    void *candidate=image?((void *(*)(void *,const char *,const char *))api[API_CLASS])(image,"UnityEngine.Playables","PlayableDirector"):NULL;
-    if(candidate){const char *imageName=((const char *(*)(void *))api[API_IMAGE_NAME])(image);char line[240];snprintf(line,sizeof(line),"director class candidate image=%.120s class=%p",imageName?imageName:"unknown",candidate);bootlog(line);directorMatches++;director_unique_candidate(candidate,&d,&directorUnique);}
-   }
-   if(directorUnique!=1)d=NULL;director_class=d;
-   void *appearanceClass=((void *(*)(void *,const char *,const char *))api[API_CLASS])(g_game,"SD","CharacterAppearance");
-   const char *bindingTypes[]={"UnityEngine.Object"};
-   void *m=d?method_by_types_one(d,"GetGenericBinding",bindingTypes,1):NULL;
-   void *t=d?method_by_types_one(d,"get_time",NULL,0):NULL;
-   void *r=appearanceClass?method_by_types_one(appearanceClass,"get_Sprenderer_charactermotion_Parts",NULL,0):NULL;
-   {char line[256];snprintf(line,sizeof(line),"director resolve classes directorMatches=%u director=%p appearance=%p methods binding=%p time=%p renderer=%p",directorMatches,d,appearanceClass,m,t,r);bootlog(line);}
-   if(m)component_log_match(d,m,701);
-   if(t)component_log_match(d,t,702);
-   if(r)component_log_match(appearanceClass,r,703);
-   {int logId=710;director_log_named(d,"GetGenericBinding",&logId);director_log_named(d,"get_time",&logId);director_log_named(appearanceClass,"get_Sprenderer_charactermotion_Parts",&logId);}
-   if(m&&team_instance_method(d,m)&&team_returns(m,"UnityEngine.Object"))director_binding_method=m;
-   if(t&&team_instance_method(d,t)&&team_returns(t,"System.Double"))director_time_method=t;
-   if(r&&team_instance_method(appearanceClass,r)&&team_returns(r,"System.Collections.Generic.List<UnityEngine.SpriteRenderer>"))director_renderer_getter=r;
-   {char line[180];snprintf(line,sizeof(line),"director observe availability binding=%d time=%d renderer=%d",!!director_binding_method,!!director_time_method,!!director_renderer_getter);bootlog(line);}
-  }
-  if(track_diag_enabled()||wedge_borrow_enabled()||director_observe_enabled()){
-   void *k=((void *(*)(void *,const char *,const char *))api[API_CLASS])(g_game,"","LinkedSkillTimelineBinding");
-   const char *ot[]={"SD.CharacterAppearance","UnityEngine.Timeline.TrackAsset"};
-   const char *st[]={"UnityEngine.Playables.PlayableDirector","UnityEngine.Timeline.TrackAsset","SD.CharacterAppearance","SD.CharacterAppearance"};
-   void *o=k?method_by_types_one(k,"GetOwner",ot,2):NULL,*t=k?method_by_types_one(k,"BindSpecial",st,4):NULL;
-   int ok=o&&t&&*(void**)o&&*(void**)t&&*(void**)o!=*(void**)t&&linked_is_static(k,o)&&linked_is_static(k,t)&&track_return_is(o,"SD.CharacterAppearance")&&track_return_is(t,"System.Boolean")&&g_hookCount+2<=HOOK_MAX;
-   for(int i=0;i<g_hookCount&&ok;i++)if(g_targets[i]==*(void**)o||g_targets[i]==*(void**)t)ok=0;
-   if(ok&&add_hook(o,track_owner_hook,&orig_track_owner)&&add_hook(t,track_special_hook,&orig_track_special))bootlog("linked track observation registered");else bootlog("linked track observation unavailable");
-  }
   if(g_fxExperiment&&m_fxStart&&m_fxEvaluate){int unique=*(void**)m_fxStart&&*(void**)m_fxEvaluate&&*(void**)m_fxStart!=*(void**)m_fxEvaluate;for(int i=0;i<g_hookCount&&unique;i++)if(g_targets[i]==*(void**)m_fxStart||g_targets[i]==*(void**)m_fxEvaluate)unique=0;if(unique&&add_hook(m_fxStart,fx_start_hook,&orig_fxStart)&&add_hook(m_fxEvaluate,fx_evaluate_hook,&orig_fxEvaluate))bootlog("fx plan hooks registered");else{g_fxExperiment=0;bootlog("fx plan hooks unavailable");}}
   if(g_hookCount<4)return 0;
   int created=0;
@@ -4642,8 +3316,6 @@ static int install_hooks(void){
     for(int j=0;j<g_hookCount;j++)MH_RemoveHook(g_targets[j]);
     return 0;
   }
-  link_sound_runtime_init();
-  link_submit_install();
   return 1;
 }
 

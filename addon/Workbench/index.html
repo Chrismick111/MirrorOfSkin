@@ -162,25 +162,6 @@
         grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
         gap: 12px;
       }
-      .fd-stages { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 12px; margin: 16px 0; }
-      .fd-stage { border: 1px solid #725d38; border-radius: 6px; background: #202329; padding: 14px; min-width: 0; }
-      .fd-stage h3 { color: #e9ca91; margin: 0 0 12px; }
-      .fd-stage label { display: flex; align-items: center; gap: 6px; margin: 8px 0; }
-      .fd-stage select, .fd-stage input[type="search"] { flex: 1; min-width: 0; }
-      .fd-stage input[type="number"] { width: 72px; }
-      .fd-condition { display: flex; flex-wrap: wrap; gap: 5px; margin: 8px 0; }
-      .fd-condition select { flex: 1; min-width: 90px; }
-      .fd-stage-actions { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 12px; }
-      .fd-director-heading { color: #ead3ac; border-left: 4px solid #a64745; padding-left: 12px; }
-      #formDirector .notice { background: #292426; border-left-color: #a54c49; }
-      #formDirector .primary { background: #742f31; border-color: #aa6861; }
-      #formDirector .fd-stage { background: linear-gradient(150deg,#322a27,#211f20); border-color:#856a4e; box-shadow:0 5px 16px #0004; }
-      .fd-trace { display:flex; gap:8px; overflow:auto; padding:8px 0; }
-      .fd-trace-item { min-width:165px; padding:10px; background:#31292a; border:1px solid #79604b; border-radius:4px; }
-      .fd-trace-item strong { color:#e9ca91; }
-      .fd-explain { margin:8px 0; padding-left:20px; }
-      .fd-preview-controls input[type=range] { width:140px; padding:0; accent-color:#a44c4c; }
-      .fd-portrait { width: 100%; height: 140px; object-fit: contain; background: #16181c; border: 1px solid #46403a; border-radius: 4px; }
       .scheme-card {
         border: 1px solid #444;
         border-radius: 6px;
@@ -571,10 +552,6 @@
       .ruleset-card.active .ruleset-name {
         color: #f0d79b;
       }
-      .chapter-rule-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 10px; }
-      .chapter-rule { border: 1px solid #50493e; border-radius: 6px; padding: 12px; }
-      .chapter-rule h4, .chapter-rule p { margin: 0 0 8px; }
-      .chapter-rule button[aria-pressed="true"] { border-color: #deb970; color: #f0d79b; }
 
       .mini-label .icon {
         width: 15px;
@@ -656,10 +633,6 @@
         background: #3b4048;
         margin: 5px 4px;
       }
-      .context-subwrap { position:relative; }
-      .context-submenu { display:none; position:absolute; left:100%; top:0; min-width:175px; background:#22252b; border:1px solid #565b66; border-radius:8px; padding:6px; box-shadow:0 12px 30px #000a; }
-      .context-subwrap:hover .context-submenu,.context-subwrap:focus-within .context-submenu { display:block; }
-      .context-subwrap.open-left .context-submenu { left:auto; right:100%; }
       .context-title {
         padding: 7px 10px 5px;
         color: #b4b8c1;
@@ -752,7 +725,6 @@
         ><button data-page="events">演出记录</button
         ><button data-page="rules">抽取编排</button
         ><button data-page="forms">形态配置</button
-        ><button data-page="formDirector">多阶段形态导演</button
         ><button data-page="schemes">方案管理</button
         ><button data-page="prepare">准备状态</button
         ><button data-page="discovered">新单位</button>
@@ -815,11 +787,6 @@
           <div class="ruleset-layout">
             <div id="rulesetList" class="ruleset-grid"></div>
           </div>
-          <div class="bar"><h3>第九章 · 五指父辈与子辈</h3>
-            <button id="enableChapterSet" type="button">启用全套</button>
-          </div>
-          <p class="hint">可同时启用不同罪人的专属规则。「仅用此项」会停用其他规则。</p>
-          <div id="chapterRuleList" class="chapter-rule-grid"></div>
         </section>
         <section id="events" class="hidden">
           <div class="bar">
@@ -893,28 +860,6 @@
           </div>
           <div id="formRows"></div>
         </section>
-        <section id="formDirector" class="hidden">
-          <h2 class="fd-director-heading">多阶段形态导演</h2>
-          <div class="notice">把同一人物的不同外观与内部形态组成阶段。第一阶段是默认阶段；后续阶段由条件与优先级决定。预演使用模拟状态，不代表游戏画面。形态组与单独外观分别作为抽选项：抽中形态组才执行阶段切换，单独外观保持独立播放。</div>
-          <div class="bar">
-            <label>形态组 <select id="fdGroup"></select></label>
-            <button id="fdNew">新建形态组</button><button id="fdClone">复制当前形态组</button><button id="fdDelete">删除形态组</button>
-            <label>候选素材组 <select id="fdCandidate"></select></label><button id="fdAddCandidate">添加候选组</button><button id="fdSave" class="primary">保存全部形态组</button><span id="fdDirty" class="muted"></span>
-          </div>
-          <div id="fdEditor" class="hidden">
-            <div class="bar"><label>名称 <input id="fdName" maxlength="80"></label><label><input type="checkbox" id="fdEnabled"> 启用形态组</label><label><input type="checkbox" id="fdHold"> 形态只进阶、不回退</label></div>
-            <div class="notice"><strong>将整组加入人格池</strong><div id="fdPoolTarget" class="muted"></div><p class="muted">先保存并启用形态组。形态组占一个独立抽选项，单独外观可以同时入池；调整第一阶段后，组条目仍指向该组。新增权重会改变池内各项的概率占比。</p><div class="bar"><label>权重 <input type="number" id="fdPoolWeight" min="0.01" max="1000000" step="any" value="1"></label><button id="fdAddPool">将整组加入当前人格池</button></div></div>
-            <p class="muted">阶段顺序可以调整。可用名称或资源 ID 搜索素材；形态编号 0 是基础形态。</p>
-            <div id="fdStages" class="fd-stages"></div>
-            <div class="bar"><button id="fdAddStage">＋ 添加阶段</button></div>
-            <h3>模拟预演</h3>
-            <p class="muted">每次预演从当前阶段开始；结果自动成为下次的当前阶段。状态是模拟值，预演不会改变游戏。</p>
-            <div class="bar fd-preview-controls"><label>血量 % <input type="range" id="fdHealthRange" min="0" max="100" value="100"><input type="number" id="fdHealth" value="100" min="0" max="100"></label><label>理智 <input type="range" id="fdSanityRange" min="-45" max="45" value="0"><input type="number" id="fdSanity" value="0" min="-45" max="45"></label><label>守备次数 <input type="number" id="fdDefense" value="0" min="0" max="65535"></label><label>当前阶段 <input type="number" id="fdCurrent" value="1" min="1" max="8"></label><button id="fdPreview" class="primary">记录并预演</button><button id="fdResetPreview">重置轨迹</button><button id="fdCompare">与已保存版本对照</button></div>
-            <div class="bar"><span>状态预设：</span><button data-fd-preset="full">满血开场</button><button data-fd-preset="low">低血量</button><button data-fd-preset="defense">守备 3 次</button></div>
-            <div id="fdCompareResult" class="notice hidden" aria-live="polite"></div><div id="fdPreviewResult" class="notice" aria-live="polite">输入模拟状态后点击预演。</div><div id="fdTrace" class="fd-trace" aria-label="预演轨迹"></div>
-          </div>
-          <div id="fdEmpty" class="notice">选择候选组添加，或新建形态组开始编排。</div>
-        </section>
         <section id="schemes" class="hidden">
           <h2>方案管理</h2>
           <p class="hint">
@@ -929,11 +874,6 @@
             ><button id="importScheme">导入方案文件</button
             ><input type="file" id="importFile" accept=".json" hidden />
           </div>
-          <details id="chapterNinePanel">
-            <summary>第九章 · 五指父辈与子辈</summary>
-            <div id="chapterNineProfiles"></div>
-            <button id="applyChapterNine" type="button">启用十个人格的专属演出</button>
-          </details>
           <div id="schemeList" class="scheme-grid"></div>
           <div id="schemeTip" class="scheme-tip hidden"></div>
         </section>
@@ -1069,6 +1009,7 @@
           <input id="addSearch" placeholder="搜索名字、ID或来源" />
           <select id="addSource">
             <option value="">全部来源</option>
+            <option id="pairedSource" value="paired" hidden disabled>当前人格的对应外观</option>
             <option value="boss">Boss</option>
             <option value="personality">人格外观</option>
             <option value="no_attack">无攻击外观</option>
@@ -1258,9 +1199,7 @@
         $("#summary").textContent =
           `${visible}/${POOL_LIMIT} 项 · 总权重 ${total}`;
         document.querySelectorAll("#rows tr[data-id]").forEach((row) => {
-          const key=row.dataset.id;
-          const fam=key.startsWith('@family:')?(data.mergedFamilies||[]).find(f=>f.id===key.slice(8)):null;
-          const weight = fam ? fam.members.reduce((n,m)=>n+(selected.get(m)||0),0) : (selected.get(key)||0);
+          const weight = selected.get(row.dataset.id) || 0;
           const share = row.querySelector(".share");
           if (share)
             share.textContent =
@@ -1289,9 +1228,8 @@
             : rule.kind === "sinner"
               ? "罪人全部人格规则集"
               : "单人格规则集";
-        if (rule.kind === "chapter") $("#scopeMeta").textContent = rule.role + " · 第九章内置规则";
-        $("#fillDefault").disabled = rule.kind === "chapter";
-        $("#addIdentity").disabled = rule.kind === "chapter";
+        $("#fillDefault").disabled = false;
+        $("#addIdentity").disabled = false;
         const select = $("#scopeSinner");
         select.classList.toggle("hidden", rule.kind !== "global");
         if (rule.kind === "global") {
@@ -1325,28 +1263,17 @@
           (data.rulesets || []).map(rulesetCard).join("") ||
           '<p class="muted">暂无规则集</p>';
         const page = $("#rulesetList");
-        page.innerHTML = (data.rulesets || []).filter(item => item.kind !== "chapter").map(rulesetCard).join("");
+        page.innerHTML = html;
         bindRulesetCards(page);
-        $("#chapterRuleList").innerHTML = (data.rulesets || []).filter(item => item.kind === "chapter").map(item =>
-          '<article class="chapter-rule"><h4>'+esc(item.name)+'</h4><p class="muted">'+esc(item.role)+' · '+esc(item.identity)+'</p>'+
-          '<p>'+esc(item.condition)+'</p><button type="button" data-chapter="'+esc(item.id)+'" aria-pressed="'+item.active+'">'+
-          (item.active?'已启用 · 停用':'启用')+'</button> <button type="button" data-only="'+esc(item.id)+'">仅用此项</button></article>'
-        ).join("");
         const picker = $("#rulePickerList");
         if (picker) {
           picker.innerHTML = html;
           bindRulesetCards(picker);
         }
       }
-      $("#chapterRuleList").onclick = async (event) => {
-        const button = event.target.closest("button");
-        if (!button) return;
-        const item = data.rulesets.find(row => row.id === (button.dataset.only || button.dataset.chapter));
-        if (item) await toggleRule(item, Boolean(button.dataset.only));
-      };
       async function toggleRule(item, only = false) {
         try {
-          if (dirty || saveTimer || saving || savePending || settingsDirty || fdChanged)
+          if (dirty || saveTimer || saving || savePending || settingsDirty)
             return status("请先保存当前修改，再切换规则集");
           if (only) {
             await api("ruleset-only", { rule: item });
@@ -1357,7 +1284,6 @@
             if (rule.kind === "global") rule.sinner = currentSinner();
             await api("ruleset-activate", { rule });
           }
-          if (item.kind === "chapter") {fdState=null; fdIndex=-1;}
           await refresh();
           $("#rulePickerModal").classList.add("hidden");
           status((only ? "已仅启用 " : item.active ? "已停用 " : "已启用 ") + item.name);
@@ -1402,9 +1328,8 @@
         activeTarget = currentSinner();
         selected = new Map(
           (data.ruleEntries || [])
-            .filter((entry) => Number(entry.weight ?? 1) > 0)
             .map((entry) => [
-              entry.entry_kind === 'group' ? '@group:' + entry.group_id : String(entry.identity_id),
+              String(entry.identity_id),
               Number(entry.weight ?? 1),
             ]),
         );
@@ -1418,37 +1343,23 @@
 
       function render() {
         $("#poolTitle").textContent = `${who(activeTarget)} 的人格池`;
-        const usedFamilies=new Set(), display=[];
-        for(const [key,weight] of selected){
-          const fam=(data.mergedFamilies||[]).find(f=>!key.startsWith('@group:')&&f.members.includes(key));
-          const members=fam?fam.members.filter(m=>selected.has(m)):[];
-          if(fam&&members.length>1){
-            if(usedFamilies.has(fam.id))continue; usedFamilies.add(fam.id);
-            display.push(['@family:'+fam.id,members.reduce((n,m)=>n+(Number(selected.get(m))||0),0)]);
-          } else display.push([key,weight]);
-        }
-        const rows = display
-          .filter(([, weight]) => Number(weight) > 0)
+        const rows = [...selected]
           .map(([id, weight]) => {
-            const family = id.startsWith('@family:') ? (data.mergedFamilies||[]).find(f=>f.id===id.slice(8)) : null;
-            const group = id.startsWith('@group:') ? (data.stageGroups || []).find(g => g.id === id.slice(7)) : null;
-            const groupFamily = group ? (data.mergedFamilies||[]).find(f=>(f.group_ids||[f.group_id]).includes(group.id)) : null;
-            const familyBase = (family || groupFamily)?.members?.[0];
-            const baseEntry = familyBase ? data.catalog.find(item=>String(item.identity_id)===String(familyBase)) : null;
-            const entry = family || groupFamily ? {...(baseEntry||{}),name:baseEntry?.name || (family||groupFamily).name,identity_id:familyBase} : group ? {name: '形态组 · ' + group.name, identity_id:id} : data.catalog.find(
+            const entry = data.catalog.find(
               (item) => String(item.identity_id) === id,
             );
             if (!entry) return "";
-            return `<tr data-id="${esc(id)}"><td>${entry.portrait_url ? `<img class="avatar" src="${esc(entry.portrait_url)}" alt="${esc(entry.name)}的战斗头像" loading="lazy" decoding="async" onerror="this.remove()">` : ""}</td><td><strong>${esc(entry.name || entry.appearance_name || id)}</strong>${entry.translation_status === "暂译" ? ' <small class="muted">暂译</small>' : ""} <small class="muted">${esc((family || groupFamily) ? (entry.identity_id || "") : id)}</small>${entry.category === "humanoid_boss" ? `<div class="muted">${esc(entry.chapter_label || "")}</div>` : ""}</td><td><input class="weight" type="number" min="0" max="1000000" step="0.1" value="${weight}" ${family?'disabled title="右键选择切换条件后可编辑"':''}></td><td class="share"></td></tr>`;
+            return `<tr data-id="${esc(id)}"><td>${entry.portrait_url ? `<img class="avatar" src="${esc(entry.portrait_url)}" alt="${esc(entry.name)}的战斗头像" loading="lazy" decoding="async" onerror="this.remove()">` : ""}</td><td><strong>${esc(entry.name || entry.appearance_name || id)}</strong>${entry.translation_status === "暂译" ? ' <small class="muted">暂译</small>' : ""} <small class="muted">${esc(id)}</small>${entry.category === "humanoid_boss" ? `<div class="muted">${esc(entry.chapter_label || "")}</div>` : ""}</td><td><input class="weight" type="number" min="0" max="1000000" step="0.1" value="${weight}"></td><td class="share"></td></tr>`;
           })
           .join("");
         $("#rows").innerHTML =
           rows ||
           '<tr><td colspan="4" class="empty-row">池子为空，点击右上角“添加人格”</td></tr>';
-        if (data.activeRule?.kind === "chapter") $("#rows").querySelectorAll("input").forEach(input => input.disabled = true);
         updatePoolSummary();
       }
+      let poolEditVersion = 0;
       function autoSave() {
+        poolEditVersion++;
         dirty = true;
         setSaveState("保存中…");
         clearTimeout(saveTimer);
@@ -1466,12 +1377,10 @@
           return;
         }
         saving = true;
+        const submittedVersion = poolEditVersion;
         try {
           const entries = [...selected]
-            .filter(([, weight]) => Number(weight) > 0)
-            .map(([identity_id, weight]) => identity_id.startsWith('@group:') ?
-              ({entry_kind:'group', group_id:identity_id.slice(7), weight:Number(weight)}) :
-              ({identity_id, weight:Number(weight)}));
+            .map(([identity_id, weight]) => ({ identity_id, weight: Number(weight) }));
           const result = await api("ruleset-save", {
             rule: data.activeRule,
             entries,
@@ -1482,9 +1391,13 @@
           data.ruleRevision = result.revision;
           data.rulesets = result.rulesets;
           data.rulesetState = result.state;
+          if (poolEditVersion !== submittedVersion) {
+            savePending = true;
+            return;
+          }
           selected = new Map(
             (result.entries || []).map((entry) => [
-              entry.entry_kind === 'group' ? '@group:' + entry.group_id : String(entry.identity_id),
+              String(entry.identity_id),
               Number(entry.weight),
             ]),
           );
@@ -1522,25 +1435,22 @@
         if (!event.target.classList.contains("weight")) return;
         const id = event.target.closest("tr")?.dataset.id;
         if (!id) return;
-        let weight = Number(event.target.value);
+        if (event.target.value === "") { render(); return; }
+        const weight = Number(event.target.value);
         if (!Number.isFinite(weight) || weight < 0 || weight > 1000000) {
           status("权重必须在 0 到 1000000 之间");
           render();
           return;
         }
-        if (weight === 0) {
-          selected.delete(id);
-          render();
+        if (selected.get(id) !== weight) {
+          selected.set(id, weight);
           autoSave();
-          status("权重为 0，已移出当前池");
-          return;
         }
-        selected.set(id, weight);
         render();
       });
       $("#rows").addEventListener("contextmenu", (event) => {
         const row = event.target.closest("tr[data-id]");
-        if (!row || data.activeRule?.kind === "chapter") return;
+        if (!row) return;
         event.preventDefault();
         openIdentityMenu(row.dataset.id, event.clientX, event.clientY);
       });
@@ -1550,19 +1460,12 @@
       function openIdentityMenu(id, x, y) {
         contextIdentity = id;
         currentIdentity = id;
-        const visualFamily = id.startsWith('@family:');
-        const grouped = id.startsWith('@group:');
-        const gid = grouped ? id.slice(7) : null;
-        const family = (data.mergedFamilies || []).find(f => visualFamily ? f.id===id.slice(8) : grouped ? (f.group_ids || [f.group_id]).includes(gid) : f.members.includes(id));
-        const entry = (grouped||visualFamily) ? {name:family?.name || (data.stageGroups || []).find(g=>g.id===gid)?.name || id} : data.catalog.find(
+        const entry = data.catalog.find(
           (item) => String(item.identity_id) === id,
         );
         const index = [...selected.keys()].indexOf(id);
-        const formMenu = family ? `<div class="context-subwrap"><button type="button" aria-haspopup="true">形态切换条件 ▸</button><div class="context-submenu" role="menu"><button data-action="form:sanity45">${family.members.length === 3 ? "23 / 45 理智" : "45 理智"}</button><button data-action="form:defense1">${family.members.length === 3 ? "累计守备 1 / 2 次" : "守备一次"}</button>${family.native_supported ? '<button data-action="form:native">依照本体切换</button>' : ''}</div></div>` : "";
-        if(visualFamily){
-          $('#identityMenu').innerHTML=`<div class="context-title">${esc(family?.name||id)} · 合并权重</div>${formMenu}`;
-        } else $("#identityMenu").innerHTML =
-          `<div class="context-title">${esc(entry?.name || entry?.appearance_name || id)}</div>${family ? `${formMenu}<div class="sep"></div>` : ''}<button data-action="only">仅抽中此人格</button><button data-action="onlyRole">仅启用此角色</button><button data-action="equal">当前池恢复均等</button><div class="sep"></div><button data-action="up"${index <= 0 ? " disabled" : ""}>上移</button><button data-action="down"${index < 0 || index >= selected.size - 1 ? " disabled" : ""}>下移</button>${grouped ? '' : '<div class="sep"></div><button data-action="upload">上传图片</button><button data-action="reset">恢复默认图片</button>'}<div class="sep"></div><button data-action="remove" class="danger">移出池子</button><button data-action="clear" class="danger">清空当前池</button>`;
+        $("#identityMenu").innerHTML =
+          `<div class="context-title">${esc(entry?.name || entry?.appearance_name || id)}</div><button data-action="only">仅抽中此人格</button><button data-action="onlyRole">仅启用此角色</button><button data-action="equal">当前池恢复均等</button><div class="sep"></div><button data-action="up"${index <= 0 ? " disabled" : ""}>上移</button><button data-action="down"${index < 0 || index >= selected.size - 1 ? " disabled" : ""}>下移</button><div class="sep"></div><button data-action="upload">上传图片</button><button data-action="reset">恢复默认图片</button><div class="sep"></div><button data-action="remove" class="danger">移出池子</button><button data-action="clear" class="danger">清空当前池</button>`;
         const menu = $("#identityMenu");
         menu.classList.remove("hidden");
         menu.style.left = "0px";
@@ -1572,8 +1475,6 @@
           Math.max(8, Math.min(x, innerWidth - rect.width - 8)) + "px";
         menu.style.top =
           Math.max(8, Math.min(y, innerHeight - rect.height - 8)) + "px";
-        const sub = menu.querySelector('.context-subwrap');
-        if(sub){ sub.classList.toggle('open-left', x + rect.width + 190 > innerWidth); const box=sub.querySelector('.context-submenu'); if(sub.getBoundingClientRect().top + 135 > innerHeight){box.style.top='auto';box.style.bottom='0';} }
         menu.querySelectorAll("button[data-action]").forEach((button) => {
           button.onclick = () => runIdentityAction(button.dataset.action);
         });
@@ -1582,17 +1483,7 @@
         const id = contextIdentity;
         closeIdentityMenu();
         if (!id) return;
-        if (action.startsWith('form:')) {
-          const visualFamily=id.startsWith('@family:');const grouped=id.startsWith('@group:');
-          const family=(data.mergedFamilies || []).find(f=>visualFamily?f.id===id.slice(8):grouped?(f.group_ids||[f.group_id]).includes(id.slice(7)):f.members.includes(id));
-          if(!family){status('未找到此外观的形态组');return;}
-          try {
-            if(dirty || saving){status('请等待当前规则池保存完成后重试');return;}
-            const result=await api('form-merged-set',{family_id:family.id,mode:action.slice(5),rule:data.activeRule,revision:data.ruleRevision,...(visualFamily?{identity_id:family.members.find(m=>selected.has(m)),merge_members:true}:!grouped?{identity_id:id}:{group_id:id.slice(7)})});
-            data.activeRule=result.activeRule;data.ruleEntries=result.entries;data.ruleRevision=result.revision;data.rulesets=result.rulesets;data.rulesetState=result.state;
-            await refresh();status('形态切换条件已保存');
-          } catch(error){status('设置失败：'+error.message);}
-        } else if (action === "only") {
+        if (action === "only") {
           selected = new Map([[id, 1]]);
           render();
           autoSave();
@@ -1732,12 +1623,13 @@
         const source = $("#addSource").value;
         const role = $("#addRole").value;
         const chapter = $("#addChapter").value;
-        const matches = data.catalog.filter((entry) => {
+        return data.catalog.filter((entry) => {
           if (chapter === "unassigned" && personalityRole(entry)) return false;
-          if (!$("#addStory").checked && entry.story_metadata && source !== "no_attack" && source !== "personality") return false;
+          if (!$("#addStory").checked && entry.story_metadata && !["no_attack", "personality", "paired"].includes(source)) return false;
+          if (source === "paired" && !entry.paired_identities?.includes(String(data.activeRule?.identity))) return false;
           if (source === "no_attack" && !entry.no_attack) return false;
           if (source === "personality" && !personalityRole(entry)) return false;
-          if (source && source !== "no_attack" && source !== "personality" &&
+          if ((source === "boss" || source === "other") &&
             (source === "boss") !== (entry.category === "humanoid_boss"))
             return false;
           if (
@@ -1759,16 +1651,6 @@
             .toLowerCase()
             .includes(query);
         });
-        const byId=new Map(data.catalog.map(e=>[String(e.identity_id),e]));
-        const seen=new Set(), out=[];
-        for(const entry of matches){
-          const family=(data.mergedFamilies||[]).find(f=>f.members.includes(String(entry.identity_id)));
-          if(!family){out.push(entry);continue;}
-          if(seen.has(family.id))continue;seen.add(family.id);
-          const first=byId.get(family.members[0])||entry;
-          out.push({...first,name:family.name,mergedFamily:family});
-        }
-        return out;
       }
       function renderAddList() {
         const candidates = addCandidates();
@@ -1778,8 +1660,8 @@
           candidates
             .map((entry) => {
               const id = String(entry.identity_id);
-              const added = selected.has(id) || (entry.mergedFamily && ((entry.mergedFamily.group_ids||[entry.mergedFamily.group_id]).some(g=>selected.has('@group:'+g)) || entry.mergedFamily.members.some(m=>selected.has(m))));
-              return `<tr><td>${entry.portrait_url ? `<img class="avatar" src="${esc(entry.portrait_url)}" alt="${esc(entry.name)}的战斗头像" loading="lazy" decoding="async" onerror="this.remove()">` : ""}</td><td><strong>${esc(entry.name || entry.appearance_name || id)}</strong>${entry.translation_status === "暂译" ? ' <small class="muted">暂译</small>' : ""} <small class="muted">${entry.mergedFamily ? '多阶段外观 · 右键设置切换条件' : esc(id)}</small>${entry.no_attack ? '<div class="muted">无攻击外观 · 攻击时待机</div>' : ''}</td><td class="muted">${esc(entry.category === "humanoid_boss" ? entry.chapter_label || "Boss" : who(entry.source))}</td><td><button class="identity-add${added ? "" : " primary"}" data-id="${esc(id)}"${added ? " disabled" : ""}>${added ? "已在池中" : "添加"}</button></td></tr>`;
+              const added = selected.has(id);
+              return `<tr><td>${entry.portrait_url ? `<img class="avatar" src="${esc(entry.portrait_url)}" alt="${esc(entry.name)}的战斗头像" loading="lazy" decoding="async" onerror="this.remove()">` : ""}</td><td><strong>${esc(entry.name || entry.appearance_name || id)}</strong>${entry.translation_status === "暂译" ? ' <small class="muted">暂译</small>' : ""} <small class="muted">${esc(id)}</small>${entry.no_attack ? '<div class="muted">无攻击外观 · 攻击时待机</div>' : ''}</td><td class="muted">${esc(entry.category === "humanoid_boss" ? entry.chapter_label || "Boss" : who(entry.source))}</td><td><button class="identity-add${added ? "" : " primary"}" data-id="${esc(id)}"${added ? " disabled" : ""}>${added ? "已在池中" : "添加"}</button></td></tr>`;
             })
             .join("") ||
           '<tr><td colspan="4" class="empty-row">没有符合条件的人格</td></tr>';
@@ -1797,11 +1679,16 @@
         }
         $("#identityTargetName").textContent = who(activeTarget);
         fillAddFilters();
-        $("#addRole").value = activeTarget;
-        $("#addSource").value = "other";
+        const identity = String(data.activeRule?.identity);
+        const hasPairs = data.activeRule?.kind === "identity" &&
+          data.catalog.some(entry => entry.paired_identities?.includes(identity));
+        $("#pairedSource").hidden = !hasPairs;
+        $("#pairedSource").disabled = !hasPairs;
+        $("#addRole").value = hasPairs ? "" : activeTarget;
+        $("#addSource").value = hasPairs ? "paired" : "other";
         $("#addChapter").value = "";
         $("#addSearch").value = "";
-        $("#addStory").checked = false;
+        $("#addStory").checked = hasPairs;
         renderAddList();
         $("#identityModal").classList.remove("hidden");
         $("#addSearch").focus();
@@ -1915,7 +1802,12 @@
         if (button) selectChapterCard(button.dataset.chapter);
       };
       $("#addSource").onchange = () => {
-        if (["boss", "no_attack"].includes($("#addSource").value)) $("#addRole").value = "";
+        const source = $("#addSource").value;
+        if (["boss", "no_attack", "paired"].includes(source)) $("#addRole").value = "";
+        if (source === "paired") {
+          $("#addChapter").value = "";
+          $("#addStory").checked = true;
+        }
         renderAddList();
       };
       $("#addChapter").onchange = () => {
@@ -2182,7 +2074,6 @@
       async function refresh() {
         try {
           data = await api("data");
-          try { data.mergedFamilies=(await api('form-merged')).families || []; } catch (_) { data.mergedFamilies=[]; }
           settingsBaseline = structuredClone(data.settings.config);
           settingsDirty = false;
           $("#version").textContent =
@@ -2293,9 +2184,6 @@
         try {
           const data = await api("schemes");
           schemes = data.schemes;
-          $("#chapterNineProfiles").innerHTML = data.chapter_nine.map(row =>
-            '<p><strong>'+esc(row.sinner_name)+' → '+esc(row.enemy)+'</strong>　'+esc(row.role)+' · '+esc(String(row.identity))+
-            '<br>'+esc(row.condition)+'</p>').join('');
           renderSchemes();
         } catch (e) {
           status(e.message);
@@ -2347,24 +2235,15 @@
       });
       async function applyScheme(request, label) {
         if (saveTimer || saving) return status("请等待当前修改自动保存完成后再读取");
-        if (fdChanged) return status("请先保存多阶段形态组的修改，再读取方案");
-        const tip = request.builtin ? "切换到十个人格的专属规则？当前全局规则将停用，当前配置会备份为“读取前自动备份”。" :
-          "读取方案“" + label + "”？当前配置会先备份为“读取前自动备份”。";
+        const tip = "读取方案“" + label + "”？当前配置会先备份为“读取前自动备份”。";
         if (!confirm(tip)) return;
         const loaded = await api("scheme-load", request);
         schemes = loaded.schemes;
-        fdState = null; fdIndex = -1;
         await refresh();
         renderRulesets();
         renderSchemes();
         status("已读取方案“" + label + "”。");
-        if (loaded.warnings?.length) alert(loaded.warnings.join('\n'));
       }
-      $("#applyChapterNine").onclick = async () => {
-        try { await applyScheme({builtin:"chapter-nine"}, "第九章 · 五指父辈与子辈"); }
-        catch (e) { status(e.message); }
-      };
-      $("#enableChapterSet").onclick = $("#applyChapterNine").onclick;
       $("#schemeList").onclick = async (e) => {
         const button = e.target.closest("button[data-act]");
         if (!button) return;
@@ -2498,138 +2377,6 @@
           status(e.message);
         }
       };
-      // 多阶段形态组独立于原有单形态规则，保留全部旧配置。
-      let fdState = null, fdIndex = -1, fdChanged = false, fdBaseline = new Map();
-      const fdCaptureBaseline = () => { fdBaseline = new Map((fdState?.config?.groups || []).map(g => [g.id, structuredClone(g)])); };
-      const fdGroup = () => fdState?.config?.groups?.[fdIndex];
-      const fdMark = () => { fdChanged = true; $('#fdDirty').textContent = '有未保存的修改'; };
-      const fdCatalog = () => data?.catalog || [];
-      const fdFind = id => fdCatalog().find(x => String(x.identity_id) === String(id));
-      const fdCaption = x => `${x.name || x.appearance_name || x.identity_id} · ${x.identity_id}`;
-      function fdChoices(selected, query = '') {
-        const q = query.trim().toLowerCase();
-        const items = fdCatalog().filter(x => !q || fdCaption(x).toLowerCase().includes(q));
-        const current = fdFind(selected);
-        if (current && !items.includes(current)) items.unshift(current);
-        return `<option value="">请选择外观</option>` + items.map(x => `<option value="${esc(x.identity_id)}" ${String(x.identity_id) === String(selected) ? 'selected' : ''}>${esc(fdCaption(x))}</option>`).join('');
-      }
-      function fdRender() {
-        if (!fdState) return;
-        const groups = fdState.config.groups;
-        $('#fdGroup').innerHTML = groups.map((g, i) => `<option value="${i}" ${i === fdIndex ? 'selected' : ''}>${esc(g.name)}</option>`).join('');
-        $('#fdCandidate').innerHTML = (fdState.candidates || []).map((g, i) => `<option value="${i}">${esc(g.name)}</option>`).join('');
-        const g = fdGroup();
-        $('#fdEditor').classList.toggle('hidden', !g); $('#fdEmpty').classList.toggle('hidden', !!g);
-        $('#fdClone').disabled = !g; $('#fdDelete').disabled = !g; $('#fdAddCandidate').disabled = !(fdState.candidates || []).length;
-        if (!g) return;
-        $('#fdPoolTarget').textContent = data?.activeRule ? `目标规则集：${data.activeRule.name} · 目标罪人：${who(data.activeRule.sinner)}` : '请先在规则集页面选择规则集和目标罪人。';
-        $('#fdName').value = g.name; $('#fdEnabled').checked = !!g.enabled; $('#fdHold').checked = !!g.hold;
-        $('#fdStages').innerHTML = g.stages.map((s, i) => {
-          const info = fdFind(s.identity_id);
-          const annotations = data?.formAnnotations?.[String(s.identity_id)];
-          const forms = info?.director_forms || ['基础形态'];
-          const formInfo = annotations?.forms || forms.map((f,n) => `${n}: ${f}`).join(' / ');
-          const formOptions = forms.map((form, n) => `<option value="${n}" ${Number(s.form || 0) === n ? 'selected' : ''}>${n} · ${esc(form)}</option>`).join('');
-          const cond = (s.conditions || []).map((c, j) => `<div class="fd-condition" data-cond="${j}"><select data-field="metric"><option value="health" ${c.metric === 'health' ? 'selected' : ''}>血量 %</option><option value="sanity" ${c.metric === 'sanity' ? 'selected' : ''}>理智</option><option value="defense" ${c.metric === 'defense' ? 'selected' : ''}>守备次数</option><option value="native" ${c.metric === 'native' ? 'selected' : ''}>对应本体形态</option>${c.metric === 'chapter_phase' ? '<option value="chapter_phase" selected>第九章专属阶段</option>' : ''}</select><select data-field="op"><option value="lte" ${c.op === 'lte' ? 'selected' : ''}>≤</option><option value="gte" ${c.op === 'gte' ? 'selected' : ''}>≥</option></select><input type="number" data-field="value" value="${esc(c.value)}"><button data-action="remove-condition" title="删除条件">×</button></div>`).join('');
-          return `<div class="fd-stage" data-stage="${i}"><h3>阶段 ${i + 1}${i === 0 ? ' · 默认' : ''}</h3>${info?.portrait_url ? `<img class="fd-portrait" src="${esc(info.portrait_url)}" alt="">` : ''}<label>搜索 <input type="search" data-stage-search placeholder="名称或资源 ID"></label><label>外观 <select data-stage-field="identity_id">${fdChoices(s.identity_id)}</select></label><label>内部形态 <select data-stage-field="form">${formOptions}</select></label><div class="muted">${esc(formInfo)}</div>${i ? `<label>条件关系 <select data-stage-field="match"><option value="all" ${s.match === 'all' ? 'selected' : ''}>全部满足</option><option value="any" ${s.match === 'any' ? 'selected' : ''}>任一满足</option></select></label>${cond}<button data-action="add-condition">＋ 添加条件</button><label>优先级 <input type="number" min="0" max="65535" data-stage-field="priority" value="${esc(s.priority ?? i)}"></label>` : '<div class="muted">没有其他条件命中时采用此阶段。</div>'}<div class="fd-stage-actions"><button data-action="up" ${i === 0 ? 'disabled' : ''}>上移</button><button data-action="down" ${i === g.stages.length - 1 ? 'disabled' : ''}>下移</button><button data-action="remove-stage" ${g.stages.length === 1 ? 'disabled' : ''}>删除阶段</button></div></div>`;
-        }).join('');
-      }
-      async function fdLoad() {
-        if (fdState) return;
-        try { if (!data) await refresh(); fdState = await api('form-director'); fdState.config.groups ||= []; fdCaptureBaseline(); fdIndex = fdState.config.groups.length ? 0 : -1; fdRender(); }
-        catch (e) { status('读取形态导演失败：' + e.message); }
-      }
-      document.querySelector('nav button[data-page="formDirector"]').addEventListener('click', fdLoad);
-      $('#fdGroup').onchange = e => { fdIndex = Number(e.target.value); $('#fdResetPreview').click(); fdRender(); };
-      $('#fdName').oninput = e => { fdGroup().name = e.target.value; fdMark(); const o = $('#fdGroup').selectedOptions[0]; if (o) o.textContent = e.target.value; };
-      $('#fdEnabled').onchange = e => { fdGroup().enabled = e.target.checked; fdMark(); };
-      $('#fdHold').onchange = e => { fdGroup().hold = e.target.checked; fdMark(); };
-      const fdNewStage = () => ({identity_id: '', form: 0, priority: 1, conditions: [{metric:'health', op:'lte', value:70}], match:'all', hold:false});
-      const fdId = () => 'group_' + Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
-      $('#fdNew').onclick = () => { const s = fdNewStage(); s.conditions = []; fdState.config.groups.push({id:fdId(), name:'新形态组', enabled:false, hold:false, stages:[s]}); fdIndex = fdState.config.groups.length - 1; fdMark(); fdRender(); };
-      $('#fdClone').onclick = () => { if (!fdGroup()) return; const g = structuredClone(fdGroup()); g.id = fdId(); g.name = (g.name + ' · 副本').slice(0,80); g.enabled = false; fdState.config.groups.push(g); fdIndex = fdState.config.groups.length - 1; fdMark(); fdRender(); };
-      $('#fdDelete').onclick = () => { if (!fdGroup() || !confirm('删除此形态组？保存后生效。')) return; fdState.config.groups.splice(fdIndex,1); fdIndex = Math.min(fdIndex,fdState.config.groups.length - 1); fdMark(); fdRender(); };
-      $('#fdAddCandidate').onclick = () => { const candidate = fdState.candidates?.[Number($('#fdCandidate').value)]; if (!candidate) return; const g = structuredClone(candidate); g.id = fdId(); g.enabled = false; fdState.config.groups.push(g); fdIndex = fdState.config.groups.length - 1; fdMark(); fdRender(); };
-      $('#fdAddStage').onclick = () => { if (fdGroup().stages.length >= 8) { status('每组最多 8 个阶段'); return; } const s = fdNewStage(); s.priority = fdGroup().stages.length; fdGroup().stages.push(s); fdMark(); fdRender(); };
-      $('#fdStages').oninput = e => { if (e.target.matches('[data-stage-search]')) { const card = e.target.closest('[data-stage]'); const s = fdGroup().stages[Number(card.dataset.stage)]; card.querySelector('[data-stage-field="identity_id"]').innerHTML = fdChoices(s.identity_id, e.target.value); } };
-      $('#fdStages').onchange = e => {
-        const card = e.target.closest('[data-stage]'); if (!card) return;
-        const s = fdGroup().stages[Number(card.dataset.stage)], field = e.target.dataset.stageField;
-        if (field) { s[field] = e.target.type === 'checkbox' ? e.target.checked : (['form','priority'].includes(field) ? Number(e.target.value) : e.target.value); fdMark(); if (field === 'identity_id') { s.form = 0; fdRender(); } return; }
-        const row = e.target.closest('[data-cond]'); if (!row || !e.target.dataset.field) return;
-        const f = e.target.dataset.field; s.conditions[Number(row.dataset.cond)][f] = f === 'value' ? Number(e.target.value) : e.target.value; fdMark();
-      };
-      $('#fdStages').onclick = e => {
-        const button = e.target.closest('button[data-action]'), card = e.target.closest('[data-stage]'); if (!button || !card) return;
-        const g = fdGroup(), i = Number(card.dataset.stage), s = g.stages[i], action = button.dataset.action;
-        if (action === 'add-condition') { if (s.conditions.length >= 4) { status('每阶段最多 4 条条件'); return; } s.conditions.push({metric:'health',op:'lte',value:70}); }
-        if (action === 'remove-condition') s.conditions.splice(Number(button.closest('[data-cond]').dataset.cond),1);
-        if (action === 'remove-stage') g.stages.splice(i,1);
-        // The first position is unconditional. Transfer its neighbouring
-        // trigger when exchanging those positions so moving back restores it.
-        if ((action === 'up' && i === 1) || (action === 'down' && i === 0)) {
-          [g.stages[0].conditions, g.stages[1].conditions] = [g.stages[1].conditions, g.stages[0].conditions];
-          [g.stages[0].match, g.stages[1].match] = [g.stages[1].match, g.stages[0].match];
-        }
-        if (action === 'up' && i > 0) [g.stages[i-1],g.stages[i]] = [g.stages[i],g.stages[i-1]];
-        if (action === 'down' && i < g.stages.length-1) [g.stages[i+1],g.stages[i]] = [g.stages[i],g.stages[i+1]];
-        // A default stage must always be unconditional; moving it preserves the other stage's conditions.
-        g.stages.forEach((v,n) => { if (!n) v.conditions = []; else if (!v.conditions.length) v.conditions = [{metric:'health',op:'lte',value:70}]; });
-        fdMark(); fdRender();
-      };
-      $('#fdSave').onclick = async () => { try { const r = await api('form-director', {revision:fdState.revision,config:fdState.config}); fdState.revision = r.revision; fdState.config = r.config; fdCaptureBaseline(); data.stageGroups = r.config.groups; fdChanged = false; $('#fdDirty').textContent = '已保存'; fdRender(); status('形态组已保存'); if (r.warnings?.length) alert('形态组已保存，请留意：\n' + r.warnings.join('\n')); } catch(e) { status('保存失败：' + e.message); } };
-      $('#fdAddPool').onclick = async () => {
-        const g = fdGroup(), rule = data?.activeRule, weight = Number($('#fdPoolWeight').value);
-        if (fdChanged || !g?.enabled) { status('请先保存并启用形态组，再加入人格池'); return; }
-        if (!rule || rule.kind==='chapter') { status('请先选择可编辑的目标规则集与罪人'); return; }
-        if (dirty || saving || saveTimer || savePending) { status('人格池仍在保存，请稍后再添加'); return; }
-        if (!(Number.isFinite(weight) && weight > 0 && weight <= 1000000)) { status('权重应大于 0 且不超过 1000000'); return; }
-        const b = $('#fdAddPool'); b.disabled = true;
-        try {
-          const r = await api('form-group-to-pool', {group_id:g.id, weight, revision:data.ruleRevision, rule_id:rule.id, sinner:String(rule.sinner)});
-          data.activeRule = r.activeRule; data.ruleEntries = r.entries; data.ruleRevision = r.revision; data.rulesets = r.rulesets; data.rulesetState = r.state;
-          data.stageGroups = fdState.config.groups; loadTarget(); fdRender(); status('形态组已作为一个抽选项加入当前人格池。');
-        } catch(e) { status('加入人格池失败：' + e.message); }
-        finally { b.disabled = false; }
-      };
-      let fdTrace = [];
-      const fdValues = () => ({health:Number($('#fdHealth').value), sanity:Number($('#fdSanity').value), defense:Number($('#fdDefense').value)});
-      function fdSyncRanges() { $('#fdHealthRange').value = $('#fdHealth').value; $('#fdSanityRange').value = $('#fdSanity').value; }
-      for (const id of ['fdHealth','fdSanity']) { $('#' + id + 'Range').oninput = e => { $('#' + id).value = e.target.value; }; $('#' + id).oninput = fdSyncRanges; }
-      document.querySelectorAll('[data-fd-preset]').forEach(b => b.onclick = () => { const v = {full:[100,0,0],low:[25,0,0],defense:[100,0,3]}[b.dataset.fdPreset]; [$('#fdHealth').value,$('#fdSanity').value,$('#fdDefense').value] = v; fdSyncRanges(); });
-      $('#fdResetPreview').onclick = () => { fdTrace = []; $('#fdTrace').replaceChildren(); $('#fdCompareResult').classList.add('hidden'); $('#fdCurrent').value = 1; $('#fdPreviewResult').textContent = '轨迹已重置，输入模拟状态后点击预演。'; };
-      $('#fdCompare').onclick = async () => {
-        const box = $('#fdCompareResult'), original = fdBaseline.get(fdGroup()?.id);
-        box.classList.remove('hidden');
-        if (!original) { box.textContent = '该形态组尚无已保存版本，请先保存后再修改并对照。'; return; }
-        try {
-          const steps = fdTrace.length ? fdTrace.map(x => x.values) : [fdValues()];
-          const result = await api('form-compare', {left:original,right:fdGroup(),steps,left_current:0,right_current:0});
-          box.replaceChildren(); const heading = document.createElement('strong'); heading.textContent = '已保存版本 → 当前编辑版本'; box.append(heading);
-          const list = document.createElement('ol');
-          steps.forEach((state,i) => {const li=document.createElement('li'); const a=result.left.steps[i], b=result.right.steps[i]; li.textContent=`血量 ${state.health}% / 理智 ${state.sanity} / 守备 ${state.defense}：阶段 ${a.index+1} → 阶段 ${b.index+1}${a.index===b.index ? '（阶段序号相同）' : '（结果不同）'}`; list.append(li);}); box.append(list);
-        } catch(e) { box.textContent = '对照失败：' + e.message; }
-      };
-      $('#fdPreview').onclick = async () => {
-        const button = $('#fdPreview'); button.disabled = true;
-        try {
-          const g = fdGroup(), values = fdValues(), current = Math.max(0,Number($('#fdCurrent').value)-1);
-          const r = await api('form-preview', {group:g, ...values, current_stage:current});
-          const item = fdFind(r.stage?.identity_id), result = $('#fdPreviewResult');
-          result.replaceChildren(); const summary = document.createElement('strong');
-          summary.textContent = `阶段 ${r.index + 1} · ${item ? fdCaption(item) : (r.stage?.identity_id || '未选择外观')} · 内部形态 ${r.stage?.form ?? 0}。${r.reason || ''}`; result.append(summary);
-          const list = document.createElement('ul'); list.className = 'fd-explain';
-          const names = {health:'血量 %', sanity:'理智', defense:'守备次数'};
-          g.stages.slice(1).forEach((stage, offset) => {
-            const checks = (stage.conditions || []).map(c => {const hit = c.op === 'lte' ? values[c.metric] <= c.value : values[c.metric] >= c.value; return {hit, text:`${names[c.metric]} ${c.op === 'lte' ? '≤' : '≥'} ${c.value}（当前 ${values[c.metric]}，${hit ? '满足' : '未满足'}）`};});
-            const matches = stage.match === 'any' ? checks.some(c => c.hit) : checks.every(c => c.hit);
-            const li = document.createElement('li'); li.textContent = `阶段 ${offset+2}：${checks.map(c=>c.text).join(stage.match === 'any' ? ' 或 ' : ' 且 ')}；${matches ? '条件命中' : '条件未命中'}，优先级 ${stage.priority ?? offset+1}${matches && r.index !== offset+1 ? '；未被选中（优先级或只进阶规则）' : ''}`; list.append(li);
-          }); result.append(list);
-          fdTrace.push({values, index:r.index}); if(fdTrace.length>50) fdTrace.shift(); $('#fdCurrent').value = r.index + 1;
-          $('#fdTrace').replaceChildren(...fdTrace.map((step,i)=>{const node=document.createElement('div');node.className='fd-trace-item';const title=document.createElement('strong');title.textContent=`${i+1} · 阶段 ${step.index+1}`;const details=document.createElement('div');details.className='muted';details.textContent=`血量 ${step.values.health}% / 理智 ${step.values.sanity} / 守备 ${step.values.defense}`;node.append(title,details);return node;}));
-        } catch(e) { $('#fdPreviewResult').textContent = '预演失败：' + e.message; } finally { button.disabled = false; }
-      };
-      window.addEventListener('beforeunload', e => { if (fdChanged) { e.preventDefault(); e.returnValue = ''; } });
     </script>
   </body>
 </html>

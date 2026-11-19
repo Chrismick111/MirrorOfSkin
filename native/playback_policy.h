@@ -4,6 +4,7 @@
 #include <string.h>
 /* Match an exact known identity or its complete five-digit ID. */
 static int sr_pair_base(const char *actual,const char *full){return actual&&full&&(!strcmp(actual,full)||(strlen(actual)==5&&!strncmp(actual,full,5)));}
+#include "counterpart_playback.h"
 /* Exact timeline matches validated against the target contract. */
 static int sr_verified_paired_attack(const int *counts,const char *base,const char *identity,int requested,int fallback){
  if(!counts||!base||!identity)return fallback;
@@ -39,7 +40,8 @@ static int sr_verified_paired_attack(const int *counts,const char *base,const ch
   static const int lengths[]={2,3,3,4,2};
   if(requested>=7&&requested<=11){target=requested;expected=lengths[requested-7];}
  }
- return target>=0&&counts[target]==expected?target:fallback;
+ if(target>=0)return counts[target]==expected?target:fallback;
+ return sr_counterpart_attack(counts,base,identity,requested,fallback);
 }
 
 /* Candidate: concatenate Salvador S3 and S4 two-clip attack groups. */

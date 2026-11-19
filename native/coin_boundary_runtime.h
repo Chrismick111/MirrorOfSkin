@@ -105,8 +105,11 @@ static void motion_dispatch(Unit *u,int original_only){
   detail=sr_resolve_attack(playing->motionCounts,detail,1,m.tier,m.detail,0,0);
   if(strcmp(playing->look,u->baseName))detail=sr_donor_tier_detail(playing->motionCounts,detail,m.tier);
   detail=sr_native_motion_detail(playing->motionCounts,playing->nativeMotionDetail,detail,detail);
+  int paired=sr_verified_paired_attack(playing->motionCounts,paired_source(u,playing),motion_identity(playing),m.detail,-1);
+  if(paired>=0)detail=paired;
   if(detail>=0&&detail<SR_MOTION_CACHE){
-   if(!native_order_index(u,m.action,m.coin,playing->motionCounts[detail],&index)){
+   if(paired>=0)index=counterpart_part(u,playing,m.action,m.coin,m.detail,playing->motionCounts[paired],m.index,m.last);
+   else if(!native_order_index(u,m.action,m.coin,playing->motionCounts[detail],&index)){
     index=sr_playback_index(index,playing->motionCounts[detail],m.last);
     static DWORD lastFallback;DWORD now=GetTickCount();if(now-lastFallback>5000){lastFallback=now;bootlog("native order unavailable; legacy index fallback");}
    }
@@ -136,7 +139,6 @@ static void timeline_end_hook(void *app,void *director,void *mi){
  Unit *before=unit_for_app(app);unsigned generation=before?before->playbackGeneration:0;
  g_timelineEndDepth++;
  ((void (*)(void *,void *,void *))orig_endTimeline)(app,director,mi);
- wedge_probe_end(app,director,generation);
  /* Capture happens during the callback; permit handoff only after it returns. */
  Unit *u=unit_for_app(app);
  if(u&&u->playbackGeneration==generation&&director&&director==rfield(app,"_playableDirector")&&!(motion_busy_mask(app)&7)){

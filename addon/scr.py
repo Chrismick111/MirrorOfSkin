@@ -328,10 +328,7 @@ def _catalog_by_identity(pools):
 
 
 def _resolve_rows(items, base, catalog, include_zero=False):
-    group_data = _json_file(ROOT / 'stage_director.json') or {}
-    groups = {g.get('id'): g for g in group_data.get('groups', []) if isinstance(g, dict)}
     import math
-    rows = []
     for item in items or []:
         if not isinstance(item, dict):
             continue
@@ -344,44 +341,26 @@ def _resolve_rows(items, base, catalog, include_zero=False):
         if weight <= 0 and not include_zero:
             continue
         kind = item.get('entry_kind', 'appearance')
-        gid = item.get('group_id', '') if kind == 'group' else ''
-        if kind == 'group':
-            group = groups.get(gid)
-            if not group or not group.get('enabled') or not group.get('stages'):
-                log('跳过已删除或停用的形态组条目：' + str(gid))
-                continue
-            identity = str(group['stages'][0]['identity_id'])
-        elif kind == 'appearance': identity = str(item.get('identity_id', ''))
-        else: raise ValueError('未知规则池条目类型')
+        if kind != 'appearance':
+            continue
+        identity = str(item.get('identity_id', ''))
         source = catalog.get(identity)
         if not source:
             continue
-        row = dict(source)
-        row['weight'] = weight
-        row['entry_kind'] = kind
-        row['group_id'] = gid
-        row['base_identity'] = base
-        rows.append(row)
-    return rows
+        yield dict(source, weight=weight, entry_kind=kind, group_id='', base_identity=base)
+
+
+def _pool_row_key(sinner, row):
+    return (int(sinner), str(row.get('base_identity', '')), str(row.get('identity_id', '')),
+            str(row.get('entry_kind', 'appearance')), str(row.get('group_id', '')))
 
 
 def _rule_paths():
-    paths = [ROOT / 'stage_director.json', ROOT / '随机设置.json', ROOT / '自定义人格池.json', RULESET_STATE, ROOT / 'Assets/runtime/all_sinners_pools.json']
-    if RULESET_DIR.exists():
-        paths.extend(sorted(RULESET_DIR.glob('*.json')))
-    return paths
+    return _pool_evidence.config_paths(ROOT)
 
 
 def _config_digest():
-    import hashlib
-    digest = hashlib.sha256()
-    for path in _rule_paths():
-        try:
-            digest.update(path.read_bytes())
-        except OSError:
-            pass
-        digest.update(b'\0')
-    return digest.hexdigest()
+    return _pool_evidence.config_digest(ROOT)
 
 
 def _old_pool_rows():
@@ -434,18 +413,19 @@ def _pool_workbench_module(name):
     return module
 
 
+_pool_evidence = _pool_workbench_module('prepare_view')
+
 def prepare_native_pools():
     lock = getattr(prepare_native_pools, 'lock', None)
     if lock is None:
         lock = _pool_workbench_module('file_lock').FileLock(ROOT / 'workbench-save.lock')
         prepare_native_pools.stage_files = _pool_workbench_module('stage_files')
-        prepare_native_pools.presets = _pool_workbench_module('merged_appearances')
         prepare_native_pools.lock = lock
     with lock:
         if not getattr(prepare_native_pools, 'story_ready', False):
+            _pool_workbench_module('chapter_nine').migrate(ROOT, prepare_native_pools.stage_files)
             _pool_workbench_module('story_defaults').restore(ROOT)
             prepare_native_pools.story_ready = True
-        prepare_native_pools.stage_files.migrate(ROOT, prepare_native_pools.presets.upgrade_legacy_groups)
         source_stamp = probability_stamp()
         rows = _prepare_native_pools_unlocked()
         prepare_native_pools.config_revision = _config_digest()
@@ -462,50 +442,31 @@ def _prepare_native_pools_unlocked():
     settings = load_user_json('随机设置.json', DEFAULT_SETTINGS)
 
     known = {}
-    stage_data = _json_file(ROOT / 'stage_director.json') or {}
-    stage_groups = {g.get('id'): g for g in stage_data.get('groups', []) if isinstance(g, dict)}
 
     def add(sinner, row):
-        row = dict(row)
-        row['sinner'] = int(sinner)
-        row['weight'] = 0
-        key = (int(sinner), str(row.get('base_identity', '')), str(row.get('identity_id', '')), str(row.get('entry_kind', 'appearance')), str(row.get('group_id', '')))
-        if key[2]:
-            known.setdefault(key, row)
-        # A group can reference a story appearance whose catalog entry lives
-        # under another sinner. Add every stage in this exact rule context so
-        # the runtime can load it without adding draw probability.
-        if row.get('entry_kind') == 'group':
-            group = stage_groups.get(row.get('group_id'), {})
-            for stage in group.get('stages', []):
-                source = catalog.get(str(stage.get('identity_id', ''))) if isinstance(stage, dict) else None
-                if source:
-                    member = dict(source)
-                    member.update(base_identity=row.get('base_identity', ''), entry_kind='appearance', group_id='')
-                    add(sinner, member)
+        key = _pool_row_key(sinner, row)
+        if key[2] and key not in known:
+            known[key] = dict(row, sinner=int(sinner), weight=0)
+
+    def add_profile(sinner, profile, base=''):
+        if isinstance(profile, dict):
+            for row in _resolve_rows(profile.get('entries', []), base, catalog, include_zero=True):
+                add(sinner, row)
 
     # Keep every catalog identity at zero weight so changing rule sets never
     # has to remove native rows (the hot reload path requires old rows).
     for sinner, pool in pools.items():
         for entry in pool.get('entries', []):
-            row = dict(entry)
-            row['weight'] = 0
-            row['base_identity'] = ''
-            add(sinner, row)
+            add(sinner, dict(entry, base_identity=''))
 
     for target, profile in (custom.get('characters') or {}).items():
-        if not isinstance(profile, dict):
-            continue
-        for row in _resolve_rows(profile.get('entries', []), '', catalog, include_zero=True):
-            add(target, row)
+        add_profile(target, profile)
 
     global_rule = _global_ruleset()
     if global_rule:
         for target, profile in global_rule.get('pools', {}).items():
-            if str(target) not in pools or not isinstance(profile, dict):
-                continue
-            for row in _resolve_rows(profile.get('entries', []), '', catalog, include_zero=True):
-                add(target, row)
+            if str(target) in pools:
+                add_profile(target, profile)
 
     if RULESET_DIR.exists():
         for path in sorted(RULESET_DIR.glob('人格-*.json')):
@@ -516,78 +477,56 @@ def _prepare_native_pools_unlocked():
             sinner = str(data.get('sinner', ''))
             if sinner not in pools or identity not in catalog:
                 continue
-            for row in _resolve_rows(data.get('entries', []), identity, catalog, include_zero=True):
-                add(sinner, row)
+            add_profile(sinner, data, identity)
+
+    # Stage transitions may request a different prefab owned by another catalog pool.
+    for group in prepare_native_pools.stage_files.automatic_groups(ROOT):
+        sinner = group['id'][4:7]
+        for stage in group['stages']:
+            source = catalog.get(stage['identity_id'])
+            if source:
+                add(sinner, dict(source, base_identity=''))
 
     for row in _old_pool_rows():
         sinner = str(row.get('sinner', ''))
-        if sinner in pools:
+        if sinner in pools and row.get('entry_kind') == 'appearance':
             add(sinner, row)
 
-    active_rows = []
-
-    def activate(sinner, rows):
-        for row in rows:
-            weight = float(row.get('weight', 0))
-            if weight <= 0:
-                continue
-            row = dict(row)
-            row['sinner'] = int(sinner)
-            key = (int(sinner), str(row.get('base_identity', '')), str(row.get('identity_id', '')), str(row.get('entry_kind', 'appearance')), str(row.get('group_id', '')))
-            known[key] = row
-            active_rows.append(row)
-
-    if state['global']:
-        for sinner in range(101, 113):
-            key = str(sinner)
-            entries = None
-            if global_rule:
-                profile = global_rule.get('pools', {}).get(key)
-                if isinstance(profile, dict):
-                    entries = profile.get('entries', [])
+    active_rows = {}
+    for sinner in range(101, 113):
+        key = str(sinner)
+        base = ''
+        if state['global']:
+            profile = global_rule['pools'].get(key) if global_rule else None
+            entries = profile.get('entries', []) if isinstance(profile, dict) else None
             if entries is None:
                 entries = pools[key].get('entries', [])
-            activate(key, _resolve_rows(entries, '', catalog))
-    else:
-        for sinner in range(101, 113):
-            key = str(sinner)
+        else:
             active = state['active'].get(key, 'none')
             if active == 'sinner':
                 profile = (custom.get('characters') or {}).get(key)
                 entries = profile.get('entries', []) if isinstance(profile, dict) else pools[key].get('entries', [])
-                activate(key, _resolve_rows(entries, '', catalog))
             elif active.startswith('identity:'):
-                identity = active.split(':', 1)[1]
-                rule = _identity_ruleset(identity)
-                if rule and str(rule.get('sinner')) == key:
-                    activate(key, _resolve_rows(rule.get('entries', []), identity, catalog))
-            elif active.startswith('chapter:'):
-                identity = active.split(':', 1)[1]
-                if len(identity) == 5 and identity[:3] == key and identity in catalog:
-                    entries = [dict(entry_kind='group', group_id='ch9_' + identity, weight=1)]
-                    for row in _resolve_rows(entries, identity, catalog):
-                        add(key, row)
-                        activate(key, [row])
+                base = active.split(':', 1)[1]
+                rule = _identity_ruleset(base)
+                if not rule or str(rule.get('sinner')) != key:
+                    continue
+                entries = rule.get('entries', [])
+            else:
+                continue
+        for row in _resolve_rows(entries, base, catalog):
+            row['sinner'] = sinner
+            row_key = _pool_row_key(sinner, row)
+            active_rows.setdefault(row_key, row)
+            known.pop(row_key, None)
 
-    rows = []
-    written = set()
-    for row in active_rows:
-        key = (int(row['sinner']), str(row.get('base_identity', '')), str(row['identity_id']), str(row.get('entry_kind', 'appearance')), str(row.get('group_id', '')))
-        if key in written:
-            continue
-        written.add(key)
-        rows.append(row)
-    for key, row in known.items():
-        if key in written:
-            continue
-        written.add(key)
-        rows.append(row)
+    # The first eligible occurrence wins; inactive rows follow in catalog order.
+    rows = [*active_rows.values(), *known.values()]
     if len(rows) > 4096:
         raise ValueError('Too many identities')
 
     actions = {'evade': 1, 'attack': 2, 'attack-preparation': 4, 'clash': 8, 'clash-preparation': 16}
     packed = []
-    seen = set()
     for row in rows:
         sinner = int(row['sinner'])
         if sinner < 101 or sinner > 112:
@@ -613,10 +552,6 @@ def _prepare_native_pools_unlocked():
         kind = row.get('entry_kind', 'appearance')
         gid = str(row.get('group_id', '')).encode('ascii')
         if kind not in ('appearance', 'group') or (kind == 'appearance' and gid) or (kind == 'group' and (not gid or len(gid) >= 64)): raise ValueError('Invalid group entry')
-        key = (sinner, base, raw, kind, gid)
-        if key in seen:
-            continue
-        seen.add(key)
         excluded = row.get('excluded_actions', [])
         if any(x not in actions for x in excluded):
             raise ValueError('Unknown excluded action')
@@ -632,7 +567,7 @@ def _prepare_native_pools_unlocked():
         enabled = 1 if weight > 0 and settings.get('enabled', True) else 0
         packed.append(ROW.pack(sinner, enabled, mask, story, weight, raw, asset, look, base, int(kind == 'group'), gid))
 
-    candidate = next((row for row in active_rows if float(row.get('weight', 0)) > 0 and not row.get('story_metadata') and not row.get('no_attack')), None)
+    candidate = next((row for row in active_rows.values() if not row.get('story_metadata') and not row.get('no_attack')), None)
     if candidate:
         (ROOT / 'probe_asset.txt').write_text(str(candidate['asset_key']), encoding='utf8')
 

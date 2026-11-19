@@ -81,12 +81,13 @@ def _default_entries(pool, sinner):
     return result[:MAX_ENTRIES]
 
 
-def _positive(entries):
+def _saved_appearances(entries):
     result = []
     for entry in entries or []:
         try: value = group_entries.normalize_entry(entry)
         except (TypeError, ValueError): continue
-        result.append(value)
+        if value['entry_kind'] == 'appearance':
+            result.append(value)
     return result[:MAX_ENTRIES]
 
 
@@ -169,16 +170,16 @@ def entries(root, rule, pool_data=None):
         data = _read(global_file(root), {})
         profile = (data.get('pools') or {}).get(sinner)
         if isinstance(profile, dict):
-            return _positive(profile.get('entries', []))
+            return _saved_appearances(profile.get('entries', []))
         if pool_data is None:
             pool_data = pools(root)
         return _default_entries(pool_data.get(sinner, {}), sinner)
     if kind == 'sinner':
         profile = (custom(root).get('characters') or {}).get(sinner)
-        return _positive(profile.get('entries', [])) if isinstance(profile, dict) else []
+        return _saved_appearances(profile.get('entries', [])) if isinstance(profile, dict) else []
     if kind == 'identity':
         data = _read(identity_file(root, identity), {})
-        return _positive(data.get('entries', [])) if isinstance(data, dict) else []
+        return _saved_appearances(data.get('entries', [])) if isinstance(data, dict) else []
     return []
 
 
@@ -205,15 +206,9 @@ def save_entries(root, rule, entries, expected_revision, known, validate, lock=N
         raise ValueError('未选择规则集')
     if not isinstance(entries,list) or len(entries)>MAX_ENTRIES: raise ValueError('规则池格式无效')
     with (lock or FileLock(root / 'workbench-save.lock')):
-        # Resolve the current group configuration while holding the same lock
-        # used by director saves, so a concurrent change cannot invalidate the
-        # entry between validation and writing it to the rule pool.
         catalog_map = {str(key): {} for key in known}
-        doc = _read(root / 'stage_director.json', {})
-        groups = {g.get('id'):g for g in doc.get('groups',[]) if isinstance(g,dict)}
-        entries = group_entries.validate_entries(entries, catalog_map, groups)
-        appearances = [e for e in entries if e['entry_kind']=='appearance']
-        validate(str(rule.get('sinner') or '101'), {'enabled': True, 'entries': appearances}, known)
+        entries = group_entries.validate_entries(entries, catalog_map, {})
+        validate(str(rule.get('sinner') or '101'), {'enabled': True, 'entries': entries}, known)
         if revision(root, rule) != expected_revision:
             raise ValueError('规则集已在其他窗口更改，请重新载入')
         kind, sinner, identity = rule.get('kind'), str(rule.get('sinner') or ''), rule.get('identity')

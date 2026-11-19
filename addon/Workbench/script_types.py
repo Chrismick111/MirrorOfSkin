@@ -1,7 +1,7 @@
 """Resolve external MonoScripts from the user's own cache, without Archive."""
 import pathlib
 import threading
-import UnityPy
+from resource_tools import unity
 import resource_identity
 
 class ScriptResolver:
@@ -9,6 +9,7 @@ class ScriptResolver:
   self.root=pathlib.Path(root).resolve();self.cabs={};self.failures=[];self.loaded=False;self.lock=threading.Lock()
  def _load(self):
   if self.loaded:return
+  UnityPy=unity()
   for folder in sorted(self.root.glob('*_monoscripts')):
    for path in sorted(folder.rglob('__data')):
     try:

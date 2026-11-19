@@ -8,7 +8,13 @@ looking like an appearance with no animation.
 """
 import json
 import pathlib
+import re
 import sys
+import hashlib
+import os
+import tempfile
+import zlib
+from functools import lru_cache
 import threading
 
 import resource_catalog
@@ -59,47 +65,119 @@ def _load(roots, appearance):
         return {'__error__': str(exc)}
 
 
-def lookup(identity, roots=None):
-    """Resolve one appearance to its collected records, or say why not.
+@lru_cache(maxsize=1)
+def _bundle_families():
+    with (HERE/'native_bundle_families.json').open(encoding='utf8') as stream:
+        return json.load(stream)
 
-    status values:
-      ok            records loaded from the local timeline snapshot
-      no_index      the snapshot knows the appearance but ships no record
-      unknown       neither the snapshot nor the local bundle index knows it
-      corrupt       the snapshot record exists but does not match the appearance
-    """
+
+def _candidate_bundles(appearance, roots, index):
+    root = roots.get('resource_root')
+    if not root:
+        return []
+    root = pathlib.Path(root).resolve()
+    families = set(_bundle_families().get(appearance, []))
+    for relative, row in (index or {}).get('entries', {}).items():
+        if appearance in (row.get('prefabs') or {}):
+            families.add(pathlib.PurePosixPath(relative.replace(chr(92), '/')).parts[0])
+    if not families:
+        try:
+            discovered=json.loads((HERE/'scan_state.json').read_bytes())
+        except (OSError,ValueError):
+            discovered={}
+        for relative,row in discovered.items():
+            if isinstance(row,dict) and appearance in (row.get('entries') or {}):
+                families.add(pathlib.PurePosixPath(relative.replace(chr(92), '/')).parts[0])
+    paths = []
+    for family in sorted(families):
+        if pathlib.Path(family).name != family or family in ('', '.', '..'):
+            continue
+        candidates = [p for p in (root/family).glob('*/__data') if p.is_file() and root in p.resolve().parents]
+        if candidates:
+            # A cache may retain older Unity content hashes after a game update.
+            path = max(candidates, key=lambda p:(p.stat().st_mtime_ns, p.name, str(p)))
+            paths.append(path.relative_to(root).as_posix())
+    return paths
+
+
+def _signature(roots, paths):
+    root = pathlib.Path(roots['resource_root']).resolve()
+    scripts = [p for folder in root.glob('*_monoscripts') for p in folder.rglob('__data')]
+    files = sorted({root/item for item in paths} | set(scripts))
+    return [str(root), [[p.relative_to(root).as_posix(),*resource_catalog.fingerprint(p)] for p in files]]
+
+
+def _cache_path(roots, appearance):
+    key=hashlib.sha256(appearance.encode()).hexdigest()
+    return pathlib.Path(roots['index_dir'])/'live-timelines-v1'/(key+'.json.z')
+
+
+def _cached(roots, appearance, paths):
+    if not paths:
+        return None
+    try:
+        obj=timeline_store._load_compressed(_cache_path(roots,appearance), limit=128*1024*1024)
+        if obj['appearance']==appearance and obj.pop('signature')==_signature(roots,paths):
+            return obj
+    except (OSError, ValueError, KeyError, TypeError, zlib.error):
+        pass
+    return None
+
+
+def _save_local(path, result, signature):
+    path.parent.mkdir(parents=True, exist_ok=True)
+    data=zlib.compress(json.dumps(dict(result,signature=signature),ensure_ascii=False,separators=(',',':')).encode('utf8'))
+    with tempfile.NamedTemporaryFile(dir=path.parent,delete=False) as f:
+        temp=pathlib.Path(f.name)
+        try:
+            f.write(data)
+            f.close()
+            os.replace(temp,path)
+        finally:
+            temp.unlink(missing_ok=True)
+
+
+def lookup(identity, roots=None):
     roots = roots or resource_catalog.resolve_roots()
-    if not isinstance(identity, str) or not identity.strip():
+    if not isinstance(identity,str) or not identity.strip():
         raise ValueError('请选择外观')
     aliases = resource_catalog.alias_map(roots['timeline_dir'])
-    # A cached index is a plain file read; building one here would turn a lookup
-    # into a multi-minute scan, so a missing index only costs name resolution.
-    index, index_source = resource_catalog.load_index(roots['index_dir'], roots['resource_root'],
-                                                      auto_build=False)
-    appearance, how = resource_catalog.resolve_appearance(identity, index, aliases)
-    base = {'identity': identity, 'appearance': appearance, 'records': [], 'available': False,
-            'roots': {key: str(roots.get(key)) for key in ('game_dir', 'resource_root', 'index_dir', 'timeline_dir')},
-            'resolved_by': how, 'index_source': index_source}
+    index, source = resource_catalog.load_index(roots['index_dir'], roots.get('resource_root'), auto_build=False)
+    appearance,how=resource_catalog.resolve_appearance(identity,index,aliases)
     if not appearance:
-        audit = _audited_entry(identity, aliases)
-        base.update({'status': 'unknown', 'reason': audit['reason'] if audit else how,
-                     'audited': bool(audit)})
-        base['notice'] = '未知：%s；未做任何动作假设。' % base['reason']
-        return base
-    obj = _load(roots, appearance)
-    if isinstance(obj, dict) and '__error__' in obj:
-        base.update({'status': 'corrupt', 'reason': obj['__error__'],
-                     'notice': '时间线资料与外观不匹配：%s' % obj['__error__']})
-        return base
-    if obj is None:
-        audit = _audited_entry(identity, aliases)
-        base.update({'status': 'no_index', 'reason': audit['reason'] if audit else '时间线快照没有该外观的记录',
-                     'audited': bool(audit)})
-        base['notice'] = '无索引：%s；动作数量未知。' % base['reason']
-        return base
-    base.update({'status': 'ok', 'available': True, 'records': obj.get('records', []),
-                 'notice': '资源引用与未渲染事件来自本地采集，时间可能是估算，游戏内效果尚未验证。'})
-    return base
+        for pool in _pool_entries().values():
+            for entry in pool.get('entries',[]):
+                if identity in (entry.get('identity_id'),entry.get('appearance_name')):
+                    appearance,how=entry['appearance_name'],'pool'
+                    break
+            if appearance: break
+    if not appearance and identity in _bundle_families():
+        appearance,how=identity,'resource-family'
+    base={'identity':identity,'appearance':appearance,'records':[],'available':False,'resolved_by':how,
+          'index_source':source,'roots':{k:str(roots.get(k)) for k in ('resource_root','index_dir','timeline_dir','game_dir')}}
+    if not appearance:
+        return dict(base,status='unknown',notice='未找到此外观',reason=how)
+    paths=_candidate_bundles(appearance,roots,index)
+    cached=_cached(roots,appearance,paths)
+    if cached:
+        with _lock:
+            if _state.get(identity,{}).get('status')!='running':
+                _state[identity]=cached
+        return {**base,**cached,'status':'ok'}
+    # Explicit old snapshots still work offline; online data always comes from game files.
+    if not roots.get('resource_root'):
+        legacy=_load(roots,appearance)
+        if legacy and 'records' in legacy:
+            return dict(base,status='ok',available=True,records=legacy['records'],notice='离线历史时间线')
+        return dict(base,status='no_index',reason='缺少游戏资源缓存',notice='请先启动游戏并下载资源，再重新选择外观。')
+    return dict(base,status='local_pending',notice='准备读取本机游戏资源',reason='待从本机游戏提取')
+
+
+def _pool_entries():
+    try:
+        return json.loads((HERE.parent/'Assets/runtime/all_sinners_pools.json').read_bytes())
+    except (OSError,ValueError):
+        return {}
 
 
 def unknown_report(roots=None):
@@ -126,7 +204,8 @@ def _capability():
     if sys.version_info < (3, 9):
         return '本机资源解析需要 Python 3.9 或更高版本，当前 %s' % sys.version.split()[0]
     try:
-        import UnityPy  # noqa: F401
+        from resource_tools import unity
+        unity()
     except Exception as exc:
         return '缺少 UnityPy 依赖：%s' % exc
     return None
@@ -134,24 +213,31 @@ def _capability():
 
 def start(identity):
     snapshot = lookup(identity)
-    if not snapshot['available']:
+    if not snapshot['available'] and snapshot['status']!='local_pending':
         raise ValueError('本地索引状态为 %s：%s' % (snapshot['status'], snapshot.get('reason')))
     with _lock:
         if _state.get(identity, {}).get('status') == 'running':
             return {'status': 'running'}
         _state[identity] = {'status': 'running'}
-    threading.Thread(target=_read_live, args=(identity, snapshot), daemon=True).start()
+    threading.Thread(target=_read_live, args=(identity, snapshot), kwargs={'allow_scan':True}, daemon=True).start()
     return {'status': 'running'}
 
 
-def _locate_bundles(snapshot, roots):
+def _locate_bundles(snapshot, roots, allow_scan):
     """Bundle paths from the snapshot, corrected through the rebuilt index.
 
     The snapshot stores paths relative to the Addressables cache root; a record
     written against another install still resolves, because the local index maps
     the appearance name to the path this machine actually has.
     """
-    index, how = resource_catalog.load_index(roots['index_dir'], roots['resource_root'], auto_build=True)
+    index, how = resource_catalog.load_index(roots['index_dir'], roots['resource_root'], auto_build=False)
+    paths = _candidate_bundles(snapshot['appearance'],roots,index)
+    if paths: return paths,index,how
+    if snapshot['appearance'] in _bundle_families(): return [],index,how
+    if allow_scan:
+        with _index_lock:
+            index=resource_catalog.build_index(roots['resource_root'],roots['index_dir'])
+            how='built'
     table = resource_catalog.appearance_table(index)
     wanted = []
     for record in snapshot['records']:
@@ -175,7 +261,10 @@ def _unique_live_records(records):
     return unique
 
 
-def _read_live(identity, snapshot, roots=None):
+_index_lock = threading.Lock()
+
+
+def _read_live(identity, snapshot, roots=None, allow_scan=False):
     try:
         blocked = _capability()
         if blocked:
@@ -188,9 +277,16 @@ def _read_live(identity, snapshot, roots=None):
         import native_timeline_extract
         import script_types
         script_resolver = script_types.shared(root)
-        bundles, index, index_source = _locate_bundles(snapshot, roots)
+        bundles, index, index_source = _locate_bundles(snapshot, roots, allow_scan)
         if not bundles:
-            raise RuntimeError('索引中没有资源包引用')
+            raise RuntimeError('本机尚未下载此外观的资源包，请在游戏中下载资源后重试')
+        signature=_signature(roots,bundles)
+        if snapshot.get('status')=='ok' and 'resource_root' in snapshot:
+            cached=_cached(roots,snapshot['appearance'],bundles)
+            if cached:
+                with _lock:
+                    _state[identity]=cached
+                return
         variants = []
         failures = []
         for relative in bundles:
@@ -225,17 +321,26 @@ def _read_live(identity, snapshot, roots=None):
                               for m in r.get('matches', []) if m.get('group')]
                     events = []
                     for track in part.get('tracks', []):
+                        script=(track.get('script') or {}).get('class') or ''
+                        kind='effect' if script=='EffectActivateTimelineTrack' else 'sound' if 'sound' in script.lower() or 'audio' in script.lower() else '片段'
                         for clip in track.get('clips', []):
-                            events.append({'t': clip.get('start'), 'kind': '片段', 'label': clip.get('name'),
+                            events.append({'t': clip.get('start'), 'kind': kind, 'label': clip.get('name'),
                                            'duration': clip.get('duration')})
                         for marker in track.get('markers', []):
                             events.append({'t': (marker.get('fields') or {}).get('m_Time'), 'kind': '标记',
                                            'label': marker.get('name') or marker.get('status')})
+                    end_times=[event['t']+(event.get('duration') or 0) for event in events
+                               if isinstance(event.get('t'), (int,float))]
+                    fixed=part.get('fixed_duration')
+                    duration = fixed if part.get('duration_mode')==1 and isinstance(fixed,(int,float)) else max(end_times,default=None)
+                    group=re.sub(r'_Timeline(?:_\d+)?$','',part.get('name') or '',flags=re.I) or ('动作 %s' % motion.get('detail'))
                     records.append(dict(variant['_bundle_info'], **{
                         'detail': motion.get('detail'), 'index': part.get('index'), 'name': part.get('name'),
+                        'bundle':variant['_bundle_info']['bundle_path'],'preferred_duration':duration,
+                        'preferred_source':'unity_fixed_duration' if part.get('duration_mode')==1 else 'unity_track_end_estimate',
                         'path_id': pid, 'status': part.get('status'), 'tracks': part.get('tracks', []),
                         'matches': [{'group': g, 'events': events}
-                                    for g in (list(dict.fromkeys(groups)) or [''])]}))
+                                    for g in (list(dict.fromkeys(groups)) or [group])]}))
         records = _unique_live_records(records)
         missing = sum(1 for r in records if r.get('status') != 'resolved')
         missing += sum(1 for r in records for t in r.get('tracks', []) if t.get('status') == 'unresolved')
@@ -243,6 +348,13 @@ def _read_live(identity, snapshot, roots=None):
                   'records': records, 'failures': failures, 'unresolved': missing,
                   'resource_root': str(root), 'index_source': index_source,
                   'notice': '读取自当前游戏资源；未解析片段或轨道 %d 项，固定时长不一定等于播放时长。' % missing}
+        if signature!=_signature(roots,bundles):
+            raise RuntimeError('读取过程中游戏资源已变化，请重新选择外观')
+        if not failures and not missing and records:
+            try:
+                _save_local(_cache_path(roots,snapshot['appearance']), result, signature)
+            except OSError:
+                result['notice'] += '；本机缓存不可写，下次将重新读取。'
     except Exception as exc:
         result = {'status': 'error', 'message': str(exc)}
     with _lock:
