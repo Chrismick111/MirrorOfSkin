@@ -28,7 +28,7 @@ SIZE = OFF_TUNABLE + 32
 ERRORS = {0: 'ok', 1: 'il2cpp-export-missing', 2: 'assembly-or-class-missing',
           6: 'no-frame-hook'}
 SESSION_NAME = 'Local\\FaustNativeSinners_v75_%d'
-DLL_NAME = 'SinnersNative-v63.dll'
+DLL_NAME = 'SinnersNative-v64.dll'
 API_NAMES = ['domain_get', 'domain_get_assemblies', 'assembly_get_image', 'image_get_name',
              'class_from_name', 'class_get_method_from_name', 'class_get_field_from_name',
              'field_get_offset', 'object_get_class', 'class_get_parent', 'runtime_invoke',
@@ -217,7 +217,8 @@ def report(session, previous):
 
 
 
-ROW = struct.Struct('<IIII d 64s 128s 64s 64s')
+ROW4 = struct.Struct('<IIII d 64s 128s 64s 64s')
+ROW = struct.Struct('<IIII d 64s 128s 64s 64s I 64s')
 ROW3 = struct.Struct('<IIII d 64s 128s 64s')
 RULESET_DIR = ROOT / '规则集'
 RULESET_STATE = ROOT / '规则集状态.json'
@@ -327,6 +328,8 @@ def _catalog_by_identity(pools):
 
 
 def _resolve_rows(items, base, catalog, include_zero=False):
+    group_data = _json_file(ROOT / 'stage_director.json') or {}
+    groups = {g.get('id'): g for g in group_data.get('groups', []) if isinstance(g, dict)}
     import math
     rows = []
     for item in items or []:
@@ -340,19 +343,30 @@ def _resolve_rows(items, base, catalog, include_zero=False):
             continue
         if weight <= 0 and not include_zero:
             continue
-        identity = str(item.get('identity_id', ''))
+        kind = item.get('entry_kind', 'appearance')
+        gid = item.get('group_id', '') if kind == 'group' else ''
+        if kind == 'group':
+            group = groups.get(gid)
+            if not group or not group.get('enabled') or not group.get('stages'):
+                log('跳过已删除或停用的形态组条目：' + str(gid))
+                continue
+            identity = str(group['stages'][0]['identity_id'])
+        elif kind == 'appearance': identity = str(item.get('identity_id', ''))
+        else: raise ValueError('未知规则池条目类型')
         source = catalog.get(identity)
         if not source:
             continue
         row = dict(source)
         row['weight'] = weight
+        row['entry_kind'] = kind
+        row['group_id'] = gid
         row['base_identity'] = base
         rows.append(row)
     return rows
 
 
 def _rule_paths():
-    paths = [ROOT / '随机设置.json', ROOT / '自定义人格池.json', RULESET_STATE, ROOT / 'Assets/runtime/all_sinners_pools.json']
+    paths = [ROOT / 'stage_director.json', ROOT / '随机设置.json', ROOT / '自定义人格池.json', RULESET_STATE, ROOT / 'Assets/runtime/all_sinners_pools.json']
     if RULESET_DIR.exists():
         paths.extend(sorted(RULESET_DIR.glob('*.json')))
     return paths
@@ -379,11 +393,13 @@ def _old_pool_rows():
     if len(raw) < 16:
         return []
     magic, version, count, size = struct.unpack_from('<4sIII', raw, 0)
-    if magic != b'SRP4' or count > 4096:
+    if magic not in (b'SRP4', b'SRP5') or count > 4096:
         return []
-    if version == 4 and size == ROW.size:
+    if magic == b'SRP5' and version == 5 and size == ROW.size:
         fmt, has_base = ROW, True
-    elif version == 3 and size == ROW3.size:
+    elif magic == b'SRP4' and version == 4 and size == ROW4.size:
+        fmt, has_base = ROW4, True
+    elif magic == b'SRP4' and version == 3 and size == ROW3.size:
         fmt, has_base = ROW3, False
     else:
         return []
@@ -400,6 +416,8 @@ def _old_pool_rows():
             'asset_key': asset.split(b'\0')[0].decode('utf-8', 'replace'),
             'appearance_name': look.split(b'\0')[0].decode('utf-8', 'replace'),
             'base_identity': base.split(b'\0')[0].decode('utf-8', 'replace'),
+            'entry_kind': 'group' if fmt is ROW and fields[9] == 1 else 'appearance',
+            'group_id': fields[10].split(b'\0')[0].decode('ascii') if fmt is ROW else '',
             'weight': 0,
             '_mask': excluded,
             '_story': bool(story),
@@ -407,18 +425,31 @@ def _old_pool_rows():
     return rows
 
 
-def prepare_native_pools():
+def _pool_workbench_module(name):
     import importlib.util
+    path = ROOT / 'Workbench' / (name + '.py')
+    spec = importlib.util.spec_from_file_location('_sinners_pool_' + name, path)
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
+
+
+def prepare_native_pools():
     lock = getattr(prepare_native_pools, 'lock', None)
     if lock is None:
-        spec = importlib.util.spec_from_file_location('_sinners_pool_file_lock', ROOT / 'Workbench' / 'file_lock.py')
-        module = importlib.util.module_from_spec(spec)
-        spec.loader.exec_module(module)
-        lock = module.FileLock(ROOT / 'workbench-save.lock')
+        lock = _pool_workbench_module('file_lock').FileLock(ROOT / 'workbench-save.lock')
+        prepare_native_pools.stage_files = _pool_workbench_module('stage_files')
+        prepare_native_pools.presets = _pool_workbench_module('merged_appearances')
         prepare_native_pools.lock = lock
     with lock:
+        if not getattr(prepare_native_pools, 'story_ready', False):
+            _pool_workbench_module('story_defaults').restore(ROOT)
+            prepare_native_pools.story_ready = True
+        prepare_native_pools.stage_files.migrate(ROOT, prepare_native_pools.presets.upgrade_legacy_groups)
+        source_stamp = probability_stamp()
         rows = _prepare_native_pools_unlocked()
         prepare_native_pools.config_revision = _config_digest()
+        prepare_native_pools.source_stamp = source_stamp
         return rows
 
 
@@ -431,14 +462,27 @@ def _prepare_native_pools_unlocked():
     settings = load_user_json('随机设置.json', DEFAULT_SETTINGS)
 
     known = {}
+    stage_data = _json_file(ROOT / 'stage_director.json') or {}
+    stage_groups = {g.get('id'): g for g in stage_data.get('groups', []) if isinstance(g, dict)}
 
     def add(sinner, row):
         row = dict(row)
         row['sinner'] = int(sinner)
         row['weight'] = 0
-        key = (int(sinner), str(row.get('base_identity', '')), str(row.get('identity_id', '')))
+        key = (int(sinner), str(row.get('base_identity', '')), str(row.get('identity_id', '')), str(row.get('entry_kind', 'appearance')), str(row.get('group_id', '')))
         if key[2]:
             known.setdefault(key, row)
+        # A group can reference a story appearance whose catalog entry lives
+        # under another sinner. Add every stage in this exact rule context so
+        # the runtime can load it without adding draw probability.
+        if row.get('entry_kind') == 'group':
+            group = stage_groups.get(row.get('group_id'), {})
+            for stage in group.get('stages', []):
+                source = catalog.get(str(stage.get('identity_id', ''))) if isinstance(stage, dict) else None
+                if source:
+                    member = dict(source)
+                    member.update(base_identity=row.get('base_identity', ''), entry_kind='appearance', group_id='')
+                    add(sinner, member)
 
     # Keep every catalog identity at zero weight so changing rule sets never
     # has to remove native rows (the hot reload path requires old rows).
@@ -489,7 +533,7 @@ def _prepare_native_pools_unlocked():
                 continue
             row = dict(row)
             row['sinner'] = int(sinner)
-            key = (int(sinner), str(row.get('base_identity', '')), str(row.get('identity_id', '')))
+            key = (int(sinner), str(row.get('base_identity', '')), str(row.get('identity_id', '')), str(row.get('entry_kind', 'appearance')), str(row.get('group_id', '')))
             known[key] = row
             active_rows.append(row)
 
@@ -517,11 +561,18 @@ def _prepare_native_pools_unlocked():
                 rule = _identity_ruleset(identity)
                 if rule and str(rule.get('sinner')) == key:
                     activate(key, _resolve_rows(rule.get('entries', []), identity, catalog))
+            elif active.startswith('chapter:'):
+                identity = active.split(':', 1)[1]
+                if len(identity) == 5 and identity[:3] == key and identity in catalog:
+                    entries = [dict(entry_kind='group', group_id='ch9_' + identity, weight=1)]
+                    for row in _resolve_rows(entries, identity, catalog):
+                        add(key, row)
+                        activate(key, [row])
 
     rows = []
     written = set()
     for row in active_rows:
-        key = (int(row['sinner']), str(row.get('base_identity', '')), str(row['identity_id']))
+        key = (int(row['sinner']), str(row.get('base_identity', '')), str(row['identity_id']), str(row.get('entry_kind', 'appearance')), str(row.get('group_id', '')))
         if key in written:
             continue
         written.add(key)
@@ -543,7 +594,9 @@ def _prepare_native_pools_unlocked():
             raise ValueError('Invalid sinner')
         identity = str(row['identity_id'])
         raw = identity.encode('ascii')
-        asset = str(row['asset_key']).encode('ascii')
+        source = catalog.get(identity)
+        asset_key = source['asset_key'] if source and source.get('appearance_name') == row['appearance_name'] else row['asset_key']
+        asset = str(asset_key).encode('ascii')
         look = str(row['appearance_name']).encode('ascii')
         weight = float(row.get('weight', 0))
         if not math.isfinite(weight) or weight < 0 or weight > 1000000:
@@ -557,7 +610,10 @@ def _prepare_native_pools_unlocked():
         base = str(row.get('base_identity', '')).encode('ascii')
         if len(base) >= 64:
             raise ValueError('Invalid base identity')
-        key = (sinner, base, raw)
+        kind = row.get('entry_kind', 'appearance')
+        gid = str(row.get('group_id', '')).encode('ascii')
+        if kind not in ('appearance', 'group') or (kind == 'appearance' and gid) or (kind == 'group' and (not gid or len(gid) >= 64)): raise ValueError('Invalid group entry')
+        key = (sinner, base, raw, kind, gid)
         if key in seen:
             continue
         seen.add(key)
@@ -568,13 +624,15 @@ def _prepare_native_pools_unlocked():
             mask = int(row['_mask'])
         else:
             mask = sum(actions[x] for x in set(excluded))
-        if row.get('auto_discovered'):
+        if row.get('auto_discovered') and not row.get('no_attack'):
             mask |= 0x80000000
-        story = 1 if row.get('_story') or row.get('story_metadata') else 0
+        if row.get('no_attack'):
+            mask |= 0x40000000
+        story = 1 if row.get('_story') or row.get('story_metadata') or row.get('no_attack') else 0
         enabled = 1 if weight > 0 and settings.get('enabled', True) else 0
-        packed.append(ROW.pack(sinner, enabled, mask, story, weight, raw, asset, look, base))
+        packed.append(ROW.pack(sinner, enabled, mask, story, weight, raw, asset, look, base, int(kind == 'group'), gid))
 
-    candidate = next((row for row in active_rows if float(row.get('weight', 0)) > 0 and not row.get('story_metadata')), None)
+    candidate = next((row for row in active_rows if float(row.get('weight', 0)) > 0 and not row.get('story_metadata') and not row.get('no_attack')), None)
     if candidate:
         (ROOT / 'probe_asset.txt').write_text(str(candidate['asset_key']), encoding='utf8')
 
@@ -596,18 +654,43 @@ def _prepare_native_pools_unlocked():
 
     dest = ROOT / 'native_pools.bin'
     temp = dest.with_suffix('.tmp')
-    temp.write_bytes(struct.pack('<4sIII', b'SRP4', 4, len(packed), ROW.size) + b''.join(packed))
+    temp.write_bytes(struct.pack('<4sIII', b'SRP5', 5, len(packed), ROW.size) + b''.join(packed))
     temp.replace(dest)
     return len(packed)
 
 
 def probability_stamp():
-    return tuple((p.stat().st_mtime_ns, p.stat().st_size) if p.exists() else (0, 0) for p in _rule_paths())
+    rows = []
+    for path in _rule_paths():
+        try:
+            info = path.stat()
+        except FileNotFoundError:
+            rows.append((path, None, None))
+        else:
+            rows.append((path, info.st_mtime_ns, info.st_size))
+    return tuple(rows)
 
 
 def _delay_ready(detected_at, now):
     return detected_at is not None and now - detected_at >= 30.0
 
+
+def prepare_fx_for_injection(root, game_dir, logger, cancelled=None):
+    import importlib.util
+    active = pathlib.Path(root) / 'fx-active.bin'
+    active.unlink(missing_ok=True)
+    try:
+        path = pathlib.Path(root) / 'Workbench/fx_handoff.py'
+        spec = importlib.util.spec_from_file_location('_sinners_fx_handoff', path)
+        handoff = importlib.util.module_from_spec(spec); spec.loader.exec_module(handoff)
+        handoff.prepare(root, game_dir, logger, cancelled=cancelled)
+    except Exception as exc:
+        active.unlink(missing_ok=True)
+        logger('特效未启用：' + str(exc))
+
+def inject_if_running(stop, injector, pid, mods):
+    if stop.is_set():raise RuntimeError('插件已停止，取消加载原生模块')
+    return injector(pid, mods)
 
 def worker():
     session = None
@@ -644,7 +727,14 @@ def worker():
                 if session:
                     if attempted != pid:
                         raise RuntimeError("Incomplete injection session")
-                    struct.pack_into('<II', session, 12, 0 if stopped_by_flag() else 1, K.GetTickCount())
+                    # Publish the two aligned DWORDs independently. Repacking the
+                    # live header can briefly clear enabled during a linked coin.
+                    C.c_uint32.from_buffer(session, 16).value = K.GetTickCount()
+                    desired = int(not stopped_by_flag())
+                    flag = C.c_uint32.from_buffer(session, 12)
+                    if flag.value != desired:
+                        flag.value = desired
+                    del flag
                     if discovery:
                         discovery.poll()
                     stamp = probability_stamp()
@@ -657,7 +747,7 @@ def worker():
                         mode, skins = prewarm_settings()
                         struct.pack_into('<II', session, OFF_TUNABLE, mode, skins)
                         struct.pack_into('<I', session, OFF_TUNABLE + 8, revision)
-                        pool_stamp = stamp
+                        pool_stamp = prepare_native_pools.source_stamp
                         log('Probability update published revision=%d rows=%d' % (revision, rows))
                     import hashlib
                     pool_status = {'pid':pid,'published':revision,'applied':struct.unpack_from('<I',session,OFF_TUNABLE+12)[0], 'config_revision':published_config}
@@ -719,9 +809,11 @@ def worker():
                         raise RuntimeError('Invalid export alias')
                     session[32 + index * 64:32 + (index + 1) * 64] = alias.ljust(64, b'\0')
                 log("Native pool snapshot rows="+str(prepare_native_pools()))
-                pool_stamp = probability_stamp()
+                prepare_fx_for_injection(ROOT, pathlib.Path(mods['gameassembly.dll'].path).parent, log, STOP.is_set)
+                pool_stamp = prepare_native_pools.source_stamp
+                published_config = prepare_native_pools.config_revision
                 revision = 0
-                inject(pid, mods)
+                inject_if_running(STOP, inject, pid, mods)
                 attempted = pid
                 log(f'Native DLL loaded in {pid}')
                 previous = report(session, None)
@@ -749,19 +841,28 @@ def worker():
 
 
 
-def on_unload(): STOP.set()
-def disabled(*unused): STOP.set()
-def deleted(*unused): STOP.set()
+def _release_workbench():
+    import json, os, re, urllib.request
+    try:
+        url=json.loads((ROOT/'workbench-instance.json').read_text(encoding='utf8'))['url']
+        if not re.fullmatch(r'http://127\.0\.0\.1:\d{1,5}/[A-Za-z0-9_-]+/',url):return
+        token=url.rstrip('/').rsplit('/',1)[-1]
+        req=urllib.request.Request(url+'api/instance-release',json.dumps({'host_pid':os.getpid()}).encode('utf8'),{'Content-Type':'application/json','X-Workbench':token})
+        with urllib.request.urlopen(req,timeout=1):pass
+    except Exception:pass
+def on_unload(): STOP.set();_release_workbench()
+def disabled(*unused): STOP.set();_release_workbench()
+def deleted(*unused): STOP.set();_release_workbench()
 def open_workbench(*unused):
-    import subprocess
-    subprocess.Popen(['powershell.exe','-NoProfile','-STA','-WindowStyle','Hidden','-ExecutionPolicy','Bypass','-File',str(ROOT/'Workbench'/'open_workbench.ps1')],cwd=str(ROOT),creationflags=subprocess.CREATE_NO_WINDOW)
+    import os, subprocess
+    subprocess.Popen(['powershell.exe','-NoProfile','-STA','-WindowStyle','Hidden','-ExecutionPolicy','Bypass','-File',str(ROOT/'Workbench'/'open_workbench.ps1'),'-HostProcessId',str(os.getpid())],cwd=str(ROOT),creationflags=subprocess.CREATE_NO_WINDOW)
 
 
 try:
     import pystray
     def open_settings(*unused):
-        import subprocess
-        subprocess.Popen(['powershell.exe','-NoProfile','-STA','-WindowStyle','Hidden','-ExecutionPolicy','Bypass','-File',str(ROOT/'Workbench'/'open_workbench.ps1')],cwd=str(ROOT),creationflags=subprocess.CREATE_NO_WINDOW)
+        import os, subprocess
+        subprocess.Popen(['powershell.exe','-NoProfile','-STA','-WindowStyle','Hidden','-ExecutionPolicy','Bypass','-File',str(ROOT/'Workbench'/'open_workbench.ps1'),'-HostProcessId',str(os.getpid())],cwd=str(ROOT),creationflags=subprocess.CREATE_NO_WINDOW)
     menu=pystray.MenuItem('人格演出工作台',pystray.Menu(
         pystray.MenuItem('人格、概率与演出设置',open_settings),
         pystray.MenuItem('原生随机已启用',None,enabled=False)))
@@ -801,5 +902,14 @@ if _old:
 _worker_thread = threading.Thread(target=worker,name='SinnersWarpBridge',daemon=True)
 _registry[NAME] = (STOP, _worker_thread)
 _worker_thread.start()
+# Enabled plugin owns weekly discovery; opening a separate workbench does not.
+try:
+    import importlib.util as _weekly_import
+    _weekly_spec = _weekly_import.spec_from_file_location('_sinners_weekly', ROOT / 'weekly_discovery.py')
+    _weekly = _weekly_import.module_from_spec(_weekly_spec); _weekly_spec.loader.exec_module(_weekly)
+    threading.Thread(target=_weekly.loop,args=(ROOT,STOP,log),name='SinnersWeeklyDiscovery',daemon=True).start()
+except Exception:
+    log('每周自动检测调度启动失败：'+traceback.format_exc())
+
 
 

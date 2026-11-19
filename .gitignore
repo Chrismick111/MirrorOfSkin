@@ -18,3 +18,8 @@ portraits/
 # Local rule-set data
 addon/规则集/
 addon/规则集状态.json
+
+# Local compiler and debugger output
+/native/*.pdb
+/native/*.lib
+/native/*.obj

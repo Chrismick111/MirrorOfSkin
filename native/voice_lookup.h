@@ -37,9 +37,10 @@ static const char *sr_voice_keys(unsigned boss,const char *trigger){
    Returns 0 when absent or ambiguous, so a caller never plays a guess. */
 static int sr_voice_single(unsigned boss,const char *trigger,char *out,int cap){
   const char *keys=sr_voice_keys(boss,trigger);
-  if(!keys||sr_voice_key_count(keys)!=1)return 0;
+  if(!out||cap<=1||!keys||sr_voice_key_count(keys)!=1)return 0;
   int n=0;
   while(keys[n]&&keys[n]!='|'&&n<cap-1){out[n]=keys[n];n++;}
+  if(keys[n]){out[0]=0;return 0;}
   out[n]=0;
   return n>0;
 }

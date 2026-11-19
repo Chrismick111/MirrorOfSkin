@@ -1,13 +1,9 @@
 static int warm_forms(Unit *u,int row){
  if(unit_bad(u,row))return 0;
- int i=sr_form_index(g_rows[row].identity);
- if(i>=0)return (u->unavailableForms&(1u<<i))?1:2;
- AutoRuntime *a=auto_for_row(row);
- if(a&&a->value.kind==1&&!auto_form_failed(u,row))return a->value.count;
- return 1;
+ return workbench_form_count(row);
 }
 static int warm_cache_required(Unit *u,int row,int form){
- for(int i=0;i<u->ncand;i++)if(u->cand[i]==row)return form<warm_forms(u,row);
+ for(int i=0;i<u->ncand;i++)if(u->cand[i]==row)return form<warm_forms(u,row)&&!resource_form_failed(u,row,form);
  return 0;
 }
 static void warm_enqueue(Unit *u){
@@ -23,11 +19,13 @@ static void warm_totals(int *ready,int *total,int *units,int *failed){
  *ready=*total=*units=*failed=0;
  for(int i=0;i<SR_UNIT_MAX;i++){
   Unit *u=&g_units[i];if(!u->used||u->dead||u->preserveSpecial||!u->ncand)continue;
-  (*units)++;*failed+=u->nbad+u->nautoFailed;
-  for(unsigned bits=u->unavailableForms;bits;bits>>=1)*failed+=(bits&1);
+  (*units)++;*failed+=u->nbad;
   for(int j=0;j<u->ncand;j++){
    int row=u->cand[j],n=warm_forms(u,row);
-   for(int form=0;form<n;form++){(*total)++;if(skin_index_form(u,row,form)>=0)(*ready)++;}
+   for(int form=0;form<n;form++){
+    if(resource_form_failed(u,row,form)){(*failed)++;continue;}
+    (*total)++;if(skin_index_form(u,row,form)>=0)(*ready)++;
+   }
   }
  }
 }

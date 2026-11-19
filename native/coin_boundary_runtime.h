@@ -1,5 +1,6 @@
 /* No Unity hierarchy work in ChangeMotion or timeline-end callbacks.
    All queued native calls are delivered after the old callback stack returns. */
+#include "queue_scope.h"
 static int g_timelineEndDepth;
 static int g_motionDispatchDepth;
 static void *m_endTimeline,*orig_endTimeline;
@@ -45,6 +46,8 @@ static int motion_capture(void *self,int detail,uint8_t a1,int index,uint8_t a3,
  char diagnostic[160];snprintf(diagnostic,sizeof(diagnostic),"coin metadata sinner=%lu coin=%d coinType=%s sourceDetail=%d sourceIndex=%d",(unsigned long)u->sinner,u->wantedSourceCoin,diagnostic_coin_type(u),detail,index);bootlog(diagnostic);
  PendingMotion m={0};m.source=self;m.detail=detail;m.index=index;m.a1=a1;m.a3=a3;m.a5=a5;m.callback=callback;m.method=mi;
  m.row=u->wanted;m.coin=u->wantedSourceCoin;m.tier=u->coinTier;m.last=u->coinLast;m.action=rfield(u->view,"_currentActionLog");
+ m.viewer=u->observedViewer;
+ if(u->skins[k].chapterActor)m.chapterSkill=chapter_skill_id(u,m.action);
  if((m.tier<1||m.tier>3)&&detail>=7&&detail<=9)m.tier=detail-6;
  /* The live viewer's coin index has already been used by decide_and_apply.
     Query final-coin semantics against that same rooted viewer, not last frame. */
@@ -94,7 +97,11 @@ static void motion_dispatch(Unit *u,int original_only){
   char why[320];snprintf(why,sizeof(why),"coin handoff rejected sinner=%lu coin=%d camera=%d currentMask=%d baseMask=%d endEvidence=%d generation=%u:%u sameAction=%d deliveredCoin=%d slot=%d originalOnly=%d",(unsigned long)u->sinner,m.coin,g_presentationGate,currentMask,baseMask,u->endedApp==current,u->endedGeneration,u->playbackGeneration,u->deliveredAction==m.action,u->deliveredCoin,slot,original_only);bootlog(why);
  }
  Skin *playing=skin_for_app(u,target);
- if(playing){
+ if(playing&&(g_rows[playing->row].excluded&SR_STATIC_APPEARANCE_FLAG)){
+  ((void (*)(void *,int,uint8_t,int,uint8_t,void *,uint8_t,void *))orig_changeMotion)(target,0,0,0,0,NULL,0,m.method);
+  target=u->baseApp;detail=m.detail;index=m.index;playing=NULL;
+ }
+ if(playing&&!playing->chapterActor){
   detail=sr_resolve_attack(playing->motionCounts,detail,1,m.tier,m.detail,0,0);
   if(strcmp(playing->look,u->baseName))detail=sr_donor_tier_detail(playing->motionCounts,detail,m.tier);
   detail=sr_native_motion_detail(playing->motionCounts,playing->nativeMotionDetail,detail,detail);
@@ -105,9 +112,13 @@ static void motion_dispatch(Unit *u,int original_only){
    }
   }
  }
+ if(playing&&!playing->chapterActor)sr_salvador_s3(playing->motionCounts,u->baseName,motion_identity(playing),m.detail,m.coin,&detail,&index);
  if(rfield(target,"m_CachedPtr")){
   ++g_motionDispatchDepth;
-  forward_projected_motion(target,detail,m.a1,index,m.a3,m.callback,m.a5,m.method,m.detail,m.index);
+  /* Apply only while the captured event still matches live skill context. */
+  if(playing&&playing->chapterActor&&enabled_now()&&!cleanup_pending)
+   target=chapter_forward(u,playing,m.detail,m.index,m.chapterSkill,m.action,m.coin,m.last,m.a1,m.a3,m.callback,m.a5,m.method);
+  else forward_projected_motion(target,detail,m.a1,index,m.a3,m.callback,m.a5,m.method,m.detail,m.index,m.coin,sr_queue_scope(m.action,m.viewer,m.coin,m.tier,u->observedAction,u->observedViewer,current_attack_coin(u),u->coinTier));
   --g_motionDispatchDepth;
   /* The native metadata container already projects donor motion onto the
      source motion. Do not override SetAnimSpeed after native playback starts:
@@ -125,6 +136,7 @@ static void timeline_end_hook(void *app,void *director,void *mi){
  Unit *before=unit_for_app(app);unsigned generation=before?before->playbackGeneration:0;
  g_timelineEndDepth++;
  ((void (*)(void *,void *,void *))orig_endTimeline)(app,director,mi);
+ wedge_probe_end(app,director,generation);
  /* Capture happens during the callback; permit handoff only after it returns. */
  Unit *u=unit_for_app(app);
  if(u&&u->playbackGeneration==generation&&director&&director==rfield(app,"_playableDirector")&&!(motion_busy_mask(app)&7)){
@@ -133,3 +145,4 @@ static void timeline_end_hook(void *app,void *director,void *mi){
  if(u)for(int i=0;i<u->motionCount;i++)if(u->motions[i].source==app)u->motions[i].endReturned=1;
  g_timelineEndDepth--;
 }
+

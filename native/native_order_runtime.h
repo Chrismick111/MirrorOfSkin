@@ -4,7 +4,7 @@
 #define SR_ORDER_LIMIT 128
 #define SR_ORDER_OBSERVATIONS 64
 #define SR_ORDER_CACHE 16
-typedef struct {void *self;int allCoin,startIndex,motionCount;uint8_t oneBased;unsigned serial;} NativeOrderObservation;
+typedef struct {void *self,*action,*viewer;int allCoin,startIndex,motionCount;uint8_t oneBased;unsigned serial;} NativeOrderObservation;
 typedef struct {void *action,*viewer;unsigned serial;int donorCount,count,values[SR_ORDER_LIMIT];} NativeOrderCache;
 static NativeOrderObservation native_order_observations[SR_ORDER_OBSERVATIONS];
 static unsigned native_order_serial;
@@ -13,7 +13,9 @@ static void *native_order_methods[4],*native_order_originals[4];
 static void native_order_record(void *self,int allCoin,int startIndex,int motionCount,uint8_t oneBased){
  unsigned serial=++native_order_serial;if(!serial)serial=++native_order_serial;
  NativeOrderObservation *r=&native_order_observations[serial%SR_ORDER_OBSERVATIONS];
- *r=(NativeOrderObservation){self,allCoin,startIndex,motionCount,oneBased,serial};
+ void *action=NULL,*viewer=NULL;
+ for(int i=0;i<SR_UNIT_MAX;i++){Unit *u=&g_units[i];if(u->used&&u->viewerActive&&u->observedViewer&&rfield(u->observedViewer,"_actor")==u->view&&rfield(u->observedViewer,"_skillViewBase")==self){action=rfield(u->view,"_currentActionLog");viewer=u->observedViewer;break;}}
+ *r=(NativeOrderObservation){self,action,viewer,allCoin,startIndex,motionCount,oneBased,serial};
 }
 static void *native_order_forward(int slot,void *self,int allCoin,int startIndex,int motionCount,uint8_t oneBased,void *mi){
  void *result=((void *(*)(void *,int,int,int,uint8_t,void *))native_order_originals[slot])(self,allCoin,startIndex,motionCount,oneBased,mi);
@@ -27,11 +29,25 @@ static int native_order_value(const int *values,int count,int coin,int *out){
  if(values[coin]==INT_MIN)return 0;
  *out=values[coin]-1;return 1;
 }
-static int native_order_index(Unit *u,void *action,int coin,int donorCount,int *index){
- if(!u||!u->observedViewer||u->observedAction!=action||coin<0||donorCount<=0||!native_order_originals[0])return 0;
+static int native_order_coin_count_for_action(Unit *u){
+ if(!u||!u->observedAction||!u->observedViewer)return 0;
  void *viewer=rfield(u->observedViewer,"_skillViewBase");if(!viewer)return 0;
  NativeOrderObservation *obs=NULL;
- for(int i=0;i<SR_ORDER_OBSERVATIONS;i++)if(native_order_observations[i].self==viewer&&(!obs||native_order_observations[i].serial>obs->serial))obs=&native_order_observations[i];
+ for(int i=0;i<SR_ORDER_OBSERVATIONS;i++)if(native_order_observations[i].self==viewer&&native_order_observations[i].action==u->observedAction&&native_order_observations[i].viewer==u->observedViewer&&(!obs||native_order_observations[i].serial>obs->serial))obs=&native_order_observations[i];
+ return obs&&obs->allCoin>0&&obs->allCoin<=SR_ORDER_LIMIT?obs->allCoin:0;
+}
+static int native_order_coin_count(Unit *u){
+ if(!u||!u->observedAction||!u->observedViewer)return 0;
+ void *viewer=rfield(u->observedViewer,"_skillViewBase");if(!viewer)return 0;
+ NativeOrderObservation *obs=NULL;
+ for(int i=0;i<SR_ORDER_OBSERVATIONS;i++)if(native_order_observations[i].self==viewer&&native_order_observations[i].action==u->observedAction&&native_order_observations[i].viewer==u->observedViewer&&(!obs||native_order_observations[i].serial>obs->serial))obs=&native_order_observations[i];
+ return obs&&obs->allCoin>0&&obs->allCoin<=SR_ORDER_LIMIT?obs->allCoin:0;
+}
+static int native_order_index(Unit *u,void *action,int coin,int donorCount,int *index){
+ if(!u||!action||!u->observedViewer||u->observedAction!=action||coin<0||donorCount<=0||!native_order_originals[0])return 0;
+ void *viewer=rfield(u->observedViewer,"_skillViewBase");if(!viewer)return 0;
+ NativeOrderObservation *obs=NULL;
+ for(int i=0;i<SR_ORDER_OBSERVATIONS;i++)if(native_order_observations[i].self==viewer&&native_order_observations[i].action==action&&native_order_observations[i].viewer==u->observedViewer&&(!obs||native_order_observations[i].serial>obs->serial))obs=&native_order_observations[i];
  if(!obs||obs->allCoin<=0||obs->allCoin>SR_ORDER_LIMIT||coin>=obs->allCoin)return 0;
  int unit=(int)(u-g_units);if(unit<0||unit>=SR_UNIT_MAX)return 0;
  NativeOrderCache *cache=NULL;

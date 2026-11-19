@@ -19,8 +19,8 @@
    Hooks only record intent. Playback runs on the main thread from tick(), the
    same place every other managed call in this file happens. */
 
-#define SR_VOICE_PENDING 8
-#define SR_VOICE_LEN 48
+#define SR_VOICE_PENDING 32
+#define SR_VOICE_LEN 128
 
 /* The engine reports one death through more than one entry point (the view's own
    callback plus the unit-level forward), 400-600ms apart. The pending-slot check
@@ -29,6 +29,12 @@
 #ifndef SR_VOICE_DEDUPE_MS
 #define SR_VOICE_DEDUPE_MS 1500
 #endif
+
+typedef struct {
+  void *appearance;
+  DWORD at;
+  char key[192];
+} SrVoiceCue;
 
 typedef struct {
   void *view;
@@ -125,7 +131,7 @@ static int sr_voice_request_locked(void *view,unsigned boss,const char *trigger)
 
   /* Remember it in the same pass that queued it, so the duplicate arriving
      after playback still finds a record. */
-  LONG r=(LONG)((unsigned)InterlockedIncrement(&g_voiceRecentNext)-1u)%SR_VOICE_PENDING;
+  unsigned r=((unsigned)InterlockedIncrement(&g_voiceRecentNext)-1u)%SR_VOICE_PENDING;
   SrVoiceRecent *rec=&g_voiceRecent[r];
   rec->view=view;rec->boss=boss;rec->at=now;
   lstrcpynA(rec->trigger,trigger,sizeof(rec->trigger));
@@ -137,6 +143,18 @@ static int sr_voice_request(void *view,unsigned boss,const char *trigger){
   int accepted=sr_voice_request_locked(view,boss,trigger);
   InterlockedExchange(&g_voiceLock,0);
   return accepted;
+}
+/* Discard the old life before a view is reused, even with the same costume. */
+static void sr_voice_cancel_view(void *view){
+  if(!view||InterlockedCompareExchange(&g_voiceLock,1,0))return;
+  for(int i=0;i<SR_VOICE_PENDING;i++){
+    SrVoicePending *p=&g_voicePending[i];
+    if(p->view==view){
+      ui_unroot(p->viewRoot);memset(p,0,sizeof(*p));InterlockedDecrement(&g_voicePendingCount);
+    }
+    if(g_voiceRecent[i].view==view)memset(&g_voiceRecent[i],0,sizeof(g_voiceRecent[i]));
+  }
+  InterlockedExchange(&g_voiceLock,0);
 }
 static void sr_voice_clear(void){
   if(InterlockedCompareExchange(&g_voiceLock,1,0))return;

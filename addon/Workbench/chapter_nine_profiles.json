@@ -1,0 +1,297 @@
+[
+  {
+    "identity": "10916",
+    "role": "拇指父辈",
+    "enemy": "瓦伦希娜",
+    "condition": "罗佳的预知眼耗尽后转为闭眼状态，关闭瓦伦希娜的两处眼光。原版预知眼以30层登场。",
+    "hold": false,
+    "stages": [
+      {
+        "identity_id": "story_1314_Thumb_FatherAppearance",
+        "form": 0,
+        "conditions": [],
+        "match": "all",
+        "priority": 0
+      },
+      {
+        "identity_id": "story_1314_Thumb_FatherAppearance",
+        "form": 1,
+        "conditions": [
+          {
+            "metric": "chapter_phase",
+            "op": "gte",
+            "value": 1
+          }
+        ],
+        "match": "all",
+        "priority": 1
+      }
+    ]
+  },
+  {
+    "identity": "10716",
+    "role": "拇指子辈",
+    "enemy": "卢西奥",
+    "condition": "常驻卢西奥外观。决斗层数强化技能，目录中只有一个战斗外观。",
+    "hold": false,
+    "stages": [
+      {
+        "identity_id": "story_1306_Thumb_DiscipleAppearance",
+        "form": 0,
+        "conditions": [],
+        "match": "all",
+        "priority": 0
+      }
+    ]
+  },
+  {
+    "identity": "10115",
+    "role": "食指父辈",
+    "enemy": "里恩",
+    "condition": "李箱首次混乱后面具转为灼伤时进入第二形态。也在体力不高于55%时进入，与里恩的敌方被动134701一致。",
+    "hold": true,
+    "stages": [
+      {
+        "identity_id": "story_1347_Index_fatherAppearance",
+        "form": 0,
+        "conditions": [],
+        "match": "all",
+        "priority": 0
+      },
+      {
+        "identity_id": "story_1348_Index_father_Phase2Appearance",
+        "form": 0,
+        "conditions": [
+          {
+            "metric": "chapter_phase",
+            "op": "gte",
+            "value": 1
+          },
+          {
+            "metric": "health",
+            "op": "lte",
+            "value": 55
+          }
+        ],
+        "match": "any",
+        "priority": 1
+      }
+    ]
+  },
+  {
+    "identity": "10314",
+    "role": "食指子辈",
+    "enemy": "空",
+    "condition": "同步堂吉诃德实际进入和解除绽放E.G.O后的外观。解放、理智和回合判定由本体处理。",
+    "hold": false,
+    "stages": [
+      {
+        "identity_id": "story_1325_Index_Disciple_NormalAppearance",
+        "form": 0,
+        "conditions": [],
+        "match": "all",
+        "priority": 0
+      },
+      {
+        "identity_id": "story_1325_Index_discipleAppearance",
+        "form": 0,
+        "conditions": [
+          {
+            "metric": "native",
+            "op": "gte",
+            "value": 1
+          }
+        ],
+        "match": "all",
+        "priority": 1
+      }
+    ]
+  },
+  {
+    "identity": "11115",
+    "role": "中指父辈",
+    "enemy": "马蒂亚斯",
+    "condition": "按奥提斯当前剑的实际阶段换剑。第一至第三把剑使用马蒂亚斯同一外观的武器控制器，第四把剑使用独立外观。",
+    "hold": false,
+    "stages": [
+      {
+        "identity_id": "story_1327_MiddleFinger_fatherAppearance",
+        "form": 0,
+        "conditions": [],
+        "match": "all",
+        "priority": 0
+      },
+      {
+        "identity_id": "story_1327_MiddleFinger_fatherAppearance",
+        "form": 1,
+        "conditions": [
+          {
+            "metric": "chapter_phase",
+            "op": "gte",
+            "value": 1
+          }
+        ],
+        "match": "all",
+        "priority": 1
+      },
+      {
+        "identity_id": "story_1327_MiddleFinger_fatherAppearance",
+        "form": 2,
+        "conditions": [
+          {
+            "metric": "chapter_phase",
+            "op": "gte",
+            "value": 2
+          }
+        ],
+        "match": "all",
+        "priority": 2
+      },
+      {
+        "identity_id": "story_1327_MiddleFinger_father_Phase4Appearance",
+        "form": 0,
+        "conditions": [
+          {
+            "metric": "chapter_phase",
+            "op": "gte",
+            "value": 3
+          }
+        ],
+        "match": "all",
+        "priority": 3
+      }
+    ]
+  },
+  {
+    "identity": "10814",
+    "role": "中指子辈",
+    "enemy": "绮罗",
+    "condition": "以实玛利获得或失去热丝武器时，调用绮罗外观的热丝状态控制器。",
+    "hold": false,
+    "stages": [
+      {
+        "identity_id": "story_1328_MiddleFinger_discipleAppearance",
+        "form": 0,
+        "conditions": [],
+        "match": "all",
+        "priority": 0
+      },
+      {
+        "identity_id": "story_1328_MiddleFinger_discipleAppearance",
+        "form": 1,
+        "conditions": [
+          {
+            "metric": "chapter_phase",
+            "op": "gte",
+            "value": 1
+          }
+        ],
+        "match": "all",
+        "priority": 1
+      }
+    ]
+  },
+  {
+    "identity": "10614",
+    "role": "环指父辈",
+    "enemy": "卡利斯托",
+    "condition": "常驻卡利斯托外观。鸿璐的闭馆条件改变技能，未发现对应的第二个卡利斯托预制体。",
+    "hold": false,
+    "stages": [
+      {
+        "identity_id": "story_1331_RingFinger_FatherAppearance",
+        "form": 0,
+        "conditions": [],
+        "match": "all",
+        "priority": 0
+      }
+    ]
+  },
+  {
+    "identity": "10215",
+    "role": "环指子辈",
+    "enemy": "阿尔比娜",
+    "condition": "同步浮士德的真实脱甲外观。获得法西娅后在回合结束时脱甲，对应阿尔比娜的脱甲预制体。",
+    "hold": true,
+    "stages": [
+      {
+        "identity_id": "story_1319_RingFinger_DiscipleAppearance",
+        "form": 0,
+        "conditions": [],
+        "match": "all",
+        "priority": 0
+      },
+      {
+        "identity_id": "story_1336_RingFinger_Disciple_CastoffAppearance",
+        "form": 0,
+        "conditions": [
+          {
+            "metric": "native",
+            "op": "gte",
+            "value": 1
+          }
+        ],
+        "match": "all",
+        "priority": 1
+      }
+    ]
+  },
+  {
+    "identity": "10415",
+    "role": "小指父辈",
+    "enemy": "盐见夜",
+    "condition": "演出换算：良秀的「过往回响」达到原外观控制器最高档（5层）时，改用终战的盐见夜。两套敌方外观原属不同关卡。",
+    "hold": true,
+    "stages": [
+      {
+        "identity_id": "story_1322_Pinky_FatherAppearance",
+        "form": 0,
+        "conditions": [],
+        "match": "all",
+        "priority": 0
+      },
+      {
+        "identity_id": "story_1322_Pinky_Father2pAppearance",
+        "form": 0,
+        "conditions": [
+          {
+            "metric": "chapter_phase",
+            "op": "gte",
+            "value": 1
+          }
+        ],
+        "match": "all",
+        "priority": 1
+      }
+    ]
+  },
+  {
+    "identity": "11015",
+    "role": "小指子辈",
+    "enemy": "莲",
+    "condition": "辛克莱与莲的原版控制器持有同名剑气物件；跟随辛克莱本体剑气的显示与隐藏。",
+    "hold": false,
+    "stages": [
+      {
+        "identity_id": "story_1318_Pinky_DiscipleAppearance",
+        "form": 0,
+        "conditions": [],
+        "match": "all",
+        "priority": 0
+      },
+      {
+        "identity_id": "story_1318_Pinky_DiscipleAppearance",
+        "form": 1,
+        "conditions": [
+          {
+            "metric": "chapter_phase",
+            "op": "gte",
+            "value": 1
+          }
+        ],
+        "match": "all",
+        "priority": 1
+      }
+    ]
+  }
+]

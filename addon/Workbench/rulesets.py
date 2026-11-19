@@ -1,5 +1,6 @@
 import hashlib, json, pathlib
 from file_lock import FileLock
+import group_entries
 
 SINNER_NAMES = ['李箱', '浮士德', '堂吉诃德', '良秀', '默尔索', '鸿璐', '希斯克利夫', '以实玛利', '罗佳', '辛克莱', '奥提斯', '格里高尔']
 DIR = '规则集'
@@ -48,9 +49,9 @@ def pools(root):
     return _read(pathlib.Path(root) / POOLS, {})
 
 
-def catalog(root):
+def catalog(root, pool_data=None):
     result = {}
-    for pool in pools(root).values():
+    for pool in (pools(root) if pool_data is None else pool_data).values():
         for entry in pool.get('entries', []):
             identity = str(entry.get('identity_id', ''))
             if identity:
@@ -83,15 +84,9 @@ def _default_entries(pool, sinner):
 def _positive(entries):
     result = []
     for entry in entries or []:
-        if not isinstance(entry, dict):
-            continue
-        identity = str(entry.get('identity_id', ''))
-        try:
-            weight = float(entry.get('weight', 1))
-        except (TypeError, ValueError):
-            continue
-        if identity and 0 < weight <= 1000000:
-            result.append({'identity_id': identity, 'weight': weight})
+        try: value = group_entries.normalize_entry(entry)
+        except (TypeError, ValueError): continue
+        result.append(value)
     return result[:MAX_ENTRIES]
 
 
@@ -99,11 +94,12 @@ def _portrait(root, identity, portrait_ok):
     return bool(identity) and portrait_ok(identity)
 
 
-def list_rulesets(root, portrait_ok):
+def list_rulesets(root, portrait_ok, pool_data=None):
     root = pathlib.Path(root)
     st = state(root)
-    pool_data = pools(root)
-    cat = catalog(root)
+    if pool_data is None:
+        pool_data = pools(root)
+    cat = catalog(root, pool_data)
     items = []
     any_active = bool(st['active'])
     items.append({
@@ -164,7 +160,7 @@ def selected_rule(root):
     return st, None
 
 
-def entries(root, rule):
+def entries(root, rule, pool_data=None):
     root = pathlib.Path(root)
     if not rule:
         return []
@@ -174,7 +170,9 @@ def entries(root, rule):
         profile = (data.get('pools') or {}).get(sinner)
         if isinstance(profile, dict):
             return _positive(profile.get('entries', []))
-        return _default_entries(pools(root).get(sinner, {}), sinner)
+        if pool_data is None:
+            pool_data = pools(root)
+        return _default_entries(pool_data.get(sinner, {}), sinner)
     if kind == 'sinner':
         profile = (custom(root).get('characters') or {}).get(sinner)
         return _positive(profile.get('entries', [])) if isinstance(profile, dict) else []
@@ -201,13 +199,21 @@ def revision(root, rule):
         return hashlib.sha256(b'').hexdigest()
 
 
-def save_entries(root, rule, entries, expected_revision, known, validate):
+def save_entries(root, rule, entries, expected_revision, known, validate, lock=None):
     root = pathlib.Path(root)
     if not rule:
         raise ValueError('未选择规则集')
-    entries = _positive(entries)
-    validate(str(rule.get('sinner') or '101'), {'enabled': True, 'entries': entries}, known)
-    with FileLock(root / 'workbench-save.lock'):
+    if not isinstance(entries,list) or len(entries)>MAX_ENTRIES: raise ValueError('规则池格式无效')
+    with (lock or FileLock(root / 'workbench-save.lock')):
+        # Resolve the current group configuration while holding the same lock
+        # used by director saves, so a concurrent change cannot invalidate the
+        # entry between validation and writing it to the rule pool.
+        catalog_map = {str(key): {} for key in known}
+        doc = _read(root / 'stage_director.json', {})
+        groups = {g.get('id'):g for g in doc.get('groups',[]) if isinstance(g,dict)}
+        entries = group_entries.validate_entries(entries, catalog_map, groups)
+        appearances = [e for e in entries if e['entry_kind']=='appearance']
+        validate(str(rule.get('sinner') or '101'), {'enabled': True, 'entries': appearances}, known)
         if revision(root, rule) != expected_revision:
             raise ValueError('规则集已在其他窗口更改，请重新载入')
         kind, sinner, identity = rule.get('kind'), str(rule.get('sinner') or ''), rule.get('identity')

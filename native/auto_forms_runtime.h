@@ -7,8 +7,12 @@ static SrAutoForm autoRead[SR_AUTO_MAX];
 static void auto_path(wchar_t *path,const wchar_t *file){
  GetModuleFileNameW(g_self,path,32768);wchar_t *p=wcsrchr(path,L'\\');if(p)lstrcpyW(p+1,file);else path[0]=0;
 }
-static int auto_existing_row(const char *id){
- for(uint32_t i=0;i<g_rowCount;i++)if(!strcmp(g_rows[i].identity,id))return (int)i;
+static int auto_existing_row(const SrAutoForm *p){
+ for(uint32_t i=0;i<g_rowCount;i++){
+  if(strcmp(g_rows[i].identity,p->identity))continue;
+  if(p->kind==1&&strncmp(g_rows[i].appearance_name,p->names[0],64))continue;
+  return (int)i;
+ }
  return -1;
 }
 static AutoRuntime *auto_for_row(int row){
@@ -25,7 +29,7 @@ static int auto_assign(int row,const SrAutoForm *p){
 }
 static int auto_form_valid(const SrAutoForm *p){
  if(!memchr(p->identity,0,64)||p->count<2||p->count>4||(p->kind!=1&&p->kind!=2))return 0;
- int row=auto_existing_row(p->identity);if(row<0)return 0;
+ int row=auto_existing_row(p);if(row<0)return 0;
  for(unsigned i=0;i<p->count;i++){
   if(!memchr(p->names[i],0,64)||!sr_auto_name(p->names[i]))return 0;
   for(unsigned j=0;j<i;j++)if(!strcmp(p->names[i],p->names[j]))return 0;
@@ -39,6 +43,17 @@ static int auto_form_valid(const SrAutoForm *p){
   if(sr_auto_skins(names,p->count,out)!=(int)p->count||memcmp(out,p->names,p->count*64))return 0;}
  return 1;
 }
+static void auto_bind_policy(const SrAutoForm *policy){
+ int source=auto_existing_row(policy);
+ if(source<0)return;
+ int binding=0;
+ for(uint32_t row=0;row<g_rowCount;row++){
+  if(!(g_rows[row].excluded&SR_AUTO_FLAG)||strcmp(g_rows[row].identity,policy->identity)||
+     strcmp(g_rows[row].asset_key,g_rows[source].asset_key))continue;
+  if(binding)autoByRow[row]=binding;
+  else if(auto_assign((int)row,policy))binding=autoByRow[row];
+ }
+}
 static void auto_forms_load(void){
  wchar_t path[32768];auto_path(path,L"auto_forms.bin");
  HANDLE f=CreateFileW(path,GENERIC_READ,FILE_SHARE_READ|FILE_SHARE_DELETE,NULL,OPEN_EXISTING,0,NULL);
@@ -47,14 +62,11 @@ static void auto_forms_load(void){
  if(ok)ok=ReadFile(f,autoRead,h[2]*(DWORD)sizeof(SrAutoForm),&got,NULL)&&got==h[2]*sizeof(SrAutoForm);
  CloseHandle(f);if(!ok){bootlog("automatic forms snapshot rejected");return;}
  for(unsigned i=0;i<h[2];i++)if(!auto_form_valid(&autoRead[i])){bootlog("automatic form entry rejected; retaining previous policy");return;}
- for(unsigned i=0;i<h[2];i++)auto_assign(auto_existing_row(autoRead[i].identity),&autoRead[i]);
-}
-static int auto_form_failed(Unit *u,int row){
- for(int i=0;i<u->nautoFailed;i++)if(u->autoFailed[i]==row)return 1;return 0;
+ for(unsigned i=0;i<h[2];i++)auto_bind_policy(&autoRead[i]);
 }
 static int auto_desired(Unit *u,int row){
  AutoRuntime *a=auto_for_row(row);
- if(!a||a->value.kind!=1||auto_form_failed(u,row))return 0;
+ if(!a||a->value.kind!=1)return 0;
  unsigned n=u->formState.evades,cap=a->value.count-1;return (int)(n<cap?n:cap);
 }
 static const SrInternalForm *auto_internal(int row){
@@ -108,7 +120,7 @@ static void auto_detect_skin(Skin *skin){
   return;
  }
  /* A cached skin policy from an older asset is not blindly reused. */
- if(existing&&existing->value.kind==2){existing->value.kind=0;bootlog("automatic internal form not confirmed on this asset; deferred");}
+ if(existing&&existing->value.kind==2){skin->internalFailed=15;bootlog("automatic internal form not confirmed on this instance");}
 }
 
 /* The authoritative identity table is exported once per process (four rows
