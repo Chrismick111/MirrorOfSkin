@@ -135,10 +135,9 @@ class Store:
   self.root=pathlib.Path(root);self.lock=FileLock(self.root/'workbench-save.lock');self.portraits=read(self.root/'Workbench/portrait_manifest.json',{});self.local_portraits=local_portraits.load(self.root)
   with self.lock:
    chapter_nine.migrate(self.root,stage_files)
- def launcher_background(self):
-  cached=getattr(self,'_launcher_bg',None)
-  if cached is not None:return cached
-  result={};self._launcher_bg_path=None
+ def _launcher_background_init(self):
+  if hasattr(self,'_launcher_bg_files'):return
+  self._launcher_bg_files=[];self._launcher_bg_blur=7.5;self._launcher_bg_path=None
   try:
    launcher=self.root.parent.parent
    settings=read(launcher/'config/settings.json',{})
@@ -146,24 +145,45 @@ class Store:
    blur_row=settings.get('bg_gaussian_blur_factor')
    try:blur=float(blur_row.get('value',3) if isinstance(blur_row,dict) else 3)
    except (TypeError,ValueError):blur=3
+   self._launcher_bg_blur=round(max(0.0,min(10.0,blur))*2.5,1)
    skin_row=settings.get('skin')
    skin=str(skin_row.get('value') or '') if isinstance(skin_row,dict) else ''
    dirs=[]
    if skin:dirs.append(launcher/'_internal/web/app_skins'/skin/'assets/launcher/background')
    dirs.append(launcher/'assets/images/background')
-   files=[]
    for folder in dirs:
     if not folder.is_dir():continue
     files=[p for p in folder.iterdir() if p.is_file() and p.suffix.lower() in ('.jpg','.jpeg','.png','.webp','.bmp')]
-    if files:break
-   if files:
-    import random
-    path=random.choice(files)
-    self._launcher_bg_path=path
-    result={'url':'api/launcher-background','name':path.name,'blur':round(max(0.0,min(10.0,blur))*2.5,1),'mask':0.5}
-  except (OSError,ValueError,TypeError):result={}
+    if files:
+     self._launcher_bg_files=files;break
+  except (OSError,ValueError,TypeError):pass
+ def _launcher_background_result(self,path):
+  return {'url':'api/launcher-background','name':path.name,'blur':self._launcher_bg_blur,'mask':0.5,'count':len(self._launcher_bg_files)}
+ def launcher_background(self):
+  cached=getattr(self,'_launcher_bg',None)
+  if cached is not None:return cached
+  self._launcher_background_init()
+  result={}
+  if self._launcher_bg_files:
+   import random
+   self._launcher_bg_index=random.randrange(len(self._launcher_bg_files))
+   self._launcher_bg_path=self._launcher_bg_files[self._launcher_bg_index]
+   result=self._launcher_background_result(self._launcher_bg_path)
   self._launcher_bg=result
   return result
+ def launcher_background_next(self):
+  self._launcher_background_init()
+  files=self._launcher_bg_files
+  if not files:return self.launcher_background()
+  if len(files)>1:
+   import random
+   current=getattr(self,'_launcher_bg_index',-1)
+   self._launcher_bg_index=random.choice([i for i in range(len(files)) if i!=current])
+   self._launcher_bg_path=files[self._launcher_bg_index]
+   self._launcher_bg=self._launcher_background_result(self._launcher_bg_path)
+  elif not getattr(self,'_launcher_bg',None):
+   self.launcher_background()
+  return self._launcher_bg
  def launcher_background_image(self):
   self.launcher_background()
   path=getattr(self,'_launcher_bg_path',None)
@@ -495,7 +515,8 @@ def main():
     if route=='index':return self.send(html,ctype='text/html; charset=utf-8')
     if route=='effect-editor':return self.send((pathlib.Path(__file__).parent/'effect-editor.html').read_bytes(),ctype='text/html; charset=utf-8')
     if route=='instance-ping':return self.send({'workbench':True})
-    if route=='launcher-background':
+    if route and (route=='launcher-background' or route.startswith('launcher-background?')):
+     if 'next=1' in route:store.launcher_background_next()
      image,ctype=store.launcher_background_image()
      if image is not None:return self.send(image,ctype=ctype,cache='no-store')
      return self.send({'error':'未找到'},404)
