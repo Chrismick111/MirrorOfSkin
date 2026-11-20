@@ -41,7 +41,7 @@ function Show-WorkbenchWindow([string]$url){
   $form=New-Object System.Windows.Forms.Form
   $form.Text='镜像幻化'
   $area=[System.Windows.Forms.Screen]::PrimaryScreen.WorkingArea
-  $form.Width=[Math]::Max(1100,[Math]::Min(1900,$area.Width-40))
+  $form.Width=[Math]::Max(1100,[Math]::Min(1400,[int]($area.Width*0.82)))
   $form.Height=[Math]::Max(760,[Math]::Min(1200,$area.Height-40))
   $form.MinimumSize=New-Object System.Drawing.Size(1000,650)
   $form.StartPosition='CenterScreen'
@@ -115,6 +115,8 @@ function Start-Pywebview([string]$url){
   return $true
  }catch{return $false}
 }
+$localVersion=$null
+try{$localVersion=(Get-Content -LiteralPath (Join-Path $addon 'addon_info.json') -Raw|ConvertFrom-Json).version}catch{}
 $state=Join-Path $addon 'workbench-instance.json'
 if(Test-Path -LiteralPath $state){
  try{
@@ -122,9 +124,21 @@ if(Test-Path -LiteralPath $state){
   if($url -match '^http://127\.0\.0\.1:\d{1,5}/[A-Za-z0-9_-]+/$'){
    $ping=Invoke-RestMethod -Uri ($url+'api/instance-ping') -TimeoutSec 1
    if($ping.workbench){
-    if($ServerOnly){Write-Output $url;exit 0}
-    if(Start-Pywebview $url){exit 0}
-    Show-WorkbenchWindow $url;exit 0
+    if((-not $ping.version) -or ($ping.version -ne $localVersion)){
+     $token=$url.TrimEnd('/').Split('/')[-1]
+     try{
+      $shutdown=Invoke-WebRequest -Method Post -Uri ($url+'api/instance-shutdown') -Headers @{'X-Workbench'=$token;'Content-Type'='application/json'} -Body '{"host_pid":0}' -TimeoutSec 3
+     }catch{}
+     for($i=0;$i -lt 20;$i++){
+      Start-Sleep -Milliseconds 150
+      try{ Invoke-RestMethod -Uri ($url+'api/instance-ping') -TimeoutSec 1|Out-Null }
+      catch{ break }
+     }
+    }else{
+     if($ServerOnly){Write-Output $url;exit 0}
+     if(Start-Pywebview $url){exit 0}
+     Show-WorkbenchWindow $url;exit 0
+    }
    }
   }
  }catch{}
