@@ -9,6 +9,16 @@ else {
  if(-not $cmd){throw '未找到 Python，请安装 Python 3.9 或更新版本。'}
  $python=$cmd.Source
 }
+$state=Join-Path $addon 'workbench-instance.json'
+if(Test-Path -LiteralPath $state){
+ try{
+  $url=(Get-Content -LiteralPath $state -Raw|ConvertFrom-Json).url
+  if($url -match '^http://127\.0\.0\.1:\d{1,5}/[A-Za-z0-9_-]+/$'){
+   $ping=Invoke-RestMethod -Uri ($url+'api/instance-ping') -TimeoutSec 1
+   if($ping.workbench){Start-Process $url;exit 0}
+  }
+ }catch{}
+}
 $script=Join-Path $PSScriptRoot 'workbench.py'
 $logId=(Get-Date -Format 'yyyyMMdd-HHmmss-fff')+'-'+[Guid]::NewGuid().ToString('N').Substring(0,8)
 $logDir=Join-Path ([IO.Path]::GetTempPath()) 'FaustRandomIdentity-Workbench'
