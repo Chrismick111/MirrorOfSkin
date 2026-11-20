@@ -141,7 +141,7 @@ ROW3 = struct.Struct('<IIII d 64s 128s 64s')
 RULESET_DIR = ROOT / '规则集'
 RULESET_STATE = ROOT / '规则集状态.json'
 
-DEFAULT_SETTINGS = {'max_cached_skins': 3, 'prewarm_full_pool': False, 'enabled': True, 'characters': {str(i): False for i in range(101, 113)}}
+DEFAULT_SETTINGS = {'max_cached_skins': 3, 'prewarm_full_pool': False, 'disable_special_clash': True, 'enabled': True, 'characters': {str(i): False for i in range(101, 113)}}
 DEFAULT_CUSTOM_POOLS = {'schema': 1, 'characters': {}}
 DEFAULT_DIRECTOR = {'schema': 1, 'characters': {}, 'forms': {}}
 DEFAULT_RULESET_STATE = {'schema': 1, 'global': False, 'active': {}}
@@ -201,7 +201,8 @@ def prewarm_settings():
         skins = 3
     skins = max(2, min(256, skins))
     mode = 1 if settings.get('prewarm_full_pool', False) else 0
-    return mode, skins
+    clash = 1 if settings.get('disable_special_clash', True) else 2
+    return mode, skins, clash
 
 def _json_file(path, default=None):
     try:
@@ -607,8 +608,9 @@ def worker():
                         rows = prepare_native_pools()
                         published_config = prepare_native_pools.config_revision
                         revision = (revision + 1) & 0xffffffff or 1
-                        mode, skins = prewarm_settings()
+                        mode, skins, clash = prewarm_settings()
                         struct.pack_into('<II', session, OFF_TUNABLE, mode, skins)
+                        struct.pack_into('<I', session, OFF_TUNABLE + 20, clash)
                         struct.pack_into('<I', session, OFF_TUNABLE + 8, revision)
                         pool_stamp = prepare_native_pools.source_stamp
                         log('Probability update published revision=%d rows=%d' % (revision, rows))
@@ -658,8 +660,9 @@ def worker():
                                     access=mmap.ACCESS_WRITE)
                 session[:] = b'\0' * SIZE
                 struct.pack_into('<5I', session, 0, MAGIC, VERSION, SIZE, 0 if stopped_by_flag() else 1, K.GetTickCount())
-                mode, skins = prewarm_settings()
+                mode, skins, clash = prewarm_settings()
                 struct.pack_into('<II', session, OFF_TUNABLE, mode, skins)
+                struct.pack_into('<I', session, OFF_TUNABLE + 20, clash)
                 import secrets
                 nonce = secrets.randbits(32) or 1
                 struct.pack_into('<I', session, OFF_TUNABLE + 16, nonce)
@@ -750,13 +753,11 @@ except Exception:
     log('diagnostic logger failed: '+traceback.format_exc())
 log('Sinners Native host loaded; protocol '+str(VERSION))
 
-if not getattr(MANAGER, '_sinners_workbench_opened', False):
-    try:
-        open_workbench()
-        setattr(MANAGER, '_sinners_workbench_opened', True)
-        log('workbench auto-opened')
-    except Exception:
-        log('workbench auto-open failed: '+traceback.format_exc())
+try:
+    open_workbench()
+    log('workbench opened')
+except Exception:
+    log('workbench open failed: '+traceback.format_exc())
 _registry = getattr(MANAGER, '_sinners_warp_workers', None)
 if _registry is None:
     _registry = {}; setattr(MANAGER, '_sinners_warp_workers', _registry)
