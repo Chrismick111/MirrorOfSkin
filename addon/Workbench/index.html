@@ -425,6 +425,9 @@
         justify-content: center;
         box-shadow: 0 10px 28px #0008;
       }
+      .pool-top.hidden {
+        display: none;
+      }
       .pool-top .icon {
         width: 21px;
         height: 21px;
@@ -1779,7 +1782,7 @@
         </section>
       </article>
     </main>
-    <div id="toasts" role="status" aria-live="polite" aria-atomic="false"></div>
+    <div id="toasts" class="toasts" role="status" aria-live="polite" aria-atomic="false"></div>
     <button
       id="scanMini"
       class="scan-mini hidden"
@@ -3278,8 +3281,10 @@
         }
       }
       function renderEvents() {
-        $("#eventLog").textContent =
+        const log = $("#eventLog");
+        log.textContent =
           events.map((event) => event.raw).join("\n") || "暂无日志";
+        log.scrollTop = log.scrollHeight;
       }
       async function loadEvents() {
         try {
