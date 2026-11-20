@@ -803,7 +803,7 @@ def _workbench_window_bounds():
             screen_w = screen_h = 0
     if screen_w <= 0 or screen_h <= 0:
         screen_w, screen_h = 1536, 864
-    width = max(1100, min(1900, screen_w - 40))
+    width = max(1100, min(1400, int(screen_w * 0.82)))
     height = max(760, min(1200, screen_h - 40))
     x = screen_x + max(0, (screen_w - width) // 2)
     y = screen_y + max(0, (screen_h - height) // 2)
