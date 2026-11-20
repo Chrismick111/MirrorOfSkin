@@ -26,3 +26,9 @@ addon/规则集状态.json
 addon/Workbench/workbench_gateway.json
 addon/Workbench/workbench-instance.json
 addon/Workbench/workbench-instance.lock
+# Local workbench runtime files
+addon/workbench-instance.json
+addon/workbench-instance.lock
+addon/workbench-save.lock
+addon/native_stage_groups.bin
+
