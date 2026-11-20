@@ -527,11 +527,22 @@
         text-align: center;
         margin: 42px 0;
       }
+      #events {
+        height: calc(100vh - 71px);
+        min-height: 320px;
+      }
+      #events:not(.hidden) {
+        display: flex;
+        flex-direction: column;
+      }
       .events-toolbar {
+        flex: 0 0 auto;
         justify-content: flex-end;
       }
       .run-log {
-        max-height: 68vh;
+        flex: 1 1 auto;
+        min-height: 0;
+        max-height: none;
         overflow: auto;
         margin: 0;
         padding: 12px;
@@ -658,6 +669,12 @@
         justify-content: flex-end;
         gap: 10px;
         margin-top: 20px;
+      }
+      .confirm-text {
+        margin: 8px 0 0;
+        line-height: 1.55;
+        color: #d8dbe1;
+        white-space: pre-wrap;
       }
       .mini-progress {
         position: fixed;
@@ -1813,6 +1830,34 @@
       </div>
     </div>
     <div
+      id="confirmModal"
+      class="modal-backdrop hidden"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="confirmTitle"
+    >
+      <div class="modal confirm-modal">
+        <div class="modal-title">
+          <h2 id="confirmTitle">确认</h2>
+          <button
+            id="confirmClose"
+            class="icon-btn"
+            aria-label="关闭"
+            title="关闭"
+          >
+            <svg class="icon" aria-hidden="true">
+              <use href="#i-close"></use>
+            </svg>
+          </button>
+        </div>
+        <p id="confirmText" class="confirm-text"></p>
+        <div class="modal-actions">
+          <button id="confirmCancel">取消</button>
+          <button id="confirmOk" class="primary">确定</button>
+        </div>
+      </div>
+    </div>
+    <div
       id="portraitModal"
       class="modal-backdrop hidden"
       role="dialog"
@@ -2138,6 +2183,31 @@
           el.classList.remove("closing");
         }, 180);
       }
+      function askConfirm(message, okText = "确定") {
+        return new Promise((resolve) => {
+          let settled = false;
+          const finish = (value) => {
+            if (settled) return;
+            settled = true;
+            hideModal("#confirmModal");
+            $("#confirmOk").onclick = null;
+            $("#confirmCancel").onclick = null;
+            $("#confirmClose").onclick = null;
+            $("#confirmModal").onclick = null;
+            resolve(value);
+          };
+          $("#confirmText").textContent = message;
+          $("#confirmOk").textContent = okText;
+          $("#confirmOk").onclick = () => finish(true);
+          $("#confirmCancel").onclick = () => finish(false);
+          $("#confirmClose").onclick = () => finish(false);
+          $("#confirmModal").onclick = (event) => {
+            if (event.target.id === "confirmModal") finish(false);
+          };
+          showModal("#confirmModal");
+          $("#confirmCancel").focus();
+        });
+      }
       function applyLauncherBackground(bg) {
         if (!bg || !bg.url) {
           bgBaseUrl = "";
@@ -2301,12 +2371,10 @@
             if (dirty || saving || savePending)
               return status("当前修改尚未保存，暂时无法选择规则集");
           }
-          if (!item.active) {
-            const rule = { ...item };
-            if (rule.kind === "global") rule.sinner = currentSinner();
-            await api("ruleset-activate", { rule });
-            await refresh();
-          }
+          const rule = { ...item };
+          if (rule.kind === "global") rule.sinner = currentSinner();
+          await api("ruleset-select", { rule });
+          await refresh();
           hideModal("#rulePickerModal");
           status("已选择 " + item.name);
         } catch (error) {
@@ -2484,7 +2552,7 @@
           return;
         }
         if (rule.kind === "global" && rule.locked) {
-          if (!confirm("清空纯随机池并取消随机接管？")) return;
+          if (!(await askConfirm("清空纯随机池并取消随机接管？"))) return;
           try {
             await api("ruleset-clear", { rule });
             await refresh();
@@ -2578,7 +2646,7 @@
           status("已移出当前池");
         } else if (action === "clear") {
           if (
-            confirm(
+            await askConfirm(
               data.activeRule?.locked
                 ? "清空纯随机默认池并恢复编辑？"
                 : "清空当前人格池？",
@@ -2980,6 +3048,10 @@
       document.addEventListener("scroll", closeIdentityMenu, true);
       document.addEventListener("keydown", (event) => {
         if (event.key === "Escape") {
+          if (!$("#confirmModal").classList.contains("hidden")) {
+            $("#confirmCancel").click();
+            return;
+          }
           closeIdentityMenu();
           closeIdentityModal();
           closeNewRule();
@@ -3727,7 +3799,7 @@
           return status("请等待当前修改自动保存完成后再读取");
         const tip =
           "读取方案“" + label + "”？当前配置会先备份为“读取前自动备份”。";
-        if (!confirm(tip)) return;
+        if (!(await askConfirm(tip))) return;
         const loaded = await api("scheme-load", request);
         schemes = loaded.schemes;
         await refresh();
@@ -3747,7 +3819,7 @@
               s.name + ".json",
               await api("scheme-get", { name: s.name }),
             );
-          } else if (confirm("删除方案“" + s.name + "”？")) {
+          } else if (await askConfirm("删除方案“" + s.name + "”？")) {
             schemes = (await api("scheme-delete", { name: s.name })).schemes;
             renderSchemes();
             $("#schemeTip").classList.add("hidden");
@@ -3761,7 +3833,7 @@
         const name = $("#schemeName").value.trim();
         if (!name) return status("请先填写方案名称");
         const overwrite = schemes.some((s) => s.name === name);
-        if (overwrite && !confirm("已存在方案“" + name + "”，覆盖它？")) return;
+        if (overwrite && !(await askConfirm("已存在方案“" + name + "”，覆盖它？"))) return;
         try {
           schemes = (await api("scheme-save", { name, overwrite })).schemes;
           renderSchemes();
@@ -3782,7 +3854,7 @@
             scheme.name || file.name.replace(/\.json$/i, ""),
           ).slice(0, 40);
           const overwrite = schemes.some((s) => s.name === name);
-          if (overwrite && !confirm("已存在方案“" + name + "”，覆盖它？"))
+          if (overwrite && !(await askConfirm("已存在方案“" + name + "”，覆盖它？")))
             return;
           schemes = (await api("scheme-import", { name, overwrite, scheme }))
             .schemes;
