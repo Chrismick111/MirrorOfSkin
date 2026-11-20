@@ -308,8 +308,21 @@ class Store:
   完整错误在 Workbench/scan_last_error.txt。"""
   weekly=read(self.root/'Workbench/weekly_scan_status.json',{})
   if not isinstance(weekly,dict):weekly={}
-  error=SCAN.get('error') or ('每周自动检测未完成，请查看检测记录' if weekly.get('status')=='failed' else None)
-  return {'running':bool(SCAN.get('running') or weekly.get('status')=='running'),'started':SCAN.get('started'),'error':error,'weekly':{'slot':weekly.get('slot'),'status':weekly.get('status'),'finished':weekly.get('finished')}}
+  from datetime import datetime
+  with SCAN_LOCK:
+   manual = dict(SCAN)
+  scheduled = weekly.get('status') == 'running'
+  running = bool(manual.get('running') or scheduled)
+  owner = weekly.get('started') if scheduled else str(manual.get('started'))
+  progress = read(self.root/'Workbench/scan_progress.json', {}) if running else {}
+  if not isinstance(progress,dict) or progress.get('run') != owner:progress={}
+  try:weekly_time=datetime.fromisoformat(weekly.get('finished') or '').timestamp()
+  except ValueError:weekly_time=0
+  error = manual.get('error')
+  if weekly_time > (manual.get('finished') or 0):
+   error = '每周自动检测未完成，请查看检测记录' if weekly.get('status')=='failed' else None
+  return dict(running=running,started=owner,progress=progress,error=None if running else error,
+              weekly={k:weekly.get(k) for k in ('slot','status','finished')})
  def discovered(self):
   """New prefabs found by scan_units.py after a game update. The scan runs in a
   subprocess, so it never blocks a request thread; the page polls 'discovered'."""
@@ -366,6 +379,7 @@ def start_scan(root):
    script=pathlib.Path(root)/'Workbench/scan_units.py'
    flags=getattr(subprocess,'CREATE_NO_WINDOW',0)
    env=dict(os.environ,PYTHONIOENCODING='utf-8',PYTHONUTF8='1')
+   env['FAUST_SCAN_RUN']=str(SCAN['started'])
    proc=_spawn_child([sys.executable,str(script),'--addon',str(root)],cwd=str(root),stdout=subprocess.PIPE,stderr=subprocess.PIPE,text=True,encoding='utf-8',errors='replace',creationflags=flags,env=env)
    try:stdout,stderr=proc.communicate(timeout=3600)
    except subprocess.TimeoutExpired:proc.kill();stdout,stderr=proc.communicate();raise
@@ -382,7 +396,8 @@ def start_scan(root):
    try:(pathlib.Path(root)/'Workbench/scan_last_error.txt').write_text(str(e),encoding='utf-8')
    except OSError:pass
   finally:
-   SCAN['running']=False;SCAN['finished']=time.time()
+   with SCAN_LOCK:
+    SCAN['finished']=time.time();SCAN['running']=False
  threading.Thread(target=work,daemon=True).start()
  return {'running':True,'started':SCAN['started']}
 

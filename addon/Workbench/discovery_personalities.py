@@ -1,7 +1,7 @@
 """Add uniquely identified sinner appearances to the selectable catalog."""
 import re
 
-def merge(pools, discovered, metadata):
+def choices_by_identity(discovered):
     groups={}
     for name,item in discovered.items():
         match=re.fullmatch(r'(10[1-9]|11[0-2])\d{2}_[A-Za-z0-9_]+Appearance',name)
@@ -9,6 +9,10 @@ def merge(pools, discovered, metadata):
         key=item.get('asset_key','')
         if key != 'SD_Personality/'+name+'.prefab':continue
         ident=name[:5];groups.setdefault(ident,[]).append((name,item,match.group(1)))
+    return groups
+
+def merge(pools, discovered, metadata):
+    groups=choices_by_identity(discovered)
     known={str(e.get('identity_id','')) for p in pools.values() for e in p.get('entries',[])}
     added=[]; ambiguous=[]
     for ident, choices in sorted(groups.items()):

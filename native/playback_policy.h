@@ -6,7 +6,7 @@
 static int sr_pair_base(const char *actual,const char *full){return actual&&full&&(!strcmp(actual,full)||(strlen(actual)==5&&!strncmp(actual,full,5)));}
 #include "counterpart_playback.h"
 /* Exact timeline matches validated against the target contract. */
-static int sr_authored_pair_motion(const int *counts,const char *base,const char *identity,int requested,int fallback,int tierFallback){
+static int sr_verified_paired_attack(const int *counts,const char *base,const char *identity,int requested,int fallback){
  if(!counts||!base||!identity)return fallback;
  int target=-1,expected=0;
  if(sr_pair_base(base,"10916_Rodion_Thumb_FatherAppearance")&&!strcmp(identity,"story_1314_Thumb_FatherAppearance")){
@@ -41,10 +41,7 @@ static int sr_authored_pair_motion(const int *counts,const char *base,const char
   if(requested>=7&&requested<=11){target=requested;expected=lengths[requested-7];}
  }
  if(target>=0)return counts[target]==expected?target:fallback;
- return sr_counterpart_motion(counts,base,identity,requested,fallback,tierFallback);
-}
-static int sr_verified_paired_attack(const int *counts,const char *base,const char *identity,int requested,int fallback){
- return sr_authored_pair_motion(counts,base,identity,requested,fallback,1);
+ return sr_counterpart_attack(counts,base,identity,requested,fallback);
 }
 
 /* Candidate: concatenate Salvador S3 and S4 two-clip attack groups. */
@@ -118,6 +115,7 @@ static int sr_playback_detail(const int *counts,int original,int tier){
  if(!counts||original<0||original>=SR_MOTION_CACHE)return original;
  if(counts[original]>0)return original;
  if(tier>=1&&tier<=3&&counts[6+tier]>0)return 6+tier;
+ for(int d=7;d<=34;d++)if((d<=16||d>=24)&&counts[d]>0)return d;
  return original;
 }
 static int sr_playback_index(int index,int count,int last){

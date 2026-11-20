@@ -30,7 +30,7 @@ REPORT_NAME = 'discovered_units.json'
 LOCK_NAME = 'scan.lock'
 # 缓存是「包没变就不用重开」的捷径，但这假设解析逻辑本身没变。改了正则或
 # 扫描方式就把它 +1，旧缓存自动作废，否则新认出的名字永远不会出现。
-SCAN_VERSION = 4
+SCAN_VERSION = 6
 # 单个 bundle 上限：正常包几百 KB，超过这个量级基本是坏包或解压炸弹。
 MAX_BUNDLE_BYTES = 512 * 1024 * 1024
 MAX_OBJECTS = 200000
@@ -231,7 +231,15 @@ def atomic_write(path, text):
         handle.write(text)
         handle.flush()
         os.fsync(handle.fileno())
-    tmp.replace(path)
+    # Windows can deny replacement while the workbench reads the current file.
+    for attempt in range(6):
+        try:
+            tmp.replace(path)
+            return
+        except PermissionError:
+            if attempt == 5:
+                raise
+            time.sleep(0.02 * (attempt + 1))
 
 
 def state_text(state):
@@ -338,7 +346,7 @@ def predict_group(name, directory, by_combo, by_family):
     return None, 'unknown', 0
 
 
-def scan_bundle(path, unity_py):
+def scan_bundle(path, unity_py, art_keys=None, known_aliases=()):
     """Return ({prefab_rel_path: [motion details]}, skipped_names) for one bundle.
 
     Everything here reads a file we did not write, so a single damaged or
@@ -354,12 +362,15 @@ def scan_bundle(path, unity_py):
     containers = dict(env.container)
     rel_paths = {}
     skipped = 0
+    from auto_artwork import classify_asset
     for key in containers:
+        if art_keys is not None and classify_asset(key):
+            art_keys.append(key)
         if not key.startswith(PRE + 'SD/') or not key.endswith('.prefab'):
             continue
         rel = key[len(PRE):]
         stem = rel.rsplit('/', 1)[-1][:-len('.prefab')]
-        if APPEARANCE.match(stem):
+        if APPEARANCE.match(stem) or stem in known_aliases:
             rel_paths[stem] = rel
         else:
             skipped += 1
@@ -396,7 +407,9 @@ def scan_bundle(path, unity_py):
                 if not isinstance(detail, int):
                     continue
                 assets = getattr(motion, 'timelineAssets', None) or []
-                rows.append([detail, len(assets)])
+                # A serialized slot may contain several null Unity references.
+                # Counting placeholders sends a visual-only unit to the attack importer.
+                rows.append([detail, sum(bool(getattr(asset, 'm_PathID', 0)) for asset in assets)])
             except Exception:
                 continue
         if rows:
@@ -460,11 +473,34 @@ def main(argv=None):
             print('另一个扫描正在进行，稍后再试。', file=sys.stderr)
             return 4
 
+    run = os.environ.get('FAUST_SCAN_RUN', '')
+    if args.weekly:
+        try:
+            run = json.loads((addon/'Workbench/weekly_scan_status.json').read_text(encoding='utf-8')).get('started')
+        except (ValueError, OSError):
+            run = None
+    last_phase, last_time = None, 0
+    def progress(phase, done=0, total=0):
+        nonlocal last_phase, last_time
+        if args.no_write:
+            return
+        now = time.monotonic()
+        if phase == last_phase and done != total and now-last_time < 0.5:
+            return
+        last_phase, last_time = phase, now
+        try:
+            atomic_write(addon/'Workbench/scan_progress.json',
+                         json.dumps(dict(run=run, phase=phase, done=done, total=total)))
+        except OSError:
+            # A busy status file may drop a single frame of progress.
+            pass
+    progress('prepare')
     try:
         pool = pool_entries(addon)
     except PoolError as exc:
         print(str(exc), file=sys.stderr)
         return 6
+    known_aliases = sorted(name for name in pool if not APPEARANCE.match(name))
     state_path = addon / 'Workbench' / STATE_NAME
     state = {}
     if state_path.is_file() and not args.full:
@@ -474,7 +510,7 @@ def main(argv=None):
             loaded = {}
         # 被写坏、被改成列表、或来自旧版本扫描逻辑的状态一律按「没有缓存」处理。
         state = loaded if isinstance(loaded, dict) else {}
-        if state.get('__version__') != SCAN_VERSION:
+        if state.get('__version__') != SCAN_VERSION or state.get('__known_aliases__', []) != known_aliases:
             state = {}
 
     # Authoritative group source. Reading it costs one file read and beats every
@@ -499,6 +535,7 @@ def main(argv=None):
     unmatched_total = 0
     checkpoint_every = CHECKPOINT_EVERY
     for index, bundle in enumerate(bundles, 1):
+        progress("bundles", index-1, len(bundles))
         key = str(bundle.relative_to(root))
         try:
             mark = fingerprint(bundle)
@@ -511,13 +548,14 @@ def main(argv=None):
             unmatched_total += int(cached.get('skipped') or 0)
             continue
         try:
-            found, skipped = scan_bundle(bundle, UnityPy)
+            art_keys = []
+            found, skipped = scan_bundle(bundle, UnityPy, art_keys, known_aliases)
         except Exception as exc:
             failed[key] = str(exc)
             continue
         changed += 1
         unmatched_total += skipped
-        seen[key] = {'fingerprint': mark, 'entries': found, 'skipped': skipped}
+        seen[key] = {'fingerprint': mark, 'entries': found, 'skipped': skipped, 'art_keys': art_keys}
         if index % 100 == 0:
             print('  scanned %d/%d (%.0fs)' % (index, len(bundles), time.time() - started))
         # A full pass takes minutes on a big cache; checkpoint so a timeout or a
@@ -532,10 +570,13 @@ def main(argv=None):
                 merged = dict(state)
                 merged.update(seen)
                 merged['__version__'] = SCAN_VERSION
+                merged['__known_aliases__'] = known_aliases
                 atomic_write(state_path, state_text(merged))
             except OSError as exc:
                 print('  checkpoint skipped: %s' % exc)
 
+    progress("bundles", len(bundles), len(bundles))
+    progress("units")
     name_dir, by_combo, by_family = build_group_lookup(pool, seen)
     # 名字没被 APPEARANCE 认出来的 prefab 不参与发现，但留下计数，免得无声漏报。
     unmatched = unmatched_total
@@ -625,6 +666,11 @@ def main(argv=None):
                 def resolve_label(self, name): return discovery_metadata.resolve(meta, name)
             def is_personality(name, payload):
                 return bool(re.fullmatch(r'(10[1-9]|11[0-2])\d{2}_[A-Za-z0-9_]+Appearance',name) and payload.get('asset_key')=='SD_Personality/'+name+'.prefab')
+            known_ids = {str(item['identity_id']) for item in pool.values()}
+            # Only a unique new base appearance owns a playable identity ID.
+            # A distinct form of an existing identity can still be imported as an appearance.
+            formal_names = {choices[0][0] for identity, choices in discovery_personalities.choices_by_identity(discovered).items()
+                            if len(choices) == 1 and identity not in known_ids}
             from file_lock import FileLock
             candidates = dict(discovered)
             for info in seen.values():
@@ -635,11 +681,13 @@ def main(argv=None):
                         candidates[name] = {'asset_key':pool[name].get('asset_key'),
                                             'motions':payload.get('motions') or []}
             meta = discovery_metadata.load_metadata(game, addon/'boss_chapters.json') if game else {'names':{'identity':{},'enemy':{}},'chapters':{}}
+            appearance_candidates = {name: item for name, item in candidates.items()
+                                     if not is_personality(name, item) or (name in discovered and name not in formal_names)}
             attack_entries = []
             attack_errors = {}
             tree_cache = {}
             for name, payload in discovered.items():
-                if is_personality(name,payload): continue
+                if name in formal_names: continue
                 if not discovery_import.has_attack(payload.get('motions') or []): continue
                 if payload.get('group_confidence') != 'catalog' or not payload.get('asset_key'): continue
                 try:
@@ -658,7 +706,7 @@ def main(argv=None):
                 import auto_translate
                 preliminary = json.loads(pool_path.read_text(encoding='utf-8-sig'))
                 discovery_personalities.merge(preliminary, discovered, PersonalityMetadata())
-                preliminary, _ = discovery_import.merge(preliminary, {'units':{n:v for n,v in candidates.items() if not is_personality(n,v)}}, meta)
+                preliminary, _ = discovery_import.merge(preliminary, {'units':appearance_candidates}, meta)
                 preliminary['101']['entries'].extend(entry for entry, _ in attack_entries)
                 discovery_metadata.refresh_discovered(preliminary, meta)
                 translation_stats = auto_translate.fill(preliminary, addon/'Workbench/auto_translation_cache.json')
@@ -666,7 +714,7 @@ def main(argv=None):
             with FileLock(addon/'workbench-save.lock'):
                 before = pool_path.read_bytes()
                 current = json.loads(before.decode('utf-8-sig'))
-                updated, added = discovery_import.merge(current, {'units':{n:v for n,v in candidates.items() if not is_personality(n,v)}}, meta)
+                updated, added = discovery_import.merge(current, {'units':appearance_candidates}, meta)
                 new_personalities, ambiguous_personalities = discovery_personalities.merge(updated, discovered, PersonalityMetadata())
                 report['auto_added_personalities'] = new_personalities
                 report['ambiguous_personalities'] = ambiguous_personalities
@@ -680,8 +728,8 @@ def main(argv=None):
                     temp.write_bytes(blob); temp.replace(contract)
                     updated['101']['entries'].append(entry)
                     known_names.add(entry['appearance_name']);added_attack+=1
+                discovery_metadata.refresh_discovered(updated, meta)
                 if args.weekly:
-                    discovery_metadata.refresh_discovered(updated, meta)
                     for pool in updated.values():
                         for item in pool.get('entries', []):
                             trans = translations.get(str(item.get('identity_id')))
@@ -693,20 +741,20 @@ def main(argv=None):
                         raise RuntimeError('人格池在扫描期间发生修改，请重新扫描')
                     atomic_write(pool_path, json.dumps(updated, ensure_ascii=False, indent=2)+'\n')
                 report['auto_added_no_attack'] = added
+                report['pool_entries'] = len({str(entry['identity_id']) for group in updated.values()
+                                              for entry in group.get('entries', []) if entry.get('identity_id')})
                 report['auto_added_attack'] = added_attack
                 report['attack_import_errors'] = attack_errors
-            if args.weekly:
-                try:
-                    import auto_artwork
-                    with FileLock(addon/'Workbench/image_resources.lock'):
-                        if (addon/'Workbench/images_disabled.flag').exists():
-                            report['artwork'] = {'disabled': True}
-                        else:
-                            report['artwork'] = auto_artwork.extract(addon, root, UnityPy, files=bundles)
-                except Exception as exc:
-                    report['artwork'] = {'error':str(exc)}
+            import auto_artwork
+            progress('chapters')
+            with FileLock(addon/'Workbench/image_resources.lock'):
+                report['artwork'] = auto_artwork.extract(
+                    addon, root, UnityPy, game=game, index=seen, progress=progress,
+                    portraits=args.weekly, images=not (addon/'Workbench/images_disabled.flag').exists())
+            progress('finish')
             seen['__catalog__'] = hash_now
             seen['__version__'] = SCAN_VERSION
+            seen['__known_aliases__'] = known_aliases
             # 已持锁，这里的清理不会碰到别人的临时文件。
             for stale in (addon / 'Workbench').glob('*.tmp'):
                 try:

@@ -58,7 +58,17 @@ class Tests(unittest.TestCase):
   with self.assertRaisesRegex(u.UpdateError,'仓库尚未发布'):u.check(self.root)
  def test_cross_process_lock(self):
   self.setbundle(bundle())
-  child=subprocess.Popen([sys.executable,'-u','-c',"from file_lock import FileLock; import sys; l=FileLock(sys.argv[1]); l.__enter__(); print('ready',flush=True); sys.stdin.readline(); l.__exit__(None,None,None)",str(self.root/'github-update.lock')],cwd=pathlib.Path(__file__).parent,stdin=subprocess.PIPE,stdout=subprocess.PIPE,text=True)
+  workbench_dir=pathlib.Path(__file__).resolve().parent
+  worker="""import sys
+sys.path.insert(0, sys.argv[1])
+from file_lock import FileLock
+with FileLock(sys.argv[2]):
+    print('ready', flush=True)
+    sys.stdin.readline()
+"""
+  child=subprocess.Popen(
+      [sys.executable,'-u','-c',worker,str(workbench_dir),str(self.root/'github-update.lock')],
+      cwd=workbench_dir,stdin=subprocess.PIPE,stdout=subprocess.PIPE,text=True)
   try:
    self.assertEqual(child.stdout.readline().strip(),'ready');done=threading.Event();errors=[]
    def run():

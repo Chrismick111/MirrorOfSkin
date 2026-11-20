@@ -3,21 +3,21 @@
 适用于 [FaustLauncher](https://github.com/f0lkskill/FaustLauncher) 的《边狱巴士》(Limbus Company) 人格外观随机插件。
 通过 WarpHook 注入原生 DLL，在战斗中替换罪人外观、随机切换人格，并按原生触发条件播放 Boss 语音与气泡。
 
-当前版本 **1.0.1** · 协议 75 · 原生模块 `SinnersNative-v64.dll` · 适用启动器 `0.8.9-release.fix.4`
+当前源码版本 **1.0.1** · 协议 75 · 原生模块 `SinnersNative-v64.dll` · 适用启动器 `0.8.9-release.fix.4`
+
+1.0.1 的新单位检测会显示进度，并从本地游戏缓存读取章节与封面。“添加人格”默认显示整个目录，可按角色、敌方单位、异想体或章节筛选。覆盖外观缺少指定攻击槽时，优先播放该外观已有的攻击动作。缺少专属攻击时间线时，当前外观通过短促位移表现攻击。
 
 ---
 
 ## 安装
 
-从 [Releases](https://github.com/Chrismick111/faust-random-identity/releases/latest) 下载：
+下表中的两个核心安装包对应 1.0.0。本文所述的 1.0.1 修复已包含在主分支源码中。
 
 | 文件 | 说明 |
 | --- | --- |
-| [标准安装包](https://github.com/Chrismick111/faust-random-identity/releases/download/v1.0.1/FaustRandomIdentity-WarpHook.zip) | 插件本体，956,446 字节，适合启动器分发与工作台更新 |
-| [通用 ZIP 安装包](https://github.com/Chrismick111/faust-random-identity/releases/download/v1.0.1/FaustRandomIdentity-WarpHook-Deflate.zip) | 解压工具不支持标准包时选用，与标准包内容相同，只需安装其中一个 |
+| [标准安装包](https://github.com/Chrismick111/faust-random-identity/releases/download/v1.0.0/FaustRandomIdentity-WarpHook.zip) | 插件本体，946,708 字节，适合启动器分发与工作台更新 |
+| [通用 ZIP 安装包](https://github.com/Chrismick111/faust-random-identity/releases/download/v1.0.0/FaustRandomIdentity-WarpHook-Deflate.zip) | 解压工具不支持标准包时选用，与标准包内容相同，只需安装其中一个 |
 | [默认图像包](https://github.com/Chrismick111/faust-random-identity/releases/download/v0.79.1/FaustRandomIdentity-Portraits.zip) | 可选，623 张图片，覆盖 693 个外观条目，工作台也可单独下载 |
-
-1.0.1 调整了楔子对应外观和人格对应外观的动作播放。已装 1.0.0 的用户可在工作台中点击「检查并更新」。
 
 将选用的安装包解压到下面的插件目录。手动安装的图像包也解压到同一目录。
 
@@ -123,6 +123,8 @@ python Workbench/package_release.py --addon . --output C:\temp\FaustRandomIdenti
 ```
 
 输出路径须在插件目录外且原先不存在。
+
+向 FaustLauncher 的“从本地安装”提供 ZIP 时，加上 `--launcher`，并将输出命名为 `人格演出工作台.zip`。启动器用包含 `addon_info.json` 的文件夹名登记插件，包内路径应为 `人格演出工作台/addon_info.json`。工作台在线更新继续使用清单位于包根目录的标准包。
 
 > 注意：`release_compatibility.py` 加载时对 `addon_info.json` 只校验版本、跳过哈希（启动器安装时会改写名称与说明），
 > 但 `github_update.py` 的安装校验 **仍会比对它的包内哈希**。两边都要满足，改版本号后记得同步 `package_files`。

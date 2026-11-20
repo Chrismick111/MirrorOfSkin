@@ -5,18 +5,22 @@ import re
 
 def _entries(root):
     folder = pathlib.Path(root) / 'Workbench/chapter_art'
-    try:
-        data = json.loads((folder/'chapters.json').read_text(encoding='utf-8-sig'))
-    except (OSError, ValueError):
-        return folder, {}
-    if not isinstance(data, dict):
-        return folder, {}
-    try:
-        discovered = json.loads((folder/'chapters.discovered.json').read_text(encoding='utf-8-sig'))
-        if isinstance(discovered, dict):
-            data = {**discovered, **data}  # curated cards always win
-    except (OSError, ValueError):
-        pass
+    def read_cards(name):
+        try:
+            data = json.loads((folder/name).read_text(encoding='utf-8-sig'))
+            return data if isinstance(data, dict) else {}
+        except (OSError, ValueError):
+            return {}
+    data = read_cards('chapters.discovered.json')
+    for key, curated in read_cards('chapters.json').items():
+        if not isinstance(curated, dict):
+            continue
+        merged = dict(data.get(key) or {})
+        filename = curated.get('image')
+        merged.update(curated)
+        if not filename or not isinstance(filename, str) or not re.fullmatch(r'[\w.-]+\.png', filename) or not (folder/filename).is_file():
+            merged['image'] = (data.get(key) or {}).get('image')
+        data[key] = merged
     result = {}
     for key, value in data.items():
         if not isinstance(key,str) or not re.fullmatch(r'[a-zA-Z0-9_]+',key) or not isinstance(value,dict):

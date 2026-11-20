@@ -96,9 +96,13 @@ static void motion_dispatch(Unit *u,int original_only){
  if(target==m.source&&slot>=0&&current!=u->skins[slot].app){
   char why[320];snprintf(why,sizeof(why),"coin handoff rejected sinner=%lu coin=%d camera=%d currentMask=%d baseMask=%d endEvidence=%d generation=%u:%u sameAction=%d deliveredCoin=%d slot=%d originalOnly=%d",(unsigned long)u->sinner,m.coin,g_presentationGate,currentMask,baseMask,u->endedApp==current,u->endedGeneration,u->playbackGeneration,u->deliveredAction==m.action,u->deliveredCoin,slot,original_only);bootlog(why);
  }
+ /* During a handoff veto the currently displayed donor owns the visual. */
+ Skin *shownDonor=skin_for_app(u,current);
+ if(!shownDonor&&u->staticHidden&&current==u->baseApp)shownDonor=held_appearance(u);
+ if(!original_only&&enabled_now()&&target==u->baseApp&&shownDonor&&!(g_rows[shownDonor->row].excluded&2))target=shownDonor->app;
  Skin *playing=skin_for_app(u,target);
  if(playing&&(g_rows[playing->row].excluded&SR_STATIC_APPEARANCE_FLAG)){
-  ((void (*)(void *,int,uint8_t,int,uint8_t,void *,uint8_t,void *))orig_changeMotion)(target,0,0,0,0,NULL,0,m.method);
+  visible_attack_begin(u,playing,m.detail,m.coin);
   target=u->baseApp;detail=m.detail;index=m.index;playing=NULL;
  }
  if(playing&&!playing->chapterActor){
@@ -142,7 +146,6 @@ static void timeline_end_hook(void *app,void *director,void *mi){
  /* Capture happens during the callback; permit handoff only after it returns. */
  Unit *u=unit_for_app(app);
  if(u&&u->playbackGeneration==generation&&director&&director==rfield(app,"_playableDirector")&&!(motion_busy_mask(app)&7)){
-  Skin *skin=skin_for_app(u,app);if(skin&&skin->wedge)wedge_end(skin);
   u->endedApp=app;u->endedDirector=director;u->endedGeneration=generation;
  }
  if(u)for(int i=0;i<u->motionCount;i++)if(u->motions[i].source==app)u->motions[i].endReturned=1;

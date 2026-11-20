@@ -8,10 +8,6 @@ static const struct { const char *base, *appearance; int role; } wedge_pairs[] =
  {"10316_Donquixote_WedgeAppearance","story_1585_PamelaAppearance",1585}
 };
 static int wedge_role_id(int role){return role>=1583 && role<=1585;}
-/* 1111602 and 1111603 request S2 and S3. RoundEndAction is detail 49. */
-static int wedge_stock_detail(int role,int detail){
- return (wedge_role_id(role)&&detail==49)||(role==1583&&(detail==8||detail==9));
-}
 static int wedge_role(const char *base,const char *appearance){
  if(!appearance)return 0;
  for(unsigned i=0;i<sizeof(wedge_pairs)/sizeof(wedge_pairs[0]);i++)

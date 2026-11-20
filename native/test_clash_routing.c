@@ -54,7 +54,7 @@ int main(void){
  part=-1;assert(clash_indexed_slot(&skin,17,4,&part)<0);
  void *receiver=visible;camera=1;assert(clash_fallback(&u,&skin,&receiver,32,2)==0&&receiver==&donor&&!switches);
  camera=0;busy=1;assert(clash_fallback(&u,&skin,&receiver,32,2)==0&&receiver==&donor&&!switches);
- busy=0;assert(clash_fallback(&u,&skin,&receiver,32,2)==32&&receiver==visible&&visible==&base&&switches==1);
+ busy=0;assert(clash_fallback(&u,&skin,&receiver,32,2)==0&&receiver==visible&&visible==&donor&&switches==0);
  SrChapterActor actor={"10115_YiSang_Index_FatherAppearance"};visible=&donor;skin.chapterActor=&actor;
  assert(clash_request(&u,32)==2&&clash_request(&u,33)==2);
  puts("Clash routing, authored and sparse poses, native camera and visible fallback passed.");

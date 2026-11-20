@@ -882,7 +882,7 @@
           <button id="refreshPrepare">刷新状态</button>
           <div id="prepareData" aria-live="polite"></div>
         </section>
-        <section id="discovered" class="hidden"><h2>新单位检测</h2><p>工作台启动后会扫描本地已下载资源；也可手动开始扫描。已识别的无攻击外观和动作信息缺失外观会加入可选目录，可在“无攻击外观”分类中查看。名称优先使用本地中文资料，未找到中文时保留原名。</p><div class="bar"><button id="startScan">开始扫描</button><button id="refreshDiscovered">刷新</button><span id="discoveredMeta" class="muted"></span></div><div id="discoveredList"></div></section>
+        <section id="discovered" class="hidden"><h2>新单位与章节检测</h2><p>插件每周会检测本地已下载的资源，也可手动开始扫描。扫描会读取本地章节资料，提取已下载的章节图片，并更新外观选择页的章节卡片。已识别的无攻击外观和动作信息缺失外观会加入可选目录，可在“无攻击外观”分类中查看。名称优先使用本地中文资料，未找到中文时保留原名。</p><div class="bar"><button id="startScan">开始扫描</button><button id="refreshDiscovered">刷新</button><span id="discoveredMeta" class="muted"></span></div><div id="scanProgress" hidden><label for="scanBar" id="scanLabel"></label> <progress id="scanBar" style="width:min(24rem,90%);vertical-align:middle"></progress></div><p id="scanError" role="status" class="muted"></p><div id="discoveredList"></div></section>
       </article>
     </main>
     <div id="status" role="status">正在读取插件数据…</div>
@@ -1012,6 +1012,8 @@
             <option id="pairedSource" value="paired" hidden disabled>当前人格的对应外观</option>
             <option value="boss">Boss</option>
             <option value="personality">人格外观</option>
+            <option value="enemy">敌方单位外观</option>
+            <option value="abnormality">异想体外观</option>
             <option value="no_attack">无攻击外观</option>
             <option value="other">角色与剧情</option>
           </select>
@@ -1023,7 +1025,7 @@
           </select>
 
           <label class="add-toggle">
-            <input id="addStory" type="checkbox" />剧情/敌方外观
+            <input id="addStory" type="checkbox" checked />包含剧情/敌方外观
           </label>
         </div>
         <details class="chapter-browser" open>
@@ -1533,6 +1535,17 @@
           }
         }
       }
+      function catalogChapters(entry) {
+        const groups = new Map();
+        if (entry.chapter && entry.chapter !== "unassigned") {
+          groups.set(entry.chapter, entry.chapter_label || entry.chapter);
+        }
+        for (const group of entry.chapter_memberships || []) {
+          if (group.chapter && group.chapter !== "unassigned") groups.set(group.chapter, group.label || group.chapter);
+        }
+        if (!groups.size && !personalityRole(entry)) groups.set("unassigned", "待确认章节");
+        return groups;
+      }
       function fillAddFilters() {
         $("#addRole").innerHTML =
           '<option value="">全部角色</option>' +
@@ -1542,20 +1555,14 @@
                 `<option value="${101 + index}">${esc(name)}</option>`,
             )
             .join("");
-        const chapters = new Map(
-          data.catalog
-            .filter((entry) => entry.chapter)
-            .flatMap((entry) =>
-              (
-                entry.chapter_memberships || [
-                  {
-                    chapter: entry.chapter || "unassigned",
-                    label: entry.chapter_label || "未归档",
-                  },
-                ]
-              ).map((group) => [String(group.chapter), group.label]),
-            ),
-        );
+        const chapters = new Map();
+        const counts = new Map();
+        for (const entry of data.catalog) {
+          for (const [key, label] of catalogChapters(entry)) {
+            chapters.set(key, label);
+            counts.set(key, (counts.get(key) || 0) + 1);
+          }
+        }
         for (const [id, info] of Object.entries(data.chapterArt || {})) {
           if (!chapters.has(id)) {
             const label = info.label || [info.chapter, info.title].filter(Boolean).join(" · ") || id;
@@ -1575,18 +1582,19 @@
                 `<option value="${esc(id)}">${esc(label)}</option>`,
             )
             .join("");
-        renderChapterCards([...chapters].sort((a,b) => chapterRank(a[0])-chapterRank(b[0]) || a[1].localeCompare(b[1], "zh-CN")));
+        renderChapterCards([...chapters].sort((a,b) => chapterRank(a[0])-chapterRank(b[0]) || a[1].localeCompare(b[1], "zh-CN")), counts);
       }
-      function renderChapterCards(chapters) {
+      function renderChapterCards(chapters, counts) {
         const art = data.chapterArt || {};
         const personalityCount = (data.catalog || []).filter(entry => personalityRole(entry)).length;
         const personalityArt = art.__personality__ || {};
         const personalityImage = personalityArt.image_url ? `<img src="${esc(personalityArt.image_url)}" alt="" loading="lazy">` : "";
         const personalityCard = `<button type="button" class="chapter-card" data-chapter="__personality__" title="全部人物的人格外观">${personalityImage}<span class="chapter-tag">人格</span><span class="chapter-name">人格外观 <small>· ${personalityCount}项</small></span></button>`;
-        $("#chapterCards").innerHTML = personalityCard + chapters.map(([id, label]) => {
+        const allCard = `<button type="button" class="chapter-card" data-chapter=""><span class="chapter-name">全部外观 <small>· ${data.catalog.length}项</small></span></button>`;
+        $("#chapterCards").innerHTML = allCard + personalityCard + chapters.map(([id, label]) => {
           const item = art[id] || {};
           const fallback = art[id.replace(/_part_\d+$/, "")] || {};
-          const count = (data.catalog || []).filter(entry => !(id === 'unassigned' && personalityRole(entry)) && (entry.chapter_memberships || [{chapter: entry.chapter}]).some(group => String(group.chapter) === id)).length;
+          const count = counts.get(id) || 0;
           const imageUrl = item.image_url || fallback.image_url;
           const img = imageUrl ? `<img src="${esc(imageUrl)}" alt="" loading="lazy">` : "";
           const tag = item.chapter ? `<span class="chapter-tag">${esc(item.chapter)}</span>` : "";
@@ -1608,7 +1616,8 @@
         }
         $("#addChapter").value = id;
         $("#addRole").value = "";
-        if (!["personality", "no_attack"].includes($("#addSource").value)) $("#addSource").value = "";
+        $("#addSource").value = "";
+        $("#addSearch").value = "";
         $("#addStory").checked = true;
         renderAddList();
       }
@@ -1624,30 +1633,19 @@
         const role = $("#addRole").value;
         const chapter = $("#addChapter").value;
         return data.catalog.filter((entry) => {
-          if (chapter === "unassigned" && personalityRole(entry)) return false;
           if (!$("#addStory").checked && entry.story_metadata && !["no_attack", "personality", "paired"].includes(source)) return false;
           if (source === "paired" && !entry.paired_identities?.includes(String(data.activeRule?.identity))) return false;
           if (source === "no_attack" && !entry.no_attack) return false;
           if (source === "personality" && !personalityRole(entry)) return false;
+          if (source === "enemy" && !entry.asset_key?.startsWith("SD_Enemy/")) return false;
+          if (source === "abnormality" && !entry.asset_key?.startsWith("SD_Abnormality/")) return false;
           if ((source === "boss" || source === "other") &&
             (source === "boss") !== (entry.category === "humanoid_boss"))
             return false;
-          if (
-            role &&
-            (source === "personality" ? personalityRole(entry) !== role :
-              (entry.category === "humanoid_boss" || String(entry.source) !== role))
-          )
-            return false;
-          if (
-            chapter &&
-            !(
-              entry.chapter_memberships || [
-                { chapter: entry.chapter || "unassigned" },
-              ]
-            ).some((group) => String(group.chapter) === chapter)
-          )
-            return false;
-          return `${entry.name} ${entry.identity_id} ${who(entry.source)} ${entry.chapter_label || ""} ${entry.no_attack ? "无攻击外观" : ""}`
+          const owner = personalityRole(entry) || (entry.category !== "humanoid_boss" ? String(entry.source) : "");
+          if (role && owner !== role) return false;
+          if (chapter && !catalogChapters(entry).has(chapter)) return false;
+          return `${entry.name} ${entry.identity_id} ${entry.appearance_name || ""} ${who(entry.source)} ${entry.chapter_label || ""} ${entry.no_attack ? "无攻击外观" : ""}`
             .toLowerCase()
             .includes(query);
         });
@@ -1655,13 +1653,17 @@
       function renderAddList() {
         const candidates = addCandidates();
         $("#addCount").textContent =
-          `${candidates.length} 个可选人格 · 当前池 ${selected.size} 项`;
+          `显示 ${candidates.length} / ${data.catalog.length} 个外观与人格 · 当前池 ${selected.size} 项`;
         $("#identityRows").innerHTML =
           candidates
             .map((entry) => {
               const id = String(entry.identity_id);
               const added = selected.has(id);
-              return `<tr><td>${entry.portrait_url ? `<img class="avatar" src="${esc(entry.portrait_url)}" alt="${esc(entry.name)}的战斗头像" loading="lazy" decoding="async" onerror="this.remove()">` : ""}</td><td><strong>${esc(entry.name || entry.appearance_name || id)}</strong>${entry.translation_status === "暂译" ? ' <small class="muted">暂译</small>' : ""} <small class="muted">${esc(id)}</small>${entry.no_attack ? '<div class="muted">无攻击外观 · 攻击时待机</div>' : ''}</td><td class="muted">${esc(entry.category === "humanoid_boss" ? entry.chapter_label || "Boss" : who(entry.source))}</td><td><button class="identity-add${added ? "" : " primary"}" data-id="${esc(id)}"${added ? " disabled" : ""}>${added ? "已在池中" : "添加"}</button></td></tr>`;
+              const owner = personalityRole(entry);
+              const type = entry.asset_key?.split("/")[0];
+              const sourceLabel = owner ? who(owner) + " · 人格外观" : ({SD_Abnormality:"异想体", SD_Enemy:"敌方单位"}[type] || "剧情外观");
+              const chapterLabel = [...catalogChapters(entry).values()][0];
+              return `<tr><td>${entry.portrait_url ? `<img class="avatar" src="${esc(entry.portrait_url)}" alt="${esc(entry.name)}的战斗头像" loading="lazy" decoding="async" onerror="this.remove()">` : ""}</td><td><strong>${esc(entry.name || entry.appearance_name || id)}</strong>${entry.translation_status === "暂译" ? ' <small class="muted">暂译</small>' : ""} <small class="muted">${esc(id)}</small>${entry.no_attack ? '<div class="muted">缺少专属攻击动画</div>' : ''}</td><td class="muted">${esc([sourceLabel, chapterLabel].filter(Boolean).join(" · "))}</td><td><button class="identity-add${added ? "" : " primary"}" data-id="${esc(id)}"${added ? " disabled" : ""}>${added ? "已在池中" : "添加"}</button></td></tr>`;
             })
             .join("") ||
           '<tr><td colspan="4" class="empty-row">没有符合条件的人格</td></tr>';
@@ -1684,14 +1686,15 @@
           data.catalog.some(entry => entry.paired_identities?.includes(identity));
         $("#pairedSource").hidden = !hasPairs;
         $("#pairedSource").disabled = !hasPairs;
-        $("#addRole").value = hasPairs ? "" : activeTarget;
-        $("#addSource").value = hasPairs ? "paired" : "other";
+        $("#addRole").value = "";
+        $("#addSource").value = "";
         $("#addChapter").value = "";
         $("#addSearch").value = "";
-        $("#addStory").checked = hasPairs;
+        $("#addStory").checked = true;
         renderAddList();
         $("#identityModal").classList.remove("hidden");
         $("#addSearch").focus();
+        loadDiscovered();
       }
       function closeIdentityModal() {
         $("#identityModal").classList.add("hidden");
@@ -1803,7 +1806,10 @@
       };
       $("#addSource").onchange = () => {
         const source = $("#addSource").value;
-        if (["boss", "no_attack", "paired"].includes(source)) $("#addRole").value = "";
+        if (["boss", "enemy", "abnormality", "no_attack", "paired"].includes(source)) {
+          $("#addRole").value = "";
+          $("#addStory").checked = true;
+        }
         if (source === "paired") {
           $("#addChapter").value = "";
           $("#addStory").checked = true;
@@ -1814,12 +1820,7 @@
         if ($("#addChapter").value) selectChapterCard($("#addChapter").value);
         else renderAddList();
       };
-      $("#addRole").onchange = () => {
-        if ($("#addRole").value) {
-          if ($("#addSource").value !== "personality") $("#addSource").value = "other";
-        }
-        renderAddList();
-      };
+      $("#addRole").onchange = renderAddList;
       $("#addStory").onchange = () => renderAddList();
       document.addEventListener("click", (event) => {
         if (!event.target.closest("#identityMenu")) closeIdentityMenu();
@@ -2178,7 +2179,52 @@
           e.returnValue = "";
         }
       };
-      const confLabel={catalog:'catalog 已确认',combo:'已确认',family:'按编号族',guess:'推测（catalog 里查不到，需实测）',unknown:'未知'};let scanTimer=null;async function loadDiscovered(){const box=$('#discoveredList'),meta=$('#discoveredMeta');try{const d=await api('discovered');const sc=d.scan||{};if(sc.running){meta.textContent='正在扫描本地缓存，全程几分钟，可以先做别的…';$('#startScan').disabled=true;if(!scanTimer)scanTimer=setInterval(loadDiscovered,5000);}else{$('#startScan').disabled=false;if(scanTimer){clearInterval(scanTimer);scanTimer=null}if(sc.error){status('扫描失败：'+sc.error)}}if(!d.available){box.innerHTML='<p class="muted">'+esc(d.reason||'暂无扫描结果')+'</p>';if(!sc.running)meta.textContent='';return}const groups={};for(const u of d.units){(groups[u.group_confidence||'unknown']=groups[u.group_confidence||'unknown']||[]).push(u)}meta.textContent='扫描于 '+d.generated+'　缓存包 '+d.bundles_total+' 个（重扫 '+(d.bundles_rescanned||0)+'）　人格池 '+d.pool_entries+' 条　待处理 '+d.new_prefabs+' 个　新增无攻击外观 '+(d.auto_added_no_attack||0)+' 个　新增攻击外观 '+(d.auto_added_attack||0)+' 个'+(d.catalog_hash?'　catalog '+String(d.catalog_hash).slice(0,8):'')+(d.catalog_changed?'（本期已更新）':'');if(d.artwork){const a=d.artwork;meta.textContent+='　新增小人 '+(a.added||[]).length+' 张　待处理图片 '+(a.unresolved||[]).length+' 项　待处理章节图 '+(a.chapter_unresolved||[]).length+' 项';}if(d.translation)meta.textContent+='　自动暂译 '+(d.translation.translated||0)+' 项';let html='';for(const k of ['catalog','combo','family','guess','unknown']){const list=groups[k];if(!list||!list.length)continue;html+='<h3>'+esc(confLabel[k]||k)+'（'+list.length+'）</h3><table><thead><tr><th>外观</th><th>分组</th><th>依据</th><th>动作数</th></tr></thead><tbody>';for(const u of list){html+='<tr><td>'+esc(u.appearance_name)+'</td><td><code>'+esc(u.asset_key||'—')+'</code></td><td>'+esc(String(u.group_evidence??''))+'</td><td>'+((u.motions||[]).length||'—')+'</td></tr>'}html+='</tbody></table>'}box.innerHTML=html||'<p class="muted">没有新增外观，人格池已是最新。</p>'}catch(e){if(scanTimer){clearInterval(scanTimer);scanTimer=null}$('#startScan').disabled=false;status(e.message)}}$('#refreshDiscovered').onclick=loadDiscovered;$('#startScan').onclick=async()=>{try{const r=await api('scan',{});status(r&&r.already?'已有扫描在进行':'已开始扫描');loadDiscovered()}catch(e){status(e.message)}};
+      const confLabel={catalog:'catalog 已确认',combo:'已确认',family:'按编号族',guess:'推测（catalog 里查不到，需实测）',unknown:'未知'};let scanTimer,scanRequest=0;
+      let lastCatalogScan;
+      function watchingCatalog() {
+        return !$("#identityModal").classList.contains("hidden");
+      }
+      async function refreshCatalogAfterScan(report, request) {
+        const stamp = report.available ? report.generated + "/" + report.pool_entries : "";
+        if (stamp && stamp !== lastCatalogScan && watchingCatalog() && !report.scan?.running) {
+          const latest = await api("data");
+          if (request !== scanRequest || !watchingCatalog()) return;
+          const role = $("#addRole").value, chapter = $("#addChapter").value;
+          data.catalog = latest.catalog;
+          data.chapterArt = latest.chapterArt || {};
+          fillAddFilters();
+          $("#addRole").value = role;
+          $("#addChapter").value = chapter;
+          const hasPairs = data.activeRule?.kind === "identity" && data.catalog.some(
+            entry => entry.paired_identities?.includes(String(data.activeRule.identity)));
+          $("#pairedSource").hidden = $("#pairedSource").disabled = !hasPairs;
+          renderAddList();
+        }
+        if (!report.scan?.running) lastCatalogScan = stamp;
+      }
+      function showScan(sc){
+        const progress=sc.progress||{}, bar=$('#scanBar'), label=$('#scanLabel');
+        $('#startScan').disabled=!!sc.running;
+        $('#scanProgress').hidden=!sc.running;
+        $('#scanError').textContent=sc.error||'';
+        if(!sc.running)return;
+        const stages={prepare:'准备扫描',bundles:'检查资源包',units:'整理单位和动作',chapters:'读取章节资料',images:'处理章节图片',portraits:'检查单位图片',finish:'保存扫描结果'};
+        let description=stages[progress.phase]||stages.prepare;
+        if(progress.total>0){
+          bar.max=progress.total;bar.value=progress.done;
+          description+='　'+progress.done+' / '+progress.total+'（'+Math.floor(100*bar.value/bar.max)+'%）';
+        }else{bar.removeAttribute('value')}
+        label.textContent=description;
+      }
+      async function loadDiscovered(){
+        const seq=++scanRequest,box=$('#discoveredList'),meta=$('#discoveredMeta');
+        clearTimeout(scanTimer);
+        try{const d=await api('discovered');if(seq!==scanRequest)return;
+        const sc=d.scan||{};showScan(sc);
+        await refreshCatalogAfterScan(d,seq);
+        if(seq!==scanRequest)return;
+        if(sc.running||watchingCatalog()||!$('#discovered').classList.contains('hidden'))scanTimer=setTimeout(loadDiscovered,sc.running?850:5000);
+        if(!d.available){box.innerHTML='<p class="muted">'+esc(d.reason||'暂无扫描结果')+'</p>';if(!sc.running)meta.textContent='';return}const groups={};for(const u of d.units){(groups[u.group_confidence||'unknown']=groups[u.group_confidence||'unknown']||[]).push(u)}meta.textContent='扫描于 '+d.generated+'　缓存包 '+d.bundles_total+' 个（重扫 '+(d.bundles_rescanned||0)+'）　人格池 '+d.pool_entries+' 条　待处理 '+d.new_prefabs+' 个　新增无攻击外观 '+(d.auto_added_no_attack||0)+' 个　新增攻击外观 '+(d.auto_added_attack||0)+' 个'+(d.catalog_hash?'　catalog '+String(d.catalog_hash).slice(0,8):'')+(d.catalog_changed?'（本期已更新）':'');if(d.artwork){const a=d.artwork;if(a.chapters_detected!=null)meta.textContent+='　检测到 '+a.chapters_detected+' 个章节（新增 '+(a.new_chapters||[]).length+' 个）　'+(a.disabled?'图片抓取已关闭':'本次抓取章节图 '+(a.chapter_extracted||[]).length+' 张');if(a.error||(a.errors||[]).length)meta.textContent+='　部分资源读取失败';meta.textContent+='　新增小人 '+(a.added||[]).length+' 张　待处理图片 '+(a.unresolved||[]).length+' 项　待处理章节图 '+(a.chapter_unresolved||[]).length+' 项';}if(d.translation)meta.textContent+='　自动暂译 '+(d.translation.translated||0)+' 项';let html='';for(const k of ['catalog','combo','family','guess','unknown']){const list=groups[k];if(!list||!list.length)continue;html+='<h3>'+esc(confLabel[k]||k)+'（'+list.length+'）</h3><table><thead><tr><th>外观</th><th>分组</th><th>依据</th><th>动作数</th></tr></thead><tbody>';for(const u of list){html+='<tr><td>'+esc(u.appearance_name)+'</td><td><code>'+esc(u.asset_key||'—')+'</code></td><td>'+esc(String(u.group_evidence??''))+'</td><td>'+((u.motions||[]).length||'—')+'</td></tr>'}html+='</tbody></table>'}box.innerHTML=html||'<p class="muted">没有新增外观，人格池已是最新。</p>'}catch(e){if(seq!==scanRequest)return;showScan({error:e.message});if(!$('#discovered').classList.contains('hidden'))scanTimer=setTimeout(loadDiscovered,3000)}}document.querySelector('button[data-page="discovered"]').addEventListener('click',loadDiscovered);$('#refreshDiscovered').onclick=loadDiscovered;$('#startScan').onclick=async()=>{try{const r=await api('scan',{});status(r&&r.already?'已有扫描在进行':'已开始扫描');loadDiscovered()}catch(e){status(e.message)}};
       let schemes = [];
       async function loadSchemes() {
         try {

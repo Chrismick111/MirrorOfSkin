@@ -4,17 +4,8 @@ static void *clash_visible(Unit *u,void *self){
  if(current&&(self==u->baseApp||skin_for_app(u,self))&&(current==u->baseApp||skin_for_app(u,current)))return current;
  return self;
 }
-static void *clash_source_if_safe(Unit *u,Skin *skin){
- void *current=rfield(u->view,"_curAppearance");
- if(!current)return skin->app;
- if(current==u->baseApp)return current;
- if(current!=skin->app||presentation_busy(current)||presentation_busy(u->baseApp)||
-    (!g_duelCameraBoundary&&camera_scope_active())||g_presentationGate)return current;
- if(unit_switch(u,NULL))return u->baseApp;
- current=rfield(u->view,"_curAppearance");return current?current:skin->app;
-}
 static int clash_fallback(Unit *u,Skin *skin,void **receiver,int requested,int role){
- *receiver=clash_source_if_safe(u,skin);
+ *receiver=skin->app;
  int detail=requested;
  if(*receiver==skin->app){
   int neutral=sr_clash_slot(skin->look,skin->chapterRole,17,4);

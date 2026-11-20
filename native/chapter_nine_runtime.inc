@@ -68,9 +68,14 @@ static void *chapter_forward(Unit *unit,Skin *skin,int requested,int index,int s
  uint8_t a1,uint8_t a3,void *callback,uint8_t a5,void *method){
  int verified=0,detail=chapter_group(unit,skin,requested,skillId,&verified);
  void *app=skin->app;
- if(detail<0){
-  app=unit->baseApp;
-  detail=requested;
+ if(detail<0||(is_skill_detail(requested)&&detail<SR_MOTION_CACHE&&!skin->motionCounts[detail])){
+  int fallback=verified==5?-1:sr_playback_detail(skin->motionCounts,requested,unit->coinTier);
+  if(fallback>=0&&fallback<SR_MOTION_CACHE&&skin->motionCounts[fallback]>0)detail=fallback;
+  else if(unit->staticHidden){
+   /* Preserve source callbacks on missing attack or special-role contracts. */
+   if(is_skill_detail(requested)&&verified!=5)visible_attack_begin(unit,skin,requested,coin);
+   keep_hidden_timing_active(unit);app=unit->baseApp;detail=requested;
+  }else detail=0;
  }
  int count=app==skin->app&&detail>=0&&detail<SR_MOTION_CACHE?skin->motionCounts[detail]:0,part=index;
  if(count>0&&index>=0&&verified!=5){
@@ -83,22 +88,17 @@ static void *chapter_forward(Unit *unit,Skin *skin,int requested,int index,int s
    if(part>=count)part=count-1;
   }else if(index>=count||(is_skill_detail(requested)&&!sameSize&&last))part=count-1;
  }
- int nativeDetail=detail,nativePart=part;
- if(count>0&&part>=0&&is_skill_detail(requested)&&verified!=5){
-  /* Stay inside the authored group. Exact clip matches and finishers also
-     seed the body history for later callbacks without changing their pose. */
-  counterpart_visual_part(unit,skin,requested,index,coin,last||verified==4?SR_PAIR_KEEP_PART:SR_PAIR_WITHIN_GROUP,&detail,&part);
- }
  void *savedApp=g_chapterPlaybackApp;int savedDetail=g_chapterPlaybackDetail;
  ProjectionContext savedProjection=g_projection;
  FxPlaybackPlan *savedCapture=g_fxCapture;uint64_t savedOwner=g_fxCaptureOwner;
  g_chapterPlaybackApp=app==skin->app?app:NULL;g_chapterPlaybackDetail=detail;
- g_projection=(ProjectionContext){0};
- if(detail!=nativeDetail||part!=nativePart)g_projection=(ProjectionContext){app,nativeDetail,nativePart,detail};
- g_fxCapture=NULL;g_fxCaptureOwner=0;
+ g_projection=(ProjectionContext){0};g_fxCapture=NULL;g_fxCaptureOwner=0;
  fx_plan_close_app(app,0);playback_begin(app);
+ void *savedTiming=hiddenTimingApp;
+ if(app==unit->baseApp&&unit->staticHidden)hiddenTimingApp=app;
+ else if(is_skill_detail(requested)&&verified!=5&&!(g_rows[skin->row].excluded&2))visible_watch_begin(unit,skin,requested,coin);
  ((void (*)(void *,int,uint8_t,int,uint8_t,void *,uint8_t,void *))orig_changeMotion)(app,detail,a1,part,a3,callback,a5,method);
- g_chapterPlaybackApp=savedApp;g_chapterPlaybackDetail=savedDetail;
+ hiddenTimingApp=savedTiming;g_chapterPlaybackApp=savedApp;g_chapterPlaybackDetail=savedDetail;
  g_projection=savedProjection;g_fxCapture=savedCapture;g_fxCaptureOwner=savedOwner;
  if(is_skill_detail(requested)){
   char line[244];snprintf(line,sizeof(line),"chapter native look=%.63s source=%d:%d played=%d:%d receiver=%s evidence=%d skill=%d coin=%d last=%d",skin->look,requested,index,detail,part,app==skin->app?"enemy":"source",verified,skillId,coin,last);

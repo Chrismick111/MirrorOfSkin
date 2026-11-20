@@ -17,7 +17,6 @@ typedef struct {
  int stage;
  unsigned char seen[SR_VARIETY_COINS],groups[SR_VARIETY_COINS],indices[SR_VARIETY_COINS];
  unsigned playedBody[SR_VARIETY_COINS];
- unsigned char pairSourceGroup[SR_VARIETY_COINS],pairSourcePart[SR_VARIETY_COINS];
  unsigned char uses[128],nextClip[128];
 } SrSegmentLatch;
 static void sr_segment_clear(SrSegmentLatch *s){memset(s,0,sizeof(*s));}
