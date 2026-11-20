@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>人格演出工作台</title>
+    <title>镜像幻化</title>
     <style>
       * {
         box-sizing: border-box;
@@ -122,6 +122,13 @@
         border-right: 0;
         overflow-y: auto;
         scrollbar-gutter: stable;
+        display: flex;
+        flex-direction: column;
+        min-height: 0;
+      }
+      .nav-spacer {
+        flex: 1;
+        min-height: 18px;
       }
       nav button {
         background: rgba(41, 44, 50, 0.62);
@@ -170,7 +177,7 @@
         text-align: left;
       }
       article {
-        padding: 24px;
+        padding: 5px 24px 24px;
         min-width: 0;
         overflow-y: auto;
         overflow-x: hidden;
@@ -325,29 +332,101 @@
         background: #202329;
         padding: 15px;
       }
-      #status {
+      .toasts {
         position: fixed;
         top: 82px;
-        right: 24px;
-        z-index: 150;
-        max-width: min(360px, calc(100vw - 48px));
-        padding: 10px 14px;
-        background: #202329;
+        left: 50%;
+        z-index: 220;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 7px;
+        width: min(420px, calc(100vw - 48px));
+        transform: translateX(-50%);
+        pointer-events: none;
+      }
+      .toast {
+        max-width: 100%;
+        padding: 8px 14px;
+        background: rgba(24, 27, 33, 0.94);
         border: 1px solid #565b66;
-        border-radius: 10px;
-        box-shadow: 0 12px 32px #000a;
+        border-radius: 999px;
+        box-shadow: 0 10px 28px #000a;
         color: #e7e7e7;
         font-size: 13px;
-        opacity: 0;
-        pointer-events: none;
-        transform: translateY(-6px);
+        text-align: center;
+        animation: toastIn 0.2s ease;
         transition:
-          opacity 0.18s,
-          transform 0.18s;
+          opacity 0.2s ease,
+          transform 0.2s ease;
       }
-      #status.show {
-        opacity: 1;
-        transform: none;
+      .toast.leaving {
+        opacity: 0;
+        transform: translateY(-6px);
+      }
+      @keyframes toastIn {
+        from {
+          opacity: 0;
+          transform: translateY(-6px);
+        }
+        to {
+          opacity: 1;
+          transform: none;
+        }
+      }
+      .scan-mini {
+        position: fixed;
+        right: 24px;
+        bottom: 84px;
+        z-index: 90;
+        width: 270px;
+        padding: 10px 12px;
+        text-align: left;
+        border-radius: 12px;
+        box-shadow: 0 14px 40px #000a;
+      }
+      .scan-mini-top {
+        display: flex;
+        justify-content: space-between;
+        gap: 8px;
+        margin-bottom: 8px;
+        font-size: 12px;
+        color: #d8dbe1;
+      }
+      .scan-mini-track {
+        height: 7px;
+        overflow: hidden;
+        border-radius: 999px;
+        background: #343840;
+      }
+      .scan-mini-track > div {
+        height: 100%;
+        width: 0;
+        border-radius: inherit;
+        background: linear-gradient(90deg, #b98d3c, #f0d79b);
+        transition: width 0.25s ease;
+      }
+      #scanDetailText {
+        max-height: 50vh;
+        overflow: auto;
+      }
+      .pool-top {
+        position: fixed;
+        right: 24px;
+        bottom: 24px;
+        z-index: 90;
+        width: 44px;
+        height: 44px;
+        padding: 0;
+        border-radius: 50%;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        box-shadow: 0 10px 28px #0008;
+      }
+      .pool-top .icon {
+        width: 21px;
+        height: 21px;
       }
       label {
         display: inline-flex;
@@ -409,6 +488,42 @@
       .scheme-actions {
         display: flex;
         gap: 8px;
+      }
+      .scheme-bar {
+        justify-content: space-between;
+      }
+      .scheme-bar input {
+        flex: 1;
+        min-width: 160px;
+      }
+      .scheme-bar .scheme-actions {
+        margin-left: auto;
+        align-items: center;
+      }
+      .scheme-action,
+      .event-export {
+        width: 40px;
+        height: 40px;
+        padding: 0;
+        border-radius: 50%;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+      }
+      .scheme-action .icon,
+      .event-export .icon {
+        width: 20px;
+        height: 20px;
+      }
+      .scheme-empty {
+        text-align: center;
+        margin: 42px 0;
+      }
+      .events-toolbar {
+        justify-content: space-between;
+      }
+      .events-toolbar input {
+        flex: 1;
       }
       .scheme-tip {
         position: fixed;
@@ -627,7 +742,7 @@
 
       .scope-card {
         position: sticky;
-        top: 0;
+        top: 5px;
         z-index: 30;
         display: flex;
         align-items: center;
@@ -1003,6 +1118,54 @@
         height: 100%;
         object-fit: cover;
         object-position: center top;
+      }
+      .pool-orb .icon {
+        width: 52px;
+        height: 52px;
+        color: #deb970;
+      }
+      .identity-orb .icon {
+        width: 30px;
+        height: 30px;
+        color: #deb970;
+      }
+      .new-rule-orb .icon {
+        width: 32px;
+        height: 32px;
+        color: #deb970;
+      }
+      #identityModal .modal {
+        padding: 14px 16px;
+      }
+      #identityModal .modal-title {
+        margin-bottom: 6px;
+      }
+      #identityModal .identity-filters {
+        gap: 6px;
+        margin-bottom: 6px;
+      }
+      #identityModal .chapter-browser {
+        margin: 4px 0;
+      }
+      #identityModal .identity-scroll table {
+        table-layout: fixed;
+      }
+      #identityModal .identity-scroll td {
+        padding: 6px 8px;
+      }
+      #identityModal .identity-scroll td:last-child {
+        width: 48px;
+        padding-right: 0;
+        text-align: right;
+      }
+      #identityModal .identity-add {
+        width: 38px;
+        height: 38px;
+        border-radius: 50%;
+      }
+      #identityModal .identity-add .icon {
+        width: 18px;
+        height: 18px;
       }
       .identity-copy {
         display: flex;
@@ -1387,6 +1550,15 @@
       <symbol id="i-grid" viewBox="0 0 24 24">
         <path d="M4 4h6v6H4zM14 4h6v6h-6zM4 14h6v6H4zM14 14h6v6h-6z" />
       </symbol>
+      <symbol id="i-save" viewBox="0 0 24 24">
+        <path d="M5 3h11l3 3v15H5zM8 3v6h8V3M8 21v-7h8v7" />
+      </symbol>
+      <symbol id="i-upload" viewBox="0 0 24 24">
+        <path d="M12 16V4M12 4L7 9M12 4l5 5M5 21h14" />
+      </symbol>
+      <symbol id="i-arrow-up" viewBox="0 0 24 24">
+        <path d="M12 19V5M6 11l6-6 6 6" />
+      </symbol>
       <symbol id="i-spark" viewBox="0 0 24 24">
         <path
           d="M12 3l1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8L12 3zM19 16l.8 2.2L22 19l-2.2.8L19 22l-.8-2.2L16 19l2.2-.8L19 16z"
@@ -1394,7 +1566,7 @@
       </symbol>
     </svg>
     <header>
-      <h1>人格演出工作台 <small class="muted">人格与Boss外观</small></h1>
+      <h1>镜像幻化</h1>
       <div class="header-actions">
         <a
           class="icon-btn"
@@ -1415,12 +1587,10 @@
       <nav>
         <button data-page="pool">人格池</button
         ><button data-page="rulesets">规则集</button
-        ><button data-page="events">演出记录</button
-        ><button data-page="rules">抽取编排</button
-        ><button data-page="forms">形态配置</button
         ><button data-page="schemes">方案管理</button
-        ><button data-page="prepare">准备状态</button
-        ><button data-page="discovered">新单位</button>
+        ><button data-page="prepare">准备状态</button>
+        <div class="nav-spacer"></div>
+        <button data-page="events" class="nav-bottom">运行日志</button>
       </nav>
       <article>
         <section id="pool">
@@ -1460,12 +1630,18 @@
           </div>
         </section>
         <section id="events" class="hidden">
-          <div class="bar">
+          <div class="bar events-toolbar">
             <input id="eventSearch" placeholder="筛选角色ID、事件或原因" />
-            <button id="exportEvents">导出当前记录</button>
-          </div>
-          <div class="notice">
-            展示最近日志中的最多600条相关事件。硬币类型未被原生核心记录时显示“未记录”。点击行可查看原始记录。
+            <button
+              id="exportEvents"
+              class="event-export"
+              title="导出当前记录"
+              aria-label="导出当前记录"
+            >
+              <svg class="icon" aria-hidden="true">
+                <use href="#i-download"></use>
+              </svg>
+            </button>
           </div>
           <div class="scroll">
             <table>
@@ -1529,25 +1705,40 @@
           <div id="formRows"></div>
         </section>
         <section id="schemes" class="hidden">
-          <h2>方案管理</h2>
-          <p class="hint">
-            方案保存当前的人格池、规则集和抽取编排。鼠标停在方案上可查看其中的外观；读取会整体替换当前配置，读取前自动备份为“读取前自动备份”。
-          </p>
-          <div class="bar">
+          <div class="bar scheme-bar">
             <input
               id="schemeName"
               maxlength="40"
               placeholder="方案名称"
-            /><button id="saveScheme" class="primary">保存当前方案</button
-            ><button id="importScheme">导入方案文件</button
-            ><input type="file" id="importFile" accept=".json" hidden />
+            />
+            <div class="scheme-actions">
+              <button
+                id="saveScheme"
+                class="scheme-action"
+                title="保存当前方案"
+                aria-label="保存当前方案"
+              >
+                <svg class="icon" aria-hidden="true">
+                  <use href="#i-save"></use>
+                </svg>
+              </button>
+              <button
+                id="importScheme"
+                class="scheme-action"
+                title="导入方案文件"
+                aria-label="导入方案文件"
+              >
+                <svg class="icon" aria-hidden="true">
+                  <use href="#i-upload"></use>
+                </svg>
+              </button>
+              <input type="file" id="importFile" accept=".json" hidden />
+            </div>
           </div>
           <div id="schemeList" class="scheme-grid"></div>
           <div id="schemeTip" class="scheme-tip hidden"></div>
         </section>
         <section id="prepare" class="hidden">
-          <h2>资源准备状态</h2>
-
           <div id="prepareData" aria-live="polite"></div>
         </section>
         <section id="discovered" class="hidden">
@@ -1568,7 +1759,56 @@
         </section>
       </article>
     </main>
-    <div id="status" role="status">正在读取插件数据…</div>
+    <div id="toasts" role="status" aria-live="polite" aria-atomic="false"></div>
+    <button
+      id="scanMini"
+      class="scan-mini hidden"
+      type="button"
+      title="查看扫描详情"
+    >
+      <div class="scan-mini-top">
+        <span id="scanMiniLabel">正在扫描</span>
+        <span id="scanMiniPercent">0%</span>
+      </div>
+      <div class="scan-mini-track">
+        <div id="scanMiniBar"></div>
+      </div>
+    </button>
+    <button
+      id="poolTop"
+      class="pool-top hidden"
+      type="button"
+      title="回到顶部"
+      aria-label="回到顶部"
+    >
+      <svg class="icon" aria-hidden="true">
+        <use href="#i-arrow-up"></use>
+      </svg>
+    </button>
+    <div
+      id="scanDetailModal"
+      class="modal-backdrop hidden"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="scanDetailTitle"
+    >
+      <div class="modal">
+        <div class="modal-title">
+          <h2 id="scanDetailTitle">扫描详情</h2>
+          <button
+            id="scanDetailClose"
+            class="icon-btn"
+            aria-label="关闭"
+            title="关闭"
+          >
+            <svg class="icon" aria-hidden="true">
+              <use href="#i-close"></use>
+            </svg>
+          </button>
+        </div>
+        <pre id="scanDetailText">正在读取扫描状态…</pre>
+      </div>
+    </div>
     <div
       id="portraitModal"
       class="modal-backdrop hidden"
@@ -1833,14 +2073,18 @@
             })[c],
         );
       const who = (id) => names[Number(id) - 101] || id;
-      let statusTimer;
       const status = (t) => {
-        const el = $("#status");
-        if (!el) return;
+        if (!t) return;
+        const box = $("#toasts");
+        if (!box) return;
+        const el = document.createElement("div");
+        el.className = "toast";
         el.textContent = t;
-        el.classList.add("show");
-        clearTimeout(statusTimer);
-        statusTimer = setTimeout(() => el.classList.remove("show"), 2200);
+        box.appendChild(el);
+        setTimeout(() => {
+          el.classList.add("leaving");
+          setTimeout(() => el.remove(), 220);
+        }, 2200);
       };
       const bgLayers = [$("#app-bg-image-a"), $("#app-bg-image-b")];
       let bgLayerIndex = 0,
@@ -2076,10 +2320,9 @@
               (item) => String(item.identity_id) === id,
             );
             if (!entry) return "";
-            const initial = (entry.name || entry.appearance_name || "?").slice(0, 1);
             const orb = entry.portrait_url
               ? `<img src="${esc(entry.portrait_url)}" alt="${esc(entry.name)}的战斗头像" loading="lazy" decoding="async" onerror="this.remove()">`
-              : esc(initial);
+              : '<svg class="icon" aria-hidden="true"><use href="#i-user"></use></svg>';
             const backdrop = entry.portrait_url
               ? `<span class="pool-bg" style="background-image:url('${esc(entry.portrait_url)}')"></span>`
               : "";
@@ -2493,11 +2736,11 @@
             .map((entry) => {
               const id = String(entry.identity_id);
               const added = selected.has(id);
-              const initial = (entry.name || entry.appearance_name || "?").slice(0, 1);
               const orb = entry.portrait_url
                 ? `<img src="${esc(entry.portrait_url)}" alt="${esc(entry.name)}的战斗头像" loading="lazy" decoding="async" onerror="this.remove()">`
-                : esc(initial);
-              return `<tr><td><div class="identity-cell"><span class="identity-orb">${orb}</span><div class="identity-copy"><strong>${esc(entry.name || entry.appearance_name || id)}</strong>${entry.no_attack ? '<small>缺少专属攻击动画</small>' : ""}</div></div></td><td><button class="identity-add${added ? " remove" : " primary"}" data-id="${esc(id)}" data-added="${added ? 1 : 0}" title="${added ? "移出池子" : "添加"}" aria-label="${added ? "移出池子" : "添加"}"><svg class="icon" aria-hidden="true"><use href="#${added ? "i-minus" : "i-plus"}"></use></svg></button></td></tr>`;
+                : '<svg class="icon" aria-hidden="true"><use href="#i-user"></use></svg>';
+              const source = entrySource(entry);
+              return `<tr><td><div class="identity-cell"><span class="identity-orb">${orb}</span><div class="identity-copy"><strong>${esc(entry.name || entry.appearance_name || id)}</strong><small>${esc(source)}</small>${entry.no_attack ? '<small>缺少专属攻击动画</small>' : ""}</div></div></td><td class="identity-action"><button class="identity-add${added ? " remove" : " primary"}" data-id="${esc(id)}" data-added="${added ? 1 : 0}" title="${added ? "移出池子" : "添加"}" aria-label="${added ? "移出池子" : "添加"}"><svg class="icon" aria-hidden="true"><use href="#${added ? "i-minus" : "i-plus"}"></use></svg></button></td></tr>`;
             })
             .join("") ||
           '<tr><td colspan="2" class="empty-row">没有符合条件的人格</td></tr>';
@@ -2624,10 +2867,9 @@
             .map((entry) => {
               const id = String(entry.identity_id);
               const active = id === newRuleIdentityId;
-              const initial = (entry.name || entry.appearance_name || "?").slice(0, 1);
               const orb = entry.portrait_url
                 ? `<img src="${esc(entry.portrait_url)}" alt="" loading="lazy" decoding="async">`
-                : esc(initial);
+                : '<svg class="icon" aria-hidden="true"><use href="#i-user"></use></svg>';
               return `<button type="button" class="new-rule-identity${active ? " active" : ""}" data-id="${esc(id)}"><span class="new-rule-orb">${orb}</span><span>${esc(entry.name || entry.appearance_name || id)}</span></button>`;
             })
             .join("") || '<p class="muted">没有可创建的人格</p>';
@@ -2706,6 +2948,7 @@
           closeIdentityModal();
           closeNewRule();
           hideModal("#rulePickerModal");
+          hideModal("#scanDetailModal");
         }
       });
       $("#portraitFile").onchange = async (event) => {
@@ -2996,12 +3239,14 @@
             .replace("等待运行中的插件读取", "等待游戏连接");
         const statusRow = (title, text, ok) =>
           `<div class="prep-status"><span>${esc(title)}</span><strong class="${ok ? "prep-ok" : "prep-wait"}">${esc(text)}</strong></div>`;
-        const section = (title, items, empty) =>
-          `<div class="prep-list"><h3>${esc(title)} <small>${items.length} 个</small></h3>${items.length ? `<ul>${items.map((x) => `<li>${esc(x.name)}</li>`).join("")}</ul>` : `<p class="muted">${esc(empty)}</p>`}</div>`;
+        const section = (title, items) =>
+          items.length
+            ? `<div class="prep-list"><h3>${esc(title)} <small>${items.length} 个</small></h3><ul>${items.map((x) => `<li>${esc(x.name)}</li>`).join("")}</ul></div>`
+            : "";
         const loaded = p.loaded || [],
           shown = p.shown || [];
         $("#prepareData").innerHTML =
-          `<div class="prep-grid">${statusRow("游戏与插件", message, ready)}${statusRow("人格池", active ? friendly(runtime.pool) : "等待游戏启动", active && (runtime.pool || "").includes("核心已读取"))}${statusRow("抽取编排", active ? friendly(runtime.draw) : "等待游戏启动", active && (runtime.draw || "").includes("核心已读取"))}${statusRow("形态设置", active ? friendly(runtime.forms) : "等待游戏启动", active && (runtime.forms || "").includes("核心已读取"))}</div><p class="muted">列表根据本次游戏的运行记录更新。已准备表示外观资源已加载；已显示表示战斗中实际出现过。</p>${section("已准备的外观", loaded, active ? "尚无已准备的外观记录。" : "启动游戏并进入战斗后显示。")}${section("本次游戏已显示的外观", shown, active ? "尚无已显示的外观记录。" : "启动游戏并进入战斗后显示。")}`;
+          `<div class="prep-grid">${statusRow("游戏与插件", message, ready)}${statusRow("人格池", active ? friendly(runtime.pool) : "等待游戏启动", active && (runtime.pool || "").includes("核心已读取"))}${statusRow("抽取编排", active ? friendly(runtime.draw) : "等待游戏启动", active && (runtime.draw || "").includes("核心已读取"))}${statusRow("形态设置", active ? friendly(runtime.forms) : "等待游戏启动", active && (runtime.forms || "").includes("核心已读取"))}</div>${section("已准备的外观", loaded)}${section("本次游戏已显示的外观", shown)}`;
       }
       async function loadPrepare() {
         try {
@@ -3010,6 +3255,16 @@
         } catch (e) {
           status(e.message);
         }
+      }
+      let scanPollAt = 0;
+      async function pollScanStatus() {
+        if (Date.now() - scanPollAt < 1500) return;
+        scanPollAt = Date.now();
+        try {
+          const d = await api("discovered");
+          lastScanReport = d;
+          showScan(d.scan || {});
+        } catch (e) {}
       }
       let pollBusy = false;
       function activePage() {
@@ -3029,6 +3284,7 @@
           else if (page === "schemes") await loadSchemes();
           if (page !== "discovered" && watchingCatalog())
             await loadDiscovered();
+          await pollScanStatus();
           await pollResourceImages();
         } catch (e) {
         } finally {
@@ -3050,6 +3306,29 @@
         };
       });
       if (navButtons[0]) navButtons[0].classList.add("active");
+
+      $("#scanMini").onclick = () => {
+        $("#scanDetailText").textContent = scanDetailText();
+        showModal("#scanDetailModal");
+      };
+      $("#scanDetailClose").onclick = () => hideModal("#scanDetailModal");
+      $("#scanDetailModal").onclick = (event) => {
+        if (event.target.id === "scanDetailModal") hideModal("#scanDetailModal");
+      };
+      const pageScroll = document.querySelector("article");
+      function updatePoolTop() {
+        const show = pageScroll && activePage() === "pool" && pageScroll.scrollTop > 400;
+        $("#poolTop").classList.toggle("hidden", !show);
+      }
+      if (pageScroll)
+        pageScroll.addEventListener("scroll", updatePoolTop, { passive: true });
+      $("#poolTop").onclick = () =>
+        pageScroll?.scrollTo({ top: 0, behavior: "smooth" });
+      navButtons.forEach((button) =>
+        button.addEventListener("click", updatePoolTop),
+      );
+      updatePoolTop();
+
       window.onbeforeunload = (e) => {
         if (dirty || saveTimer) {
           e.preventDefault();
@@ -3099,38 +3378,78 @@
         }
         if (!report.scan?.running) lastCatalogScan = stamp;
       }
+      const scanStages = {
+        prepare: "准备扫描",
+        bundles: "检查资源包",
+        units: "整理单位和动作",
+        chapters: "读取章节资料",
+        images: "处理章节图片",
+        portraits: "检查单位图片",
+        finish: "保存扫描结果",
+      };
+      let lastScanState = {},
+        lastScanReport = null;
       function showScan(sc) {
+        lastScanState = sc || {};
         const progress = sc.progress || {},
           bar = $("#scanBar"),
           label = $("#scanLabel");
-        $("#scanProgress").hidden = !sc.running;
-        $("#scanError").textContent = sc.error || "";
-        if (!sc.running) return;
-        const stages = {
-          prepare: "准备扫描",
-          bundles: "检查资源包",
-          units: "整理单位和动作",
-          chapters: "读取章节资料",
-          images: "处理章节图片",
-          portraits: "检查单位图片",
-          finish: "保存扫描结果",
-        };
-        let description = stages[progress.phase] || stages.prepare;
-        if (progress.total > 0) {
-          bar.max = progress.total;
-          bar.value = progress.done;
+        if ($("#scanProgress")) $("#scanProgress").hidden = !sc.running;
+        if ($("#scanError")) $("#scanError").textContent = sc.error || "";
+        let description = scanStages[progress.phase] || scanStages.prepare;
+        if (progress.total > 0)
           description +=
             "　" +
             progress.done +
             " / " +
             progress.total +
             "（" +
-            Math.floor((100 * bar.value) / bar.max) +
+            Math.floor((100 * (progress.done || 0)) / progress.total) +
             "%）";
-        } else {
-          bar.removeAttribute("value");
+        if (bar) {
+          if (progress.total > 0) {
+            bar.max = progress.total;
+            bar.value = progress.done;
+          } else bar.removeAttribute("value");
         }
-        label.textContent = description;
+        if (label) label.textContent = description;
+        const mini = $("#scanMini");
+        if (mini) {
+          mini.classList.toggle("hidden", !sc.running);
+          if (sc.running) {
+            const pct =
+              progress.total > 0
+                ? Math.floor((100 * (progress.done || 0)) / progress.total)
+                : 0;
+            $("#scanMiniLabel").textContent = description.replace(
+              /（\d+%）$/,
+              "",
+            );
+            $("#scanMiniPercent").textContent = pct + "%";
+            $("#scanMiniBar").style.width = pct + "%";
+          }
+        }
+      }
+      function scanDetailText() {
+        const sc = lastScanState || {},
+          p = sc.progress || {},
+          report = lastScanReport || {};
+        const stage = scanStages[p.phase] || "准备扫描";
+        const lines = [
+          "状态：" + (sc.running ? "扫描中" : sc.error ? "失败" : "空闲"),
+          "阶段：" + stage,
+        ];
+        if (p.total) lines.push(`进度：${p.done || 0} / ${p.total}`);
+        if (sc.started) lines.push("开始：" + sc.started);
+        if (sc.error) lines.push("错误：" + sc.error);
+        if (report.generated) lines.push("上次完成：" + report.generated);
+        if (report.bundles_total != null)
+          lines.push("缓存包：" + report.bundles_total);
+        if (report.pool_entries != null)
+          lines.push("人格池：" + report.pool_entries);
+        if (report.new_prefabs != null)
+          lines.push("待处理新外观：" + report.new_prefabs);
+        return lines.join("\n");
       }
       async function loadDiscovered() {
         const seq = ++scanRequest,
@@ -3140,6 +3459,7 @@
           const d = await api("discovered");
           if (seq !== scanRequest) return;
           const sc = d.scan || {};
+          lastScanReport = d;
           showScan(sc);
           await refreshCatalogAfterScan(d, seq);
           if (seq !== scanRequest) return;
@@ -3313,7 +3633,7 @@
       function renderSchemes() {
         const box = $("#schemeList");
         if (!schemes.length) {
-          box.innerHTML = '<p class="muted">还没有保存的方案。</p>';
+          box.innerHTML = '<p class="muted scheme-empty">还没有保存的方案。</p>';
           return;
         }
         box.innerHTML = schemes
