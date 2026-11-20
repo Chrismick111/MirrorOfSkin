@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 import sys
 from pathlib import Path
 _HERE = Path(__file__).resolve().parent
@@ -32,6 +33,13 @@ import struct
 import subprocess
 import argparse,hashlib,importlib.util,json,math,os,pathlib,re,secrets,threading,time,webbrowser
 from http.server import BaseHTTPRequestHandler,ThreadingHTTPServer
+
+_STARTUP_VERSION=''
+try:
+ _STARTUP_VERSION=json.loads((pathlib.Path(__file__).resolve().parent.parent/'addon_info.json').read_text(encoding='utf-8-sig')).get('version','')
+except Exception:
+ pass
+_BUILD_FILE='Workbench/server_build.json'
 
 _PORTRAIT_LOCK=threading.Lock()
 _PORTRAIT_THREAD=None
@@ -525,7 +533,7 @@ def main():
    try:
     if route=='index':return self.send(html,ctype='text/html; charset=utf-8')
     if route=='effect-editor':return self.send((pathlib.Path(__file__).parent/'effect-editor.html').read_bytes(),ctype='text/html; charset=utf-8')
-    if route=='instance-ping':return self.send({'workbench':True,'version':read(store.root/'addon_info.json',{}).get('version','')})
+    if route=='instance-ping':return self.send({'workbench':True,'version':_STARTUP_VERSION})
     if route and (route=='launcher-background' or route.startswith('launcher-background?')):
      if 'next=1' in route:store.launcher_background_next()
      image,ctype=store.launcher_background_image()
@@ -557,7 +565,7 @@ def main():
    except Exception as e:return self.send({'error':str(e)},500)
   def do_POST(self):
    route=self.route()
-   if route not in ('save','import','director','bundle','boss-preview','update-check','update-install','portrait-save','portrait-reset','portrait-download','images-delete','ruleset-activate','ruleset-save','ruleset-create','ruleset-only','ruleset-deactivate','ruleset-fill','ruleset-clear','scan','scheme-save','scheme-load','scheme-delete','scheme-import','scheme-get','effect-scheme-save','effect-scheme-get','effect-scheme-delete','effect-timelines','effect-live-start','effect-live-status','effect-plan-preview','effect-selection','effect-sprites','effect-sprites-start','effect-sprites-status','effect-sprites-cancel','effect-sprite-export','instance-shutdown','instance-attach','instance-release'):return self.send({'error':'未找到'},404)
+   if route not in ('save','import','director','bundle','boss-preview','update-check','update-install','portrait-save','portrait-reset','portrait-download','images-delete','ruleset-activate','ruleset-select','ruleset-save','ruleset-create','ruleset-only','ruleset-deactivate','ruleset-fill','ruleset-clear','scan','scheme-save','scheme-load','scheme-delete','scheme-import','scheme-get','effect-scheme-save','effect-scheme-get','effect-scheme-delete','effect-timelines','effect-live-start','effect-live-status','effect-plan-preview','effect-selection','effect-sprites','effect-sprites-start','effect-sprites-status','effect-sprites-cancel','effect-sprite-export','instance-shutdown','instance-attach','instance-release'):return self.send({'error':'未找到'},404)
    if self.headers.get('X-Workbench')!=token:return self.send({'error':'请求无效'},403)
    try:
     n=int(self.headers.get('Content-Length',0))
@@ -605,6 +613,9 @@ def main():
      raise ValueError('父辈与子辈演出已改为按人格和覆盖外观自动匹配')
     if route=='ruleset-activate':
      rulesets.activate(store.root, body.get('rule') or body)
+     return self.send(_ruleset_payload(store))
+    if route=='ruleset-select':
+     rulesets.select(store.root, body.get('rule') or body)
      return self.send(_ruleset_payload(store))
     if route=='ruleset-save':
      rulesets.save_entries(store.root, body['rule'], body.get('entries', []), body.get('revision', ''), {str(e['identity_id']) for e in rulesets.catalog(store.root).values()}, store.validate)
@@ -676,10 +687,19 @@ def main():
  except OSError:
   server=ThreadingHTTPServer(('127.0.0.1',0),Handler);gateway_port=server.server_port
  _save_gateway(args.addon,gateway_port,token)
+ try:
+  build_path=pathlib.Path(args.addon)/_BUILD_FILE
+  build_path.parent.mkdir(parents=True,exist_ok=True)
+  build_path.write_text(json.dumps({'version':_STARTUP_VERSION,'pid':os.getpid()}),encoding='utf-8')
+ except OSError:
+  pass
  server.daemon_threads=False;lifetime.watch(server);url=f'http://127.0.0.1:{server.server_port}/{token}/';instance.publish(url);print(url,flush=True)
  resource_catalog.resource_tools.prepare_in_background()
  if not args.no_browser:webbrowser.open(url)
  try:server.serve_forever()
  except KeyboardInterrupt:pass
- finally:server.server_close();_stop_children();lifetime.close();instance.close()
+ finally:
+  try:(pathlib.Path(args.addon)/_BUILD_FILE).unlink(missing_ok=True)
+  except OSError:pass
+  server.server_close();_stop_children();lifetime.close();instance.close()
 if __name__=='__main__':main()
