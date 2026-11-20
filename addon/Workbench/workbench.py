@@ -525,7 +525,7 @@ def main():
    try:
     if route=='index':return self.send(html,ctype='text/html; charset=utf-8')
     if route=='effect-editor':return self.send((pathlib.Path(__file__).parent/'effect-editor.html').read_bytes(),ctype='text/html; charset=utf-8')
-    if route=='instance-ping':return self.send({'workbench':True})
+    if route=='instance-ping':return self.send({'workbench':True,'version':read(store.root/'addon_info.json',{}).get('version','')})
     if route and (route=='launcher-background' or route.startswith('launcher-background?')):
      if 'next=1' in route:store.launcher_background_next()
      image,ctype=store.launcher_background_image()
