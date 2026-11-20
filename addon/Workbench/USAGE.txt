@@ -1,6 +1,6 @@
 人格演出工作台
 
-在 FaustLauncher 的插件设置中打开工作台，也可以双击 Workbench 目录中的「打开工作台.cmd」。工作台优先使用启动器自带的 Python。
+在 FaustLauncher 的插件设置中打开工作台，也可以双击 Workbench 目录中的 open_workbench.cmd。工作台优先使用启动器自带的 Python。
 
 人格与对应外观
 
