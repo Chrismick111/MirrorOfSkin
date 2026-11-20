@@ -80,7 +80,7 @@ def main():
         if screens:
             screen = screens[0]
             sw, sh = int(screen.width), int(screen.height)
-            width = max(1100, min(1900, sw - 40))
+            width = max(1100, min(1400, int(sw * 0.82)))
             height = max(760, min(1200, sh - 40))
             x = int(getattr(screen, "x", 0)) + max(0, (sw - width) // 2)
             y = int(getattr(screen, "y", 0)) + max(0, (sh - height) // 2)
