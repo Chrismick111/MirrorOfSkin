@@ -23,3 +23,6 @@ addon/规则集状态.json
 /native/*.pdb
 /native/*.lib
 /native/*.obj
+addon/Workbench/workbench_gateway.json
+addon/Workbench/workbench-instance.json
+addon/Workbench/workbench-instance.lock
