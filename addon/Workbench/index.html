@@ -2230,7 +2230,7 @@
       function rulesetCreateCard(mode) {
         return `<button type="button" class="ruleset-card ruleset-add" data-create="${mode}" aria-label="新建单人格规则集"><span class="ruleset-orb"><svg class="icon" aria-hidden="true"><use href="#i-plus"></use></svg></span><span class="ruleset-name">新建</span></button>`;
       }
-      function bindRulesetCards(container) {
+      function bindRulesetCards(container, picker = false) {
         container.querySelectorAll(".ruleset-card[data-id]").forEach((button) => {
           button.onclick = async (event) => {
             event.preventDefault();
@@ -2238,7 +2238,7 @@
             const item = (data.rulesets || []).find(
               (candidate) => candidate.id === button.dataset.id,
             );
-            if (item) await toggleRule(item);
+            if (item) await (picker ? selectRule(item) : toggleRule(item));
           };
         });
         container.querySelectorAll(".ruleset-card[data-create]").forEach((button) => {
@@ -2257,7 +2257,7 @@
         const picker = $("#rulePickerList");
         if (picker) {
           picker.innerHTML = cards + rulesetCreateCard("picker");
-          bindRulesetCards(picker);
+          bindRulesetCards(picker, true);
         }
       }
       async function toggleRule(item, only = false) {
@@ -2286,6 +2286,29 @@
             (only ? "已仅启用 " : item.active ? "已停用 " : "已启用 ") +
               item.name,
           );
+        } catch (error) {
+          status(error.message);
+        }
+      }
+
+      async function selectRule(item) {
+        try {
+          if (settingsDirty) return status("请先保存设置，再选择规则集");
+          if (saving || savePending)
+            return status("请等待当前修改保存完成后再选择规则集");
+          if (dirty || saveTimer) {
+            await flushSave();
+            if (dirty || saving || savePending)
+              return status("当前修改尚未保存，暂时无法选择规则集");
+          }
+          if (!item.active) {
+            const rule = { ...item };
+            if (rule.kind === "global") rule.sinner = currentSinner();
+            await api("ruleset-activate", { rule });
+            await refresh();
+          }
+          hideModal("#rulePickerModal");
+          status("已选择 " + item.name);
         } catch (error) {
           status(error.message);
         }
