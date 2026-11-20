@@ -723,17 +723,178 @@ def _release_workbench():
 def on_unload(): STOP.set();_release_workbench()
 def disabled(*unused): STOP.set();_release_workbench()
 def deleted(*unused): STOP.set();_release_workbench()
-def open_workbench(*unused):
+_WORKBENCH_URL = None
+_WORKBENCH_WINDOW = None
+_WEBVIEW_HOOKED = False
+
+
+def _start_workbench_server():
+    import os, re, subprocess
+    script = str(ROOT / 'Workbench' / 'open_workbench.ps1')
+    try:
+        result = subprocess.run(
+            ['powershell.exe', '-NoProfile', '-STA', '-WindowStyle', 'Hidden',
+             '-ExecutionPolicy', 'Bypass', '-File', script,
+             '-ServerOnly', '-HostProcessId', str(os.getpid())],
+            cwd=str(ROOT), capture_output=True, text=True, timeout=25,
+            creationflags=subprocess.CREATE_NO_WINDOW,
+        )
+        match = re.search(r'http://127\.0\.0\.1:\d{1,5}/[A-Za-z0-9_-]+/', result.stdout or '')
+        if match:
+            return match.group(0)
+        log('workbench server start produced no URL: ' + ((result.stdout or '') + (result.stderr or ''))[:300])
+    except Exception:
+        log('workbench server start failed: ' + traceback.format_exc())
+    return None
+
+
+def _show_workbench_window():
+    global _WORKBENCH_WINDOW
+    try:
+        import webview
+    except Exception:
+        return False
+    if _WORKBENCH_WINDOW is None:
+        for window in list(getattr(webview, 'windows', []) or []):
+            try:
+                if getattr(window, 'title', '') == '镜像幻化':
+                    _WORKBENCH_WINDOW = window
+                    break
+            except Exception:
+                continue
+    if _WORKBENCH_WINDOW is None:
+        return False
+    try:
+        _WORKBENCH_WINDOW.show()
+        try:
+            _WORKBENCH_WINDOW.restore()
+        except Exception:
+            pass
+        return True
+    except Exception:
+        return False
+
+
+def _workbench_window_bounds():
+    screen_w = screen_h = 0
+    screen_x = screen_y = 0
+    try:
+        import webview
+        screens = list(getattr(webview, 'screens', []) or [])
+        if screens:
+            screen = screens[0]
+            screen_w, screen_h = int(screen.width), int(screen.height)
+            screen_x, screen_y = int(getattr(screen, 'x', 0)), int(getattr(screen, 'y', 0))
+    except Exception:
+        pass
+    if screen_w <= 0 or screen_h <= 0:
+        try:
+            import ctypes
+            user32 = ctypes.windll.user32
+            screen_w = int(user32.GetSystemMetrics(0) or 0)
+            screen_h = int(user32.GetSystemMetrics(1) or 0)
+        except Exception:
+            screen_w = screen_h = 0
+    if screen_w <= 0 or screen_h <= 0:
+        screen_w, screen_h = 1536, 864
+    width = max(1100, min(1700, int(screen_w * 0.9)))
+    height = max(650, min(1050, int(screen_h * 0.9)))
+    x = screen_x + max(0, (screen_w - width) // 2)
+    y = screen_y + max(0, (screen_h - height) // 2)
+    return width, height, x, y
+
+
+def _install_workbench_webview():
+    global _WEBVIEW_HOOKED
+    if _WEBVIEW_HOOKED:
+        return True
+    try:
+        import webview
+    except Exception:
+        log('pywebview unavailable; workbench falls back to launcher window')
+        return False
+    original = getattr(webview, 'start', None)
+    if not callable(original):
+        return False
+    if getattr(original, '_mos_workbench_wrapped', False):
+        _WEBVIEW_HOOKED = True
+        return True
+
+    def start(*args, **kwargs):
+        global _WORKBENCH_WINDOW
+        try:
+            if _WORKBENCH_URL:
+                existing = None
+                for window in list(getattr(webview, 'windows', []) or []):
+                    try:
+                        if getattr(window, 'title', '') == '镜像幻化':
+                            existing = window
+                            break
+                    except Exception:
+                        continue
+                if existing is not None:
+                    _WORKBENCH_WINDOW = existing
+                    try:
+                        existing.show()
+                    except Exception:
+                        pass
+                else:
+                    width, height, x, y = _workbench_window_bounds()
+                    _WORKBENCH_WINDOW = webview.create_window(
+                        '镜像幻化', _WORKBENCH_URL, width=width, height=height,
+                        x=x, y=y, min_size=(1000, 650),
+                        background_color='#17191d', text_select=True,
+                    )
+                    try:
+                        def _closing():
+                            try:
+                                _WORKBENCH_WINDOW.hide()
+                            except Exception:
+                                pass
+                            return False
+                        _WORKBENCH_WINDOW.events.closing += _closing
+                    except Exception:
+                        pass
+                    log('workbench pywebview window registered')
+        except Exception:
+            log('workbench pywebview window failed: ' + traceback.format_exc())
+        return original(*args, **kwargs)
+
+    start._mos_workbench_wrapped = True
+    webview.start = start
+    _WEBVIEW_HOOKED = True
+    return True
+
+
+def _fallback_open_workbench():
     import os, subprocess
     subprocess.Popen(['powershell.exe','-NoProfile','-STA','-WindowStyle','Hidden','-ExecutionPolicy','Bypass','-File',str(ROOT/'Workbench'/'open_workbench.ps1'),'-HostProcessId',str(os.getpid())],cwd=str(ROOT),creationflags=subprocess.CREATE_NO_WINDOW)
+
+
+def open_workbench(*unused):
+    global _WORKBENCH_URL
+    _WORKBENCH_URL = _start_workbench_server()
+    if _WORKBENCH_URL:
+        log('workbench server: ' + _WORKBENCH_URL)
+    if _install_workbench_webview():
+        log('workbench pywebview hook installed')
+        try:
+            import webview
+            if getattr(webview, 'guilib', None) is not None and not _show_workbench_window():
+                _fallback_open_workbench()
+        except Exception:
+            pass
+    else:
+        _fallback_open_workbench()
 
 
 try:
     import pystray
     def open_settings(*unused):
-        import os, subprocess
-        subprocess.Popen(['powershell.exe','-NoProfile','-STA','-WindowStyle','Hidden','-ExecutionPolicy','Bypass','-File',str(ROOT/'Workbench'/'open_workbench.ps1'),'-HostProcessId',str(os.getpid())],cwd=str(ROOT),creationflags=subprocess.CREATE_NO_WINDOW)
-    menu=pystray.MenuItem('人格演出工作台',pystray.Menu(
+        if _show_workbench_window():
+            return
+        _fallback_open_workbench()
+    menu=pystray.MenuItem('镜像幻化',pystray.Menu(
         pystray.MenuItem('人格、概率与演出设置',open_settings),
         pystray.MenuItem('原生随机已启用',None,enabled=False)))
     register=getattr(MANAGER,'register_tray_item',None)
