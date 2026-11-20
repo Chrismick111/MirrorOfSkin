@@ -34,6 +34,22 @@ FaustLauncher/addons/MirrorOfSkin/
 
 也可以只装核心包，之后在插件里点「下载默认头像」自动补齐。1.0.1 只通过 WarpHook 加载原生模块。若 WarpHook 返回错误 87，插件会在日志中保留原因并停止本次游戏的加载。
 
+Workbench 的 Python 代码按功能拆分：
+
+```
+Workbench/
+  core/    文件锁、实例控制、宿主生命周期、更新与打包
+  pool/    规则集、方案、导演与池子数据
+  scan/    资源扫描、单位发现、头像与章节资源
+  fx/      特效方案、时间线、精灵与动作数据
+  tools/   验收与发布工具
+  tests/   工作台单元测试
+  workbench.py   工作台 HTTP 入口
+  index.html / effect-editor.html / open_workbench.*   界面入口
+```
+
+模块目录由 `Workbench/_module_paths.py` 注入到 `sys.path`，原有扁平导入无需改动。
+
 **依赖**：Windows x64、FaustLauncher、WarpHook。工作台优先使用启动器自带的 `resources/mod_loader/_internal/venv` 里的 Python；
 该路径不存在时才回退到系统 Python，此时需要 3.9 或更新版本。
 
@@ -120,7 +136,7 @@ FaustLauncher/addons/MirrorOfSkin/
 6. 不得包含 `native_pools.bin`、`随机设置.json`、`自定义人格池.json`、`animation-times-*`、`*.log`、`*.bak*`
 
 ```powershell
-python Workbench/package_release.py --addon . --output C:\temp\FaustRandomIdentity-WarpHook.zip
+python Workbench/core/package_release.py --addon . --output C:\temp\FaustRandomIdentity-WarpHook.zip
 ```
 
 输出路径须在插件目录外且原先不存在。
