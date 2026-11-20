@@ -135,6 +135,41 @@ class Store:
   self.root=pathlib.Path(root);self.lock=FileLock(self.root/'workbench-save.lock');self.portraits=read(self.root/'Workbench/portrait_manifest.json',{});self.local_portraits=local_portraits.load(self.root)
   with self.lock:
    chapter_nine.migrate(self.root,stage_files)
+ def launcher_background(self):
+  cached=getattr(self,'_launcher_bg',None)
+  if cached is not None:return cached
+  result={};self._launcher_bg_path=None
+  try:
+   launcher=self.root.parent.parent
+   settings=read(launcher/'config/settings.json',{})
+   if not isinstance(settings,dict):settings={}
+   blur_row=settings.get('bg_gaussian_blur_factor')
+   try:blur=float(blur_row.get('value',3) if isinstance(blur_row,dict) else 3)
+   except (TypeError,ValueError):blur=3
+   skin_row=settings.get('skin')
+   skin=str(skin_row.get('value') or '') if isinstance(skin_row,dict) else ''
+   dirs=[]
+   if skin:dirs.append(launcher/'_internal/web/app_skins'/skin/'assets/launcher/background')
+   dirs.append(launcher/'assets/images/background')
+   files=[]
+   for folder in dirs:
+    if not folder.is_dir():continue
+    files=[p for p in folder.iterdir() if p.is_file() and p.suffix.lower() in ('.jpg','.jpeg','.png','.webp','.bmp')]
+    if files:break
+   if files:
+    import random
+    path=random.choice(files)
+    self._launcher_bg_path=path
+    result={'url':'api/launcher-background','name':path.name,'blur':round(max(0.0,min(10.0,blur))*2.5,1),'mask':0.5}
+  except (OSError,ValueError,TypeError):result={}
+  self._launcher_bg=result
+  return result
+ def launcher_background_image(self):
+  self.launcher_background()
+  path=getattr(self,'_launcher_bg_path',None)
+  if path is None or not path.is_file():return None,None
+  ctype={'.jpg':'image/jpeg','.jpeg':'image/jpeg','.png':'image/png','.webp':'image/webp','.bmp':'image/bmp'}.get(path.suffix.lower(),'application/octet-stream')
+  return path.read_bytes(),ctype
  def _refresh_local_portraits(self):
   path=self.root/'Workbench/local_portraits/local_portraits.json'
   try:stamp=path.stat().st_mtime_ns
@@ -291,7 +326,7 @@ class Store:
   pool_status=read(self.root/'pool_update_status.json',{});pid=pool_status.get('pid');alive=prepare_view.process_alive(pid)
   evidence=self.evidence.read(pid) if alive else ''
   preparation=prepare_view.summarize(evidence,pid,alive,list(catalog.values()))
-  return dict(self.snapshot(),preparation=preparation,rulesetState=rule_state,rulesets=rule_items,activeRule=active_rule,ruleEntries=rule_entries,ruleRevision=rule_revision,settings=self.settings_snapshot(),runtime=self.runtime_status(pool_status,evidence),director=self.director_snapshot(),formAnnotations=self.form_annotations(),catalog=list(catalog.values()),chapterArt=chapter_cards.load(self.root),pools=pools,forms=native_forms,warmup=read(self.root/'warmup_status.json',{}),version=read(self.root/'addon_info.json',{}).get('version','未知'))
+  return dict(self.snapshot(),preparation=preparation,rulesetState=rule_state,rulesets=rule_items,activeRule=active_rule,ruleEntries=rule_entries,ruleRevision=rule_revision,settings=self.settings_snapshot(),runtime=self.runtime_status(pool_status,evidence),director=self.director_snapshot(),formAnnotations=self.form_annotations(),catalog=list(catalog.values()),chapterArt=chapter_cards.load(self.root),pools=pools,forms=native_forms,warmup=read(self.root/'warmup_status.json',{}),version=read(self.root/'addon_info.json',{}).get('version','未知'),launcherBackground=self.launcher_background())
  def known_appearances(self):
   """pool 里的外观名集合，按文件 mtime 缓存：扫描期间页面每 5 秒轮询，1.5 MB 的池文件不该重复解析。"""
   path=self.root/'Assets/runtime/all_sinners_pools.json'
@@ -460,6 +495,10 @@ def main():
     if route=='index':return self.send(html,ctype='text/html; charset=utf-8')
     if route=='effect-editor':return self.send((pathlib.Path(__file__).parent/'effect-editor.html').read_bytes(),ctype='text/html; charset=utf-8')
     if route=='instance-ping':return self.send({'workbench':True})
+    if route=='launcher-background':
+     image,ctype=store.launcher_background_image()
+     if image is not None:return self.send(image,ctype=ctype,cache='no-store')
+     return self.send({'error':'未找到'},404)
     if route=='portrait-progress':return self.send(_portrait_state())
     if route=='rulesets':return self.send(_ruleset_payload(store))
     if route=='data':return self.send(store.data())
