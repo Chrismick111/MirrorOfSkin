@@ -754,6 +754,21 @@ def _start_workbench_server():
     return None
 
 
+def _reload_workbench_window(window):
+    if not _WORKBENCH_URL or window is None:
+        return
+    try:
+        window.load_url(_WORKBENCH_URL)
+        return
+    except Exception:
+        pass
+    try:
+        import json
+        window.evaluate_js('location.replace(' + json.dumps(_WORKBENCH_URL) + ')')
+    except Exception:
+        pass
+
+
 def _show_workbench_window():
     global _WORKBENCH_WINDOW
     try:
@@ -776,6 +791,7 @@ def _show_workbench_window():
             _WORKBENCH_WINDOW.restore()
         except Exception:
             pass
+        _reload_workbench_window(_WORKBENCH_WINDOW)
         return True
     except Exception:
         return False
@@ -844,6 +860,7 @@ def _install_workbench_webview():
                         existing.show()
                     except Exception:
                         pass
+                    _reload_workbench_window(existing)
                 else:
                     width, height, x, y = _workbench_window_bounds()
                     _WORKBENCH_WINDOW = webview.create_window(
