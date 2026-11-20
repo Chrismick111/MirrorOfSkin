@@ -31,7 +31,7 @@
         background: #17191d;
         pointer-events: none;
       }
-      #app-bg-image {
+      .app-bg-image {
         position: absolute;
         inset: -24px;
         background-position: center;
@@ -39,14 +39,19 @@
         background-size: cover;
         filter: blur(var(--launcher-bg-blur, 8px)) saturate(1.05);
         transform: scale(1.04);
+        opacity: 0;
+        transition: opacity 0.9s ease;
+      }
+      .app-bg-image.on {
+        opacity: 1;
       }
       #app-bg-mask {
         position: absolute;
         inset: 0;
         background: linear-gradient(
           180deg,
-          rgba(6, 8, 12, 0.42),
-          rgba(6, 8, 12, 0.6)
+          rgba(5, 7, 10, 0.62),
+          rgba(5, 7, 10, 0.82)
         );
       }
       * {
@@ -119,13 +124,19 @@
         scrollbar-gutter: stable;
       }
       nav button {
+        background: rgba(41, 44, 50, 0.62);
+        backdrop-filter: blur(6px);
+        -webkit-backdrop-filter: blur(6px);
         transition:
           background 0.15s,
           border-color 0.15s,
           box-shadow 0.15s;
       }
+      nav button:hover {
+        background: rgba(55, 59, 67, 0.8);
+      }
       nav button.active {
-        background: #685125;
+        background: rgba(104, 81, 37, 0.84);
         border-color: #deb970;
         color: #fff;
         box-shadow: inset 3px 0 0 #deb970;
@@ -141,6 +152,13 @@
       }
       button {
         cursor: pointer;
+        transition:
+          background 0.15s,
+          border-color 0.15s,
+          color 0.15s;
+      }
+      button:not(:disabled):active {
+        transform: translateY(1px);
       }
       button:hover {
         border-color: #deb970;
@@ -157,6 +175,22 @@
         overflow-y: auto;
         overflow-x: hidden;
         scrollbar-gutter: stable;
+      }
+      article section {
+        width: 100%;
+        max-width: 1360px;
+        margin: 0 auto;
+        padding: 22px;
+        border: 1px solid rgba(255, 255, 255, 0.07);
+        border-radius: 16px;
+        background: rgba(15, 18, 24, 0.8);
+        box-shadow: 0 18px 50px rgba(0, 0, 0, 0.28);
+      }
+      @media (max-width: 700px) {
+        article section {
+          padding: 16px;
+          border-radius: 12px;
+        }
       }
       .bar {
         display: flex;
@@ -208,6 +242,73 @@
       }
       .hidden {
         display: none;
+      }
+      @keyframes pageIn {
+        from {
+          opacity: 0;
+          transform: translateY(6px);
+        }
+        to {
+          opacity: 1;
+          transform: none;
+        }
+      }
+      @keyframes modalIn {
+        from {
+          opacity: 0;
+          transform: translateY(10px) scale(0.98);
+        }
+        to {
+          opacity: 1;
+          transform: none;
+        }
+      }
+      @keyframes backdropIn {
+        from {
+          opacity: 0;
+        }
+        to {
+          opacity: 1;
+        }
+      }
+      article section:not(.hidden) {
+        animation: pageIn 0.26s ease;
+      }
+      .modal-backdrop {
+        opacity: 1;
+        transition: opacity 0.18s ease;
+      }
+      .modal-backdrop:not(.hidden) {
+        animation: backdropIn 0.18s ease;
+      }
+      .modal-backdrop .modal {
+        transition:
+          transform 0.18s ease,
+          opacity 0.18s ease;
+      }
+      .modal-backdrop:not(.hidden) .modal {
+        animation: modalIn 0.22s cubic-bezier(0.2, 0.8, 0.3, 1);
+      }
+      .modal-backdrop.closing {
+        opacity: 0;
+        pointer-events: none;
+      }
+      .modal-backdrop.closing .modal {
+        opacity: 0;
+        transform: translateY(8px) scale(0.98);
+      }
+      @media (prefers-reduced-motion: reduce) {
+        article section:not(.hidden),
+        .modal-backdrop:not(.hidden),
+        .modal-backdrop:not(.hidden) .modal {
+          animation: none;
+        }
+        .modal-backdrop,
+        .modal-backdrop .modal,
+        .app-bg-image,
+        .pool-card {
+          transition: none;
+        }
       }
       .primary {
         background: #685125;
@@ -560,6 +661,10 @@
         object-fit: cover;
         object-position: center top;
       }
+      .scope-icon .icon {
+        width: 36px;
+        height: 36px;
+      }
       .scope-copy {
         display: flex;
         flex-direction: column;
@@ -689,7 +794,11 @@
         min-width: 0;
       }
       .ruleset-card:hover {
-        background: #24272d;
+        background: transparent;
+      }
+      .ruleset-card:hover .ruleset-orb {
+        border-color: #deb970;
+        box-shadow: 0 0 0 3px #deb97024;
       }
       .ruleset-orb {
         width: 112px;
@@ -792,35 +901,28 @@
       }
       .pool-bg {
         position: absolute;
-        inset: -10px;
+        inset: 0;
         z-index: 0;
         background-position: right bottom;
         background-repeat: no-repeat;
         background-size: cover;
-        opacity: 0.38;
-        filter: blur(8px) saturate(1.05) brightness(0.9);
-        transform: scale(1.05);
+        opacity: 0.2;
         pointer-events: none;
       }
-      .pool-glass {
-        position: absolute;
-        inset: 0;
-        z-index: 0;
-        background: linear-gradient(
-          180deg,
-          rgba(32, 35, 41, 0.14),
-          rgba(32, 35, 41, 0.55)
-        );
-        backdrop-filter: blur(2px) saturate(1.05);
-        -webkit-backdrop-filter: blur(2px) saturate(1.05);
-        pointer-events: none;
-      }
-      .pool-card > :not(.pool-bg):not(.pool-glass) {
+      .pool-card > :not(.pool-bg) {
         position: relative;
         z-index: 1;
       }
+      .pool-card {
+        transition:
+          border-color 0.18s,
+          transform 0.18s,
+          box-shadow 0.18s;
+      }
       .pool-card:hover {
         border-color: #deb970;
+        transform: translateY(-2px);
+        box-shadow: 0 10px 24px #0005;
       }
       .pool-orb {
         width: 128px;
@@ -1026,6 +1128,9 @@
         padding: 6px;
         box-shadow: 0 16px 36px #000a;
       }
+      .context-menu:not(.hidden) {
+        animation: pageIn 0.14s ease;
+      }
       .context-menu button {
         display: flex;
         width: 100%;
@@ -1062,6 +1167,27 @@
         width: min(920px, 96vw);
         max-height: calc(100vh - 40px);
         overflow-y: auto;
+      }
+      #identityModal .identity-modal {
+        height: calc(100vh - 40px);
+        max-height: calc(100vh - 40px);
+        overflow: hidden;
+        display: flex;
+        flex-direction: column;
+      }
+      #identityModal .identity-scroll {
+        flex: 1 1 0;
+        min-height: 0;
+        max-height: none;
+        overflow-y: auto;
+      }
+      #identityModal .modal-title,
+      #identityModal .identity-filters,
+      #identityModal .chapter-browser {
+        flex: 0 0 auto;
+      }
+      #identityModal .chapter-cards {
+        max-height: min(28vh, 220px);
       }
       .identity-scroll {
         max-height: 60vh;
@@ -1234,7 +1360,8 @@
   </head>
   <body>
     <div id="app-bg" aria-hidden="true">
-      <div id="app-bg-image"></div>
+      <div id="app-bg-image-a" class="app-bg-image"></div>
+      <div id="app-bg-image-b" class="app-bg-image"></div>
       <div id="app-bg-mask"></div>
     </div>
     <svg
@@ -1267,6 +1394,16 @@
       </symbol>
       <symbol id="i-minus" viewBox="0 0 24 24">
         <path d="M5 12h14" />
+      </symbol>
+      <symbol id="i-user" viewBox="0 0 24 24">
+        <path
+          d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2M12 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8z"
+        />
+      </symbol>
+      <symbol id="i-users" viewBox="0 0 24 24">
+        <path
+          d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM22 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"
+        />
       </symbol>
       <symbol id="i-shuffle" viewBox="0 0 24 24">
         <path d="M16 3h5v5M4 20L21 3M21 16v5h-5M15 15l6 6M4 4l5 5" />
@@ -1609,15 +1746,8 @@
             aria-label="章节分类"
           ></div>
         </details>
-        <div id="addCount" class="identity-count muted"></div>
         <div class="scroll identity-scroll">
           <table>
-            <thead>
-              <tr>
-                <th>来源</th>
-                <th></th>
-              </tr>
-            </thead>
             <tbody id="identityRows"></tbody>
           </table>
         </div>
@@ -1737,19 +1867,76 @@
         clearTimeout(statusTimer);
         statusTimer = setTimeout(() => el.classList.remove("show"), 2200);
       };
+      const bgLayers = [$("#app-bg-image-a"), $("#app-bg-image-b")];
+      let bgLayerIndex = 0,
+        bgBaseUrl = "",
+        bgSeq = 0,
+        bgRotateTimer = null;
+      function setLauncherBackgroundImage(url) {
+        const seq = ++bgSeq;
+        const next = bgLayers[1 - bgLayerIndex],
+          old = bgLayers[bgLayerIndex];
+        if (!next) return;
+        const probe = new Image();
+        probe.onload = () => {
+          if (seq !== bgSeq) return;
+          next.style.backgroundImage = `url("${url}")`;
+          next.classList.add("on");
+          if (old && old !== next) old.classList.remove("on");
+          bgLayerIndex = 1 - bgLayerIndex;
+        };
+        probe.onerror = () => {};
+        probe.src = url;
+      }
+      function startLauncherBackgroundRotation(count) {
+        const total = Number(count);
+        if (!bgBaseUrl || !Number.isFinite(total) || total < 2)
+          return;
+        if (bgRotateTimer) return;
+        bgRotateTimer = setInterval(() => {
+          setLauncherBackgroundImage(
+            `api/launcher-background?next=1&t=${Date.now()}`,
+          );
+        }, 30000);
+      }
+      function showModal(selector) {
+        const el = $(selector);
+        if (!el) return;
+        clearTimeout(el._hideTimer);
+        el.classList.remove("hidden", "closing");
+      }
+      function hideModal(selector) {
+        const el = $(selector);
+        if (!el || el.classList.contains("hidden")) return;
+        clearTimeout(el._hideTimer);
+        el.classList.add("closing");
+        el._hideTimer = setTimeout(() => {
+          el.classList.add("hidden");
+          el.classList.remove("closing");
+        }, 180);
+      }
       function applyLauncherBackground(bg) {
-        const image = $("#app-bg-image");
-        if (!image) return;
         if (!bg || !bg.url) {
-          image.style.backgroundImage = "";
+          bgBaseUrl = "";
+          bgSeq++;
+          if (bgRotateTimer) clearInterval(bgRotateTimer);
+          bgRotateTimer = null;
+          bgLayers.forEach((layer) => layer?.classList.remove("on"));
           return;
         }
-        image.style.backgroundImage = `url("${bg.url}")`;
         const blur = Number(bg.blur);
-        document.documentElement.style.setProperty(
-          "--launcher-bg-blur",
-          `${Number.isFinite(blur) ? Math.max(0, Math.min(20, blur)) : 8}px`,
-        );
+        if (Number.isFinite(blur))
+          document.documentElement.style.setProperty(
+            "--launcher-bg-blur",
+            `${Math.max(0, Math.min(20, blur))}px`,
+          );
+        if (bg.url === bgBaseUrl) {
+          startLauncherBackgroundRotation(bg.count);
+          return;
+        }
+        bgBaseUrl = bg.url;
+        setLauncherBackgroundImage(bg.url);
+        startLauncherBackgroundRotation(bg.count);
       }
       async function api(route, body) {
         const r = await fetch(
@@ -1798,14 +1985,15 @@
         const rule = data.activeRule;
         const icon = $("#scopeIcon");
         if (!rule) {
-          icon.textContent = "?";
+          icon.innerHTML =
+            '<svg class="icon" aria-hidden="true"><use href="#i-grid"></use></svg>';
           $("#scopeName").textContent = "未选择规则集";
           $("#fillDefault").disabled = true;
           return;
         }
         icon.innerHTML = rule.icon
           ? `<img src="api/portrait/${encodeURIComponent(rule.icon)}" alt="">`
-          : "全";
+          : `<svg class="icon" aria-hidden="true"><use href="#${rule.kind === "identity" ? "i-user" : "i-users"}"></use></svg>`;
         $("#scopeName").textContent = rule.name;
         $("#fillDefault").disabled = rule.kind === "global" && rule.locked;
       }
@@ -1819,7 +2007,7 @@
       function rulesetCard(item) {
         const orb = item.icon
           ? `<span class="ruleset-orb"><img src="api/portrait/${encodeURIComponent(item.icon)}" alt=""></span>`
-          : `<span class="ruleset-orb">${item.kind === "global" ? "全" : "人"}</span>`;
+          : `<span class="ruleset-orb"><svg class="icon" aria-hidden="true"><use href="#${item.kind === "identity" ? "i-user" : "i-users"}"></use></svg></span>`;
         return `<button class="ruleset-card${item.active ? " active" : ""}" data-id="${esc(item.id)}">${orb}<span class="ruleset-name">${esc(item.name)}</span></button>`;
       }
       function rulesetCreateCard(mode) {
@@ -1837,7 +2025,7 @@
         container.querySelectorAll(".ruleset-card[data-create]").forEach((button) => {
           button.onclick = () => {
             if (button.dataset.create === "picker")
-              $("#rulePickerModal").classList.add("hidden");
+              hideModal("#rulePickerModal");
             openNewRule();
           };
         });
@@ -1867,7 +2055,7 @@
             await api("ruleset-activate", { rule });
           }
           await refresh();
-          $("#rulePickerModal").classList.add("hidden");
+          hideModal("#rulePickerModal");
           status(
             (only ? "已仅启用 " : item.active ? "已停用 " : "已启用 ") +
               item.name,
@@ -1924,7 +2112,7 @@
               ? `<img src="${esc(entry.portrait_url)}" alt="${esc(entry.name)}的战斗头像" loading="lazy" decoding="async" onerror="this.remove()">`
               : esc(initial);
             const backdrop = entry.portrait_url
-              ? `<span class="pool-bg" style="background-image:url('${esc(entry.portrait_url)}')"></span><span class="pool-glass"></span>`
+              ? `<span class="pool-bg" style="background-image:url('${esc(entry.portrait_url)}')"></span>`
               : "";
             return `<div class="pool-card" data-id="${esc(id)}" tabindex="0">${backdrop}<span class="pool-orb">${orb}</span><strong class="pool-name">${esc(entry.name || entry.appearance_name || id)}</strong><span class="pool-source">${esc(entrySource(entry))}</span><span class="pool-meta"><input class="weight" type="number" min="0" max="1000000" step="0.1" value="${weight}"${locked ? " disabled" : ""}><span class="share"></span></span></div>`;
           })
@@ -2331,8 +2519,6 @@
       }
       function renderAddList() {
         const candidates = addCandidates();
-        $("#addCount").textContent =
-          `显示 ${candidates.length} / ${data.catalog.length} 个外观与人格 · 当前池 ${selected.size} 项`;
         $("#identityRows").innerHTML =
           candidates
             .map((entry) => {
@@ -2342,8 +2528,7 @@
               const orb = entry.portrait_url
                 ? `<img src="${esc(entry.portrait_url)}" alt="${esc(entry.name)}的战斗头像" loading="lazy" decoding="async" onerror="this.remove()">`
                 : esc(initial);
-              const source = entrySource(entry);
-              return `<tr><td><div class="identity-cell"><span class="identity-orb">${orb}</span><div class="identity-copy"><strong>${esc(entry.name || entry.appearance_name || id)}</strong><small>${esc(source)}</small>${entry.no_attack ? '<small>缺少专属攻击动画</small>' : ""}</div></div></td><td><button class="identity-add${added ? " remove" : " primary"}" data-id="${esc(id)}" data-added="${added ? 1 : 0}" title="${added ? "移出池子" : "添加"}" aria-label="${added ? "移出池子" : "添加"}"><svg class="icon" aria-hidden="true"><use href="#${added ? "i-minus" : "i-plus"}"></use></svg></button></td></tr>`;
+              return `<tr><td><div class="identity-cell"><span class="identity-orb">${orb}</span><div class="identity-copy"><strong>${esc(entry.name || entry.appearance_name || id)}</strong>${entry.no_attack ? '<small>缺少专属攻击动画</small>' : ""}</div></div></td><td><button class="identity-add${added ? " remove" : " primary"}" data-id="${esc(id)}" data-added="${added ? 1 : 0}" title="${added ? "移出池子" : "添加"}" aria-label="${added ? "移出池子" : "添加"}"><svg class="icon" aria-hidden="true"><use href="#${added ? "i-minus" : "i-plus"}"></use></svg></button></td></tr>`;
             })
             .join("") ||
           '<tr><td colspan="2" class="empty-row">没有符合条件的人格</td></tr>';
@@ -2379,12 +2564,12 @@
         $("#addSearch").value = "";
         $("#addStory").checked = true;
         renderAddList();
-        $("#identityModal").classList.remove("hidden");
+        showModal("#identityModal");
         $("#addSearch").focus();
         loadDiscovered();
       }
       function closeIdentityModal() {
-        $("#identityModal").classList.add("hidden");
+        hideModal("#identityModal");
       }
       function addIdentity(id) {
         if (data.activeRule?.kind === "global" && data.activeRule.locked) {
@@ -2420,13 +2605,13 @@
       };
       $("#scopeGo").onclick = () => {
         renderRulesets();
-        $("#rulePickerModal").classList.remove("hidden");
+        showModal("#rulePickerModal");
       };
       $("#rulePickerClose").onclick = () =>
-        $("#rulePickerModal").classList.add("hidden");
+        hideModal("#rulePickerModal");
       $("#rulePickerModal").onclick = (event) => {
         if (event.target.id === "rulePickerModal")
-          $("#rulePickerModal").classList.add("hidden");
+          hideModal("#rulePickerModal");
       };
       $("#fillDefault").onclick = () => fillDefault();
       let newRuleIdentityId = "";
@@ -2440,10 +2625,10 @@
         $("#newRuleSinner").value = currentSinner();
         newRuleIdentityId = "";
         fillNewRuleIdentities();
-        $("#newRuleModal").classList.remove("hidden");
+        showModal("#newRuleModal");
       }
       function closeNewRule() {
-        $("#newRuleModal").classList.add("hidden");
+        hideModal("#newRuleModal");
       }
       function fillNewRuleIdentities() {
         const sinner = $("#newRuleSinner").value;
@@ -2551,7 +2736,7 @@
           closeIdentityMenu();
           closeIdentityModal();
           closeNewRule();
-          $("#rulePickerModal").classList.add("hidden");
+          hideModal("#rulePickerModal");
         }
       });
       $("#portraitFile").onchange = async (event) => {
@@ -2631,7 +2816,7 @@
         portraitActive = false,
         portraitDoneTimer = null;
       function portraitDismiss() {
-        $("#portraitModal").classList.add("hidden");
+        hideModal("#portraitModal");
         $("#portraitMini").classList.add("hidden");
       }
       function portraitRender(p = {}) {
@@ -2698,7 +2883,7 @@
       }
       async function portraitShow(autoStart = true) {
         clearTimeout(portraitDoneTimer);
-        $("#portraitModal").classList.remove("hidden");
+        showModal("#portraitModal");
         $("#portraitMini").classList.add("hidden");
         try {
           let p = await api("portrait-progress");
@@ -2717,7 +2902,7 @@
         }
       }
       function portraitHide() {
-        $("#portraitModal").classList.add("hidden");
+        hideModal("#portraitModal");
         if (portraitActive) $("#portraitMini").classList.remove("hidden");
       }
       async function initPortraitState() {
