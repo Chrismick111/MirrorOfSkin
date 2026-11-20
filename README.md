@@ -50,7 +50,7 @@ FaustLauncher/addons/人格演出工作台/
 
 设置保存在插件目录，更新时不会被覆盖：
 
-- `随机设置.json` — 概率、开关；`prewarm_full_pool` 默认 `false`，关闭全池预载以避免持续掉帧，需要时可手动开启
+- `随机设置.json` — 概率、开关；`prewarm_full_pool` 默认 `false`，关闭全池预载以避免持续掉帧，需要时可手动开启；`disable_special_clash` 默认 `true`，禁用特殊拼点动画以避免个别外观拼点时卡住，设为 `false` 可恢复
 - `自定义人格池.json` — 人格挑选与覆盖
 - `演出编排.json` — 演出编排
 
