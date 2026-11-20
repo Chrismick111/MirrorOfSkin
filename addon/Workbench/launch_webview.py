@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 """Open the workbench in an independent pywebview window."""
 import argparse
 import pathlib
