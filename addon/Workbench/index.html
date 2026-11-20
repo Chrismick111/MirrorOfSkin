@@ -2402,6 +2402,7 @@
           else if (page === "schemes") await loadSchemes();
           if (page !== "discovered" && watchingCatalog())
             await loadDiscovered();
+          await pollResourceImages();
         } catch (e) {
         } finally {
           pollBusy = false;
@@ -2605,8 +2606,57 @@
         try {
           const d = await api("discovered");
           const sc = d.scan || {};
-          if (!d.available && !sc.running) await api("scan", {});
+          if (!sc.running) {
+            let stale = !d.available || !d.generated;
+            if (sc.weekly?.status === "failed") stale = true;
+            if (d.generated) {
+              const age = Date.now() - Date.parse(d.generated);
+              if (Number.isFinite(age) && age > 7 * 86400000) stale = true;
+            }
+            if (stale) await api("scan", {});
+          }
           await loadDiscovered();
+          await ensureResourceImages();
+        } catch (e) {}
+      }
+      async function ensureResourceImages() {
+        try {
+          if (sessionStorage.getItem("sinnersResourceScan")) return;
+          const lastDone = Number(
+            localStorage.getItem("sinnersResourceScanDoneAt") || 0,
+          );
+          if (
+            Number.isFinite(lastDone) &&
+            Date.now() - lastDone < 6 * 60 * 60 * 1000
+          )
+            return;
+          const p = await api("portrait-progress");
+          if (["starting", "download", "verify", "install"].includes(p.stage))
+            return;
+          const missingPortrait = (data.catalog || []).some(
+            (entry) => !entry.portrait_url,
+          );
+          const missingChapter =
+            !data.chapterArt || Object.keys(data.chapterArt).length === 0;
+          if (!missingPortrait && !missingChapter) return;
+          sessionStorage.setItem("sinnersResourceScan", "1");
+          await api("portrait-download", {});
+          status("正在从本地游戏资源恢复头像与章节图");
+        } catch (e) {}
+      }
+      async function pollResourceImages() {
+        if (sessionStorage.getItem("sinnersResourceScan") !== "1") return;
+        try {
+          const p = await api("portrait-progress");
+          if (p.stage === "done") {
+            sessionStorage.setItem("sinnersResourceScan", "done");
+            localStorage.setItem("sinnersResourceScanDoneAt", String(Date.now()));
+            await refresh();
+            status("头像与章节图已从本地资源恢复");
+          } else if (p.stage === "error") {
+            sessionStorage.setItem("sinnersResourceScan", "error");
+            status("资源图恢复失败：" + (p.message || "未知错误"));
+          }
         } catch (e) {}
       }
 
