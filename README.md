@@ -20,10 +20,10 @@
 | [工作台更新包](https://github.com/Chrismick111/faust-random-identity/releases/download/v1.0.1/FaustRandomIdentity-WarpHook.zip) | 工作台自动下载使用，文件位于压缩包根目录 |
 | [默认图像包](https://github.com/Chrismick111/faust-random-identity/releases/download/v0.79.1/FaustRandomIdentity-Portraits.zip) | 可选，623 张图片，覆盖 693 个外观条目，工作台也可单独下载 |
 
-手动安装时，把启动器完整安装包解压到 `FaustLauncher/addons/`。确认目录结构如下。可选图像包解压到 `人格演出工作台/` 内。
+手动安装时，把启动器完整安装包解压到 `FaustLauncher/addons/`。确认目录结构如下。可选图像包解压到 `MirrorOfSkin/` 内。
 
 ```
-FaustLauncher/addons/人格演出工作台/
+FaustLauncher/addons/MirrorOfSkin/
   addon_info.json
   compatibility.json
   scr.py
@@ -43,7 +43,7 @@ FaustLauncher/addons/人格演出工作台/
 
 ## 使用
 
-启动器托盘菜单 → 插件 → **人格演出工作台** → 打开网页端工作台。
+启动器托盘菜单 → 插件 → **镜像幻化** → 打开网页端工作台。
 
 工作台监听 `127.0.0.1` 的临时端口，每次启动生成新的随机 token 并作为 URL 前缀；只接受带 `X-Workbench` 头的请求。
 启动日志在 `%TEMP%\FaustRandomIdentity-Workbench`（`workbench-start-*.log` / `workbench-error-*.log`）。
@@ -125,7 +125,7 @@ python Workbench/package_release.py --addon . --output C:\temp\FaustRandomIdenti
 
 输出路径须在插件目录外且原先不存在。
 
-向 FaustLauncher 的“从本地安装”提供 ZIP 时，加上 `--launcher`。启动器用包含 `addon_info.json` 的文件夹名登记插件，包内路径应为 `人格演出工作台/addon_info.json`。工作台在线更新继续使用清单位于包根目录的标准包。
+向 FaustLauncher 的“从本地安装”提供 ZIP 时，加上 `--launcher`。启动器用包含 `addon_info.json` 的文件夹名登记插件，包内路径应为 `MirrorOfSkin/addon_info.json`。工作台在线更新继续使用清单位于包根目录的标准包。
 
 > 注意：`release_compatibility.py` 加载时对 `addon_info.json` 只校验版本、跳过哈希（启动器安装时会改写名称与说明），
 > 但 `github_update.py` 的安装校验 **仍会比对它的包内哈希**。两边都要满足，改版本号后记得同步 `package_files`。
