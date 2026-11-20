@@ -41,8 +41,8 @@ function Show-WorkbenchWindow([string]$url){
   $form=New-Object System.Windows.Forms.Form
   $form.Text='镜像幻化'
   $area=[System.Windows.Forms.Screen]::PrimaryScreen.WorkingArea
-  $form.Width=[Math]::Max(1100,[int]($area.Width*0.9))
-  $form.Height=[Math]::Max(650,[int]($area.Height*0.9))
+  $form.Width=[Math]::Max(1100,[Math]::Min(1900,$area.Width-40))
+  $form.Height=[Math]::Max(760,[Math]::Min(1200,$area.Height-40))
   $form.MinimumSize=New-Object System.Drawing.Size(1000,650)
   $form.StartPosition='CenterScreen'
   $icon=Join-Path $launcherRoot 'assets\images\icon\icon.ico'
@@ -82,6 +82,39 @@ function Show-WorkbenchWindow([string]$url){
   Start-Process $url
  }
 }
+function Find-PywebviewPython {
+ $candidates=New-Object System.Collections.Generic.List[string]
+ if($env:MOS_WEBVIEW_PYTHON){$candidates.Add($env:MOS_WEBVIEW_PYTHON)}
+ $candidates.Add((Join-Path $launcherRoot 'venv\Scripts\pythonw.exe'))
+ $candidates.Add((Join-Path $launcherRoot 'venv\Scripts\python.exe'))
+ foreach($root in @('D:\projects\python','C:\projects\python',(Join-Path $env:USERPROFILE 'projects\python'))){
+  if(-not (Test-Path -LiteralPath $root)){continue}
+  try{
+   Get-ChildItem -LiteralPath $root -Directory -Filter 'FaustLauncher' -Recurse -Depth 3 -ErrorAction SilentlyContinue | ForEach-Object {
+    $candidates.Add((Join-Path $_.FullName 'venv\Scripts\pythonw.exe'))
+    $candidates.Add((Join-Path $_.FullName 'venv\Scripts\python.exe'))
+   }
+  }catch{}
+ }
+ foreach($candidate in $candidates){
+  if(-not $candidate -or -not (Test-Path -LiteralPath $candidate)){continue}
+  try{
+   & $candidate -c "import webview" 2>$null
+   if($LASTEXITCODE -eq 0){return $candidate}
+  }catch{}
+ }
+ return $null
+}
+function Start-Pywebview([string]$url){
+ $py=Find-PywebviewPython
+ if(-not $py){return $false}
+ $script=Join-Path $PSScriptRoot 'launch_webview.py'
+ if(-not (Test-Path -LiteralPath $script)){return $false}
+ try{
+  Start-Process -FilePath $py -ArgumentList @($script,'--url',$url,'--addon',$addon) -WindowStyle Hidden
+  return $true
+ }catch{return $false}
+}
 $state=Join-Path $addon 'workbench-instance.json'
 if(Test-Path -LiteralPath $state){
  try{
@@ -90,6 +123,7 @@ if(Test-Path -LiteralPath $state){
    $ping=Invoke-RestMethod -Uri ($url+'api/instance-ping') -TimeoutSec 1
    if($ping.workbench){
     if($ServerOnly){Write-Output $url;exit 0}
+    if(Start-Pywebview $url){exit 0}
     Show-WorkbenchWindow $url;exit 0
    }
   }
@@ -115,5 +149,7 @@ for($i=0;$i -lt 100;$i++){
  }catch{}
 }
 if($url){
- if($ServerOnly){Write-Output $url}else{Show-WorkbenchWindow $url}
+ if($ServerOnly){Write-Output $url}
+ elseif(Start-Pywebview $url){exit 0}
+ else{Show-WorkbenchWindow $url}
 }
