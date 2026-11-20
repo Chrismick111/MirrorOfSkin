@@ -333,15 +333,20 @@
         color: #fff;
       }
       .icon {
-        width: 1em;
-        height: 1em;
+        width: 1.3em;
+        height: 1.3em;
         display: inline-block;
-        vertical-align: -0.125em;
+        vertical-align: -0.15em;
         fill: none;
         stroke: currentColor;
-        stroke-width: 2;
+        stroke-width: 2.25;
         stroke-linecap: round;
         stroke-linejoin: round;
+      }
+      .primary .icon,
+      .pool-add .icon,
+      .ruleset-add .icon {
+        color: #f0d79b;
       }
       .icon-btn {
         display: inline-flex;
@@ -353,8 +358,8 @@
         font-size: 18px;
       }
       .icon-btn .icon {
-        width: 18px;
-        height: 18px;
+        width: 22px;
+        height: 22px;
       }
       .icon-btn.hidden {
         display: none;
@@ -366,9 +371,9 @@
         color: #deb970;
       }
       .stage-icon .icon {
-        width: 46px;
-        height: 46px;
-        stroke-width: 1.6;
+        width: 56px;
+        height: 56px;
+        stroke-width: 1.8;
       }
       .stage-icon.done {
         color: #7ddc9a;
@@ -393,9 +398,9 @@
         margin-bottom: 18px;
       }
       .scope-icon {
-        width: 56px;
-        height: 56px;
-        flex: 0 0 56px;
+        width: 66px;
+        height: 66px;
+        flex: 0 0 66px;
         display: flex;
         align-items: center;
         justify-content: center;
@@ -418,7 +423,7 @@
         min-width: 0;
       }
       .scope-copy strong {
-        font-size: 17px;
+        font-size: 18px;
         overflow: hidden;
         text-overflow: ellipsis;
         white-space: nowrap;
@@ -431,10 +436,8 @@
         flex-wrap: wrap;
       }
       .ruleset-layout {
-        display: grid;
-        grid-template-columns: minmax(260px, 380px) 1fr;
-        gap: 18px;
-        align-items: start;
+        display: flex;
+        justify-content: center;
       }
       .ruleset-list {
         display: flex;
@@ -491,29 +494,45 @@
       }
       .ruleset-grid {
         display: grid;
-        grid-template-columns: repeat(auto-fill, minmax(106px, 1fr));
-        gap: 14px;
-        max-height: 70vh;
-        overflow: auto;
-        align-content: start;
+        grid-template-columns: repeat(5, minmax(0, 1fr));
+        gap: 18px;
+        width: 100%;
+        max-width: 980px;
+        margin: 0 auto;
+        align-items: start;
+      }
+      @media (max-width: 900px) {
+        .ruleset-grid {
+          grid-template-columns: repeat(4, minmax(0, 1fr));
+        }
+      }
+      @media (max-width: 720px) {
+        .ruleset-grid {
+          grid-template-columns: repeat(3, minmax(0, 1fr));
+        }
+      }
+      @media (max-width: 520px) {
+        .ruleset-grid {
+          grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
       }
       .ruleset-card {
         display: flex;
         flex-direction: column;
         align-items: center;
-        gap: 8px;
-        padding: 10px 6px;
+        gap: 10px;
+        padding: 14px 8px;
         border: 0;
         background: transparent;
-        border-radius: 12px;
+        border-radius: 14px;
         min-width: 0;
       }
       .ruleset-card:hover {
         background: #24272d;
       }
       .ruleset-orb {
-        width: 72px;
-        height: 72px;
+        width: 104px;
+        height: 104px;
         border-radius: 50%;
         border: 2px solid #4b505a;
         background: #202329;
@@ -533,12 +552,25 @@
         height: 100%;
         object-fit: contain;
       }
+      .ruleset-orb .icon {
+        width: 46px;
+        height: 46px;
+      }
+      .ruleset-add .ruleset-orb {
+        border-style: dashed;
+        color: #deb970;
+        background: #1d2025;
+      }
+      .ruleset-add:hover .ruleset-orb {
+        border-color: #f0d79b;
+        box-shadow: 0 0 0 3px #deb97022;
+      }
       .ruleset-card.active .ruleset-orb {
         border-color: #deb970;
         box-shadow: 0 0 0 3px #deb97033;
       }
       .ruleset-name {
-        font-size: 12px;
+        font-size: 13px;
         line-height: 1.3;
         text-align: center;
         color: #d7d9dd;
@@ -554,8 +586,8 @@
       }
 
       .mini-label .icon {
-        width: 15px;
-        height: 15px;
+        width: 18px;
+        height: 18px;
       }
       .sinner-tabs {
         display: flex;
@@ -572,6 +604,184 @@
         background: #685125;
         border-color: #deb970;
         color: #fff;
+      }
+      .pool-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+        gap: 16px;
+        width: 100%;
+        max-width: 1100px;
+        margin: 0 auto;
+        align-items: start;
+      }
+      .pool-card {
+        position: relative;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 6px;
+        padding: 14px 10px;
+        border: 1px solid #3d424b;
+        border-radius: 16px;
+        background: #202329;
+        min-width: 0;
+      }
+      .pool-card:hover {
+        border-color: #deb970;
+      }
+      .pool-orb {
+        width: 96px;
+        height: 96px;
+        border-radius: 50%;
+        border: 2px solid #4b505a;
+        background: #292c32;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        overflow: hidden;
+        color: #b4b8c1;
+        font-size: 24px;
+        font-weight: 700;
+      }
+      .pool-orb img {
+        width: 100%;
+        height: 100%;
+        object-fit: contain;
+      }
+      .pool-name {
+        max-width: 100%;
+        text-align: center;
+        font-size: 13px;
+        line-height: 1.3;
+        overflow: hidden;
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+        word-break: break-word;
+      }
+      .pool-source {
+        max-width: 100%;
+        color: #b4b8c1;
+        font-size: 11px;
+        line-height: 1.35;
+        text-align: center;
+        overflow-wrap: anywhere;
+      }
+      .pool-meta {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+      }
+      .pool-meta input {
+        width: 64px;
+        padding: 4px 6px;
+      }
+      .pool-meta .share {
+        color: #b4b8c1;
+        font-size: 11px;
+      }
+      .pool-add {
+        border-style: dashed;
+        background: transparent;
+        cursor: pointer;
+      }
+      .pool-add .pool-orb {
+        border-style: dashed;
+        background: #1d2025;
+      }
+      .pool-add .pool-orb .icon {
+        width: 42px;
+        height: 42px;
+      }
+      .pool-add.is-disabled {
+        opacity: 0.45;
+      }
+      .identity-cell {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        min-width: 0;
+      }
+      .identity-orb {
+        width: 56px;
+        height: 56px;
+        flex: 0 0 56px;
+        border-radius: 50%;
+        border: 1px solid #4b505a;
+        background: #292c32;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        overflow: hidden;
+        color: #b4b8c1;
+        font-weight: 700;
+      }
+      .identity-orb img {
+        width: 100%;
+        height: 100%;
+        object-fit: contain;
+      }
+      .identity-copy {
+        display: flex;
+        flex-direction: column;
+        gap: 3px;
+        min-width: 0;
+      }
+      .identity-copy small {
+        color: #b4b8c1;
+      }
+      .new-rule-identities {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(92px, 1fr));
+        gap: 10px;
+        max-height: 46vh;
+        overflow: auto;
+        padding: 4px;
+        margin-top: 10px;
+      }
+      .new-rule-identity {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 6px;
+        padding: 8px 4px;
+        border: 1px solid transparent;
+        border-radius: 12px;
+        background: transparent;
+        min-width: 0;
+      }
+      .new-rule-identity.active {
+        border-color: #deb970;
+        background: #2c271d;
+      }
+      .new-rule-orb {
+        width: 64px;
+        height: 64px;
+        border-radius: 50%;
+        border: 1px solid #4b505a;
+        background: #292c32;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        overflow: hidden;
+        color: #b4b8c1;
+        font-weight: 700;
+      }
+      .new-rule-orb img {
+        width: 100%;
+        height: 100%;
+        object-fit: contain;
+      }
+      .new-rule-identity span:last-child {
+        max-width: 100%;
+        text-align: center;
+        font-size: 12px;
+        line-height: 1.3;
+        overflow: hidden;
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+        word-break: break-word;
       }
       .pool-toolbar {
         justify-content: space-between;
@@ -855,54 +1065,16 @@
             <div id="scopeIcon" class="scope-icon">?</div>
             <div class="scope-copy">
               <strong id="scopeName">未选择规则集</strong>
-              <span id="scopeMeta" class="muted"
-                >在左侧“规则集”页面选择并启用</span
-              >
             </div>
             <div class="scope-actions">
               <button id="fillDefault">填入默认全随机</button>
               <button id="scopeGo">选择规则集</button>
             </div>
           </div>
-          <div class="bar pool-toolbar">
-            <div class="pool-heading">
-              <strong id="poolTitle"></strong>
-              <span id="summary" class="muted"></span>
-              <span id="saveState" class="save-state" aria-live="polite"></span>
-            </div>
-            <button id="addIdentity" class="primary">
-              <svg class="icon" aria-hidden="true">
-                <use href="#i-plus"></use>
-              </svg>
-              添加人格
-            </button>
-          </div>
-          <p id="poolHint" class="hint">
-            只显示当前规则集内容。右键人格可执行仅抽中、移出等操作；修改自动保存，每个池最多
-            256 项。
-          </p>
-          <div class="scroll">
-            <table class="pool-table">
-              <thead>
-                <tr>
-                  <th>图片</th>
-                  <th>人格</th>
-                  <th>权重</th>
-                  <th>抽取占比</th>
-                </tr>
-              </thead>
-              <tbody id="rows"></tbody>
-            </table>
-          </div>
+          <span id="saveState" class="hidden" aria-live="polite"></span>
+          <div id="poolGrid" class="pool-grid"></div>
         </section>
         <section id="rulesets" class="hidden">
-          <div class="bar">
-            <h2>规则集</h2>
-            <button id="createRule" class="primary">新建单人格规则集</button>
-          </div>
-          <p class="hint">
-            点击规则集切换启用状态。全局规则会应用到全部友方角色。
-          </p>
           <div class="ruleset-layout">
             <div id="rulesetList" class="ruleset-grid"></div>
           </div>
@@ -1174,9 +1346,7 @@
           <table>
             <thead>
               <tr>
-                <th>图片</th>
-                <th>人格</th>
-                <th>来源 / 章节</th>
+                <th>来源</th>
                 <th></th>
               </tr>
             </thead>
@@ -1206,11 +1376,6 @@
             </svg>
           </button>
         </div>
-        <div class="bar">
-          <button id="rulePickerCreate" class="primary">
-            新建单人格规则集
-          </button>
-        </div>
         <div id="rulePickerList" class="ruleset-grid"></div>
       </div>
     </div>
@@ -1237,11 +1402,8 @@
         </div>
         <div class="bar">
           <select id="newRuleSinner"></select>
-          <select id="newRuleIdentity"></select>
         </div>
-        <p class="muted">
-          创建后会为该人格生成独立规则集，并立即启用。默认填入该角色的全随机池。
-        </p>
+        <div id="newRuleIdentity" class="new-rule-identities"></div>
         <div class="modal-actions">
           <button id="newRuleCreate" class="primary">创建并启用</button>
         </div>
@@ -1334,12 +1496,9 @@
       }
       function updatePoolSummary() {
         const total = poolTotal();
-        const visible = document.querySelectorAll("#rows tr[data-id]").length;
-        $("#summary").textContent =
-          `${visible}/${POOL_LIMIT} 项 · 总权重 ${total}`;
-        document.querySelectorAll("#rows tr[data-id]").forEach((row) => {
-          const weight = selected.get(row.dataset.id) || 0;
-          const share = row.querySelector(".share");
+        document.querySelectorAll("#poolGrid .pool-card[data-id]").forEach((card) => {
+          const weight = selected.get(card.dataset.id) || 0;
+          const share = card.querySelector(".share");
           if (share)
             share.textContent =
               (total > 0 ? ((100 * weight) / total).toFixed(2) : "0.00") + "%";
@@ -1351,33 +1510,21 @@
         if (!rule) {
           icon.textContent = "?";
           $("#scopeName").textContent = "未选择规则集";
-          $("#scopeMeta").textContent = "点击“选择规则集”启用或创建规则集";
           $("#fillDefault").disabled = true;
-          $("#addIdentity").disabled = true;
-          $("#poolHint").textContent =
-            "未启用规则集。请先点击“选择规则集”启用或创建规则集。";
           return;
         }
         icon.innerHTML = rule.icon
           ? `<img src="api/portrait/${encodeURIComponent(rule.icon)}" alt="">`
           : "全";
         $("#scopeName").textContent = rule.name;
-        const locked = rule.kind === "global" && rule.locked;
-        $("#scopeMeta").textContent =
-          rule.kind === "global"
-            ? locked
-              ? "纯随机默认池 · 不可编辑"
-              : "全局规则集 · 应用于全部友方角色"
-            : rule.kind === "sinner"
-              ? "罪人全部人格规则集"
-              : "单人格规则集";
-        $("#fillDefault").disabled = locked;
-        $("#addIdentity").disabled = locked;
-        $("#poolHint").textContent = locked
-          ? "当前为纯随机默认池，不可编辑。右键任意人格可清空并恢复编辑。"
-          : rule.kind === "global"
-            ? "全局规则集内的外观会应用到全部友方角色，不受原所属角色限制。"
-            : "只显示当前规则集内容。右键人格可执行仅抽中、移出等操作；修改自动保存，每个池最多 256 项。";
+        $("#fillDefault").disabled = rule.kind === "global" && rule.locked;
+      }
+      function entrySource(entry) {
+        const code = entry.appearance_name || String(entry.identity_id);
+        const status = entry.translation_status === "暂译" ? "暂译 " : "";
+        let chapter = entry.chapter_label || [...catalogChapters(entry).values()][0] || "";
+        if (chapter === "待确认章节") chapter = "";
+        return [status + code, chapter].filter(Boolean).join(" · ");
       }
       function rulesetCard(item) {
         const orb = item.icon
@@ -1385,8 +1532,11 @@
           : `<span class="ruleset-orb">${item.kind === "global" ? "全" : "人"}</span>`;
         return `<button class="ruleset-card${item.active ? " active" : ""}" data-id="${esc(item.id)}">${orb}<span class="ruleset-name">${esc(item.name)}</span></button>`;
       }
+      function rulesetCreateCard(mode) {
+        return `<button type="button" class="ruleset-card ruleset-add" data-create="${mode}" aria-label="新建单人格规则集"><span class="ruleset-orb"><svg class="icon" aria-hidden="true"><use href="#i-plus"></use></svg></span><span class="ruleset-name">新建</span></button>`;
+      }
       function bindRulesetCards(container) {
-        container.querySelectorAll(".ruleset-card").forEach((button) => {
+        container.querySelectorAll(".ruleset-card[data-id]").forEach((button) => {
           button.onclick = async () => {
             const item = (data.rulesets || []).find(
               (candidate) => candidate.id === button.dataset.id,
@@ -1394,17 +1544,22 @@
             if (item) await toggleRule(item);
           };
         });
+        container.querySelectorAll(".ruleset-card[data-create]").forEach((button) => {
+          button.onclick = () => {
+            if (button.dataset.create === "picker")
+              $("#rulePickerModal").classList.add("hidden");
+            openNewRule();
+          };
+        });
       }
       function renderRulesets() {
-        const html =
-          (data.rulesets || []).map(rulesetCard).join("") ||
-          '<p class="muted">暂无规则集</p>';
+        const cards = (data.rulesets || []).map(rulesetCard).join("");
         const page = $("#rulesetList");
-        page.innerHTML = html;
+        page.innerHTML = cards + rulesetCreateCard("page");
         bindRulesetCards(page);
         const picker = $("#rulePickerList");
         if (picker) {
-          picker.innerHTML = html;
+          picker.innerHTML = cards + rulesetCreateCard("picker");
           bindRulesetCards(picker);
         }
       }
@@ -1467,22 +1622,22 @@
       function render() {
         const rule = data.activeRule;
         const locked = rule?.kind === "global" && rule.locked;
-        $("#poolTitle").textContent =
-          rule?.kind === "global"
-            ? "全局人格池"
-            : `${who(activeTarget)} 的人格池`;
-        const rows = [...selected]
+        const blocked = !rule || locked;
+        const cards = [...selected]
           .map(([id, weight]) => {
             const entry = data.catalog.find(
               (item) => String(item.identity_id) === id,
             );
             if (!entry) return "";
-            return `<tr data-id="${esc(id)}"><td>${entry.portrait_url ? `<img class="avatar" src="${esc(entry.portrait_url)}" alt="${esc(entry.name)}的战斗头像" loading="lazy" decoding="async" onerror="this.remove()">` : ""}</td><td><strong>${esc(entry.name || entry.appearance_name || id)}</strong>${entry.translation_status === "暂译" ? ' <small class="muted">暂译</small>' : ""} <small class="muted">${esc(id)}</small>${entry.category === "humanoid_boss" ? `<div class="muted">${esc(entry.chapter_label || "")}</div>` : ""}</td><td><input class="weight" type="number" min="0" max="1000000" step="0.1" value="${weight}"${locked ? " disabled" : ""}></td><td class="share"></td></tr>`;
+            const initial = (entry.name || entry.appearance_name || "?").slice(0, 1);
+            const orb = entry.portrait_url
+              ? `<img src="${esc(entry.portrait_url)}" alt="${esc(entry.name)}的战斗头像" loading="lazy" decoding="async" onerror="this.remove()">`
+              : esc(initial);
+            return `<div class="pool-card" data-id="${esc(id)}" tabindex="0"><span class="pool-orb">${orb}</span><strong class="pool-name">${esc(entry.name || entry.appearance_name || id)}</strong><span class="pool-source">${esc(entrySource(entry))}</span><span class="pool-meta"><input class="weight" type="number" min="0" max="1000000" step="0.1" value="${weight}"${locked ? " disabled" : ""}><span class="share"></span></span></div>`;
           })
           .join("");
-        $("#rows").innerHTML =
-          rows ||
-          '<tr><td colspan="4" class="empty-row">池子为空，点击右上角“添加人格”</td></tr>';
+        const add = `<button type="button" class="pool-card pool-add${blocked ? " is-disabled" : ""}" data-action="add" aria-disabled="${blocked}"><span class="pool-orb"><svg class="icon" aria-hidden="true"><use href="#i-plus"></use></svg></span><span class="pool-name">？？？</span></button>`;
+        $("#poolGrid").innerHTML = add + cards;
         updatePoolSummary();
       }
       let poolEditVersion = 0;
@@ -1557,20 +1712,20 @@
         }
       }
 
-      $("#rows").addEventListener("input", (event) => {
+      $("#poolGrid").addEventListener("input", (event) => {
         if (!event.target.classList.contains("weight")) return;
-        const id = event.target.closest("tr")?.dataset.id;
-        if (!id || event.target.value === "") return;
+        const card = event.target.closest(".pool-card[data-id]");
+        if (!card || event.target.value === "") return;
         const weight = Number(event.target.value);
         if (!Number.isFinite(weight) || weight < 0 || weight > 1000000) return;
-        selected.set(id, weight);
+        selected.set(card.dataset.id, weight);
         updatePoolSummary();
         autoSave();
       });
-      $("#rows").addEventListener("change", (event) => {
+      $("#poolGrid").addEventListener("change", (event) => {
         if (!event.target.classList.contains("weight")) return;
-        const id = event.target.closest("tr")?.dataset.id;
-        if (!id) return;
+        const card = event.target.closest(".pool-card[data-id]");
+        if (!card) return;
         if (event.target.value === "") {
           render();
           return;
@@ -1581,17 +1736,40 @@
           render();
           return;
         }
-        if (selected.get(id) !== weight) {
-          selected.set(id, weight);
+        if (selected.get(card.dataset.id) !== weight) {
+          selected.set(card.dataset.id, weight);
           autoSave();
         }
         render();
       });
-      $("#rows").addEventListener("contextmenu", (event) => {
-        const row = event.target.closest("tr[data-id]");
-        if (!row) return;
+      $("#poolGrid").addEventListener("contextmenu", (event) => {
+        const card = event.target.closest(".pool-card[data-id]");
+        if (!card) return;
         event.preventDefault();
-        openIdentityMenu(row.dataset.id, event.clientX, event.clientY);
+        openIdentityMenu(card.dataset.id, event.clientX, event.clientY);
+      });
+      async function handlePoolAdd() {
+        const rule = data.activeRule;
+        if (!rule) {
+          status("请先选择规则集");
+          return;
+        }
+        if (rule.kind === "global" && rule.locked) {
+          if (!confirm("清空纯随机池并取消随机接管？")) return;
+          try {
+            await api("ruleset-clear", { rule });
+            await refresh();
+            openIdentityModal();
+            status("已恢复编辑");
+          } catch (error) {
+            status(error.message);
+          }
+          return;
+        }
+        openIdentityModal();
+      }
+      $("#poolGrid").addEventListener("click", (event) => {
+        if (event.target.closest(".pool-add")) handlePoolAdd();
       });
       function closeIdentityMenu() {
         $("#identityMenu").classList.add("hidden");
@@ -1867,17 +2045,15 @@
             .map((entry) => {
               const id = String(entry.identity_id);
               const added = selected.has(id);
-              const owner = personalityRole(entry);
-              const type = entry.asset_key?.split("/")[0];
-              const sourceLabel = owner
-                ? who(owner) + " · 人格外观"
-                : { SD_Abnormality: "异想体", SD_Enemy: "敌方单位" }[type] ||
-                  "剧情外观";
-              const chapterLabel = [...catalogChapters(entry).values()][0];
-              return `<tr><td>${entry.portrait_url ? `<img class="avatar" src="${esc(entry.portrait_url)}" alt="${esc(entry.name)}的战斗头像" loading="lazy" decoding="async" onerror="this.remove()">` : ""}</td><td><strong>${esc(entry.name || entry.appearance_name || id)}</strong>${entry.translation_status === "暂译" ? ' <small class="muted">暂译</small>' : ""} <small class="muted">${esc(id)}</small>${entry.no_attack ? '<div class="muted">缺少专属攻击动画</div>' : ""}</td><td class="muted">${esc([sourceLabel, chapterLabel].filter(Boolean).join(" · "))}</td><td><button class="identity-add${added ? "" : " primary"}" data-id="${esc(id)}"${added ? " disabled" : ""}>${added ? "已在池中" : "添加"}</button></td></tr>`;
+              const initial = (entry.name || entry.appearance_name || "?").slice(0, 1);
+              const orb = entry.portrait_url
+                ? `<img src="${esc(entry.portrait_url)}" alt="${esc(entry.name)}的战斗头像" loading="lazy" decoding="async" onerror="this.remove()">`
+                : esc(initial);
+              const source = entrySource(entry);
+              return `<tr><td><div class="identity-cell"><span class="identity-orb">${orb}</span><div class="identity-copy"><strong>${esc(entry.name || entry.appearance_name || id)}</strong><small>${esc(source)}</small>${entry.no_attack ? '<small>缺少专属攻击动画</small>' : ""}</div></div></td><td><button class="identity-add${added ? "" : " primary"}" data-id="${esc(id)}"${added ? " disabled" : ""}>${added ? "已在池中" : "添加"}</button></td></tr>`;
             })
             .join("") ||
-          '<tr><td colspan="4" class="empty-row">没有符合条件的人格</td></tr>';
+          '<tr><td colspan="2" class="empty-row">没有符合条件的人格</td></tr>';
         document.querySelectorAll(".identity-add").forEach((button) => {
           button.onclick = () => addIdentity(button.dataset.id);
         });
@@ -1930,7 +2106,6 @@
         renderAddList();
         status("已添加到当前池");
       }
-      $("#addIdentity").onclick = () => openIdentityModal();
       $("#identityClose").onclick = () => closeIdentityModal();
       $("#identityModal").onclick = (event) => {
         if (event.target.id === "identityModal") closeIdentityModal();
@@ -1945,11 +2120,8 @@
         if (event.target.id === "rulePickerModal")
           $("#rulePickerModal").classList.add("hidden");
       };
-      $("#rulePickerCreate").onclick = () => {
-        $("#rulePickerModal").classList.add("hidden");
-        openNewRule();
-      };
       $("#fillDefault").onclick = () => fillDefault();
+      let newRuleIdentityId = "";
       function openNewRule() {
         $("#newRuleSinner").innerHTML = names
           .map(
@@ -1958,6 +2130,7 @@
           )
           .join("");
         $("#newRuleSinner").value = currentSinner();
+        newRuleIdentityId = "";
         fillNewRuleIdentities();
         $("#newRuleModal").classList.remove("hidden");
       }
@@ -1966,19 +2139,46 @@
       }
       function fillNewRuleIdentities() {
         const sinner = $("#newRuleSinner").value;
-        const identities = (data.catalog || []).filter(
-          (entry) => String(entry.source) === sinner && !entry.story_metadata,
-        );
-        $("#newRuleIdentity").innerHTML = identities
-          .map(
+        const identities = (data.catalog || [])
+          .filter(
             (entry) =>
-              `<option value="${esc(String(entry.identity_id))}">${esc(entry.name || entry.appearance_name || entry.identity_id)}</option>`,
+              String(entry.source) === sinner && !entry.story_metadata,
           )
-          .join("");
+          .sort((a, b) =>
+            String(a.name || a.appearance_name || "").localeCompare(
+              String(b.name || b.appearance_name || ""),
+              "zh-CN",
+            ),
+          );
+        if (
+          !identities.some(
+            (entry) => String(entry.identity_id) === newRuleIdentityId,
+          )
+        )
+          newRuleIdentityId = String(identities[0]?.identity_id || "");
+        const box = $("#newRuleIdentity");
+        box.innerHTML =
+          identities
+            .map((entry) => {
+              const id = String(entry.identity_id);
+              const active = id === newRuleIdentityId;
+              const initial = (entry.name || entry.appearance_name || "?").slice(0, 1);
+              const orb = entry.portrait_url
+                ? `<img src="${esc(entry.portrait_url)}" alt="" loading="lazy" decoding="async">`
+                : esc(initial);
+              return `<button type="button" class="new-rule-identity${active ? " active" : ""}" data-id="${esc(id)}"><span class="new-rule-orb">${orb}</span><span>${esc(entry.name || entry.appearance_name || id)}</span></button>`;
+            })
+            .join("") || '<p class="muted">没有可创建的人格</p>';
+        box.querySelectorAll(".new-rule-identity").forEach((button) => {
+          button.onclick = () => {
+            newRuleIdentityId = button.dataset.id;
+            fillNewRuleIdentities();
+          };
+        });
       }
       async function createNewRule() {
         const sinner = $("#newRuleSinner").value;
-        const identity = $("#newRuleIdentity").value;
+        const identity = newRuleIdentityId;
         if (!identity) {
           status("没有可创建的人格");
           return;
@@ -2000,7 +2200,6 @@
           status(error.message);
         }
       }
-      $("#createRule").onclick = () => openNewRule();
       $("#newRuleClose").onclick = () => closeNewRule();
       $("#newRuleSinner").onchange = () => fillNewRuleIdentities();
       $("#newRuleCreate").onclick = () => createNewRule();
