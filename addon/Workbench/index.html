@@ -2641,9 +2641,10 @@
           const p = await api("portrait-progress");
           if (["starting", "download", "verify", "install"].includes(p.stage))
             return;
-          const missingPortrait = (data.catalog || []).some(
-            (entry) => !entry.portrait_url,
-          );
+          const catalog = data.catalog || [];
+          const portraitCount = catalog.filter((entry) => entry.portrait_url).length;
+          const missingPortrait =
+            catalog.length > 0 && portraitCount < catalog.length * 0.25;
           const missingChapter =
             !data.chapterArt || Object.keys(data.chapterArt).length === 0;
           if (!missingPortrait && !missingChapter) return;
