@@ -1,6 +1,7 @@
 """Short-lived isolated interpreter for FXP2 preparation."""
 import pathlib,sys
-sys.path.insert(0,str(pathlib.Path(__file__).resolve().parent))
+sys.path.insert(0,str(pathlib.Path(__file__).resolve().parents[1]))
+import _module_paths
 import fx_activation
 
 def main():

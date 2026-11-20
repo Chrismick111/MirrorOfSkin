@@ -8,7 +8,7 @@ import os
 import pathlib
 import resource_tools
 
-HERE = pathlib.Path(__file__).resolve().parent
+HERE = pathlib.Path(__file__).resolve().parents[1]
 
 CONFIG_NAME = 'resource-paths.json'
 INDEX_NAME = 'resource-index.json'

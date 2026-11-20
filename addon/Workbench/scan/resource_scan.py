@@ -1,6 +1,7 @@
 """Restore workbench images from the local game's cached Unity bundles."""
 import argparse,json,os,pathlib,sys
-sys.path.insert(0,str(pathlib.Path(__file__).resolve().parent))
+sys.path.insert(0,str(pathlib.Path(__file__).resolve().parents[1]))
+import _module_paths
 from file_lock import FileLock
 
 def emit(stage,done=0,total=0,message='',**extra):

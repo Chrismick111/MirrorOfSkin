@@ -13,7 +13,9 @@ def weekly_slot(now):
     return start.isoformat()
 
 def _lock(root, filename='weekly_scan.lock'):
-    spec=importlib.util.spec_from_file_location('_weekly_file_lock',root/'Workbench'/'file_lock.py')
+    base=root/'Workbench';lock_path=base/'core'/'file_lock.py'
+    if not lock_path.is_file():lock_path=next((p for p in base.rglob('file_lock.py') if p.is_file()),base/'file_lock.py')
+    spec=importlib.util.spec_from_file_location('_weekly_file_lock',lock_path)
     module=importlib.util.module_from_spec(spec);spec.loader.exec_module(module)
     return module.FileLock(root/'Workbench'/filename)
 
@@ -71,7 +73,9 @@ def _run_owned(root,stop,log):
         env=dict(os.environ,PYTHONIOENCODING='utf-8',PYTHONUTF8='1')
         # Redirect to temporary files: a verbose scanner must not block on a full pipe.
         with tempfile.TemporaryFile() as out:
-            proc=subprocess.Popen([str(python),str(root/'Workbench/scan_units.py'),'--addon',str(root),'--weekly'],cwd=str(root),stdout=out,stderr=subprocess.STDOUT,creationflags=flags,env=env)
+            base=root/'Workbench';scan_script=base/'scan'/'scan_units.py'
+            if not scan_script.is_file():scan_script=next((p for p in base.rglob('scan_units.py') if p.is_file()),base/'scan_units.py')
+            proc=subprocess.Popen([str(python),str(scan_script),'--addon',str(root),'--weekly'],cwd=str(root),stdout=out,stderr=subprocess.STDOUT,creationflags=flags,env=env)
             while proc.poll() is None:
                 if stop.wait(1):
                     proc.terminate();proc.wait(timeout=10);break

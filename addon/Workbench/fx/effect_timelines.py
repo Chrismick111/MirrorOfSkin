@@ -21,7 +21,7 @@ import resource_catalog
 import resource_identity
 import timeline_store
 
-HERE = pathlib.Path(__file__).resolve().parent
+HERE = pathlib.Path(__file__).resolve().parents[1]
 AUDIT_NAME = 'audited-unknown.json'
 _state = {}
 _lock = threading.Lock()

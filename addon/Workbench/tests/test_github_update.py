@@ -1,3 +1,6 @@
+import pathlib, sys
+sys.path.insert(0, str(pathlib.Path(__file__).resolve().parents[1]))
+import _module_paths
 import hashlib, io, json, pathlib, tempfile, unittest, zipfile, subprocess, sys, threading, time
 import github_update as u
 import package_release
@@ -58,9 +61,10 @@ class Tests(unittest.TestCase):
   with self.assertRaisesRegex(u.UpdateError,'仓库尚未发布'):u.check(self.root)
  def test_cross_process_lock(self):
   self.setbundle(bundle())
-  workbench_dir=pathlib.Path(__file__).resolve().parent
+  workbench_dir=pathlib.Path(__file__).resolve().parents[1]
   worker="""import sys
 sys.path.insert(0, sys.argv[1])
+import _module_paths
 from file_lock import FileLock
 with FileLock(sys.argv[2]):
     print('ready', flush=True)

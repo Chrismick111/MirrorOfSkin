@@ -21,7 +21,7 @@ import zipfile
 
 from file_lock import FileLock
 
-WHEELS = Path(__file__).with_name('resource-tools-wheels.json')
+WHEELS = Path(__file__).resolve().parents[1] / 'resource-tools-wheels.json'
 PROBE = """
 import sys,json
 sys.path[:]=json.loads(sys.stdin.read())

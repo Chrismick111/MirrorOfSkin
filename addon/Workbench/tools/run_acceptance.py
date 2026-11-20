@@ -10,8 +10,9 @@ import json
 import pathlib
 import sys
 
-HERE = pathlib.Path(__file__).resolve().parent
+HERE = pathlib.Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(HERE))
+import _module_paths
 
 import effect_timelines
 import resource_catalog

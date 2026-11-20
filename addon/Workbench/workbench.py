@@ -1,6 +1,8 @@
 import sys
 from pathlib import Path
-sys.path.insert(0, str(Path(__file__).resolve().parent))
+_HERE = Path(__file__).resolve().parent
+sys.path.insert(0, str(_HERE))
+import _module_paths
 import prepare_view
 import chapter_nine
 import chapter_cards
@@ -44,6 +46,15 @@ def _spawn_child(*args,**kwargs):
   proc=subprocess.Popen(*args,**kwargs);_CHILDREN.add(proc);return proc
 def _forget_child(proc):
  with _CHILD_LOCK:_CHILDREN.discard(proc)
+
+def _workbench_script(root,name):
+ base=pathlib.Path(root)/'Workbench'
+ for folder in ('scan','fx','pool','core','tools'):
+  path=base/folder/name
+  if path.is_file():return path
+ for path in base.rglob(name):
+  if path.is_file():return path
+ return base/name
 def _stop_children():
  global _CHILD_STOPPING
  with _CHILD_LOCK:_CHILD_STOPPING=True;children=list(_CHILDREN)
@@ -66,7 +77,7 @@ def _portrait_update(stage,done=0,total=0,message=''):
 
 def _portrait_run(root):
  try:
-  script=pathlib.Path(root)/'Workbench/resource_scan.py'
+  script=_workbench_script(root,'resource_scan.py')
   flags=getattr(subprocess,'CREATE_NO_WINDOW',0)|getattr(subprocess,'BELOW_NORMAL_PRIORITY_CLASS',0)
   env=dict(os.environ,PYTHONIOENCODING='utf-8',PYTHONUTF8='1')
   proc=_spawn_child([sys.executable,str(script),'--addon',str(root)],cwd=str(root),stdout=subprocess.PIPE,stderr=subprocess.STDOUT,text=True,encoding='utf8',errors='replace',creationflags=flags,env=env)
@@ -431,7 +442,7 @@ def start_scan(root):
   SCAN.update(running=True,started=time.time(),finished=None,error=None,log=None)
  def work():
   try:
-   script=pathlib.Path(root)/'Workbench/scan_units.py'
+   script=_workbench_script(root,'scan_units.py')
    flags=getattr(subprocess,'CREATE_NO_WINDOW',0)
    env=dict(os.environ,PYTHONIOENCODING='utf-8',PYTHONUTF8='1')
    env['FAUST_SCAN_RUN']=str(SCAN['started'])

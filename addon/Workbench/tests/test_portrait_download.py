@@ -1,3 +1,6 @@
+import pathlib, sys
+sys.path.insert(0, str(pathlib.Path(__file__).resolve().parents[1]))
+import _module_paths
 import hashlib, io, json, pathlib, tempfile, unittest, zipfile
 import portrait_download as p
 from github_update import UpdateError

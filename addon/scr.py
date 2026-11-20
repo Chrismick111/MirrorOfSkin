@@ -327,7 +327,10 @@ def _old_pool_rows():
 
 def _pool_workbench_module(name):
     import importlib.util
-    path = ROOT / 'Workbench' / (name + '.py')
+    base = ROOT / 'Workbench'
+    path = next((base / folder / (name + '.py') for folder in ('core','pool','scan','fx','tools') if (base / folder / (name + '.py')).is_file()), None)
+    if path is None:
+        path = next((p for p in base.rglob(name + '.py') if p.is_file()), base / (name + '.py'))
     spec = importlib.util.spec_from_file_location('_sinners_pool_' + name, path)
     module = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(module)
@@ -545,7 +548,10 @@ def prepare_fx_for_injection(root, game_dir, logger, cancelled=None):
     active = pathlib.Path(root) / 'fx-active.bin'
     active.unlink(missing_ok=True)
     try:
-        path = pathlib.Path(root) / 'Workbench/fx_handoff.py'
+        base = pathlib.Path(root) / 'Workbench'
+        path = base / 'fx/fx_handoff.py'
+        if not path.is_file():
+            path = next((p for p in base.rglob('fx_handoff.py') if p.is_file()), base / 'fx_handoff.py')
         spec = importlib.util.spec_from_file_location('_sinners_fx_handoff', path)
         handoff = importlib.util.module_from_spec(spec); spec.loader.exec_module(handoff)
         handoff.prepare(root, game_dir, logger, cancelled=cancelled)

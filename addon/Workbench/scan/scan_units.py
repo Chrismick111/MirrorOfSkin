@@ -18,7 +18,8 @@ import re
 import struct
 import sys
 import time
-sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent))
+sys.path.insert(0,str(pathlib.Path(__file__).resolve().parents[1]))
+import _module_paths
 
 PRE = 'Assets/Resources_moved/Prefab/'
 # 外观名不只「10101_XxxAppearance」一种：还有 Fools_9999_VergiliusAppearance、
