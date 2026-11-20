@@ -337,12 +337,12 @@
         flex-direction: column;
         align-items: center;
         gap: 6px;
-        width: max-content;
-        max-width: min(540px, calc(100vw - 40px));
+        width: min(200px, calc(100vw - 40px));
         transform: translateX(-50%);
         pointer-events: none;
       }
       .toast {
+        width: 100%;
         max-width: 100%;
         padding: 7px 13px;
         background: rgba(24, 27, 33, 0.72);
@@ -3273,7 +3273,6 @@
                 `<h3>${esc(id)} · ${esc(p.forms)}</h3><p>${esc(p.method)}</p>`,
             )
             .join("");
-          status("已读取插件数据");
         } catch (e) {
           status(e.message);
         }
