@@ -32,13 +32,13 @@ def package(root, output, *, launcher=False):
  items['compatibility.json']=manifest_path.read_bytes()
  output.parent.mkdir(parents=True,exist_ok=True)
  with zipfile.ZipFile(output,'x',compression=zipfile.ZIP_DEFLATED,compresslevel=6) as z:
-  prefix = '人格演出工作台/' if launcher else ''
+  prefix = 'MirrorOfSkin/' if launcher else ''
   for name,data in sorted(items.items()):z.writestr(prefix+name,data)
  return len(items)
 
 if __name__=='__main__':
  p=argparse.ArgumentParser(description='从已校验插件创建 GitHub Release 安装包')
  p.add_argument('--addon',required=True);p.add_argument('--output',required=True,help='插件目录外的输出文件（Release 资产名必须为 '+ASSET+'）')
- p.add_argument('--launcher',action='store_true',help='为启动器本地导入添加固定的中文插件目录')
+ p.add_argument('--launcher',action='store_true',help='为启动器本地导入添加固定的 MirrorOfSkin 插件目录')
  a=p.parse_args();print('已打包文件数:',package(a.addon,a.output,launcher=a.launcher))
  if not a.launcher:print('Release 资产名必须为:',ASSET)
