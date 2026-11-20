@@ -1,4 +1,4 @@
-人格演出工作台
+镜像幻化
 
 在 FaustLauncher 的插件设置中打开工作台，也可以双击 Workbench 目录中的 open_workbench.cmd。工作台优先使用启动器自带的 Python。
 
