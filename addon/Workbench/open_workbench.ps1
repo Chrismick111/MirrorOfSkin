@@ -124,7 +124,9 @@ if(Test-Path -LiteralPath $state){
   if($url -match '^http://127\.0\.0\.1:\d{1,5}/[A-Za-z0-9_-]+/$'){
    $ping=Invoke-RestMethod -Uri ($url+'api/instance-ping') -TimeoutSec 1
    if($ping.workbench){
-    if((-not $ping.version) -or ($ping.version -ne $localVersion)){
+    $buildVersion=$null
+    try{$buildVersion=(Get-Content -LiteralPath (Join-Path $addon 'Workbench/server_build.json') -Raw|ConvertFrom-Json).version}catch{}
+    if((-not $ping.version) -or ($ping.version -ne $localVersion) -or (-not $buildVersion) -or ($buildVersion -ne $localVersion)){
      $token=$url.TrimEnd('/').Split('/')[-1]
      try{
       $shutdown=Invoke-WebRequest -Method Post -Uri ($url+'api/instance-shutdown') -Headers @{'X-Workbench'=$token;'Content-Type'='application/json'} -Body '{"host_pid":0}' -TimeoutSec 3
