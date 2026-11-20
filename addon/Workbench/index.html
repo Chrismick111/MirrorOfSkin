@@ -2608,7 +2608,15 @@
           const sc = d.scan || {};
           if (!sc.running) {
             let stale = !d.available || !d.generated;
-            if (sc.weekly?.status === "failed") stale = true;
+            if (sc.weekly?.status === "failed") {
+              const failedAt = Date.parse(sc.weekly.finished || "");
+              const generatedAt = Date.parse(d.generated || "");
+              if (
+                !Number.isFinite(generatedAt) ||
+                (Number.isFinite(failedAt) && failedAt > generatedAt)
+              )
+                stale = true;
+            }
             if (d.generated) {
               const age = Date.now() - Date.parse(d.generated);
               if (Number.isFinite(age) && age > 7 * 86400000) stale = true;
