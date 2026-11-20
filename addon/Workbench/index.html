@@ -330,27 +330,32 @@
       }
       .toasts {
         position: fixed;
-        top: 64px;
+        top: 56px;
         left: 50%;
         z-index: 220;
         display: flex;
         flex-direction: column;
         align-items: center;
-        gap: 7px;
-        width: min(420px, calc(100vw - 48px));
+        gap: 6px;
+        width: max-content;
+        max-width: min(540px, calc(100vw - 40px));
         transform: translateX(-50%);
         pointer-events: none;
       }
       .toast {
         max-width: 100%;
-        padding: 8px 14px;
-        background: rgba(24, 27, 33, 0.94);
-        border: 1px solid #565b66;
+        padding: 7px 13px;
+        background: rgba(24, 27, 33, 0.72);
+        border: 1px solid rgba(255, 255, 255, 0.13);
         border-radius: 999px;
-        box-shadow: 0 10px 28px #000a;
+        box-shadow: 0 8px 22px rgba(0, 0, 0, 0.3);
+        backdrop-filter: blur(12px);
+        -webkit-backdrop-filter: blur(12px);
         color: #e7e7e7;
-        font-size: 13px;
+        font-size: 12.5px;
+        line-height: 1.35;
         text-align: center;
+        overflow-wrap: anywhere;
         animation: toastIn 0.2s ease;
         transition:
           opacity 0.2s ease,
@@ -523,10 +528,23 @@
         margin: 42px 0;
       }
       .events-toolbar {
-        justify-content: space-between;
+        justify-content: flex-end;
       }
-      .events-toolbar input {
-        flex: 1;
+      .run-log {
+        max-height: 68vh;
+        overflow: auto;
+        margin: 0;
+        padding: 12px;
+        background: rgb(10 12 16 / 45%);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        border-radius: 10px;
+        font:
+          12px/1.45 "Cascadia Code",
+          Consolas,
+          monospace;
+        white-space: pre-wrap;
+        overflow-wrap: anywhere;
+        scrollbar-gutter: stable;
       }
       .scheme-tip {
         position: fixed;
@@ -1633,7 +1651,6 @@
         </section>
         <section id="events" class="hidden">
           <div class="bar events-toolbar">
-            <input id="eventSearch" placeholder="筛选角色ID、事件或原因" />
             <button
               id="exportEvents"
               class="event-export"
@@ -1645,23 +1662,7 @@
               </svg>
             </button>
           </div>
-          <div class="scroll">
-            <table>
-              <thead>
-                <tr>
-                  <th>事件</th>
-                  <th>角色</th>
-                  <th>硬币</th>
-                  <th>类型</th>
-                  <th>选中</th>
-                  <th>可见外观</th>
-                  <th>结果/原因</th>
-                </tr>
-              </thead>
-              <tbody id="eventRows"></tbody>
-            </table>
-          </div>
-          <pre id="eventDetail">选择一条记录查看详情</pre>
+          <pre id="eventLog" class="run-log">暂无日志</pre>
         </section>
         <section id="rules" class="hidden">
           <h2>抽取编排 · <span id="rulesTarget"></span></h2>
@@ -2083,6 +2084,7 @@
         el.className = "toast";
         el.textContent = t;
         box.appendChild(el);
+        while (box.children.length > 3) box.firstElementChild.remove();
         setTimeout(() => {
           el.classList.add("leaving");
           setTimeout(() => el.remove(), 220);
@@ -2230,7 +2232,9 @@
       }
       function bindRulesetCards(container) {
         container.querySelectorAll(".ruleset-card[data-id]").forEach((button) => {
-          button.onclick = async () => {
+          button.onclick = async (event) => {
+            event.preventDefault();
+            event.stopPropagation();
             const item = (data.rulesets || []).find(
               (candidate) => candidate.id === button.dataset.id,
             );
@@ -2258,8 +2262,15 @@
       }
       async function toggleRule(item, only = false) {
         try {
-          if (dirty || saveTimer || saving || savePending || settingsDirty)
-            return status("请先保存当前修改，再切换规则集");
+          if (settingsDirty)
+            return status("请先保存设置，再切换规则集");
+          if (saving || savePending)
+            return status("请等待当前修改保存完成后再切换规则集");
+          if (dirty || saveTimer) {
+            await flushSave();
+            if (dirty || saving || savePending)
+              return status("当前修改尚未保存，暂时无法切换规则集");
+          }
           if (only) {
             await api("ruleset-only", { rule: item });
           } else if (item.active) {
@@ -3173,16 +3184,8 @@
         }
       }
       function renderEvents() {
-        let q = $("#eventSearch").value.toLowerCase();
-        $("#eventRows").innerHTML = events
-          .map((e, i) => ({ ...e, i }))
-          .filter((e) => e.raw.toLowerCase().includes(q))
-          .reverse()
-          .map(
-            (e) =>
-              `<tr data-index="${e.i}"><td>${esc(e.kind)}</td><td>${esc(e.fields.sinner || e.fields.unit || "—")}</td><td>${esc(e.fields.coin ?? "—")}</td><td>${esc(e.coin_type)}</td><td>${esc(e.fields.selected || e.fields.identity || "—")}</td><td>${esc(e.fields.shown || "—")}</td><td>${esc(e.fields.result || e.fields.metadata || "—")}</td></tr>`,
-          )
-          .join("");
+        $("#eventLog").textContent =
+          events.map((event) => event.raw).join("\n") || "暂无日志";
       }
       async function loadEvents() {
         try {
@@ -3192,12 +3195,6 @@
           status(e.message);
         }
       }
-      $("#eventSearch").oninput = renderEvents;
-      $("#eventRows").onclick = (e) => {
-        let row = e.target.closest("tr");
-        if (row)
-          $("#eventDetail").textContent = events[Number(row.dataset.index)].raw;
-      };
       function download(name, value) {
         let a = document.createElement("a"),
           u = URL.createObjectURL(
@@ -3318,14 +3315,25 @@
         if (event.target.id === "scanDetailModal") hideModal("#scanDetailModal");
       };
       const pageScroll = document.querySelector("article");
+      let poolTopTimer = null;
       function updatePoolTop() {
-        const show = pageScroll && activePage() === "pool" && pageScroll.scrollTop > 400;
+        const show =
+          pageScroll && activePage() === "pool" && pageScroll.scrollTop > 400;
+        clearTimeout(poolTopTimer);
         $("#poolTop").classList.toggle("hidden", !show);
+        if (show)
+          poolTopTimer = setTimeout(
+            () => $("#poolTop").classList.add("hidden"),
+            3000,
+          );
       }
       if (pageScroll)
         pageScroll.addEventListener("scroll", updatePoolTop, { passive: true });
-      $("#poolTop").onclick = () =>
+      $("#poolTop").onclick = () => {
+        clearTimeout(poolTopTimer);
+        $("#poolTop").classList.add("hidden");
         pageScroll?.scrollTo({ top: 0, behavior: "smooth" });
+      };
       navButtons.forEach((button) =>
         button.addEventListener("click", updatePoolTop),
       );
