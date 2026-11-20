@@ -136,6 +136,15 @@ if(Test-Path -LiteralPath $state){
       try{ Invoke-RestMethod -Uri ($url+'api/instance-ping') -TimeoutSec 1|Out-Null }
       catch{ break }
      }
+     try{
+      $windowLock=Join-Path $addon 'Workbench/webview-window.json'
+      if(Test-Path -LiteralPath $windowLock){
+       $windowInfo=Get-Content -LiteralPath $windowLock -Raw|ConvertFrom-Json
+       if($windowInfo.pid){Stop-Process -Id ([int]$windowInfo.pid) -Force -ErrorAction SilentlyContinue}
+       Remove-Item -LiteralPath $windowLock -Force -ErrorAction SilentlyContinue
+      }
+     }catch{}
+     Remove-Item -LiteralPath (Join-Path $addon 'Workbench/workbench_gateway.json') -Force -ErrorAction SilentlyContinue
     }else{
      if($ServerOnly){Write-Output $url;exit 0}
      if(Start-Pywebview $url){exit 0}
