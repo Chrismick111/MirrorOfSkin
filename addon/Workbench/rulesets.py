@@ -81,6 +81,23 @@ def _default_entries(pool, sinner):
     return result[:MAX_ENTRIES]
 
 
+def _all_default_entries(pool_data):
+    result = []
+    seen = set()
+    for pool in pool_data.values():
+        for entry in pool.get('entries', []):
+            identity = str(entry.get('identity_id', ''))
+            if not identity.isdigit() or len(identity) != 5 or identity in seen:
+                continue
+            if entry.get('story_metadata') or entry.get('category') == 'humanoid_boss':
+                continue
+            weight = float(entry.get('weight', 1))
+            if weight > 0:
+                seen.add(identity)
+                result.append({'identity_id': identity, 'weight': weight})
+    return result[:MAX_ENTRIES]
+
+
 def _saved_appearances(entries):
     result = []
     for entry in entries or []:
@@ -103,9 +120,11 @@ def list_rulesets(root, portrait_ok, pool_data=None):
     cat = catalog(root, pool_data)
     items = []
     any_active = bool(st['active'])
+    global_data = _read(global_file(root), {})
     items.append({
         'id': 'global', 'kind': 'global', 'name': '所有角色', 'icon': None, 'sinner': None, 'identity': None,
         'active': st['global'], 'conflict': not st['global'] and any_active,
+        'locked': bool(global_data.get('locked')),
     })
     for index, name in enumerate(SINNER_NAMES):
         sinner = str(101 + index)
@@ -168,12 +187,21 @@ def entries(root, rule, pool_data=None):
     kind, sinner, identity = rule.get('kind'), str(rule.get('sinner') or ''), rule.get('identity')
     if kind == 'global':
         data = _read(global_file(root), {})
-        profile = (data.get('pools') or {}).get(sinner)
-        if isinstance(profile, dict):
-            return _saved_appearances(profile.get('entries', []))
-        if pool_data is None:
-            pool_data = pools(root)
-        return _default_entries(pool_data.get(sinner, {}), sinner)
+        if isinstance(data.get('entries'), list):
+            return _saved_appearances(data.get('entries', []))
+        if isinstance(data.get('pools'), dict):
+            merged = []
+            seen = set()
+            for profile in data['pools'].values():
+                if not isinstance(profile, dict):
+                    continue
+                for entry in _saved_appearances(profile.get('entries', [])):
+                    identity = str(entry.get('identity_id', ''))
+                    if identity and identity not in seen:
+                        seen.add(identity)
+                        merged.append(entry)
+            return merged[:MAX_ENTRIES]
+        return []
     if kind == 'sinner':
         profile = (custom(root).get('characters') or {}).get(sinner)
         return _saved_appearances(profile.get('entries', [])) if isinstance(profile, dict) else []
@@ -225,12 +253,75 @@ def save_entries(root, rule, entries, expected_revision, known, validate, lock=N
             _write(path, data)
         elif kind == 'global':
             path = global_file(root)
-            data = _read(path, {'schema': 1, 'scope': 'global', 'name': '所有角色', 'pools': {}})
-            data.setdefault('pools', {})[sinner] = {'enabled': True, 'entries': entries}
+            data = _read(path, {})
+            if data.get('locked'):
+                raise ValueError('纯随机默认池不可编辑，请右键清空池子')
+            data.update({'schema': 1, 'scope': 'global', 'name': '所有角色', 'entries': entries, 'locked': False})
+            data.pop('pools', None)
             _write(path, data)
         else:
             raise ValueError('未知规则集类型')
     return revision(root, rule)
+
+
+def fill_default(root, rule, pool_data=None):
+    root = pathlib.Path(root)
+    if not rule:
+        raise ValueError('未选择规则集')
+    if pool_data is None:
+        pool_data = pools(root)
+    kind, sinner, identity = rule.get('kind'), str(rule.get('sinner') or ''), rule.get('identity')
+    if kind == 'global':
+        entries = _all_default_entries(pool_data)
+        with FileLock(root / 'workbench-save.lock'):
+            _write(global_file(root), {'schema': 1, 'scope': 'global', 'name': '所有角色', 'entries': entries, 'locked': True})
+        return entries
+    entries = _default_entries(pool_data.get(sinner, {}), sinner)
+    if kind == 'sinner':
+        with FileLock(root / 'workbench-save.lock'):
+            data = custom(root)
+            data.setdefault('characters', {})[sinner] = {'enabled': True, 'entries': entries}
+            _write(root / CUSTOM, data)
+        return entries
+    if kind == 'identity':
+        path = identity_file(root, identity)
+        data = _read(path, None)
+        if not data:
+            raise ValueError('单人格规则集不存在')
+        data['entries'] = entries
+        with FileLock(root / 'workbench-save.lock'):
+            _write(path, data)
+        return entries
+    raise ValueError('未知规则集类型')
+
+
+def clear(root, rule):
+    root = pathlib.Path(root)
+    if not rule:
+        raise ValueError('未选择规则集')
+    kind, sinner, identity = rule.get('kind'), str(rule.get('sinner') or ''), rule.get('identity')
+    if kind == 'global':
+        with FileLock(root / 'workbench-save.lock'):
+            _write(global_file(root), {'schema': 1, 'scope': 'global', 'name': '所有角色', 'entries': [], 'locked': False})
+    elif kind == 'sinner':
+        with FileLock(root / 'workbench-save.lock'):
+            data = custom(root)
+            profile = (data.get('characters') or {}).get(sinner)
+            if not isinstance(profile, dict):
+                profile = {'enabled': True}
+                data.setdefault('characters', {})[sinner] = profile
+            profile['entries'] = []
+            _write(root / CUSTOM, data)
+    elif kind == 'identity':
+        path = identity_file(root, identity)
+        data = _read(path, None)
+        if data:
+            data['entries'] = []
+            with FileLock(root / 'workbench-save.lock'):
+                _write(path, data)
+    else:
+        raise ValueError('未知规则集类型')
+    return []
 
 
 def activate(root, rule):
