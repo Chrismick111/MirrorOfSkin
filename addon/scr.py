@@ -48,17 +48,7 @@ def bind(name, result, *args):
 
 bind('CreateToolhelp32Snapshot', W.HANDLE, W.DWORD, W.DWORD)
 bind('CloseHandle', W.BOOL, W.HANDLE)
-bind('OpenProcess', W.HANDLE, W.DWORD, W.BOOL, W.DWORD)
-bind('VirtualAllocEx', P, W.HANDLE, P, C.c_size_t, W.DWORD, W.DWORD)
-bind('VirtualFreeEx', W.BOOL, W.HANDLE, P, C.c_size_t, W.DWORD)
-bind('WriteProcessMemory', W.BOOL, W.HANDLE, P, P, C.c_size_t, P)
-bind('CreateRemoteThread', W.HANDLE, W.HANDLE, P, C.c_size_t, P, P, W.DWORD, P)
-bind('WaitForSingleObject', W.DWORD, W.HANDLE, W.DWORD)
-bind('GetModuleHandleW', W.HMODULE, W.LPCWSTR)
-bind('GetProcAddress', P, W.HMODULE, C.c_char_p)
 bind('GetTickCount', W.DWORD)
-bind('VirtualQuery', C.c_size_t, P, P, C.c_size_t)
-bind('GetModuleFileNameW', W.DWORD, W.HMODULE, W.LPWSTR, W.DWORD)
 
 
 class Process(C.Structure):
@@ -117,54 +107,9 @@ def modules(pid):
     return {m.name.lower(): m for m in _snapshot(0x18, pid, Module, 'Module32')}
 
 
-def _inject_remote_loader(pid, mods):
-    dll = ROOT / DLL_NAME
-    if dll.name.lower() in mods:
-        return
-    process = K.OpenProcess(0x43a, False, pid)
-    if not process:
-        raise C.WinError(C.get_last_error())
-    remote = thread = None
-    try:
-        path = str(dll).encode('utf-16le') + b'\0\0'
-        remote = K.VirtualAllocEx(process, None, len(path), 0x3000, 4)
-        if not remote:
-            raise C.WinError(C.get_last_error())
-        buf = C.create_string_buffer(path)
-        if not K.WriteProcessMemory(process, remote, buf, len(path), None):
-            raise C.WinError(C.get_last_error())
-        address = K.GetProcAddress(K.GetModuleHandleW('kernel32.dll'), b'LoadLibraryW')
+class WarpHookLoadError(RuntimeError):
+    """The launcher declined the load for this game session."""
 
-        class Memory(C.Structure):
-            _fields_ = [('base', P), ('allocation', P), ('protection', W.DWORD),
-                        ('partition', W.WORD), ('size', C.c_size_t), ('state', W.DWORD),
-                        ('protect', W.DWORD), ('type', W.DWORD)]
-
-        info = Memory(); K.VirtualQuery(address, C.byref(info), C.sizeof(info))
-        text = C.create_unicode_buffer(32768)
-        K.GetModuleFileNameW(info.allocation, text, len(text))
-        module = mods[pathlib.Path(text.value).name.lower()]
-        loader = module.base + address - info.allocation
-        thread = K.CreateRemoteThread(process, None, 0, loader, remote, 0, None)
-        if not thread:
-            raise C.WinError(C.get_last_error())
-        if K.WaitForSingleObject(thread, 20000) != 0:
-            def finish(h, t, p):
-                K.WaitForSingleObject(t, 0xffffffff)
-                K.VirtualFreeEx(h, p, 0, 0x8000)
-                K.CloseHandle(t); K.CloseHandle(h)
-            threading.Thread(target=finish, args=(process, thread, remote), daemon=True).start()
-            process = thread = remote = None
-            raise RuntimeError('DLL load timed out')
-        if dll.name.lower() not in modules(pid):
-            raise RuntimeError('DLL not present after load')
-    finally:
-        if remote:
-            K.VirtualFreeEx(process, remote, 0, 0x8000)
-        if thread:
-            K.CloseHandle(thread)
-        if process:
-            K.CloseHandle(process)
 
 def inject(pid, mods):
     import warphook
@@ -172,36 +117,9 @@ def inject(pid, mods):
         return
     ok, message = warphook.inject_dll(pid, str((ROOT / DLL_NAME).resolve()))
     if not ok:
-        if 'winerror=87' in str(message):
-            log('WarpHook加载地址错误87，使用按目标进程模块地址计算的兼容加载路径')
-            _inject_remote_loader(pid, mods)
-        else:
-            raise RuntimeError('WarpHook加载失败: ' + str(message))
+        raise WarpHookLoadError('WarpHook 加载失败：' + str(message))
     if DLL_NAME.lower() not in modules(pid):
-        raise RuntimeError('WarpHook加载后未发现目标DLL')
-
-
-def enable_debug_privilege():
-    class Luid(C.Structure):
-        _fields_ = [('low', W.DWORD), ('high', W.LONG)]
-
-    class Privilege(C.Structure):
-        _fields_ = [('count', W.DWORD), ('luid', Luid), ('attributes', W.DWORD)]
-
-    adv = C.WinDLL('advapi32', use_last_error=True)
-    adv.OpenProcessToken.argtypes = [W.HANDLE, W.DWORD, C.POINTER(W.HANDLE)]
-    adv.LookupPrivilegeValueW.argtypes = [W.LPCWSTR, W.LPCWSTR, C.POINTER(Luid)]
-    adv.AdjustTokenPrivileges.argtypes = [W.HANDLE, W.BOOL, C.POINTER(Privilege), W.DWORD, P, P]
-    bind('GetCurrentProcess', W.HANDLE)
-    token = W.HANDLE()
-    if not adv.OpenProcessToken(K.GetCurrentProcess(), 0x28, C.byref(token)):
-        return
-    privilege = Privilege(); privilege.count = 1; privilege.attributes = 2
-    if adv.LookupPrivilegeValueW(None, 'SeDebugPrivilege', C.byref(privilege.luid)):
-        C.set_last_error(0)
-        adv.AdjustTokenPrivileges(token, False, C.byref(privilege), 0, None, None)
-        log('SeDebugPrivilege result=' + str(C.get_last_error()))
-    K.CloseHandle(token)
+        raise WarpHookLoadError('WarpHook 加载后未发现目标 DLL')
 
 
 def report(session, previous):
@@ -639,7 +557,6 @@ def worker():
     pool_stamp = None
     revision = 0
     published_config = None
-    enable_debug_privilege()
     try:
         while not STOP.wait(.5):
             try:
@@ -757,6 +674,10 @@ def worker():
                     compat.release_process(load_guard); load_guard = None
                 if session is not None and attempted != pid:
                     session.close(); session = None
+                if isinstance(exc, WarpHookLoadError):
+                    attempted = pid
+                    log(str(exc) + '。本次游戏已停止加载，请检查 WarpHook 后重新启动游戏。')
+                    continue
                 if isinstance(exc, OSError) and (getattr(exc, 'winerror', None) == 5 or exc.errno == 5):
                     message = ('游戏进程访问被拒绝（错误 5），原生插件尚未加载。'
                                '请关闭游戏和启动器，以管理员身份运行 FaustLauncher.exe 后重新启动游戏。'

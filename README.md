@@ -11,15 +11,16 @@
 
 ## 安装
 
-下表中的两个核心安装包对应 1.0.0。本文所述的 1.0.1 修复已包含在主分支源码中。
+全新安装时，在 FaustLauncher 中选择“从本地安装”，导入下表中的启动器安装包。已安装 1.0.0 的用户也可以在工作台中选择“检查并更新”。
 
 | 文件 | 说明 |
 | --- | --- |
-| [标准安装包](https://github.com/Chrismick111/faust-random-identity/releases/download/v1.0.0/FaustRandomIdentity-WarpHook.zip) | 插件本体，946,708 字节，适合启动器分发与工作台更新 |
-| [通用 ZIP 安装包](https://github.com/Chrismick111/faust-random-identity/releases/download/v1.0.0/FaustRandomIdentity-WarpHook-Deflate.zip) | 解压工具不支持标准包时选用，与标准包内容相同，只需安装其中一个 |
+| [启动器完整安装包（通用 ZIP）](https://github.com/Chrismick111/faust-random-identity/releases/download/v1.0.1/FaustRandomIdentity-Launcher-Deflate.zip) | 推荐全新安装，内含启动器识别用的中文插件目录 |
+| [启动器完整安装包（小体积）](https://github.com/Chrismick111/faust-random-identity/releases/download/v1.0.1/FaustRandomIdentity-Launcher.zip) | 相同内容，使用 LZMA 压缩 |
+| [工作台更新包](https://github.com/Chrismick111/faust-random-identity/releases/download/v1.0.1/FaustRandomIdentity-WarpHook.zip) | 工作台自动下载使用，文件位于压缩包根目录 |
 | [默认图像包](https://github.com/Chrismick111/faust-random-identity/releases/download/v0.79.1/FaustRandomIdentity-Portraits.zip) | 可选，623 张图片，覆盖 693 个外观条目，工作台也可单独下载 |
 
-将选用的安装包解压到下面的插件目录。手动安装的图像包也解压到同一目录。
+手动安装时，把启动器完整安装包解压到 `FaustLauncher/addons/`。确认目录结构如下。可选图像包解压到 `人格演出工作台/` 内。
 
 ```
 FaustLauncher/addons/人格演出工作台/
@@ -31,7 +32,7 @@ FaustLauncher/addons/人格演出工作台/
     portraits/          <- 来自立绘包
 ```
 
-也可以只装核心包，之后在插件里点「下载默认头像」自动补齐。
+也可以只装核心包，之后在插件里点「下载默认头像」自动补齐。1.0.1 只通过 WarpHook 加载原生模块。若 WarpHook 返回错误 87，插件会在日志中保留原因并停止本次游戏的加载。
 
 **依赖**：Windows x64、FaustLauncher、WarpHook。工作台优先使用启动器自带的 `resources/mod_loader/_internal/venv` 里的 Python；
 该路径不存在时才回退到系统 Python，此时需要 3.9 或更新版本。
@@ -124,7 +125,7 @@ python Workbench/package_release.py --addon . --output C:\temp\FaustRandomIdenti
 
 输出路径须在插件目录外且原先不存在。
 
-向 FaustLauncher 的“从本地安装”提供 ZIP 时，加上 `--launcher`，并将输出命名为 `人格演出工作台.zip`。启动器用包含 `addon_info.json` 的文件夹名登记插件，包内路径应为 `人格演出工作台/addon_info.json`。工作台在线更新继续使用清单位于包根目录的标准包。
+向 FaustLauncher 的“从本地安装”提供 ZIP 时，加上 `--launcher`。启动器用包含 `addon_info.json` 的文件夹名登记插件，包内路径应为 `人格演出工作台/addon_info.json`。工作台在线更新继续使用清单位于包根目录的标准包。
 
 > 注意：`release_compatibility.py` 加载时对 `addon_info.json` 只校验版本、跳过哈希（启动器安装时会改写名称与说明），
 > 但 `github_update.py` 的安装校验 **仍会比对它的包内哈希**。两边都要满足，改版本号后记得同步 `package_files`。
