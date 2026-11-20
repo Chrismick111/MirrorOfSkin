@@ -3,9 +3,9 @@
 适用于 [FaustLauncher](https://github.com/f0lkskill/FaustLauncher) 的《边狱巴士》(Limbus Company) 人格外观随机插件。
 通过 WarpHook 注入原生 DLL，在战斗中替换罪人外观、随机切换人格，并按原生触发条件播放 Boss 语音与气泡。
 
-当前源码版本 **1.1.2** · 协议 75 · 原生模块 `SinnersNative-v64.dll` · 适用启动器 `0.8.9-release.fix.4`
+当前源码版本 **1.1.3** · 协议 75 · 原生模块 `SinnersNative-v64.dll` · 适用启动器 `0.8.9-release.fix.4`
 
-1.1.2 的新单位检测会显示进度，并从本地游戏缓存读取章节与封面。“添加人格”默认显示整个目录，可按角色、敌方单位、异想体或章节筛选。覆盖外观缺少指定攻击槽时，优先播放该外观已有的攻击动作。缺少专属攻击时间线时，当前外观通过短促位移表现攻击。
+1.1.3 的新单位检测会显示进度，并从本地游戏缓存读取章节与封面。“添加人格”默认显示整个目录，可按角色、敌方单位、异想体或章节筛选。覆盖外观缺少指定攻击槽时，优先播放该外观已有的攻击动作。缺少专属攻击时间线时，当前外观通过短促位移表现攻击。
 
 ---
 
@@ -15,9 +15,9 @@
 
 | 文件 | 说明 |
 | --- | --- |
-| [启动器完整安装包（通用 ZIP）](https://github.com/Chrismick111/faust-random-identity/releases/download/v1.1.2/FaustRandomIdentity-Launcher-Deflate.zip) | 推荐全新安装，内含启动器识别用的中文插件目录 |
-| [启动器完整安装包（小体积）](https://github.com/Chrismick111/faust-random-identity/releases/download/v1.1.2/FaustRandomIdentity-Launcher.zip) | 相同内容，使用 LZMA 压缩 |
-| [工作台更新包](https://github.com/Chrismick111/faust-random-identity/releases/download/v1.1.2/FaustRandomIdentity-WarpHook.zip) | 工作台自动下载使用，文件位于压缩包根目录 |
+| [启动器完整安装包（通用 ZIP）](https://github.com/Chrismick111/faust-random-identity/releases/download/v1.1.3/FaustRandomIdentity-Launcher-Deflate.zip) | 推荐全新安装，内含启动器识别用的中文插件目录 |
+| [启动器完整安装包（小体积）](https://github.com/Chrismick111/faust-random-identity/releases/download/v1.1.3/FaustRandomIdentity-Launcher.zip) | 相同内容，使用 LZMA 压缩 |
+| [工作台更新包](https://github.com/Chrismick111/faust-random-identity/releases/download/v1.1.3/FaustRandomIdentity-WarpHook.zip) | 工作台自动下载使用，文件位于压缩包根目录 |
 | [默认图像包](https://github.com/Chrismick111/faust-random-identity/releases/download/v0.79.1/FaustRandomIdentity-Portraits.zip) | 可选，623 张图片，覆盖 693 个外观条目，工作台也可单独下载 |
 
 手动安装时，把启动器完整安装包解压到 `FaustLauncher/addons/`。确认目录结构如下。可选图像包解压到 `MirrorOfSkin/` 内。
@@ -32,7 +32,7 @@ FaustLauncher/addons/MirrorOfSkin/
     portraits/          <- 来自立绘包
 ```
 
-也可以只装核心包，之后在插件里点「下载默认头像」自动补齐。1.1.2 只通过 WarpHook 加载原生模块。若 WarpHook 返回错误 87，插件会在日志中保留原因并停止本次游戏的加载。
+也可以只装核心包，之后在插件里点「下载默认头像」自动补齐。1.1.3 只通过 WarpHook 加载原生模块。若 WarpHook 返回错误 87，插件会在日志中保留原因并停止本次游戏的加载。
 
 Workbench 的 Python 代码按功能拆分：
 
