@@ -182,6 +182,10 @@ static int enabled_now(void){
  DWORD published=cfg->heartbeat;
  return (DWORD)(GetTickCount()-published)<3000;
 }
+static int special_clash_disabled(void){
+ const volatile Config *cfg=g_cfg;
+ return !cfg||cfg->reserved[3]!=2;
+}
 
 static void *find_method(void *klass,const char *name,int count){
   for(void *c=klass;c;c=ui_parent(c)){void *m=((void *(*)(void *,const char *,int))api[API_METHOD])(c,name,count);if(m)return m;}
@@ -2280,6 +2284,10 @@ static void after_cointoss_hook(void *self,void *mi){
 static void *m_parryPlayback,*orig_parryPlayback;
 static unsigned g_parryTrace;
 static void parry_playback_hook(void *self,int detail,void *mi){
+ if(special_clash_disabled()){
+  ((void (*)(void *,int,void *))orig_parryPlayback)(self,detail,mi);
+  return;
+ }
  Unit *u=unit_for_app(self);
  if(enabled_now()&&u&&!u->switching){
   char line[256];snprintf(line,sizeof(line),"clash playback sinner=%lu event=%u depth=%d detail=%d wanted=%d current=%d mask=%d camera=%d",(unsigned long)u->sinner,g_parryTrace,u->clashDepth,detail,u->wanted,rfield(u->view,"_curAppearance")==self,motion_busy_mask(self),g_presentationGate);bootlog(line);
@@ -2299,6 +2307,8 @@ static void parry_playback_hook(void *self,int detail,void *mi){
  g_clashPlayback=saved;
 }
 static int parry_hook(void *self,int result,float delay,uint8_t a2,int close,int defense,int detail,uint8_t a6,void *mi){
+  if(special_clash_disabled())
+    return ((int (*)(void *,int,float,uint8_t,int,int,int,uint8_t,void *))orig_parryOnly)(self,result,delay,a2,close,defense,detail,a6,mi);
   Unit *owner=enabled_now()?unit_for_app(self):NULL;
   void *target=clash_visible(owner,self);int entered=0;
   if(enabled_now()&&!g_visualEventDepth&&!g_clashBoundary&&!InterlockedCompareExchange(&g_busy,1,0)){
@@ -3695,6 +3705,7 @@ static DWORD WINAPI run(void *unused){
   if(c->magic!=0x3152534e||c->version!=SR_PROTOCOL_VERSION||c->bytes!=sizeof(Config)){bootlog("protocol validation failed");return 0;}
   g_cfg=c;
   bootlog("protocol validated");
+  bootlog(special_clash_disabled()?"special clash disabled":"special clash enabled");
   HMODULE game=GetModuleHandleW(L"GameAssembly.dll");
   if(!game){fatal("GameAssembly missing",1);return 0;}
   static void *table[37];
