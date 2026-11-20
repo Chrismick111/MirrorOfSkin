@@ -230,7 +230,9 @@ def _identity_ruleset(identity):
 
 def _global_ruleset():
     data = _json_file(RULESET_DIR / '全局.json')
-    if not data or data.get('scope') != 'global' or not isinstance(data.get('pools'), dict):
+    if not data or data.get('scope') != 'global':
+        return None
+    if not isinstance(data.get('entries'), list) and not isinstance(data.get('pools'), dict):
         return None
     return data
 
@@ -382,9 +384,14 @@ def _prepare_native_pools_unlocked():
 
     global_rule = _global_ruleset()
     if global_rule:
-        for target, profile in global_rule.get('pools', {}).items():
-            if str(target) in pools:
-                add_profile(target, profile)
+        if isinstance(global_rule.get('entries'), list):
+            for sinner in range(101, 113):
+                for row in _resolve_rows(global_rule['entries'], '', catalog, include_zero=True):
+                    add(str(sinner), row)
+        else:
+            for target, profile in global_rule.get('pools', {}).items():
+                if str(target) in pools:
+                    add_profile(target, profile)
 
     if RULESET_DIR.exists():
         for path in sorted(RULESET_DIR.glob('人格-*.json')):
@@ -415,10 +422,14 @@ def _prepare_native_pools_unlocked():
         key = str(sinner)
         base = ''
         if state['global']:
-            profile = global_rule['pools'].get(key) if global_rule else None
-            entries = profile.get('entries', []) if isinstance(profile, dict) else None
+            entries = None
+            if global_rule and isinstance(global_rule.get('entries'), list):
+                entries = global_rule['entries']
+            elif global_rule and isinstance(global_rule.get('pools'), dict):
+                profile = global_rule['pools'].get(key)
+                entries = profile.get('entries', []) if isinstance(profile, dict) else None
             if entries is None:
-                entries = pools[key].get('entries', [])
+                continue
         else:
             active = state['active'].get(key, 'none')
             if active == 'sinner':
