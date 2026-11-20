@@ -355,6 +355,25 @@ def activate(root, rule):
     return st
 
 
+def select(root, rule):
+    root = pathlib.Path(root)
+    if not rule:
+        raise ValueError('未选择规则集')
+    kind = rule.get('kind')
+    if kind not in ('global', 'sinner', 'identity'):
+        raise ValueError('未知规则集类型')
+    st = state(root)
+    st['selected'] = {
+        'id': rule.get('id'),
+        'kind': kind,
+        'sinner': rule.get('sinner'),
+        'identity': rule.get('identity'),
+    }
+    with FileLock(root / 'workbench-save.lock'):
+        save_state(root, st)
+    return st
+
+
 def create_identity(root, sinner, identity, known):
     root = pathlib.Path(root)
     identity = str(identity)
