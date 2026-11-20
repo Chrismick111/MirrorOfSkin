@@ -78,7 +78,7 @@
         position: relative;
         z-index: 2;
         flex: 0 0 auto;
-        padding: 22px 30px;
+        padding: 11px 24px;
         border-bottom: 0;
         background: rgba(30, 33, 40, 0.8);
         backdrop-filter: blur(14px);
@@ -88,7 +88,7 @@
         align-items: center;
       }
       h1 {
-        font-size: 23px;
+        font-size: 20px;
         margin: 0;
       }
       main {
@@ -125,10 +125,6 @@
         display: flex;
         flex-direction: column;
         min-height: 0;
-      }
-      .nav-spacer {
-        flex: 1;
-        min-height: 18px;
       }
       nav button {
         background: rgba(41, 44, 50, 0.62);
@@ -334,7 +330,7 @@
       }
       .toasts {
         position: fixed;
-        top: 82px;
+        top: 64px;
         left: 50%;
         z-index: 220;
         display: flex;
@@ -440,8 +436,8 @@
         flex-wrap: wrap;
       }
       .header-actions .icon-btn {
-        width: 40px;
-        height: 40px;
+        width: 36px;
+        height: 36px;
         border: 1px solid #4b505a;
         background: #202329;
       }
@@ -450,7 +446,7 @@
         background: #2c2f35;
       }
       .version-pill {
-        padding: 6px 10px;
+        padding: 4px 9px;
         border: 1px solid #4b505a;
         border-radius: 999px;
         color: #b4b8c1;
@@ -490,14 +486,19 @@
         gap: 8px;
       }
       .scheme-bar {
+        width: 100%;
+        flex-wrap: nowrap;
         justify-content: space-between;
       }
       .scheme-bar input {
-        flex: 1;
-        min-width: 160px;
+        flex: 1 1 0;
+        width: auto;
+        min-width: 0;
+        max-width: none;
       }
       .scheme-bar .scheme-actions {
-        margin-left: auto;
+        flex: 0 0 auto;
+        margin-left: 8px;
         align-items: center;
       }
       .scheme-action,
@@ -516,6 +517,8 @@
         height: 20px;
       }
       .scheme-empty {
+        grid-column: 1 / -1;
+        width: 100%;
         text-align: center;
         margin: 42px 0;
       }
@@ -1154,8 +1157,8 @@
         padding: 6px 8px;
       }
       #identityModal .identity-scroll td:last-child {
-        width: 48px;
-        padding-right: 0;
+        width: 58px;
+        padding-right: 10px;
         text-align: right;
       }
       #identityModal .identity-add {
@@ -1588,9 +1591,8 @@
         <button data-page="pool">人格池</button
         ><button data-page="rulesets">规则集</button
         ><button data-page="schemes">方案管理</button
-        ><button data-page="prepare">准备状态</button>
-        <div class="nav-spacer"></div>
-        <button data-page="events" class="nav-bottom">运行日志</button>
+        ><button data-page="prepare">准备状态</button
+        ><button data-page="events">运行日志</button>
       </nav>
       <article>
         <section id="pool">
