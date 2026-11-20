@@ -23,6 +23,32 @@
         background: #17191d;
         color: #e7e7e7;
       }
+      #app-bg {
+        position: fixed;
+        inset: 0;
+        z-index: 0;
+        overflow: hidden;
+        background: #17191d;
+        pointer-events: none;
+      }
+      #app-bg-image {
+        position: absolute;
+        inset: -24px;
+        background-position: center;
+        background-repeat: no-repeat;
+        background-size: cover;
+        filter: blur(var(--launcher-bg-blur, 8px)) saturate(1.05);
+        transform: scale(1.04);
+      }
+      #app-bg-mask {
+        position: absolute;
+        inset: 0;
+        background: linear-gradient(
+          180deg,
+          rgba(6, 8, 12, 0.42),
+          rgba(6, 8, 12, 0.6)
+        );
+      }
       * {
         scrollbar-width: thin;
         scrollbar-color: #5b606a #1c1f24;
@@ -44,9 +70,14 @@
         background: #deb970;
       }
       header {
+        position: relative;
+        z-index: 2;
         flex: 0 0 auto;
         padding: 22px 30px;
-        border-bottom: 1px solid #444;
+        border-bottom: 0;
+        background: rgba(30, 33, 40, 0.8);
+        backdrop-filter: blur(14px);
+        -webkit-backdrop-filter: blur(14px);
         display: flex;
         justify-content: space-between;
         align-items: center;
@@ -56,17 +87,48 @@
         margin: 0;
       }
       main {
+        position: relative;
+        z-index: 1;
         flex: 1;
         min-height: 0;
         display: grid;
         grid-template-columns: 170px minmax(0, 1fr);
         overflow: hidden;
       }
+      main::after {
+        content: "";
+        position: absolute;
+        left: 170px;
+        top: 0;
+        bottom: 0;
+        width: 1px;
+        z-index: 4;
+        background: linear-gradient(
+          180deg,
+          transparent,
+          rgba(255, 255, 255, 0.14) 12%,
+          rgba(255, 255, 255, 0.14) 88%,
+          transparent
+        );
+        pointer-events: none;
+      }
       nav {
         padding: 20px;
-        border-right: 1px solid #444;
+        border-right: 0;
         overflow-y: auto;
         scrollbar-gutter: stable;
+      }
+      nav button {
+        transition:
+          background 0.15s,
+          border-color 0.15s,
+          box-shadow 0.15s;
+      }
+      nav button.active {
+        background: #685125;
+        border-color: #deb970;
+        color: #fff;
+        box-shadow: inset 3px 0 0 #deb970;
       }
       button,
       select,
@@ -463,13 +525,19 @@
       }
 
       .scope-card {
+        position: sticky;
+        top: 0;
+        z-index: 30;
         display: flex;
         align-items: center;
         gap: 14px;
         padding: 14px 16px;
         border: 1px solid #565b66;
         border-radius: 10px;
-        background: #202329;
+        background: rgba(32, 35, 41, 0.94);
+        backdrop-filter: blur(12px);
+        -webkit-backdrop-filter: blur(12px);
+        box-shadow: 0 10px 24px #0004;
         margin-bottom: 18px;
       }
       .scope-icon {
@@ -724,14 +792,14 @@
       }
       .pool-bg {
         position: absolute;
-        inset: -12px;
+        inset: -10px;
         z-index: 0;
         background-position: right bottom;
         background-repeat: no-repeat;
         background-size: cover;
-        opacity: 0.5;
-        filter: blur(14px) saturate(1.15) brightness(0.82);
-        transform: scale(1.08);
+        opacity: 0.38;
+        filter: blur(8px) saturate(1.05) brightness(0.9);
+        transform: scale(1.05);
         pointer-events: none;
       }
       .pool-glass {
@@ -740,11 +808,11 @@
         z-index: 0;
         background: linear-gradient(
           180deg,
-          rgba(32, 35, 41, 0.28),
-          rgba(32, 35, 41, 0.72)
+          rgba(32, 35, 41, 0.14),
+          rgba(32, 35, 41, 0.55)
         );
-        backdrop-filter: blur(5px) saturate(1.1);
-        -webkit-backdrop-filter: blur(5px) saturate(1.1);
+        backdrop-filter: blur(2px) saturate(1.05);
+        -webkit-backdrop-filter: blur(2px) saturate(1.05);
         pointer-events: none;
       }
       .pool-card > :not(.pool-bg):not(.pool-glass) {
@@ -1110,6 +1178,14 @@
         width: 20px;
         height: 20px;
       }
+      .identity-add.remove {
+        background: #352125;
+        border-color: #7a3a3f;
+        color: #ff9a9a;
+      }
+      .identity-add.remove:hover {
+        border-color: #ff8d8d;
+      }
       .prep-grid {
         display: grid;
         grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
@@ -1157,6 +1233,10 @@
     </style>
   </head>
   <body>
+    <div id="app-bg" aria-hidden="true">
+      <div id="app-bg-image"></div>
+      <div id="app-bg-mask"></div>
+    </div>
     <svg
       aria-hidden="true"
       style="position: absolute; width: 0; height: 0; overflow: hidden"
@@ -1184,6 +1264,9 @@
       </symbol>
       <symbol id="i-plus" viewBox="0 0 24 24">
         <path d="M12 5v14M5 12h14" />
+      </symbol>
+      <symbol id="i-minus" viewBox="0 0 24 24">
+        <path d="M5 12h14" />
       </symbol>
       <symbol id="i-shuffle" viewBox="0 0 24 24">
         <path d="M16 3h5v5M4 20L21 3M21 16v5h-5M15 15l6 6M4 4l5 5" />
@@ -1654,6 +1737,20 @@
         clearTimeout(statusTimer);
         statusTimer = setTimeout(() => el.classList.remove("show"), 2200);
       };
+      function applyLauncherBackground(bg) {
+        const image = $("#app-bg-image");
+        if (!image) return;
+        if (!bg || !bg.url) {
+          image.style.backgroundImage = "";
+          return;
+        }
+        image.style.backgroundImage = `url("${bg.url}")`;
+        const blur = Number(bg.blur);
+        document.documentElement.style.setProperty(
+          "--launcher-bg-blur",
+          `${Number.isFinite(blur) ? Math.max(0, Math.min(20, blur)) : 8}px`,
+        );
+      }
       async function api(route, body) {
         const r = await fetch(
           "api/" + route,
@@ -2246,12 +2343,15 @@
                 ? `<img src="${esc(entry.portrait_url)}" alt="${esc(entry.name)}的战斗头像" loading="lazy" decoding="async" onerror="this.remove()">`
                 : esc(initial);
               const source = entrySource(entry);
-              return `<tr><td><div class="identity-cell"><span class="identity-orb">${orb}</span><div class="identity-copy"><strong>${esc(entry.name || entry.appearance_name || id)}</strong><small>${esc(source)}</small>${entry.no_attack ? '<small>缺少专属攻击动画</small>' : ""}</div></div></td><td><button class="identity-add${added ? "" : " primary"}" data-id="${esc(id)}"${added ? " disabled" : ""} title="${added ? "已在池中" : "添加"}" aria-label="${added ? "已在池中" : "添加"}"><svg class="icon" aria-hidden="true"><use href="#${added ? "i-check" : "i-plus"}"></use></svg></button></td></tr>`;
+              return `<tr><td><div class="identity-cell"><span class="identity-orb">${orb}</span><div class="identity-copy"><strong>${esc(entry.name || entry.appearance_name || id)}</strong><small>${esc(source)}</small>${entry.no_attack ? '<small>缺少专属攻击动画</small>' : ""}</div></div></td><td><button class="identity-add${added ? " remove" : " primary"}" data-id="${esc(id)}" data-added="${added ? 1 : 0}" title="${added ? "移出池子" : "添加"}" aria-label="${added ? "移出池子" : "添加"}"><svg class="icon" aria-hidden="true"><use href="#${added ? "i-minus" : "i-plus"}"></use></svg></button></td></tr>`;
             })
             .join("") ||
           '<tr><td colspan="2" class="empty-row">没有符合条件的人格</td></tr>';
         document.querySelectorAll(".identity-add").forEach((button) => {
-          button.onclick = () => addIdentity(button.dataset.id);
+          button.onclick = () =>
+            button.dataset.added === "1"
+              ? removeIdentity(button.dataset.id)
+              : addIdentity(button.dataset.id);
         });
       }
       async function openIdentityModal() {
@@ -2301,6 +2401,18 @@
         autoSave();
         renderAddList();
         status("已添加到当前池");
+      }
+      function removeIdentity(id) {
+        if (data.activeRule?.kind === "global" && data.activeRule.locked) {
+          status("纯随机默认池不可编辑，请右键清空");
+          return;
+        }
+        if (!selected.has(id)) return;
+        selected.delete(id);
+        render();
+        autoSave();
+        renderAddList();
+        status("已移出当前池");
       }
       $("#identityClose").onclick = () => closeIdentityModal();
       $("#identityModal").onclick = (event) => {
@@ -2646,6 +2758,7 @@
           data = await api("data");
           settingsBaseline = structuredClone(data.settings.config);
           settingsDirty = false;
+          applyLauncherBackground(data.launcherBackground);
           $("#version").textContent = data.version;
           loadTarget();
           renderPrepare(data);
@@ -2768,17 +2881,21 @@
           pollBusy = false;
         }
       }
-      document.querySelectorAll("nav button").forEach(
-        (b) =>
-          (b.onclick = () => {
-            document
-              .querySelectorAll("article section")
-              .forEach((s) =>
-                s.classList.toggle("hidden", s.id !== b.dataset.page),
-              );
-            pollActive();
-          }),
-      );
+      const navButtons = [...document.querySelectorAll("nav button")];
+      navButtons.forEach((b) => {
+        b.onclick = () => {
+          document
+            .querySelectorAll("article section")
+            .forEach((s) =>
+              s.classList.toggle("hidden", s.id !== b.dataset.page),
+            );
+          navButtons.forEach((item) =>
+            item.classList.toggle("active", item === b),
+          );
+          pollActive();
+        };
+      });
+      if (navButtons[0]) navButtons[0].classList.add("active");
       window.onbeforeunload = (e) => {
         if (dirty || saveTimer) {
           e.preventDefault();
