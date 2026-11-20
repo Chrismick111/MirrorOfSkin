@@ -32,3 +32,4 @@ addon/workbench-instance.lock
 addon/workbench-save.lock
 addon/native_stage_groups.bin
 
+addon/Workbench/server_build.json
