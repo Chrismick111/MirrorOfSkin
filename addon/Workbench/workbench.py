@@ -401,6 +401,31 @@ def start_scan(root):
  threading.Thread(target=work,daemon=True).start()
  return {'running':True,'started':SCAN['started']}
 
+GATEWAY = 'Workbench/workbench_gateway.json'
+DEFAULT_GATEWAY_PORT = 47821
+
+
+def _load_gateway(root):
+ path = pathlib.Path(root) / GATEWAY
+ try:
+  data = json.loads(path.read_text(encoding='utf-8'))
+  port = int(data.get('port'))
+  token = str(data.get('token') or '')
+ except (OSError, ValueError, TypeError):
+  return None
+ if not 1024 <= port <= 65535 or not re.fullmatch(r'[A-Za-z0-9_-]{16,64}', token):
+  return None
+ return {'port': port, 'token': token}
+
+
+def _save_gateway(root, port, token):
+ path = pathlib.Path(root) / GATEWAY
+ path.parent.mkdir(parents=True, exist_ok=True)
+ temp = path.with_suffix('.json.tmp')
+ temp.write_text(json.dumps({'port': port, 'token': token}), encoding='utf8')
+ temp.replace(path)
+
+
 def main():
  ap=argparse.ArgumentParser();ap.add_argument('--addon',required=True);ap.add_argument('--no-browser',action='store_true');ap.add_argument('--host-pid',type=int);args=ap.parse_args()
  instance=instance_control.Instance(args.addon)
@@ -411,7 +436,11 @@ def main():
   finally:instance.close()
   return
  lifetime=host_lifetime.Lifetime();lifetime.register(args.host_pid)
- store=Store(args.addon);token=secrets.token_urlsafe(24);html=(pathlib.Path(__file__).parent/'index.html').read_bytes()
+ store=Store(args.addon)
+ gateway=_load_gateway(args.addon)
+ token=gateway['token'] if gateway else secrets.token_urlsafe(24)
+ gateway_port=gateway['port'] if gateway else DEFAULT_GATEWAY_PORT
+ html=(pathlib.Path(__file__).parent/'index.html').read_bytes()
  class Handler(BaseHTTPRequestHandler):
   # Browsers can preconnect without sending a request. Bound the socket wait
   # so server_close can join those handlers when the launcher exits.
@@ -457,7 +486,7 @@ def main():
    except Exception as e:return self.send({'error':str(e)},500)
   def do_POST(self):
    route=self.route()
-   if route not in ('save','import','director','bundle','boss-preview','update-check','update-install','portrait-save','portrait-reset','portrait-download','images-delete','ruleset-activate','ruleset-save','ruleset-create','ruleset-only','ruleset-deactivate','scan','scheme-save','scheme-load','scheme-delete','scheme-import','scheme-get','effect-scheme-save','effect-scheme-get','effect-scheme-delete','effect-timelines','effect-live-start','effect-live-status','effect-plan-preview','effect-selection','effect-sprites','effect-sprites-start','effect-sprites-status','effect-sprites-cancel','effect-sprite-export','instance-shutdown','instance-attach','instance-release'):return self.send({'error':'未找到'},404)
+   if route not in ('save','import','director','bundle','boss-preview','update-check','update-install','portrait-save','portrait-reset','portrait-download','images-delete','ruleset-activate','ruleset-save','ruleset-create','ruleset-only','ruleset-deactivate','ruleset-fill','ruleset-clear','scan','scheme-save','scheme-load','scheme-delete','scheme-import','scheme-get','effect-scheme-save','effect-scheme-get','effect-scheme-delete','effect-timelines','effect-live-start','effect-live-status','effect-plan-preview','effect-selection','effect-sprites','effect-sprites-start','effect-sprites-status','effect-sprites-cancel','effect-sprite-export','instance-shutdown','instance-attach','instance-release'):return self.send({'error':'未找到'},404)
    if self.headers.get('X-Workbench')!=token:return self.send({'error':'请求无效'},403)
    try:
     n=int(self.headers.get('Content-Length',0))
@@ -518,6 +547,12 @@ def main():
     if route=='ruleset-deactivate':
      rulesets.deactivate(store.root, body.get('rule') or body)
      return self.send(_ruleset_payload(store))
+    if route=='ruleset-fill':
+     rulesets.fill_default(store.root, body.get('rule') or body, rulesets.pools(store.root))
+     return self.send(_ruleset_payload(store))
+    if route=='ruleset-clear':
+     rulesets.clear(store.root, body.get('rule') or body)
+     return self.send(_ruleset_payload(store))
     if route=='scheme-save':
      with store.lock:return self.send({'saved':schemes.save(store.root,body.get('name'),bool(body.get('overwrite'))),'schemes':schemes.listing(store.root)})
     if route=='scheme-import':
@@ -565,7 +600,12 @@ def main():
     return self.send(result)
    except (ValueError,KeyError,TypeError) as e:return self.send({'error':str(e)},400)
    except Exception as e:return self.send({'error':str(e)},500)
- server=ThreadingHTTPServer(('127.0.0.1',0),Handler);server.daemon_threads=False;lifetime.watch(server);url=f'http://127.0.0.1:{server.server_port}/{token}/';instance.publish(url);print(url,flush=True)
+ try:
+  server=ThreadingHTTPServer(('127.0.0.1',gateway_port),Handler)
+ except OSError:
+  server=ThreadingHTTPServer(('127.0.0.1',0),Handler);gateway_port=server.server_port
+ _save_gateway(args.addon,gateway_port,token)
+ server.daemon_threads=False;lifetime.watch(server);url=f'http://127.0.0.1:{server.server_port}/{token}/';instance.publish(url);print(url,flush=True)
  resource_catalog.resource_tools.prepare_in_background()
  if not args.no_browser:webbrowser.open(url)
  try:server.serve_forever()
