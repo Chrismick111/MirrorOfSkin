@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 """Discover appearance prefabs that the pool does not know about yet.
 
 The pool is built from prefab names, so a unit is "known" only if its
