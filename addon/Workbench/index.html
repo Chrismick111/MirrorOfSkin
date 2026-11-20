@@ -652,23 +652,149 @@
       .identity-count {
         margin: 8px 0;
       }
-      .chapter-browser { margin: 10px 0; }
-      .chapter-browser summary { cursor: pointer; color: #d5b780; font-weight: 600; padding: 5px 0; }
-      .chapter-cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 8px; max-height: 220px; overflow: auto; padding: 5px 2px; }
-      .chapter-card { position: relative; min-height: 76px; overflow: hidden; border: 2px solid #81755e; border-radius: 5px; background: linear-gradient(110deg,#291d1d,#15171b); color: #f0d8a2; cursor: pointer; text-align: left; padding: 8px 10px; display: flex; align-items: flex-end; }
-      .chapter-card img { position: absolute; width: 100%; height: 100%; inset: 0; object-fit: cover; opacity: .68; }
-      .chapter-card::after { content: ''; position: absolute; inset: 0; background: linear-gradient(90deg,rgba(15,12,12,.26),rgba(16,9,9,.72)); }
-      .chapter-card span { position: relative; z-index: 1; text-shadow: 0 1px 4px #000; font-size: 14px; font-weight: 700; }
-      .chapter-card .chapter-name { margin-left: auto; text-align: right; }
-      .chapter-card .chapter-tag { position: absolute; top: 3px; left: 4px; padding: 1px 5px; background: #721d18; }
-      .chapter-card .chapter-time { position: absolute; top: 5px; right: 6px; color: #e63c25; }
-      .chapter-card .chapter-art-note { position: absolute; bottom: 3px; left: 4px; padding: 1px 4px; background: #252019d9; color: #d6c29a; font-size: 10px; }
-      .chapter-card:hover,.chapter-card:focus-visible { border-color: #e4bc71; outline: none; }
-      @media (max-width: 620px) { .chapter-cards { grid-template-columns: repeat(2,minmax(0,1fr)); max-height: 160px; } .chapter-card { min-height: 64px; } }
+      .chapter-browser {
+        margin: 10px 0;
+      }
+      .chapter-browser summary {
+        cursor: pointer;
+        color: #d5b780;
+        font-weight: 600;
+        padding: 5px 0;
+      }
+      .chapter-cards {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
+        gap: 8px;
+        max-height: 220px;
+        overflow: auto;
+        padding: 5px 2px;
+      }
+      .chapter-card {
+        position: relative;
+        min-height: 76px;
+        overflow: hidden;
+        border: 2px solid #81755e;
+        border-radius: 5px;
+        background: linear-gradient(110deg, #291d1d, #15171b);
+        color: #f0d8a2;
+        cursor: pointer;
+        text-align: left;
+        padding: 8px 10px;
+        display: flex;
+        align-items: flex-end;
+      }
+      .chapter-card img {
+        position: absolute;
+        width: 100%;
+        height: 100%;
+        inset: 0;
+        object-fit: cover;
+        opacity: 0.68;
+      }
+      .chapter-card::after {
+        content: "";
+        position: absolute;
+        inset: 0;
+        background: linear-gradient(
+          90deg,
+          rgba(15, 12, 12, 0.26),
+          rgba(16, 9, 9, 0.72)
+        );
+      }
+      .chapter-card span {
+        position: relative;
+        z-index: 1;
+        text-shadow: 0 1px 4px #000;
+        font-size: 14px;
+        font-weight: 700;
+      }
+      .chapter-card .chapter-name {
+        margin-left: auto;
+        text-align: right;
+      }
+      .chapter-card .chapter-tag {
+        position: absolute;
+        top: 3px;
+        left: 4px;
+        padding: 1px 5px;
+        background: #721d18;
+      }
+      .chapter-card .chapter-time {
+        position: absolute;
+        top: 5px;
+        right: 6px;
+        color: #e63c25;
+      }
+      .chapter-card .chapter-art-note {
+        position: absolute;
+        bottom: 3px;
+        left: 4px;
+        padding: 1px 4px;
+        background: #252019d9;
+        color: #d6c29a;
+        font-size: 10px;
+      }
+      .chapter-card:hover,
+      .chapter-card:focus-visible {
+        border-color: #e4bc71;
+        outline: none;
+      }
+      @media (max-width: 620px) {
+        .chapter-cards {
+          grid-template-columns: repeat(2, minmax(0, 1fr));
+          max-height: 160px;
+        }
+        .chapter-card {
+          min-height: 64px;
+        }
+      }
       .identity-add {
         white-space: nowrap;
       }
-    .prep-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:10px;margin:14px 0}.prep-status,.prep-list{padding:14px;border:1px solid #4a4c53;border-radius:8px;background:#24272d}.prep-status{display:flex;justify-content:space-between;gap:12px}.prep-ok{color:#98d5ae}.prep-wait{color:#e5c58a}.prep-list{margin:12px 0}.prep-list h3{margin:0 0 10px}.prep-list h3 small{font-weight:normal;color:#b6b8bc}.prep-list ul{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:6px 24px;margin:0;padding-left:20px;max-height:250px;overflow:auto}</style>
+      .prep-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+        gap: 10px;
+        margin: 14px 0;
+      }
+      .prep-status,
+      .prep-list {
+        padding: 14px;
+        border: 1px solid #4a4c53;
+        border-radius: 8px;
+        background: #24272d;
+      }
+      .prep-status {
+        display: flex;
+        justify-content: space-between;
+        gap: 12px;
+      }
+      .prep-ok {
+        color: #98d5ae;
+      }
+      .prep-wait {
+        color: #e5c58a;
+      }
+      .prep-list {
+        margin: 12px 0;
+      }
+      .prep-list h3 {
+        margin: 0 0 10px;
+      }
+      .prep-list h3 small {
+        font-weight: normal;
+        color: #b6b8bc;
+      }
+      .prep-list ul {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+        gap: 6px 24px;
+        margin: 0;
+        padding-left: 20px;
+        max-height: 250px;
+        overflow: auto;
+      }
+    </style>
   </head>
   <body>
     <svg
@@ -706,13 +832,7 @@
         <a href="effect-editor" target="_blank" rel="noopener">特效方案</a>
         <span id="version" class="version-pill"></span>
         <div class="action-group">
-          <button
-            id="downloadPortraits"
-            class="primary"
-            title="检索本地游戏资源并添加图片"
-          >
-            下载资源</button
-          ><button id="deleteImages" title="删除工作台图片并关闭图片自动生成">删除所有图片</button><button id="updatePlugin" title="检查并安装核心插件更新">
+          <button id="updatePlugin" title="检查并安装核心插件更新">
             检查更新
           </button>
         </div>
@@ -740,7 +860,6 @@
               >
             </div>
             <div class="scope-actions">
-              <select id="scopeSinner" class="hidden"></select>
               <button id="fillDefault">填入默认全随机</button>
               <button id="scopeGo">选择规则集</button>
             </div>
@@ -758,8 +877,8 @@
               添加人格
             </button>
           </div>
-          <p class="hint">
-            只显示当前角色的自定义池内容。右键人格可执行仅抽中、移出等操作；修改自动保存，每个池最多
+          <p id="poolHint" class="hint">
+            只显示当前规则集内容。右键人格可执行仅抽中、移出等操作；修改自动保存，每个池最多
             256 项。
           </p>
           <div class="scroll">
@@ -782,7 +901,7 @@
             <button id="createRule" class="primary">新建单人格规则集</button>
           </div>
           <p class="hint">
-            点击规则集即启用；全局规则与其它规则冲突，同一罪人的规则集互斥，最后选择的优先。
+            点击规则集切换启用状态。全局规则会应用到全部友方角色。
           </p>
           <div class="ruleset-layout">
             <div id="rulesetList" class="ruleset-grid"></div>
@@ -790,11 +909,8 @@
         </section>
         <section id="events" class="hidden">
           <div class="bar">
-            <input
-              id="eventSearch"
-              placeholder="筛选角色ID、事件或原因"
-            /><button id="refreshEvents">刷新日志</button
-            ><button id="exportEvents">导出当前记录</button>
+            <input id="eventSearch" placeholder="筛选角色ID、事件或原因" />
+            <button id="exportEvents">导出当前记录</button>
           </div>
           <div class="notice">
             展示最近日志中的最多600条相关事件。硬币类型未被原生核心记录时显示“未记录”。点击行可查看原始记录。
@@ -866,11 +982,11 @@
             方案保存当前的人格池、规则集和抽取编排。鼠标停在方案上可查看其中的外观；读取会整体替换当前配置，读取前自动备份为“读取前自动备份”。
           </p>
           <div class="bar">
-            <input id="schemeName" maxlength="40" placeholder="方案名称" /><button
-              id="saveScheme"
-              class="primary"
-            >
-              保存当前方案</button
+            <input
+              id="schemeName"
+              maxlength="40"
+              placeholder="方案名称"
+            /><button id="saveScheme" class="primary">保存当前方案</button
             ><button id="importScheme">导入方案文件</button
             ><input type="file" id="importFile" accept=".json" hidden />
           </div>
@@ -879,10 +995,25 @@
         </section>
         <section id="prepare" class="hidden">
           <h2>资源准备状态</h2>
-          <button id="refreshPrepare">刷新状态</button>
+
           <div id="prepareData" aria-live="polite"></div>
         </section>
-        <section id="discovered" class="hidden"><h2>新单位与章节检测</h2><p>插件每周会检测本地已下载的资源，也可手动开始扫描。扫描会读取本地章节资料，提取已下载的章节图片，并更新外观选择页的章节卡片。已识别的无攻击外观和动作信息缺失外观会加入可选目录，可在“无攻击外观”分类中查看。名称优先使用本地中文资料，未找到中文时保留原名。</p><div class="bar"><button id="startScan">开始扫描</button><button id="refreshDiscovered">刷新</button><span id="discoveredMeta" class="muted"></span></div><div id="scanProgress" hidden><label for="scanBar" id="scanLabel"></label> <progress id="scanBar" style="width:min(24rem,90%);vertical-align:middle"></progress></div><p id="scanError" role="status" class="muted"></p><div id="discoveredList"></div></section>
+        <section id="discovered" class="hidden">
+          <h2>新单位与章节检测</h2>
+          <p>
+            插件会每周自动检测本地资源，首次进入工作台也会自动检测。扫描会读取本地章节资料、提取章节图片，并更新外观选择页的章节卡片；识别到的无攻击外观和动作缺失外观会加入可选目录。
+          </p>
+          <div class="bar"><span id="discoveredMeta" class="muted"></span></div>
+          <div id="scanProgress" hidden>
+            <label for="scanBar" id="scanLabel"></label>
+            <progress
+              id="scanBar"
+              style="width: min(24rem, 90%); vertical-align: middle"
+            ></progress>
+          </div>
+          <p id="scanError" role="status" class="muted"></p>
+          <div id="discoveredList"></div>
+        </section>
       </article>
     </main>
     <div id="status" role="status">正在读取插件数据…</div>
@@ -1009,7 +1140,9 @@
           <input id="addSearch" placeholder="搜索名字、ID或来源" />
           <select id="addSource">
             <option value="">全部来源</option>
-            <option id="pairedSource" value="paired" hidden disabled>当前人格的对应外观</option>
+            <option id="pairedSource" value="paired" hidden disabled>
+              当前人格的对应外观
+            </option>
             <option value="boss">Boss</option>
             <option value="personality">人格外观</option>
             <option value="enemy">敌方单位外观</option>
@@ -1030,7 +1163,11 @@
         </div>
         <details class="chapter-browser" open>
           <summary>按章节浏览</summary>
-          <div id="chapterCards" class="chapter-cards" aria-label="章节分类"></div>
+          <div
+            id="chapterCards"
+            class="chapter-cards"
+            aria-label="章节分类"
+          ></div>
         </details>
         <div id="addCount" class="identity-count muted"></div>
         <div class="scroll identity-scroll">
@@ -1197,7 +1334,7 @@
       }
       function updatePoolSummary() {
         const total = poolTotal();
-        const visible = document.querySelectorAll('#rows tr[data-id]').length;
+        const visible = document.querySelectorAll("#rows tr[data-id]").length;
         $("#summary").textContent =
           `${visible}/${POOL_LIMIT} 项 · 总权重 ${total}`;
         document.querySelectorAll("#rows tr[data-id]").forEach((row) => {
@@ -1214,35 +1351,33 @@
         if (!rule) {
           icon.textContent = "?";
           $("#scopeName").textContent = "未选择规则集";
-          $("#scopeMeta").textContent = "在左侧“规则集”页面选择并启用";
+          $("#scopeMeta").textContent = "点击“选择规则集”启用或创建规则集";
           $("#fillDefault").disabled = true;
           $("#addIdentity").disabled = true;
-          $("#scopeSinner").classList.add("hidden");
+          $("#poolHint").textContent =
+            "未启用规则集。请先点击“选择规则集”启用或创建规则集。";
           return;
         }
         icon.innerHTML = rule.icon
           ? `<img src="api/portrait/${encodeURIComponent(rule.icon)}" alt="">`
           : "全";
         $("#scopeName").textContent = rule.name;
+        const locked = rule.kind === "global" && rule.locked;
         $("#scopeMeta").textContent =
           rule.kind === "global"
-            ? "全局规则集 · 当前编辑 " + who(rule.sinner)
+            ? locked
+              ? "纯随机默认池 · 不可编辑"
+              : "全局规则集 · 应用于全部友方角色"
             : rule.kind === "sinner"
               ? "罪人全部人格规则集"
               : "单人格规则集";
-        $("#fillDefault").disabled = false;
-        $("#addIdentity").disabled = false;
-        const select = $("#scopeSinner");
-        select.classList.toggle("hidden", rule.kind !== "global");
-        if (rule.kind === "global") {
-          select.innerHTML = names
-            .map(
-              (name, index) =>
-                `<option value="${101 + index}">${esc(name)}</option>`,
-            )
-            .join("");
-          select.value = String(rule.sinner || "101");
-        }
+        $("#fillDefault").disabled = locked;
+        $("#addIdentity").disabled = locked;
+        $("#poolHint").textContent = locked
+          ? "当前为纯随机默认池，不可编辑。右键任意人格可清空并恢复编辑。"
+          : rule.kind === "global"
+            ? "全局规则集内的外观会应用到全部友方角色，不受原所属角色限制。"
+            : "只显示当前规则集内容。右键人格可执行仅抽中、移出等操作；修改自动保存，每个池最多 256 项。";
       }
       function rulesetCard(item) {
         const orb = item.icon
@@ -1288,52 +1423,38 @@
           }
           await refresh();
           $("#rulePickerModal").classList.add("hidden");
-          status((only ? "已仅启用 " : item.active ? "已停用 " : "已启用 ") + item.name);
+          status(
+            (only ? "已仅启用 " : item.active ? "已停用 " : "已启用 ") +
+              item.name,
+          );
         } catch (error) {
           status(error.message);
         }
       }
 
-      function fillDefault() {
-        const sinner = currentSinner();
-        const pool = data.pools[sinner];
-        if (!pool) {
-          status("找不到该角色的默认池");
+      async function fillDefault() {
+        if (data.activeRule?.kind === "global" && data.activeRule.locked) {
+          status("当前为纯随机默认池，请先右键清空");
           return;
         }
-        const entries = (pool.entries || [])
-          .filter((entry) => {
-            const identity = String(entry.identity_id || "");
-            return (
-              identity.length === 5 &&
-              identity.startsWith(sinner) &&
-              !entry.story_metadata &&
-              entry.category !== "humanoid_boss" &&
-              Number(entry.weight ?? 1) > 0
-            );
-          })
-          .slice(0, POOL_LIMIT)
-          .map((entry) => ({
-            identity_id: String(entry.identity_id),
-            weight: Number(entry.weight ?? 1),
-          }));
-        selected = new Map(
-          entries.map((entry) => [entry.identity_id, entry.weight]),
-        );
-        render();
-        autoSave();
-        status("已填入本角色全部普通人格");
+        try {
+          await api("ruleset-fill", { rule: data.activeRule });
+          await refresh();
+          status("已填入默认随机池");
+        } catch (error) {
+          status(error.message);
+        }
       }
+
       function loadTarget() {
         currentIdentity = null;
         contextIdentity = null;
         activeTarget = currentSinner();
         selected = new Map(
-          (data.ruleEntries || [])
-            .map((entry) => [
-              String(entry.identity_id),
-              Number(entry.weight ?? 1),
-            ]),
+          (data.ruleEntries || []).map((entry) => [
+            String(entry.identity_id),
+            Number(entry.weight ?? 1),
+          ]),
         );
         dirty = false;
         setSaveState("");
@@ -1344,14 +1465,19 @@
       }
 
       function render() {
-        $("#poolTitle").textContent = `${who(activeTarget)} 的人格池`;
+        const rule = data.activeRule;
+        const locked = rule?.kind === "global" && rule.locked;
+        $("#poolTitle").textContent =
+          rule?.kind === "global"
+            ? "全局人格池"
+            : `${who(activeTarget)} 的人格池`;
         const rows = [...selected]
           .map(([id, weight]) => {
             const entry = data.catalog.find(
               (item) => String(item.identity_id) === id,
             );
             if (!entry) return "";
-            return `<tr data-id="${esc(id)}"><td>${entry.portrait_url ? `<img class="avatar" src="${esc(entry.portrait_url)}" alt="${esc(entry.name)}的战斗头像" loading="lazy" decoding="async" onerror="this.remove()">` : ""}</td><td><strong>${esc(entry.name || entry.appearance_name || id)}</strong>${entry.translation_status === "暂译" ? ' <small class="muted">暂译</small>' : ""} <small class="muted">${esc(id)}</small>${entry.category === "humanoid_boss" ? `<div class="muted">${esc(entry.chapter_label || "")}</div>` : ""}</td><td><input class="weight" type="number" min="0" max="1000000" step="0.1" value="${weight}"></td><td class="share"></td></tr>`;
+            return `<tr data-id="${esc(id)}"><td>${entry.portrait_url ? `<img class="avatar" src="${esc(entry.portrait_url)}" alt="${esc(entry.name)}的战斗头像" loading="lazy" decoding="async" onerror="this.remove()">` : ""}</td><td><strong>${esc(entry.name || entry.appearance_name || id)}</strong>${entry.translation_status === "暂译" ? ' <small class="muted">暂译</small>' : ""} <small class="muted">${esc(id)}</small>${entry.category === "humanoid_boss" ? `<div class="muted">${esc(entry.chapter_label || "")}</div>` : ""}</td><td><input class="weight" type="number" min="0" max="1000000" step="0.1" value="${weight}"${locked ? " disabled" : ""}></td><td class="share"></td></tr>`;
           })
           .join("");
         $("#rows").innerHTML =
@@ -1361,6 +1487,8 @@
       }
       let poolEditVersion = 0;
       function autoSave() {
+        if (data.activeRule?.kind === "global" && data.activeRule.locked)
+          return;
         poolEditVersion++;
         dirty = true;
         setSaveState("保存中…");
@@ -1374,6 +1502,10 @@
           setSaveState("未选择规则集", true);
           return;
         }
+        if (data.activeRule.kind === "global" && data.activeRule.locked) {
+          setSaveState("纯随机默认池不可编辑", true);
+          return;
+        }
         if (saving) {
           savePending = true;
           return;
@@ -1381,8 +1513,10 @@
         saving = true;
         const submittedVersion = poolEditVersion;
         try {
-          const entries = [...selected]
-            .map(([identity_id, weight]) => ({ identity_id, weight: Number(weight) }));
+          const entries = [...selected].map(([identity_id, weight]) => ({
+            identity_id,
+            weight: Number(weight),
+          }));
           const result = await api("ruleset-save", {
             rule: data.activeRule,
             entries,
@@ -1437,7 +1571,10 @@
         if (!event.target.classList.contains("weight")) return;
         const id = event.target.closest("tr")?.dataset.id;
         if (!id) return;
-        if (event.target.value === "") { render(); return; }
+        if (event.target.value === "") {
+          render();
+          return;
+        }
         const weight = Number(event.target.value);
         if (!Number.isFinite(weight) || weight < 0 || weight > 1000000) {
           status("权重必须在 0 到 1000000 之间");
@@ -1462,13 +1599,19 @@
       function openIdentityMenu(id, x, y) {
         contextIdentity = id;
         currentIdentity = id;
-        const entry = data.catalog.find(
-          (item) => String(item.identity_id) === id,
-        );
-        const index = [...selected.keys()].indexOf(id);
-        $("#identityMenu").innerHTML =
-          `<div class="context-title">${esc(entry?.name || entry?.appearance_name || id)}</div><button data-action="only">仅抽中此人格</button><button data-action="onlyRole">仅启用此角色</button><button data-action="equal">当前池恢复均等</button><div class="sep"></div><button data-action="up"${index <= 0 ? " disabled" : ""}>上移</button><button data-action="down"${index < 0 || index >= selected.size - 1 ? " disabled" : ""}>下移</button><div class="sep"></div><button data-action="upload">上传图片</button><button data-action="reset">恢复默认图片</button><div class="sep"></div><button data-action="remove" class="danger">移出池子</button><button data-action="clear" class="danger">清空当前池</button>`;
         const menu = $("#identityMenu");
+        const locked =
+          data.activeRule?.kind === "global" && data.activeRule.locked;
+        if (locked) {
+          menu.innerHTML =
+            '<div class="context-title">纯随机默认池 · 不可编辑</div><button data-action="clear" class="danger">清空当前池</button>';
+        } else {
+          const entry = data.catalog.find(
+            (item) => String(item.identity_id) === id,
+          );
+          const index = [...selected.keys()].indexOf(id);
+          menu.innerHTML = `<div class="context-title">${esc(entry?.name || entry?.appearance_name || id)}</div><button data-action="only">仅抽中此人格</button><button data-action="onlyRole">仅启用此角色</button><button data-action="equal">当前池恢复均等</button><div class="sep"></div><button data-action="up"${index <= 0 ? " disabled" : ""}>上移</button><button data-action="down"${index < 0 || index >= selected.size - 1 ? " disabled" : ""}>下移</button><div class="sep"></div><button data-action="upload">上传图片</button><button data-action="reset">恢复默认图片</button><div class="sep"></div><button data-action="remove" class="danger">移出池子</button><button data-action="clear" class="danger">清空当前池</button>`;
+        }
         menu.classList.remove("hidden");
         menu.style.left = "0px";
         menu.style.top = "0px";
@@ -1527,11 +1670,20 @@
           autoSave();
           status("已移出当前池");
         } else if (action === "clear") {
-          if (confirm("清空当前人格池？")) {
-            selected.clear();
-            render();
-            autoSave();
-            status("当前池已清空");
+          if (
+            confirm(
+              data.activeRule?.locked
+                ? "清空纯随机默认池并恢复编辑？"
+                : "清空当前人格池？",
+            )
+          ) {
+            try {
+              await api("ruleset-clear", { rule: data.activeRule });
+              await refresh();
+              status("当前池已清空");
+            } catch (error) {
+              status(error.message);
+            }
           }
         }
       }
@@ -1541,9 +1693,11 @@
           groups.set(entry.chapter, entry.chapter_label || entry.chapter);
         }
         for (const group of entry.chapter_memberships || []) {
-          if (group.chapter && group.chapter !== "unassigned") groups.set(group.chapter, group.label || group.chapter);
+          if (group.chapter && group.chapter !== "unassigned")
+            groups.set(group.chapter, group.label || group.chapter);
         }
-        if (!groups.size && !personalityRole(entry)) groups.set("unassigned", "待确认章节");
+        if (!groups.size && !personalityRole(entry))
+          groups.set("unassigned", "待确认章节");
         return groups;
       }
       function fillAddFilters() {
@@ -1565,7 +1719,10 @@
         }
         for (const [id, info] of Object.entries(data.chapterArt || {})) {
           if (!chapters.has(id)) {
-            const label = info.label || [info.chapter, info.title].filter(Boolean).join(" · ") || id;
+            const label =
+              info.label ||
+              [info.chapter, info.title].filter(Boolean).join(" · ") ||
+              id;
             chapters.set(id, label);
           }
         }
@@ -1582,27 +1739,51 @@
                 `<option value="${esc(id)}">${esc(label)}</option>`,
             )
             .join("");
-        renderChapterCards([...chapters].sort((a,b) => chapterRank(a[0])-chapterRank(b[0]) || a[1].localeCompare(b[1], "zh-CN")), counts);
+        renderChapterCards(
+          [...chapters].sort(
+            (a, b) =>
+              chapterRank(a[0]) - chapterRank(b[0]) ||
+              a[1].localeCompare(b[1], "zh-CN"),
+          ),
+          counts,
+        );
       }
       function renderChapterCards(chapters, counts) {
         const art = data.chapterArt || {};
-        const personalityCount = (data.catalog || []).filter(entry => personalityRole(entry)).length;
+        const personalityCount = (data.catalog || []).filter((entry) =>
+          personalityRole(entry),
+        ).length;
         const personalityArt = art.__personality__ || {};
-        const personalityImage = personalityArt.image_url ? `<img src="${esc(personalityArt.image_url)}" alt="" loading="lazy">` : "";
+        const personalityImage = personalityArt.image_url
+          ? `<img src="${esc(personalityArt.image_url)}" alt="" loading="lazy">`
+          : "";
         const personalityCard = `<button type="button" class="chapter-card" data-chapter="__personality__" title="全部人物的人格外观">${personalityImage}<span class="chapter-tag">人格</span><span class="chapter-name">人格外观 <small>· ${personalityCount}项</small></span></button>`;
         const allCard = `<button type="button" class="chapter-card" data-chapter=""><span class="chapter-name">全部外观 <small>· ${data.catalog.length}项</small></span></button>`;
-        $("#chapterCards").innerHTML = allCard + personalityCard + chapters.map(([id, label]) => {
-          const item = art[id] || {};
-          const fallback = art[id.replace(/_part_\d+$/, "")] || {};
-          const count = counts.get(id) || 0;
-          const imageUrl = item.image_url || fallback.image_url;
-          const img = imageUrl ? `<img src="${esc(imageUrl)}" alt="" loading="lazy">` : "";
-          const tag = item.chapter ? `<span class="chapter-tag">${esc(item.chapter)}</span>` : "";
-          const timeline = item.timeline ? `<span class="chapter-time">${esc(item.timeline)}</span>` : "";
-          const note = String(item.art_note || '');
-          const badge = note.includes('共用') ? '<span class="chapter-art-note">共用图</span>' : '';
-          return `<button type="button" class="chapter-card" data-chapter="${esc(id)}" title="${esc(note ? label + ' · ' + note : label)}">${img}${tag}${timeline}${badge}<span class="chapter-name">${esc(item.title || label)} <small>· ${count}项</small></span></button>`;
-        }).join("") || '<span class="muted">暂无章节分类</span>';
+        $("#chapterCards").innerHTML =
+          allCard +
+            personalityCard +
+            chapters
+              .map(([id, label]) => {
+                const item = art[id] || {};
+                const fallback = art[id.replace(/_part_\d+$/, "")] || {};
+                const count = counts.get(id) || 0;
+                const imageUrl = item.image_url || fallback.image_url;
+                const img = imageUrl
+                  ? `<img src="${esc(imageUrl)}" alt="" loading="lazy">`
+                  : "";
+                const tag = item.chapter
+                  ? `<span class="chapter-tag">${esc(item.chapter)}</span>`
+                  : "";
+                const timeline = item.timeline
+                  ? `<span class="chapter-time">${esc(item.timeline)}</span>`
+                  : "";
+                const note = String(item.art_note || "");
+                const badge = note.includes("共用")
+                  ? '<span class="chapter-art-note">共用图</span>'
+                  : "";
+                return `<button type="button" class="chapter-card" data-chapter="${esc(id)}" title="${esc(note ? label + " · " + note : label)}">${img}${tag}${timeline}${badge}<span class="chapter-name">${esc(item.title || label)} <small>· ${count}项</small></span></button>`;
+              })
+              .join("") || '<span class="muted">暂无章节分类</span>';
       }
       function selectChapterCard(id) {
         if (id === "__personality__") {
@@ -1622,10 +1803,17 @@
         renderAddList();
       }
       function personalityRole(entry) {
-        const name = String(entry.appearance_name || entry.identity_id || '').replace(/^story_/, '').replace(/^Fools_/, '');
-        if (/^(?:30501_Meursault_KimSatGatAwaken|40501_Meursault_KimSatGatBefore)Appearance$/i.test(name)) return '105';
+        const name = String(entry.appearance_name || entry.identity_id || "")
+          .replace(/^story_/, "")
+          .replace(/^Fools_/, "");
+        if (
+          /^(?:30501_Meursault_KimSatGatAwaken|40501_Meursault_KimSatGatBefore)Appearance$/i.test(
+            name,
+          )
+        )
+          return "105";
         const match = name.match(/^(10[1-9]|11[0-2])\d{2}(?:_|$)/i);
-        return match ? match[1] : '';
+        return match ? match[1] : "";
       }
       function addCandidates() {
         const query = $("#addSearch").value.toLowerCase();
@@ -1633,16 +1821,36 @@
         const role = $("#addRole").value;
         const chapter = $("#addChapter").value;
         return data.catalog.filter((entry) => {
-          if (!$("#addStory").checked && entry.story_metadata && !["no_attack", "personality", "paired"].includes(source)) return false;
-          if (source === "paired" && !entry.paired_identities?.includes(String(data.activeRule?.identity))) return false;
+          if (
+            !$("#addStory").checked &&
+            entry.story_metadata &&
+            !["no_attack", "personality", "paired"].includes(source)
+          )
+            return false;
+          if (
+            source === "paired" &&
+            !entry.paired_identities?.includes(
+              String(data.activeRule?.identity),
+            )
+          )
+            return false;
           if (source === "no_attack" && !entry.no_attack) return false;
           if (source === "personality" && !personalityRole(entry)) return false;
-          if (source === "enemy" && !entry.asset_key?.startsWith("SD_Enemy/")) return false;
-          if (source === "abnormality" && !entry.asset_key?.startsWith("SD_Abnormality/")) return false;
-          if ((source === "boss" || source === "other") &&
-            (source === "boss") !== (entry.category === "humanoid_boss"))
+          if (source === "enemy" && !entry.asset_key?.startsWith("SD_Enemy/"))
             return false;
-          const owner = personalityRole(entry) || (entry.category !== "humanoid_boss" ? String(entry.source) : "");
+          if (
+            source === "abnormality" &&
+            !entry.asset_key?.startsWith("SD_Abnormality/")
+          )
+            return false;
+          if (
+            (source === "boss" || source === "other") &&
+            (source === "boss") !== (entry.category === "humanoid_boss")
+          )
+            return false;
+          const owner =
+            personalityRole(entry) ||
+            (entry.category !== "humanoid_boss" ? String(entry.source) : "");
           if (role && owner !== role) return false;
           if (chapter && !catalogChapters(entry).has(chapter)) return false;
           return `${entry.name} ${entry.identity_id} ${entry.appearance_name || ""} ${who(entry.source)} ${entry.chapter_label || ""} ${entry.no_attack ? "无攻击外观" : ""}`
@@ -1661,9 +1869,12 @@
               const added = selected.has(id);
               const owner = personalityRole(entry);
               const type = entry.asset_key?.split("/")[0];
-              const sourceLabel = owner ? who(owner) + " · 人格外观" : ({SD_Abnormality:"异想体", SD_Enemy:"敌方单位"}[type] || "剧情外观");
+              const sourceLabel = owner
+                ? who(owner) + " · 人格外观"
+                : { SD_Abnormality: "异想体", SD_Enemy: "敌方单位" }[type] ||
+                  "剧情外观";
               const chapterLabel = [...catalogChapters(entry).values()][0];
-              return `<tr><td>${entry.portrait_url ? `<img class="avatar" src="${esc(entry.portrait_url)}" alt="${esc(entry.name)}的战斗头像" loading="lazy" decoding="async" onerror="this.remove()">` : ""}</td><td><strong>${esc(entry.name || entry.appearance_name || id)}</strong>${entry.translation_status === "暂译" ? ' <small class="muted">暂译</small>' : ""} <small class="muted">${esc(id)}</small>${entry.no_attack ? '<div class="muted">缺少专属攻击动画</div>' : ''}</td><td class="muted">${esc([sourceLabel, chapterLabel].filter(Boolean).join(" · "))}</td><td><button class="identity-add${added ? "" : " primary"}" data-id="${esc(id)}"${added ? " disabled" : ""}>${added ? "已在池中" : "添加"}</button></td></tr>`;
+              return `<tr><td>${entry.portrait_url ? `<img class="avatar" src="${esc(entry.portrait_url)}" alt="${esc(entry.name)}的战斗头像" loading="lazy" decoding="async" onerror="this.remove()">` : ""}</td><td><strong>${esc(entry.name || entry.appearance_name || id)}</strong>${entry.translation_status === "暂译" ? ' <small class="muted">暂译</small>' : ""} <small class="muted">${esc(id)}</small>${entry.no_attack ? '<div class="muted">缺少专属攻击动画</div>' : ""}</td><td class="muted">${esc([sourceLabel, chapterLabel].filter(Boolean).join(" · "))}</td><td><button class="identity-add${added ? "" : " primary"}" data-id="${esc(id)}"${added ? " disabled" : ""}>${added ? "已在池中" : "添加"}</button></td></tr>`;
             })
             .join("") ||
           '<tr><td colspan="4" class="empty-row">没有符合条件的人格</td></tr>';
@@ -1679,11 +1890,15 @@
         } catch (error) {
           status("更新外观列表失败：" + error.message);
         }
-        $("#identityTargetName").textContent = who(activeTarget);
+        $("#identityTargetName").textContent =
+          data.activeRule?.kind === "global" ? "所有角色" : who(activeTarget);
         fillAddFilters();
         const identity = String(data.activeRule?.identity);
-        const hasPairs = data.activeRule?.kind === "identity" &&
-          data.catalog.some(entry => entry.paired_identities?.includes(identity));
+        const hasPairs =
+          data.activeRule?.kind === "identity" &&
+          data.catalog.some((entry) =>
+            entry.paired_identities?.includes(identity),
+          );
         $("#pairedSource").hidden = !hasPairs;
         $("#pairedSource").disabled = !hasPairs;
         $("#addRole").value = "";
@@ -1700,6 +1915,10 @@
         $("#identityModal").classList.add("hidden");
       }
       function addIdentity(id) {
+        if (data.activeRule?.kind === "global" && data.activeRule.locked) {
+          status("纯随机默认池不可编辑，请右键清空");
+          return;
+        }
         if (selected.has(id)) return;
         if (selected.size >= POOL_LIMIT) {
           status(`每个池最多 ${POOL_LIMIT} 项，请先移出部分人格`);
@@ -1731,17 +1950,6 @@
         openNewRule();
       };
       $("#fillDefault").onclick = () => fillDefault();
-      $("#scopeSinner").onchange = async () => {
-        if (!data.activeRule || data.activeRule.kind !== "global") return;
-        try {
-          await api("ruleset-activate", {
-            rule: { ...data.activeRule, sinner: $("#scopeSinner").value },
-          });
-          await refresh();
-        } catch (error) {
-          status(error.message);
-        }
-      };
       function openNewRule() {
         $("#newRuleSinner").innerHTML = names
           .map(
@@ -1806,7 +2014,11 @@
       };
       $("#addSource").onchange = () => {
         const source = $("#addSource").value;
-        if (["boss", "enemy", "abnormality", "no_attack", "paired"].includes(source)) {
+        if (
+          ["boss", "enemy", "abnormality", "no_attack", "paired"].includes(
+            source,
+          )
+        ) {
           $("#addRole").value = "";
           $("#addStory").checked = true;
         }
@@ -2013,15 +2225,6 @@
           }
         } catch (e) {}
       }
-      $("#downloadPortraits").onclick = () => portraitShow();
-      $("#deleteImages").onclick = async () => {
-        if (!confirm('将删除工作台的人格头像、外观图片、章节图片和自定义头像，并暂停自动生成图片。自定义头像删除后需重新上传。确定删除吗？')) return;
-        try {
-          let result = await api('images-delete', {});
-          await refresh();
-          alert(`已删除 ${result.count} 张图片，图片自动生成已暂停。需要恢复时请点击“下载资源”。`);
-        } catch (e) { alert('删除图片失败：' + e.message); }
-      };
       $("#portraitClose").onclick = () => portraitDismiss();
       $("#portraitHide").onclick = () => portraitHide();
       $("#portraitRetry").onclick = () => portraitBegin();
@@ -2109,15 +2312,14 @@
           )
           .join("");
       }
-      $("#refreshEvents").onclick = async () => {
+      async function loadEvents() {
         try {
           events = await api("events");
           renderEvents();
-          status(`已读取 ${events.length} 条演出记录`);
         } catch (e) {
           status(e.message);
         }
-      };
+      }
       $("#eventSearch").oninput = renderEvents;
       $("#eventRows").onclick = (e) => {
         let row = e.target.closest("tr");
@@ -2146,23 +2348,65 @@
           events,
         });
       function renderPrepare(value) {
-        const p = value.preparation || {}, runtime = value.runtime || {};
-        const active = !!p.connected, ready = active && !!p.ready;
-        const message = !active ? '等待游戏启动' : p.evidence_missing ? '正在确认连接状态' : ready ? '已连接，等待或正在进行战斗' : '正在准备，尚未确认就绪';
-        const friendly = text => String(text || '等待读取').replace('核心已读取成员与权重','已生效').replace('核心已读取','已生效').replace('已发布，等待核心读取','已保存，等待生效').replace('已保存，等待核心读取确认','已保存，等待生效').replace('已保存，等待核心读取','已保存，等待生效').replace('等待运行中的插件读取','等待游戏连接');
-        const statusRow = (title, text, ok) => `<div class="prep-status"><span>${esc(title)}</span><strong class="${ok ? 'prep-ok' : 'prep-wait'}">${esc(text)}</strong></div>`;
-        const section = (title, items, empty) => `<div class="prep-list"><h3>${esc(title)} <small>${items.length} 个</small></h3>${items.length ? `<ul>${items.map(x=>`<li>${esc(x.name)}</li>`).join('')}</ul>` : `<p class="muted">${esc(empty)}</p>`}</div>`;
-        const loaded = p.loaded || [], shown = p.shown || [];
-        $('#prepareData').innerHTML = `<div class="prep-grid">${statusRow('游戏与插件',message,ready)}${statusRow('人格池',active ? friendly(runtime.pool) : '等待游戏启动',active && (runtime.pool || '').includes('核心已读取'))}${statusRow('抽取编排',active ? friendly(runtime.draw) : '等待游戏启动',active && (runtime.draw || '').includes('核心已读取'))}${statusRow('形态设置',active ? friendly(runtime.forms) : '等待游戏启动',active && (runtime.forms || '').includes('核心已读取'))}</div><p class="muted">列表根据本次游戏的运行记录更新。已准备表示外观资源已加载；已显示表示战斗中实际出现过。</p>${section('已准备的外观',loaded,active ? '尚无已准备的外观记录。' : '启动游戏并进入战斗后显示。')}${section('本次游戏已显示的外观',shown,active ? '尚无已显示的外观记录。' : '启动游戏并进入战斗后显示。')}`;
+        const p = value.preparation || {},
+          runtime = value.runtime || {};
+        const active = !!p.connected,
+          ready = active && !!p.ready;
+        const message = !active
+          ? "等待游戏启动"
+          : p.evidence_missing
+            ? "正在确认连接状态"
+            : ready
+              ? "已连接，等待或正在进行战斗"
+              : "正在准备，尚未确认就绪";
+        const friendly = (text) =>
+          String(text || "等待读取")
+            .replace("核心已读取成员与权重", "已生效")
+            .replace("核心已读取", "已生效")
+            .replace("已发布，等待核心读取", "已保存，等待生效")
+            .replace("已保存，等待核心读取确认", "已保存，等待生效")
+            .replace("已保存，等待核心读取", "已保存，等待生效")
+            .replace("等待运行中的插件读取", "等待游戏连接");
+        const statusRow = (title, text, ok) =>
+          `<div class="prep-status"><span>${esc(title)}</span><strong class="${ok ? "prep-ok" : "prep-wait"}">${esc(text)}</strong></div>`;
+        const section = (title, items, empty) =>
+          `<div class="prep-list"><h3>${esc(title)} <small>${items.length} 个</small></h3>${items.length ? `<ul>${items.map((x) => `<li>${esc(x.name)}</li>`).join("")}</ul>` : `<p class="muted">${esc(empty)}</p>`}</div>`;
+        const loaded = p.loaded || [],
+          shown = p.shown || [];
+        $("#prepareData").innerHTML =
+          `<div class="prep-grid">${statusRow("游戏与插件", message, ready)}${statusRow("人格池", active ? friendly(runtime.pool) : "等待游戏启动", active && (runtime.pool || "").includes("核心已读取"))}${statusRow("抽取编排", active ? friendly(runtime.draw) : "等待游戏启动", active && (runtime.draw || "").includes("核心已读取"))}${statusRow("形态设置", active ? friendly(runtime.forms) : "等待游戏启动", active && (runtime.forms || "").includes("核心已读取"))}</div><p class="muted">列表根据本次游戏的运行记录更新。已准备表示外观资源已加载；已显示表示战斗中实际出现过。</p>${section("已准备的外观", loaded, active ? "尚无已准备的外观记录。" : "启动游戏并进入战斗后显示。")}${section("本次游戏已显示的外观", shown, active ? "尚无已显示的外观记录。" : "启动游戏并进入战斗后显示。")}`;
       }
-      $("#refreshPrepare").onclick = async () => {
+      async function loadPrepare() {
         try {
           let r = await api("data");
           renderPrepare(r);
         } catch (e) {
           status(e.message);
         }
-      };
+      }
+      let pollBusy = false;
+      function activePage() {
+        const section = [...document.querySelectorAll("article section")].find(
+          (item) => !item.classList.contains("hidden"),
+        );
+        return section ? section.id : "";
+      }
+      async function pollActive() {
+        if (pollBusy) return;
+        pollBusy = true;
+        try {
+          const page = activePage();
+          if (page === "events") await loadEvents();
+          else if (page === "prepare") await loadPrepare();
+          else if (page === "discovered") await loadDiscovered();
+          else if (page === "schemes") await loadSchemes();
+          if (page !== "discovered" && watchingCatalog())
+            await loadDiscovered();
+        } catch (e) {
+        } finally {
+          pollBusy = false;
+        }
+      }
       document.querySelectorAll("nav button").forEach(
         (b) =>
           (b.onclick = () => {
@@ -2171,6 +2415,7 @@
               .forEach((s) =>
                 s.classList.toggle("hidden", s.id !== b.dataset.page),
               );
+            pollActive();
           }),
       );
       window.onbeforeunload = (e) => {
@@ -2179,52 +2424,192 @@
           e.returnValue = "";
         }
       };
-      const confLabel={catalog:'catalog 已确认',combo:'已确认',family:'按编号族',guess:'推测（catalog 里查不到，需实测）',unknown:'未知'};let scanTimer,scanRequest=0;
-      let lastCatalogScan;
+      const confLabel = {
+        catalog: "catalog 已确认",
+        combo: "已确认",
+        family: "按编号族",
+        guess: "推测（catalog 里查不到，需实测）",
+        unknown: "未知",
+      };
+      let lastCatalogScan,
+        scanRequest = 0;
       function watchingCatalog() {
         return !$("#identityModal").classList.contains("hidden");
       }
       async function refreshCatalogAfterScan(report, request) {
-        const stamp = report.available ? report.generated + "/" + report.pool_entries : "";
-        if (stamp && stamp !== lastCatalogScan && watchingCatalog() && !report.scan?.running) {
+        const stamp = report.available
+          ? report.generated + "/" + report.pool_entries
+          : "";
+        if (
+          stamp &&
+          stamp !== lastCatalogScan &&
+          watchingCatalog() &&
+          !report.scan?.running
+        ) {
           const latest = await api("data");
           if (request !== scanRequest || !watchingCatalog()) return;
-          const role = $("#addRole").value, chapter = $("#addChapter").value;
+          const role = $("#addRole").value,
+            chapter = $("#addChapter").value;
           data.catalog = latest.catalog;
           data.chapterArt = latest.chapterArt || {};
           fillAddFilters();
           $("#addRole").value = role;
           $("#addChapter").value = chapter;
-          const hasPairs = data.activeRule?.kind === "identity" && data.catalog.some(
-            entry => entry.paired_identities?.includes(String(data.activeRule.identity)));
+          const hasPairs =
+            data.activeRule?.kind === "identity" &&
+            data.catalog.some((entry) =>
+              entry.paired_identities?.includes(
+                String(data.activeRule.identity),
+              ),
+            );
           $("#pairedSource").hidden = $("#pairedSource").disabled = !hasPairs;
           renderAddList();
         }
         if (!report.scan?.running) lastCatalogScan = stamp;
       }
-      function showScan(sc){
-        const progress=sc.progress||{}, bar=$('#scanBar'), label=$('#scanLabel');
-        $('#startScan').disabled=!!sc.running;
-        $('#scanProgress').hidden=!sc.running;
-        $('#scanError').textContent=sc.error||'';
-        if(!sc.running)return;
-        const stages={prepare:'准备扫描',bundles:'检查资源包',units:'整理单位和动作',chapters:'读取章节资料',images:'处理章节图片',portraits:'检查单位图片',finish:'保存扫描结果'};
-        let description=stages[progress.phase]||stages.prepare;
-        if(progress.total>0){
-          bar.max=progress.total;bar.value=progress.done;
-          description+='　'+progress.done+' / '+progress.total+'（'+Math.floor(100*bar.value/bar.max)+'%）';
-        }else{bar.removeAttribute('value')}
-        label.textContent=description;
+      function showScan(sc) {
+        const progress = sc.progress || {},
+          bar = $("#scanBar"),
+          label = $("#scanLabel");
+        $("#scanProgress").hidden = !sc.running;
+        $("#scanError").textContent = sc.error || "";
+        if (!sc.running) return;
+        const stages = {
+          prepare: "准备扫描",
+          bundles: "检查资源包",
+          units: "整理单位和动作",
+          chapters: "读取章节资料",
+          images: "处理章节图片",
+          portraits: "检查单位图片",
+          finish: "保存扫描结果",
+        };
+        let description = stages[progress.phase] || stages.prepare;
+        if (progress.total > 0) {
+          bar.max = progress.total;
+          bar.value = progress.done;
+          description +=
+            "　" +
+            progress.done +
+            " / " +
+            progress.total +
+            "（" +
+            Math.floor((100 * bar.value) / bar.max) +
+            "%）";
+        } else {
+          bar.removeAttribute("value");
+        }
+        label.textContent = description;
       }
-      async function loadDiscovered(){
-        const seq=++scanRequest,box=$('#discoveredList'),meta=$('#discoveredMeta');
-        clearTimeout(scanTimer);
-        try{const d=await api('discovered');if(seq!==scanRequest)return;
-        const sc=d.scan||{};showScan(sc);
-        await refreshCatalogAfterScan(d,seq);
-        if(seq!==scanRequest)return;
-        if(sc.running||watchingCatalog()||!$('#discovered').classList.contains('hidden'))scanTimer=setTimeout(loadDiscovered,sc.running?850:5000);
-        if(!d.available){box.innerHTML='<p class="muted">'+esc(d.reason||'暂无扫描结果')+'</p>';if(!sc.running)meta.textContent='';return}const groups={};for(const u of d.units){(groups[u.group_confidence||'unknown']=groups[u.group_confidence||'unknown']||[]).push(u)}meta.textContent='扫描于 '+d.generated+'　缓存包 '+d.bundles_total+' 个（重扫 '+(d.bundles_rescanned||0)+'）　人格池 '+d.pool_entries+' 条　待处理 '+d.new_prefabs+' 个　新增无攻击外观 '+(d.auto_added_no_attack||0)+' 个　新增攻击外观 '+(d.auto_added_attack||0)+' 个'+(d.catalog_hash?'　catalog '+String(d.catalog_hash).slice(0,8):'')+(d.catalog_changed?'（本期已更新）':'');if(d.artwork){const a=d.artwork;if(a.chapters_detected!=null)meta.textContent+='　检测到 '+a.chapters_detected+' 个章节（新增 '+(a.new_chapters||[]).length+' 个）　'+(a.disabled?'图片抓取已关闭':'本次抓取章节图 '+(a.chapter_extracted||[]).length+' 张');if(a.error||(a.errors||[]).length)meta.textContent+='　部分资源读取失败';meta.textContent+='　新增小人 '+(a.added||[]).length+' 张　待处理图片 '+(a.unresolved||[]).length+' 项　待处理章节图 '+(a.chapter_unresolved||[]).length+' 项';}if(d.translation)meta.textContent+='　自动暂译 '+(d.translation.translated||0)+' 项';let html='';for(const k of ['catalog','combo','family','guess','unknown']){const list=groups[k];if(!list||!list.length)continue;html+='<h3>'+esc(confLabel[k]||k)+'（'+list.length+'）</h3><table><thead><tr><th>外观</th><th>分组</th><th>依据</th><th>动作数</th></tr></thead><tbody>';for(const u of list){html+='<tr><td>'+esc(u.appearance_name)+'</td><td><code>'+esc(u.asset_key||'—')+'</code></td><td>'+esc(String(u.group_evidence??''))+'</td><td>'+((u.motions||[]).length||'—')+'</td></tr>'}html+='</tbody></table>'}box.innerHTML=html||'<p class="muted">没有新增外观，人格池已是最新。</p>'}catch(e){if(seq!==scanRequest)return;showScan({error:e.message});if(!$('#discovered').classList.contains('hidden'))scanTimer=setTimeout(loadDiscovered,3000)}}document.querySelector('button[data-page="discovered"]').addEventListener('click',loadDiscovered);$('#refreshDiscovered').onclick=loadDiscovered;$('#startScan').onclick=async()=>{try{const r=await api('scan',{});status(r&&r.already?'已有扫描在进行':'已开始扫描');loadDiscovered()}catch(e){status(e.message)}};
+      async function loadDiscovered() {
+        const seq = ++scanRequest,
+          box = $("#discoveredList"),
+          meta = $("#discoveredMeta");
+        try {
+          const d = await api("discovered");
+          if (seq !== scanRequest) return;
+          const sc = d.scan || {};
+          showScan(sc);
+          await refreshCatalogAfterScan(d, seq);
+          if (seq !== scanRequest) return;
+          if (!d.available) {
+            box.innerHTML =
+              '<p class="muted">' + esc(d.reason || "尚未扫描") + "</p>";
+            if (!sc.running) meta.textContent = "";
+            return;
+          }
+          const groups = {};
+          for (const u of d.units) {
+            (groups[u.group_confidence || "unknown"] =
+              groups[u.group_confidence || "unknown"] || []).push(u);
+          }
+          meta.textContent =
+            "扫描于 " +
+            d.generated +
+            "　缓存包 " +
+            d.bundles_total +
+            " 个（重扫 " +
+            (d.bundles_rescanned || 0) +
+            "）　人格池 " +
+            d.pool_entries +
+            " 条　待处理 " +
+            d.new_prefabs +
+            " 个　新增无攻击外观 " +
+            (d.auto_added_no_attack || 0) +
+            " 个　新增攻击外观 " +
+            (d.auto_added_attack || 0) +
+            " 个" +
+            (d.catalog_hash
+              ? "　catalog " + String(d.catalog_hash).slice(0, 8)
+              : "") +
+            (d.catalog_changed ? "（本期已更新）" : "");
+          if (d.artwork) {
+            const a = d.artwork;
+            if (a.chapters_detected != null)
+              meta.textContent +=
+                "　检测到 " +
+                a.chapters_detected +
+                " 个章节（新增 " +
+                (a.new_chapters || []).length +
+                " 个）　" +
+                (a.disabled
+                  ? "图片抓取已关闭"
+                  : "本次抓取章节图 " +
+                    (a.chapter_extracted || []).length +
+                    " 张");
+            if (a.error || (a.errors || []).length)
+              meta.textContent += "　部分资源读取失败";
+            meta.textContent +=
+              "　新增小人 " +
+              (a.added || []).length +
+              " 张　待处理图片 " +
+              (a.unresolved || []).length +
+              " 项　待处理章节图 " +
+              (a.chapter_unresolved || []).length +
+              " 张";
+          }
+          if (d.translation)
+            meta.textContent +=
+              "　自动暂译 " + (d.translation.translated || 0) + " 条";
+          let html = "";
+          for (const k of ["catalog", "combo", "family", "guess", "unknown"]) {
+            const list = groups[k];
+            if (!list || !list.length) continue;
+            html +=
+              "<h3>" +
+              esc(confLabel[k] || k) +
+              "（" +
+              list.length +
+              "）</h3><table><thead><tr><th>外观</th><th>分组</th><th>依据</th><th>动作数</th></tr></thead><tbody>";
+            for (const u of list) {
+              html +=
+                "<tr><td>" +
+                esc(u.appearance_name) +
+                "</td><td><code>" +
+                esc(u.asset_key || "—") +
+                "</code></td><td>" +
+                esc(String(u.group_evidence ?? "")) +
+                "</td><td>" +
+                ((u.motions || []).length || "—") +
+                "</td></tr>";
+            }
+            html += "</tbody></table>";
+          }
+          box.innerHTML =
+            html || '<p class="muted">没有新增外观，人格池已是最新。</p>';
+        } catch (e) {
+          if (seq !== scanRequest) return;
+          showScan({ error: e.message });
+        }
+      }
+      async function ensureInitialScan() {
+        try {
+          const d = await api("discovered");
+          const sc = d.scan || {};
+          if (!d.available && !sc.running) await api("scan", {});
+          await loadDiscovered();
+        } catch (e) {}
+      }
+
       let schemes = [];
       async function loadSchemes() {
         try {
@@ -2244,16 +2629,30 @@
         box.innerHTML = schemes
           .map(
             (s, i) =>
-              '<div class="scheme-card" data-i="' + i + '"><div><strong>' + esc(s.name) + '</strong><span class="muted">' + esc(s.saved_at || "") + " · " + s.count + ' 个外观</span></div><div class="scheme-actions"><button data-act="load" class="primary">读取</button><button data-act="export">导出</button><button data-act="delete">删除</button></div></div>',
+              '<div class="scheme-card" data-i="' +
+              i +
+              '"><div><strong>' +
+              esc(s.name) +
+              '</strong><span class="muted">' +
+              esc(s.saved_at || "") +
+              " · " +
+              s.count +
+              ' 个外观</span></div><div class="scheme-actions"><button data-act="load" class="primary">读取</button><button data-act="export">导出</button><button data-act="delete">删除</button></div></div>',
           )
           .join("");
       }
       function schemeTip(s) {
-        if (!s.groups.length) return '<p class="muted">该方案没有启用任何外观</p>';
+        if (!s.groups.length)
+          return '<p class="muted">该方案没有启用任何外观</p>';
         return s.groups
           .map(
             (g) =>
-              "<h4>" + esc(g.label) + (g.active ? "（启用）" : "") + "</h4><p>" + g.items.map(esc).join("、") + "</p>",
+              "<h4>" +
+              esc(g.label) +
+              (g.active ? "（启用）" : "") +
+              "</h4><p>" +
+              g.items.map(esc).join("、") +
+              "</p>",
           )
           .join("");
       }
@@ -2277,11 +2676,14 @@
       });
       $("#schemeList").addEventListener("mouseout", (e) => {
         const card = e.target.closest(".scheme-card");
-        if (card && !card.contains(e.relatedTarget)) $("#schemeTip").classList.add("hidden");
+        if (card && !card.contains(e.relatedTarget))
+          $("#schemeTip").classList.add("hidden");
       });
       async function applyScheme(request, label) {
-        if (saveTimer || saving) return status("请等待当前修改自动保存完成后再读取");
-        const tip = "读取方案“" + label + "”？当前配置会先备份为“读取前自动备份”。";
+        if (saveTimer || saving)
+          return status("请等待当前修改自动保存完成后再读取");
+        const tip =
+          "读取方案“" + label + "”？当前配置会先备份为“读取前自动备份”。";
         if (!confirm(tip)) return;
         const loaded = await api("scheme-load", request);
         schemes = loaded.schemes;
@@ -2296,9 +2698,12 @@
         const s = schemes[button.closest(".scheme-card").dataset.i];
         try {
           if (button.dataset.act === "load") {
-            await applyScheme({name:s.name}, s.name);
+            await applyScheme({ name: s.name }, s.name);
           } else if (button.dataset.act === "export") {
-            download(s.name + ".json", await api("scheme-get", { name: s.name }));
+            download(
+              s.name + ".json",
+              await api("scheme-get", { name: s.name }),
+            );
           } else if (confirm("删除方案“" + s.name + "”？")) {
             schemes = (await api("scheme-delete", { name: s.name })).schemes;
             renderSchemes();
@@ -2330,10 +2735,14 @@
         if (!file) return;
         try {
           const scheme = JSON.parse(await file.text());
-          const name = String(scheme.name || file.name.replace(/\.json$/i, "")).slice(0, 40);
+          const name = String(
+            scheme.name || file.name.replace(/\.json$/i, ""),
+          ).slice(0, 40);
           const overwrite = schemes.some((s) => s.name === name);
-          if (overwrite && !confirm("已存在方案“" + name + "”，覆盖它？")) return;
-          schemes = (await api("scheme-import", { name, overwrite, scheme })).schemes;
+          if (overwrite && !confirm("已存在方案“" + name + "”，覆盖它？"))
+            return;
+          schemes = (await api("scheme-import", { name, overwrite, scheme }))
+            .schemes;
           renderSchemes();
           status("已导入方案“" + name + "”，点“读取”即可应用");
         } catch (err) {
@@ -2343,9 +2752,9 @@
       document
         .querySelector('nav button[data-page="schemes"]')
         .addEventListener("click", loadSchemes);
-      refresh().then(initPortraitState);
+      refresh().then(ensureInitialScan);
       loadSchemes();
-      loadDiscovered();
+      setInterval(pollActive, 500);
 
       function renderDirector() {
         $("#rulesTarget").textContent = who(activeTarget);
@@ -2357,7 +2766,8 @@
               `<label>${["攻击", "拼点", "守备"][i]} <select data-action="${a}"><option value="independent">独立加权随机</option><option value="round">加权轮抽不重复</option><option value="sequence">按当前池顺序</option></select></label>`,
           )
           .join(" ");
-        $("#ruleControls").querySelectorAll("select[data-action]")
+        $("#ruleControls")
+          .querySelectorAll("select[data-action]")
           .forEach(
             (x) => (x.value = r[x.dataset.action]?.mode || "independent"),
           );
@@ -2390,19 +2800,21 @@
           revision: data.director.revision,
         });
         data.director = r;
-        status("演出编排已保存，等待原生核心读取；可在准备状态页刷新确认。");
+        status("演出编排已保存，等待原生核心读取；准备状态页会自动刷新确认。");
         renderDirector();
       }
       $("#saveRules").onclick = async () => {
         try {
           let c = structuredClone(data.director.config);
           c.characters[activeTarget] = {};
-          $("#ruleControls").querySelectorAll("select[data-action]").forEach(
-            (x) =>
-              (c.characters[activeTarget][x.dataset.action] = {
-                mode: x.value,
-              }),
-          );
+          $("#ruleControls")
+            .querySelectorAll("select[data-action]")
+            .forEach(
+              (x) =>
+                (c.characters[activeTarget][x.dataset.action] = {
+                  mode: x.value,
+                }),
+            );
           await saveDirector(c);
         } catch (e) {
           status(e.message);
