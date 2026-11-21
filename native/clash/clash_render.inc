@@ -45,6 +45,15 @@ static int clash_indexed_slot(Skin *skin,int detail,int role,int *index){
  if(slot>=0&&skin->clashCount[slot]>0&&*index>=skin->clashCount[slot])*index=skin->clashCount[slot]-1;
  return slot;
 }
+static int clash_indexed_slot_exact(Skin *skin,int detail,int role,int *index){
+ int slot=sr_clash_slot_exact(skin->look,skin->chapterRole,detail,role);
+ if(slot<0)return -1;
+ if(*index>=0&&detail>=0&&detail<SR_MOTION_CACHE&&skin->clashSparse[detail]&&
+    ((*index<skin->clashCount[detail])&&list_item(skin->clashSparse[detail],*index))&&
+    sr_clash_role(skin->look,detail)==role)return detail;
+ if(slot>=0&&skin->clashCount[slot]>0&&*index>=skin->clashCount[slot])*index=skin->clashCount[slot]-1;
+ return slot;
+}
 static const char *chapter_source(Unit *u,const SrChapterActor *actor);
 static int clash_native_response(int detail){
  return detail==4||(detail>=0&&detail<128&&defenseMotions[detail]);

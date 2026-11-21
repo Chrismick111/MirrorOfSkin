@@ -19,6 +19,7 @@ typedef struct {
  unsigned char seen[SR_VARIETY_COINS],groups[SR_VARIETY_COINS],indices[SR_VARIETY_COINS];
  unsigned playedBody[SR_VARIETY_COINS];
  unsigned char uses[128],nextClip[128];
+ uint32_t usedClips[128];
 } SrSegmentLatch;
 static void sr_segment_clear(SrSegmentLatch *s){memset(s,0,sizeof(*s));}
 static int sr_segment_scope(SrSegmentLatch *s,void *action,void *viewer,void *app,int stage){
@@ -57,13 +58,14 @@ static int sr_segment_pick(SrSegmentLatch *s,int coin,unsigned ordinal,double so
   if(targetValid&&!overflow){
    s->groups[coin]=(unsigned char)requested;s->indices[coin]=(unsigned char)requestedIndex;
    s->uses[requested]++;s->nextClip[requested]=(unsigned char)((requestedIndex+1)%counts[requested]);
+   s->usedClips[requested]|=UINT32_C(1)<<requestedIndex;
    *detail=requested;*index=requestedIndex;return 1;
   }
   if(!counts||!ordinary)return targetValid;
   int winner=-1,clip=-1;
   int timed=source>0&&donor;
   if(timed){
-   int least=256,bestChanges=-1,bestDistance=INT_MAX;
+   int least=256,bestChanges=-1,bestDistance=INT_MAX,bestReused=-1;
    double best=1e30;
    /* Visit only attack details. Rotate the starting group across uses of a skill. */
    for(unsigned i=0;i<21;i++){
@@ -80,13 +82,15 @@ static int sr_segment_pick(SrSegmentLatch *s,int coin,unsigned ordinal,double so
      unsigned body=sr_cached_body(bodies,d,k);
      int changes=previous&&body&&body!=previous;
      int distance=d>requested?d-requested:requested-d;
+     int reused=(s->usedClips[d]&(UINT32_C(1)<<k))!=0;
      int better=0;
      if(winner<0)better=1;
+     else if(reused!=bestReused)better=reused<bestReused;
      else if(error+1e-9<best)better=1;
      else if(error<=best+1e-9&&changes!=bestChanges)better=changes>bestChanges;
      else if(error<=best+1e-9&&changes==bestChanges&&s->uses[d]!=least)better=s->uses[d]<least;
      else if(error<=best+1e-9&&changes==bestChanges&&s->uses[d]==least&&distance!=bestDistance)better=distance<bestDistance;
-     if(better){bestChanges=changes;best=error;least=s->uses[d];bestDistance=distance;winner=d;clip=k;}
+     if(better){bestChanges=changes;best=error;least=s->uses[d];bestDistance=distance;bestReused=reused;winner=d;clip=k;}
     }
    }
   }
@@ -94,7 +98,7 @@ static int sr_segment_pick(SrSegmentLatch *s,int coin,unsigned ordinal,double so
      rejected, continue with another ordinary attack group anyway. Repeating
      the short target group is worse than a safe, sequential donor clip. */
   if(winner<0&&(overflow||!targetValid)){
-   int least=256,bestChanges=-1,bestDistance=INT_MAX;
+   int least=256,bestChanges=-1,bestDistance=INT_MAX,bestReused=-1;
    for(unsigned i=0;i<21;i++){
     unsigned offset=(i+ordinal)%21;
     int d=offset<10?7+(int)offset:14+(int)offset;
@@ -106,12 +110,14 @@ static int sr_segment_pick(SrSegmentLatch *s,int coin,unsigned ordinal,double so
      unsigned body=sr_cached_body(bodies,d,k);
      int changes=previous&&body&&body!=previous;
      int distance=d>requested?d-requested:requested-d;
+     int reused=(s->usedClips[d]&(UINT32_C(1)<<k))!=0;
      int better=0;
      if(winner<0)better=1;
+     else if(reused!=bestReused)better=reused<bestReused;
      else if(changes!=bestChanges)better=changes>bestChanges;
      else if(s->uses[d]!=least)better=s->uses[d]<least;
      else if(distance!=bestDistance)better=distance<bestDistance;
-     if(better){bestChanges=changes;least=s->uses[d];bestDistance=distance;winner=d;clip=k;}
+     if(better){bestChanges=changes;least=s->uses[d];bestDistance=distance;bestReused=reused;winner=d;clip=k;}
     }
    }
   }
@@ -119,6 +125,7 @@ static int sr_segment_pick(SrSegmentLatch *s,int coin,unsigned ordinal,double so
    s->groups[coin]=(unsigned char)winner;s->indices[coin]=(unsigned char)clip;
    s->playedBody[coin]=sr_cached_body(bodies,winner,clip);
    s->uses[winner]++;s->nextClip[winner]=(unsigned char)((clip+1)%counts[winner]);
+   s->usedClips[winner]|=UINT32_C(1)<<clip;
   }
  }
  if(!s->groups[coin])return 0;

@@ -62,6 +62,15 @@ int main(void){
  assert(sr_segment_pick(&latch,2,0,1,donor,counts,ordinary,&bodies,0,&detail,&index));
  assert(detail==8&&index==0);
 
+ /* Single-clip fallback groups must be consumed before any clip repeats. */
+ setup(counts,ordinary,donor);sr_segment_clear(&latch);
+ counts[7]=1;ordinary[7]=0x1;counts[8]=1;ordinary[8]=0x1;counts[9]=1;ordinary[9]=0x1;
+ detail=7;index=0;
+ assert(sr_segment_pick(&latch,1,0,0,NULL,counts,ordinary,&bodies,0,&detail,&index));
+ int first=detail;
+ detail=7;index=0;
+ assert(sr_segment_pick(&latch,2,1,0,NULL,counts,ordinary,&bodies,0,&detail,&index));
+ assert(detail!=7&&detail!=first);
  /* Missing timing data must not turn a coin overflow back into a repeat. */
  setup(counts,ordinary,donor);sr_segment_clear(&latch);
  counts[7]=2;ordinary[7]=0x3;counts[8]=3;ordinary[8]=0x7;

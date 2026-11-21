@@ -2051,23 +2051,25 @@ static void change_motion_hook(void *self,int detail,uint8_t a1,int index,uint8_
       (clash_raw(self,detail)||role)){
     void *app=clash_visible(u,self);Skin *skin=skin_for_app(u,app);
     if((clash_raw(self,detail)||skin)&&special_clash_available(skin,"change_motion")){
-     int mapped=detail,sourceIndex=index;
+     int mapped=detail,sourceIndex=index,valid=clash_raw(self,detail)||!skin;
      if(!clash_raw(self,detail)&&skin){
       if(is_parry_detail(detail)&&!g_visualEventDepth&&!g_clashBoundary&&!g_clashOwner&&!InterlockedCompareExchange(&g_busy,1,0)){
        int requested=detail,part=index;void *receiver=app;
        decide_and_apply(&receiver,&requested,&part);InterlockedExchange(&g_busy,0);
       }
-      mapped=clash_indexed_slot(skin,detail,role,&index);
-      if(mapped<0)mapped=clash_fallback(u,skin,&app,detail,role);
+      mapped=clash_indexed_slot_exact(skin,detail,role,&index);
+      valid=mapped>=0;
      }
-     if(skin&&mapped!=detail){char line[180];snprintf(line,sizeof(line),"clash pose look=%.63s requested=%d played=%d part=%d role=%d",skin->look,detail,mapped,index,role);bootlog(line);}
-     if(role==7)observe_defense(u,detail);
-     ClashPlayback saved=g_clashPlayback;
-     if(!clash_raw(app,mapped))g_clashPlayback=(ClashPlayback){app,mapped,detail,sourceIndex,skin&&skin->app==app&&skin->chapterActor};
-     else if(saved.index<0)g_clashPlayback.index=sourceIndex;
-     playback_begin(app);
-     ((void (*)(void *,int,uint8_t,int,uint8_t,void *,uint8_t,void *))orig_changeMotion)(app,mapped,a1,index,a3,callback,a5,mi);
-     g_clashPlayback=saved;return;
+     if(valid){
+      if(skin&&mapped!=detail){char line[180];snprintf(line,sizeof(line),"clash pose look=%.63s requested=%d played=%d part=%d role=%d",skin->look,detail,mapped,index,role);bootlog(line);}
+      if(role==7)observe_defense(u,detail);
+      ClashPlayback saved=g_clashPlayback;
+      if(!clash_raw(app,mapped))g_clashPlayback=(ClashPlayback){app,mapped,detail,sourceIndex,skin&&skin->app==app&&skin->chapterActor};
+      else if(saved.index<0)g_clashPlayback.index=sourceIndex;
+      playback_begin(app);
+      ((void (*)(void *,int,uint8_t,int,uint8_t,void *,uint8_t,void *))orig_changeMotion)(app,mapped,a1,index,a3,callback,a5,mi);
+      g_clashPlayback=saved;return;
+     }
     }
    }
   }
@@ -2300,8 +2302,11 @@ static void parry_playback_hook(void *self,int detail,void *mi){
  int role=skin&&enabled_now()?clash_request(u,detail):0,mapped=detail;
  if(skin&&enabled_now()&&!role&&clash_native_response(detail))role=7;
  if(role&&!u->switching&&!u->dead&&!u->preserveSpecial&&!cleanup_pending&&introUnit!=u){
-  mapped=sr_clash_slot(skin->look,skin->chapterRole,detail,role);
-  if(mapped<0)mapped=clash_fallback(u,skin,&app,detail,role);
+  mapped=sr_clash_slot_exact(skin->look,skin->chapterRole,detail,role);
+  if(mapped<0){
+   ((void (*)(void *,int,void *))orig_parryPlayback)(self,detail,mi);
+   return;
+  }
  }
  ClashPlayback saved=g_clashPlayback;
  if(role)g_clashPlayback=(ClashPlayback){app,mapped,detail,-1,skin&&skin->app==app&&skin->chapterActor};
@@ -2393,7 +2398,7 @@ static void *get_motion_hook(void *self,int detail,uint8_t flag,void *mi){
    Unit *u=unit_for_app(self);Skin *skin=u?skin_for_app(u,self):NULL;
    int role=skin?clash_request(u,detail):0;
    if(role&&special_clash_available(skin,"get_motion")){
-    int mapped=sr_clash_slot(skin->look,skin->chapterRole,detail,role);
+    int mapped=sr_clash_slot_exact(skin->look,skin->chapterRole,detail,role);
     return ((void *(*)(void *,int,uint8_t,void *))orig_getMotion)(self,mapped>=0?mapped:detail,flag,mi);
    }
   }

@@ -3,9 +3,9 @@
 适用于 [FaustLauncher](https://github.com/f0lkskill/FaustLauncher) 的《边狱巴士》(Limbus Company) 人格外观随机插件。
 通过 WarpHook 注入原生 DLL，在战斗中替换罪人外观、随机切换人格，并按原生触发条件播放 Boss 语音与气泡。
 
-当前源码版本 **1.2.5** · 协议 75 · 原生模块 `SinnersNative-v64.dll` · 适用启动器 `0.8.9-release.fix.4`
+当前源码版本 **1.2.6** · 协议 75 · 原生模块 `SinnersNative-v64.dll` · 适用启动器 `0.8.9-release.fix.4`
 
-1.2.5 新增首次使用教程、自动打开调整面板开关，并把规则集、方案、头像和游戏提取缓存迁移到启动器数据目录，插件更新不会覆盖。教程使用聚焦框和逐项悬浮提示讲解每个面板与图标按钮；“是否展示教程”完成一次后关闭，也可从右上角问号重新打开。没有特殊拼点动画素材的外观会保留游戏原生拼点，不再尝试特殊拼点姿态。工作台缺失静态时间线会恢复，卸载时会关闭工作台/扫描子进程，且不会再遍历 MOS_data 的用户数据。套皮技能动画不足时会继续从其他普通攻击组补全，不再在目标组内复读；缺少时间缓存时也会使用安全的顺序补全。
+1.2.6 新增首次使用教程、自动打开调整面板开关，并把规则集、方案、头像和游戏提取缓存迁移到启动器数据目录，插件更新不会覆盖。教程使用聚焦框和逐项悬浮提示讲解每个面板与图标按钮；“是否展示教程”完成一次后关闭，也可从右上角问号重新打开。没有特殊拼点动画素材的外观会保留游戏原生拼点，不再尝试特殊拼点姿态。工作台缺失静态时间线会恢复，卸载时会关闭工作台/扫描子进程，且不会再遍历 MOS_data 的用户数据。套皮技能动画不足时会继续从其他普通攻击组补全，不再在目标组内复读；缺少时间缓存时也会使用安全的顺序补全；补全时会优先消耗尚未使用的动画片段，避免单币动画组反复播放。特殊拼点缺少精确姿态时保留游戏原生动作，并用精确定位槽修复闪避/反击错位。
 
 ---
 
@@ -15,9 +15,9 @@
 
 | 文件 | 说明 |
 | --- | --- |
-| [启动器完整安装包（通用 ZIP）](https://github.com/Chrismick111/faust-random-identity/releases/download/v1.2.5/FaustRandomIdentity-Launcher-Deflate.zip) | 推荐全新安装，内含启动器识别用的中文插件目录 |
-| [启动器完整安装包（小体积）](https://github.com/Chrismick111/faust-random-identity/releases/download/v1.2.5/FaustRandomIdentity-Launcher.zip) | 相同内容，使用 LZMA 压缩 |
-| [工作台更新包](https://github.com/Chrismick111/faust-random-identity/releases/download/v1.2.5/FaustRandomIdentity-WarpHook.zip) | 工作台自动下载使用，文件位于压缩包根目录 |
+| [启动器完整安装包（通用 ZIP）](https://github.com/Chrismick111/faust-random-identity/releases/download/v1.2.6/FaustRandomIdentity-Launcher-Deflate.zip) | 推荐全新安装，内含启动器识别用的中文插件目录 |
+| [启动器完整安装包（小体积）](https://github.com/Chrismick111/faust-random-identity/releases/download/v1.2.6/FaustRandomIdentity-Launcher.zip) | 相同内容，使用 LZMA 压缩 |
+| [工作台更新包](https://github.com/Chrismick111/faust-random-identity/releases/download/v1.2.6/FaustRandomIdentity-WarpHook.zip) | 工作台自动下载使用，文件位于压缩包根目录 |
 | [默认图像包](https://github.com/Chrismick111/faust-random-identity/releases/download/v0.79.1/FaustRandomIdentity-Portraits.zip) | 可选，623 张图片，覆盖 693 个外观条目，工作台也可单独下载 |
 
 手动安装时，把启动器完整安装包解压到 `FaustLauncher/addons/`。确认目录结构如下。可选图像包解压到 `MirrorOfSkin/` 内。
@@ -32,7 +32,7 @@ FaustLauncher/addons/MirrorOfSkin/
     portraits/          <- 来自立绘包
 ```
 
-也可以只装核心包，之后在插件里点「下载默认头像」自动补齐。1.2.5 只通过 WarpHook 加载原生模块。若 WarpHook 返回错误 87，插件会在日志中保留原因并停止本次游戏的加载。
+也可以只装核心包，之后在插件里点「下载默认头像」自动补齐。1.2.6 只通过 WarpHook 加载原生模块。若 WarpHook 返回错误 87，插件会在日志中保留原因并停止本次游戏的加载。
 
 Workbench 的 Python 代码按功能拆分：
 

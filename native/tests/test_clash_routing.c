@@ -57,6 +57,10 @@ int main(void){
  busy=0;assert(clash_fallback(&u,&skin,&receiver,32,2)==0&&receiver==visible&&visible==&donor&&switches==0);
  SrChapterActor actor={"10115_YiSang_Index_FatherAppearance"};visible=&donor;skin.chapterActor=&actor;
  assert(clash_request(&u,32)==2&&clash_request(&u,33)==2);
+ skin.chapterRole[17]=1;skin.clashCount[17]=1;
+ assert(sr_clash_slot_exact(skin.look,skin.chapterRole,17,4)==17);
+ skin.chapterRole[37]=-1;assert(sr_clash_slot_exact(skin.look,skin.chapterRole,37,2)<0);
+ skin.chapterRole[19]=-1;assert(sr_clash_slot_exact(skin.look,skin.chapterRole,19,5)<0);
  skin.look="10110_Yisang_DeadButterflyAppearance";skin.clashCount[37]=1;
  assert(skin_has_special_clash(&skin));
  skin.look="Unknown_NoClashAppearance";skin.chapterActor=NULL;assert(!skin_has_special_clash(&skin));
