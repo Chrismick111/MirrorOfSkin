@@ -54,6 +54,16 @@ int main(void){
  assert(sr_segment_pick(&latch,1,1,1,donor,counts,ordinary,&bodies,3,&detail,&index));
  assert(detail==8&&index==1);
 
+ /* A repeated native index must advance inside the same target skill group
+    before borrowing other groups. */
+ setup(counts,ordinary,donor);sr_segment_clear(&latch);
+ counts[8]=3;ordinary[8]=0x7;
+ detail=8;index=0;
+ assert(sr_segment_pick(&latch,0,0,0,NULL,counts,ordinary,&bodies,0,&detail,&index));
+ assert(detail==8&&index==0);
+ detail=8;index=0;
+ assert(sr_segment_pick(&latch,1,1,0,NULL,counts,ordinary,&bodies,0,&detail,&index));
+ assert(detail==8&&index==1);
  /* A coin overflow must also continue when the game's clip index is still in range. */
  setup(counts,ordinary,donor);sr_segment_clear(&latch);
  counts[7]=2;ordinary[7]=0x3;counts[8]=3;ordinary[8]=0x7;

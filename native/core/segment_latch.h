@@ -79,10 +79,22 @@ static int sr_segment_pick(SrSegmentLatch *s,int coin,unsigned ordinal,double so
   s->playedBody[coin]=sr_cached_body(bodies,requested,requestedIndex);
   unsigned previous=coin?s->playedBody[coin-1]:0;
   if(targetValid&&!overflow){
-   s->groups[coin]=(unsigned char)requested;s->indices[coin]=(unsigned char)requestedIndex;
-   s->uses[requested]++;s->nextClip[requested]=(unsigned char)((requestedIndex+1)%counts[requested]);
-   s->usedClips[requested]|=UINT32_C(1)<<requestedIndex;
-   *detail=requested;*index=requestedIndex;return 1;
+   int chosenIndex=requestedIndex;
+   if(s->usedClips[requested]&(UINT32_C(1)<<chosenIndex)){
+    int n=counts[requested],found=-1;
+    for(int j=0;j<n;j++){
+     int k=(s->nextClip[requested]+j)%n;
+     if((ordinary[requested]&(UINT32_C(1)<<k))&&!(s->usedClips[requested]&(UINT32_C(1)<<k))){found=k;break;}
+    }
+    if(found>=0)chosenIndex=found;
+    else {targetValid=0;overflow=1;}
+   }
+   if(targetValid){
+    s->groups[coin]=(unsigned char)requested;s->indices[coin]=(unsigned char)chosenIndex;
+    s->uses[requested]++;s->nextClip[requested]=(unsigned char)((chosenIndex+1)%counts[requested]);
+    s->usedClips[requested]|=UINT32_C(1)<<chosenIndex;
+    *detail=requested;*index=chosenIndex;return 1;
+   }
   }
   if(!counts||!ordinary)return targetValid;
   if(overflow&&(s->poolCount==0||s->poolRequested!=requested))sr_segment_build_pool(s,requested,counts,ordinary);
