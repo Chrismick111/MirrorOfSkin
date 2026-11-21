@@ -1,0 +1,74 @@
+[
+ {
+  "filename": "archspec-0.2.6-py3-none-any.whl",
+  "url": "https://files.pythonhosted.org/packages/15/12/7f9edf5a5a547ce0421e8f120c157b3602eabb12147ffea95eefbd55a94e/archspec-0.2.6-py3-none-any.whl",
+  "sha256": "22463371fe8e9fa92fa144bf320cb445373a99f2ca6a5914c890e0c0b7816f8f",
+  "size": 81818
+ },
+ {
+  "filename": "astc_encoder_py-0.1.12-cp37-abi3-win_amd64.whl",
+  "url": "https://files.pythonhosted.org/packages/81/36/9c36fdcedc314f514298f602661518a1525bcb37d81c1197fc290bce8484/astc_encoder_py-0.1.12-cp37-abi3-win_amd64.whl",
+  "sha256": "a45d375fc6b0ff2cd3d772aab3eef19a6b7f3e067306e11fab37820ea9576121",
+  "size": 2533265
+ },
+ {
+  "filename": "attrs-26.1.0-py3-none-any.whl",
+  "url": "https://files.pythonhosted.org/packages/64/b4/17d4b0b2a2dc85a6df63d1157e028ed19f90d4cd97c36717afef2bc2f395/attrs-26.1.0-py3-none-any.whl",
+  "sha256": "c647aa4a12dfbad9333ca4e71fe62ddc36f4e63b2d260a37a8b83d2f043ac309",
+  "size": 67548
+ },
+ {
+  "filename": "Brotli-1.1.0-cp39-cp39-win_amd64.whl",
+  "url": "https://files.pythonhosted.org/packages/99/b3/f7b3af539f74b82e1c64d28685a5200c631cc14ae751d37d6ed819655627/Brotli-1.1.0-cp39-cp39-win_amd64.whl",
+  "sha256": "cdad5b9014d83ca68c25d2e9444e28e967ef16e80f6b436918c700c117a85467",
+  "size": 357258
+ },
+ {
+  "filename": "etcpak-0.9.8-cp39-cp39-win_amd64.whl",
+  "url": "https://files.pythonhosted.org/packages/52/1a/b308030fabeca91be9b7b413abb490c097ac05364fd84fa9e1d6a228a049/etcpak-0.9.8-cp39-cp39-win_amd64.whl",
+  "sha256": "93826e49f3edc9eb833f7097adde364252ea07c1fa634dc8c50faf54ce13e258",
+  "size": 35250
+ },
+ {
+  "filename": "fmod_toolkit-0.1.3-cp38-abi3-win_amd64.whl",
+  "url": "https://files.pythonhosted.org/packages/4e/6b/608e1f9467fa54e370b9643d25d9be21e10cc1370cd4261f828a2c5e932a/fmod_toolkit-0.1.3-cp38-abi3-win_amd64.whl",
+  "sha256": "33256c13ab84deadc443c6fd428938827469b0df964261c314863b430239dee2",
+  "size": 795705
+ },
+ {
+  "filename": "fsspec-2024.9.0-py3-none-any.whl",
+  "url": "https://files.pythonhosted.org/packages/1d/a0/6aaea0c2fbea2f89bfd5db25fb1e3481896a423002ebe4e55288907a97a3/fsspec-2024.9.0-py3-none-any.whl",
+  "sha256": "a0947d552d8a6efa72cc2c730b12c41d043509156966cca4fb157b0f2a0c574b",
+  "size": 179253
+ },
+ {
+  "filename": "lz4-4.3.3-cp39-cp39-win_amd64.whl",
+  "url": "https://files.pythonhosted.org/packages/46/e0/d1260caaea03089ac9bbf4cce3e1afc8affbeb9719aeb4f0e2430b15329a/lz4-4.3.3-cp39-cp39-win_amd64.whl",
+  "sha256": "eac9af361e0d98335a02ff12fb56caeb7ea1196cf1a49dbf6f17828a131da807",
+  "size": 99784
+ },
+ {
+  "filename": "pillow-10.4.0-cp39-cp39-win_amd64.whl",
+  "url": "https://files.pythonhosted.org/packages/37/f8/bef952bdb32aa53741f58bf21798642209e994edc3f6598f337f23d5400a/pillow-10.4.0-cp39-cp39-win_amd64.whl",
+  "sha256": "961a7293b2457b405967af9c77dcaa43cc1a8cd50d23c532e62d48ab6cdd56f5",
+  "size": 2554479
+ },
+ {
+  "filename": "pyfmodex-0.7.2-py3-none-any.whl",
+  "url": "https://files.pythonhosted.org/packages/2c/7b/f7fdcdf6a6e8fd951c41e91baae8c1cecfffc2ed3199157afd6ab5728716/pyfmodex-0.7.2-py3-none-any.whl",
+  "sha256": "1c42112b788e80ee7b4b57ae25bbbc0a98eb1e32a8e7c9e1246698cdf72efa9d",
+  "size": 126703
+ },
+ {
+  "filename": "texture2ddecoder-1.0.6-cp39-cp39-win_amd64.whl",
+  "url": "https://files.pythonhosted.org/packages/8a/35/58d430e6fff3918d0ac7bdb5d0676bdddf57c2d15f23082c064bf9ca32cd/texture2ddecoder-1.0.6-cp39-cp39-win_amd64.whl",
+  "sha256": "3c81a8e39ca40ee6caf3dc65368ea8ebe7432420bdc749263cc07c2c86917e75",
+  "size": 64548
+ },
+ {
+  "filename": "unitypy-1.25.0-cp39-cp39-win_amd64.whl",
+  "url": "https://files.pythonhosted.org/packages/1c/00/22193c3dcff62e30f5abc5e6770814875f28f4452be66eae6d549c9bdd4c/unitypy-1.25.0-cp39-cp39-win_amd64.whl",
+  "sha256": "6b0e942a13810090547a7a08fa180baf68ab8551ed6f94fd966c7cfd72707676",
+  "size": 412359
+ }
+]

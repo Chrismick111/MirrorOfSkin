@@ -1,0 +1,6833 @@
+{
+  "10101": {
+    "file": "222548c44b06cb5607a9ceca.png",
+    "source": "Assets/Sprites/SkinPreview/SkinPreview-Archived/01/10101.png",
+    "portrait_id": "10101",
+    "size": [
+      279,
+      551
+    ],
+    "kind": "battle_skin_preview"
+  },
+  "10102": {
+    "file": "d6a4602f14376ff287f4db67.png",
+    "source": "Assets/Sprites/SkinPreview/SkinPreview-Archived/01/10102.png",
+    "portrait_id": "10102",
+    "size": [
+      458,
+      547
+    ],
+    "kind": "battle_skin_preview"
+  },
+  "10103": {
+    "file": "f0d70c29c4a11de4a86a7a59.png",
+    "source": "Assets/Sprites/SkinPreview/SkinPreview-Archived/01/10103.png",
+    "portrait_id": "10103",
+    "size": [
+      506,
+      554
+    ],
+    "kind": "battle_skin_preview"
+  },
+  "10104": {
+    "file": "f059bff3b376133f94b080c8.png",
+    "source": "Assets/Sprites/SkinPreview/SkinPreview-Archived/01/10104_YiSang_SpicebushFlower_0_idle.png",
+    "portrait_id": "10104",
+    "size": [
+      649,
+      661
+    ],
+    "kind": "battle_skin_preview"
+  },
+  "10105": {
+    "file": "d98d37bd4e5a389f5d09d464.png",
+    "source": "Assets/Sprites/SkinPreview/SkinPreview-Archived/01/10105_Yisang_Rain_1_idle.png",
+    "portrait_id": "10105",
+    "size": [
+      650,
+      443
+    ],
+    "kind": "battle_skin_preview"
+  },
+  "10106": {
+    "file": "ec30b9e645134ff17af393a6.png",
+    "source": "Assets/Sprites/SkinPreview/SkinPreview-Archived/01/10106_Yisang_WCorp_2_idle.png",
+    "portrait_id": "10106",
+    "size": [
+      434,
+      542
+    ],
+    "kind": "battle_skin_preview"
+  },
+  "10107": {
+    "file": "68c1f8b18c5f167722cf2305.png",
+    "source": "Assets/Sprites/SkinPreview/SkinPreview-Archived/01/10107_Yisang_Starbuck_3_idle.png",
+    "portrait_id": "10107",
+    "size": [
+      286,
+      847
+    ],
+    "kind": "battle_skin_preview"
+  },
+  "10108": {
+    "file": "060664040921e16ebf119665.png",
+    "source": "Assets/Sprites/SkinPreview/SkinPreview-Archived/01/10108_YiSang_Dieci_4_idle.png",
+    "portrait_id": "10108",
+    "size": [
+      173,
+      435
+    ],
+    "kind": "battle_skin_preview"
+  },
+  "10109": {
+    "file": "88838a575b886687cdad4acb.png",
+    "source": "Assets/Sprites/SkinPreview/SkinPreview-Archived/01/10109_Yisang_RingFinger_5_idle.png",
+    "portrait_id": "10109",
+    "size": [
+      392,
+      544
+    ],
+    "kind": "battle_skin_preview"
+  },
+  "10110": {
+    "file": "00568a94e386dd117ddc60ad.png",
+    "source": "Assets/Sprites/SkinPreview/SkinPreview-Archived/01/10110_Yisang_DeadButterfly_6_idle.png",
+    "portrait_id": "10110",
+    "size": [
+      270,
+      444
+    ],
+    "kind": "battle_skin_preview"
+  },
+  "10111": {
+    "file": "25f8cfbe8f08159fb6f12f84.png",
+    "source": "Assets/Sprites/SkinPreview/SkinPreview-Archived/01/10111_Yisang_FairyLantern_7_idle.png",
+    "portrait_id": "10111",
+    "size": [
+      384,
+      505
+    ],
+    "kind": "battle_skin_preview"
+  },
+  "10112": {
+    "file": "c6632dab02521157664026a0.png",
+    "source": "Assets/Sprites/SkinPreview/SkinPreview-Archived/01/10112_Yisang_Liu_8_idle.png",
+    "portrait_id": "10112",
+    "size": [
+      681,
+      547
+    ],
+    "kind": "battle_skin_preview"
+  },
+  "10113": {
+    "file": "b66214950bbd150a9b5aa6cb.png",
+    "source": "Assets/Sprites/SkinPreview/SkinPreview-Archived/01/10113_YiSang_DerSchutze_9_idle.png",
+    "portrait_id": "10113",
+    "size": [
+      278,
+      623
+    ],
+    "kind": "battle_skin_preview"
+  },
+  "10114": {
+    "file": "52e5921430e28c4b683f1947.png",
+    "source": "Assets/Sprites/SkinPreview/SkinPreview-Archived/01/10114_Yisang_Heishou_Wu_10_idle.png",
+    "portrait_id": "10114",
+    "size": [
+      1070,
+      500
+    ],
+    "kind": "battle_skin_preview"
+  },
+  "10115": {
+    "file": "e94bf4b6834c97853092f94b.png",
+    "source": "Assets/Sprites/SkinPreview/SkinPreview01/10115.png",
+    "portrait_id": "10115",
+    "size": [
+      255,
+      551
+    ],
+    "kind": "battle_skin_preview"
+  },
+  "10201": {
+    "file": "0dc31cb23a799a30e83cb237.png",
+    "source": "Assets/Sprites/SkinPreview/SkinPreview-Archived/02/10201.png",
+    "portrait_id": "10201",
+    "size": [
+      565,
+      545
+    ],
+    "kind": "battle_skin_preview"
+  },
+  "10202": {
+    "file": "feb2090ed0b2949547ae42d0.png",
+    "source": "Assets/Sprites/SkinPreview/SkinPreview-Archived/02/10202.png",
+    "portrait_id": "10202",
+    "size": [
+      319,
+      544
+    ],
+    "kind": "battle_skin_preview"
+  },
+  "10203": {
+    "file": "ed88caad6dca4f6c751332a0.png",
+    "source": "Assets/Sprites/SkinPreview/SkinPreview-Archived/02/10203.png",
+    "portrait_id": "10203",
+    "size": [
+      446,
+      556
+    ],
+    "kind": "battle_skin_preview"
+  },
+  "10204": {
+    "file": "54c11e1e05c86bd549bf3110.png",
+    "source": "Assets/Sprites/SkinPreview/SkinPreview-Archived/02/10204.png",
+    "portrait_id": "10204",
+    "size": [
+      439,
+      540
+    ],
+    "kind": "battle_skin_preview"
+  },
+  "10205": {
+    "file": "a117572ba29db18e8094e7df.png",
+    "source": "Assets/Sprites/SkinPreview/SkinPreview-Archived/02/10205_Faust_Zwei_11_idle.png",
+    "portrait_id": "10205",
+    "size": [
+      406,
+      551
+    ],
+    "kind": "battle_skin_preview"
+  },
+  "10206": {
+    "file": "0f2714e1e9e4f4140c18148a.png",
+    "source": "Assets/Sprites/SkinPreview/SkinPreview-Archived/02/10206_Faust_Seven_12_idle.png",
+    "portrait_id": "10206",
+    "size": [
+      309,
+      438
+    ],
+    "kind": "battle_skin_preview"
+  },
+  "10207": {
+    "file": "a903cb7acf5cbd2a4ea772f1.png",
+    "source": "Assets/Sprites/SkinPreview/SkinPreview-Archived/02/10207_Faust_ForsakenMurderer_LOB_13_idle.png",
+    "portrait_id": "10207",
+    "size": [
+      567,
+      421
+    ],
+    "kind": "battle_skin_preview"
+  },
+  "10208": {
+    "file": "8302f7d64e6f3a15080cfe66.png",
+    "source": "Assets/Sprites/SkinPreview/SkinPreview-Archived/02/10208_Faust_SwordGroup_14_idle.png",
+    "portrait_id": "10208",
+    "size": [
+      458,
+      530
+    ],
+    "kind": "battle_skin_preview"
+  },
+  "10209": {
+    "file": "593cc16b33ddd59f5063cb25.png",
+    "source": "Assets/Sprites/SkinPreview/SkinPreview-Archived/02/10209_Faust_Butler_15_idle.png",
+    "portrait_id": "10209",
+    "size": [
+      128,
+      436
+    ],
+    "kind": "battle_skin_preview"
+  },
+  "10210": {
+    "file": "9296fe2d5fe600ca0d146ca7.png",
+    "source": "Assets/Sprites/SkinPreview/SkinPreview-Archived/02/10210_Faust_CyborgFixer_16_idle.png",
+    "portrait_id": "10210",
+    "size": [
+      346,
+      494
+    ],
+    "kind": "battle_skin_preview"
+  },
+  "10211": {
+    "file": "b2bfe3074d7b06ed46f33250.png",
+    "source": "Assets/Sprites/SkinPreview/SkinPreview-Archived/02/10211_Faust_FireMoth_17_idle.png",
+    "portrait_id": "10211",
+    "size": [
+      172,
+      447
+    ],
+    "kind": "battle_skin_preview"
+  },
+  "10212": {
+    "file": "e90dbb313dace4c1f9e3e0b1.png",
+    "source": "Assets/Sprites/SkinPreview/SkinPreview-Archived/02/10212_Faust_Heishou_Jaro_18_idle.png",
+    "portrait_id": "10212",
+    "size": [
+      657,
+      530
+    ],
+    "kind": "battle_skin_preview"
+  },
+  "10213": {
+    "file": "0c498a09863233157ac3c8bc.png",
+    "source": "Assets/Sprites/SkinPreview/SkinPreview-Archived/02/10213.png",
+    "portrait_id": "10213",
+    "size": [
+      533,
+      475
+    ],
+    "kind": "battle_skin_preview"
+  },
+  "10214": {
+    "file": "8f6657edb73f32bd42cedef7.png",
+    "source": "Assets/Sprites/SkinPreview/SkinPreview-Archived/02/10214_Faust_IndexFinger_Proselyte_173_idle.png",
+    "portrait_id": "10214",
+    "size": [
+      403,
+      428
+    ],
+    "kind": "battle_skin_preview"
+  },
+  "10301": {
+    "file": "0b163dc64454036da4ac45ff.png",
+    "source": "Assets/Sprites/SkinPreview/SkinPreview-Archived/03/10301.png",
+    "portrait_id": "10301",
+    "size": [
+      206,
+      630
+    ],
+    "kind": "battle_skin_preview"
+  },
+  "10304": {
+    "file": "628fbb770173026a380ccc9a.png",
+    "source": "Assets/Sprites/SkinPreview/SkinPreview-Archived/03/10304_Donquixote_NCorp_19_idle.png",
+    "portrait_id": "10304",
+    "size": [
+      707,
+      672
+    ],
+    "kind": "battle_skin_preview"
+  },
+  "10305": {
+    "file": "823c16c27f1de9394fd263a1.png",
+    "source": "Assets/Sprites/SkinPreview/SkinPreview-Archived/03/10305_Donquixote_Cinq_20_idle.png",
+    "portrait_id": "10305",
+    "size": [
+      233,
+      533
+    ],
+    "kind": "battle_skin_preview"
+  },
+  "10306": {
+    "file": "ed0d92ae9abb7be438079bc8.png",
+    "source": "Assets/Sprites/SkinPreview/SkinPreview-Archived/03/10306_Donquixote_MiddleFinger_21_idle.png",
+    "portrait_id": "10306",
+    "size": [
+      311,
+      526
+    ],
+    "kind": "battle_skin_preview"
+  },
+  "10307": {
+    "file": "97cc3f79c31a48b3d44edaf3.png",
+    "source": "Assets/Sprites/SkinPreview/SkinPreview-Archived/03/10307_Donquixote_MeatLantern_22_idle.png",
+    "portrait_id": "10307",
+    "size": [
+      481,
+      509
+    ],
+    "kind": "battle_skin_preview"
+  },
+  "10308": {
+    "file": "c2a8ffcaaba665795e6a7ab5.png",
+    "source": "Assets/Sprites/SkinPreview/SkinPreview-Archived/03/10308_Donquixote_SwordGroup_23_idle.png",
+    "portrait_id": "10308",
+    "size": [
+      470,
+      520
+    ],
+    "kind": "battle_skin_preview"
+  },
+  "10310": {
+    "file": "0945ec3179d245c7c38eaaa9.png",
+    "source": "Assets/Sprites/SkinPreview/SkinPreview-Archived/03/10310_Donquixote_DarkSancho_26_idle.png",
+    "portrait_id": "10310",
+    "size": [
+      1124,
+      523
+    ],
+    "kind": "battle_skin_preview"
+  },
+  "10311": {
+    "file": "383bde183a6f87daec7cac62.png",
+    "source": "Assets/Sprites/SkinPreview/SkinPreview-Archived/03/10311_Donquixote_Cinq_East_28_idle.png",
+    "portrait_id": "10311",
+    "size": [
+      281,
+      542
+    ],
+    "kind": "battle_skin_preview"
+  },
+  "10313": {
+    "file": "3e8b2983984cc2198aa31d0d.png",
+    "source": "Assets/Sprites/SkinPreview/SkinPreview-Archived/03/10313_Donquixote_Heishou_Wei_31_idle.png",
+    "portrait_id": "10313",
+    "size": [
+      451,
+      588
+    ],
+    "kind": "battle_skin_preview"
+  },
+  "10401": {
+    "file": "92b2303bc7c23709b648adc2.png",
+    "source": "Assets/Sprites/SkinPreview/SkinPreview-Archived/04/10401.png",
+    "portrait_id": "10401",
+    "size": [
+      421,
+      539
+    ],
+    "kind": "battle_skin_preview"
+  },
+  "10402": {
+    "file": "dfc4495ce236b29bb7297b8f.png",
+    "source": "Assets/Sprites/SkinPreview/SkinPreview-Archived/04/10402.png",
+    "portrait_id": "10402",
+    "size": [
+      419,
+      538
+    ],
+    "kind": "battle_skin_preview"
+  },
+  "10403": {
+    "file": "53eb81b89efad9491229b188.png",
+    "source": "Assets/Sprites/SkinPreview/SkinPreview-Archived/04/10403.png",
+    "portrait_id": "10403",
+    "size": [
+      450,
+      535
+    ],
+    "kind": "battle_skin_preview"
+  },
+  "10404": {
+    "file": "aee85fbc25f47156a0398b75.png",
+    "source": "Assets/Sprites/SkinPreview/SkinPreview-Archived/04/10404_Ryoshu_Pierre_32_idle.png",
+    "portrait_id": "10404",
+    "size": [
+      306,
+      543
+    ],
+    "kind": "battle_skin_preview"
+  },
+  "10405": {
+    "file": "8ea7a7f8e2438cbefe1730fd.png",
+    "source": "Assets/Sprites/SkinPreview/SkinPreview-Archived/04/10405.png",
+    "portrait_id": "10405",
+    "size": [
+      383,
+      581
+    ],
+    "kind": "battle_skin_preview"
+  },
+  "10406": {
+    "file": "59a6ff3ee987bf3ec7f481e8.png",
+    "source": "Assets/Sprites/SkinPreview/SkinPreview-Archived/04/10406_Ryoshu_LCCB_33_idle.png",
+    "portrait_id": "10406",
+    "size": [
+      365,
+      448
+    ],
+    "kind": "battle_skin_preview"
+  },
+  "10407": {
+    "file": "0239b679af7b1f99dd0c7fd6.png",
+    "source": "Assets/Sprites/SkinPreview/SkinPreview-Archived/04/10407_Ryoshu_Liu_34_idle.png",
+    "portrait_id": "10407",
+    "size": [
+      203,
+      430
+    ],
+    "kind": "battle_skin_preview"
+  },
+  "10408": {
+    "file": "aac56e0c74caa58eb81ab835.png",
+    "source": "Assets/Sprites/SkinPreview/SkinPreview-Archived/04/10408_Ryoshu_Nelly_35_idle.png",
+    "portrait_id": "10408",
+    "size": [
+      339,
+      502
+    ],
+    "kind": "battle_skin_preview"
+  },
+  "10409": {
+    "file": "faeb384735089834862b8273.png",
+    "source": "Assets/Sprites/SkinPreview/SkinPreview-Archived/04/10409_Ryoshu_Yuro_36_idle.png",
+    "portrait_id": "10409",
+    "size": [
+      450,
+      559
+    ],
+    "kind": "battle_skin_preview"
+  },
+  "10411": {
+    "file": "4a7a6d93c8a9c633f9400ba4.png",
+    "source": "Assets/Sprites/SkinPreview/SkinPreview-Archived/04/10411_Ryoshu_BlackHand_Mao_40_idle.png",
+    "portrait_id": "10411",
+    "size": [
+      436,
+      548
+    ],
+    "kind": "battle_skin_preview"
+  },
+  "10413": {
+    "file": "3e68d9303e1f14f6250b0318.png",
+    "source": "Assets/Sprites/SkinPreview/SkinPreview-Archived/04/10413_Ryoshu_Lindaiyu_43_idle.png",
+    "portrait_id": "10413",
+    "size": [
+      564,
+      667
+    ],
+    "kind": "battle_skin_preview"
+  },
+  "10414": {
+    "file": "0d1af790d93f1f71b6b0bc6f.png",
+    "source": "Assets/Sprites/SkinPreview/SkinPreview04/10414.png",
+    "portrait_id": "10414",
+    "size": [
+      339,
+      437
+    ],
+    "kind": "battle_skin_preview"
+  },
+  "10501": {
+    "file": "f099e05850b5ee71e8187f97.png",
+    "source": "Assets/Sprites/SkinPreview/SkinPreview-Archived/05/10501.png",
+    "portrait_id": "10501",
+    "size": [
+      262,
+      574
+    ],
+    "kind": "battle_skin_preview"
+  },
+  "10502": {
+    "file": "614609954772c91f9d25fc5d.png",
+    "source": "Assets/Sprites/SkinPreview/SkinPreview-Archived/05/10502.png",
+    "portrait_id": "10502",
+    "size": [
+      331,
+      555
+    ],
+    "kind": "battle_skin_preview"
+  },
+  "10503": {
+    "file": "51b9d7043f37618e6e5ecdf8.png",
+    "source": "Assets/Sprites/SkinPreview/SkinPreview-Archived/05/10503.png",
+    "portrait_id": "10503",
+    "size": [
+      370,
+      575
+    ],
+    "kind": "battle_skin_preview"
+  },
+  "10504": {
+    "file": "4f3c7801e7867f15dbc24770.png",
+    "source": "Assets/Sprites/SkinPreview/SkinPreview-Archived/05/10504.png",
+    "portrait_id": "10504",
+    "size": [
+      570,
+      632
+    ],
+    "kind": "battle_skin_preview"
+  },
+  "10505": {
+    "file": "6baf1b29d3893c63ed5b5ff8.png",
+    "source": "Assets/Sprites/SkinPreview/SkinPreview-Archived/05/10505_Meursault_HammerFixer_44_idle.png",
+    "portrait_id": "10505",
+    "size": [
+      435,
+      572
+    ],
+    "kind": "battle_skin_preview"
+  },
+  "10507": {
+    "file": "17aec0bc63511984ec5d971b.png",
+    "source": "Assets/Sprites/SkinPreview/SkinPreview-Archived/05/10507_Meursault_MiddleFinger_47_idle.png",
+    "portrait_id": "10507",
+    "size": [
+      191,
+      489
+    ],
+    "kind": "battle_skin_preview"
+  },
+  "10508": {
+    "file": "840efb307e80f1215bec4711.png",
+    "source": "Assets/Sprites/SkinPreview/SkinPreview-Archived/05/10508_Meursault_KimSatGat_48_idle.png",
+    "portrait_id": "10508",
+    "size": [
+      370,
+      496
+    ],
+    "kind": "battle_skin_preview"
+  },
+  "10509": {
+    "file": "ae35fd3657972600f509bc35.png",
+    "source": "Assets/Sprites/SkinPreview/SkinPreview-Archived/05/10509_Meursault_Deadrabbits_49_idle.png",
+    "portrait_id": "10509",
+    "size": [
+      373,
+      485
+    ],
+    "kind": "battle_skin_preview"
+  },
+  "10510": {
+    "file": "2bce5d595be9adcfb5c80fb4.png",
+    "source": "Assets/Sprites/SkinPreview/SkinPreview-Archived/05/10510_Meursault_Dieci_50_idle.png",
+    "portrait_id": "10510",
+    "size": [
+      200,
+      474
+    ],
+    "kind": "battle_skin_preview"
+  },
+  "10511": {
+    "file": "f9ba6a2e1c28852f6d1974a7.png",
+    "source": "Assets/Sprites/SkinPreview/SkinPreview-Archived/05/10511_Meursault_Cinq_51_idle.png",
+    "portrait_id": "10511",
+    "size": [
+      569,
+      484
+    ],
+    "kind": "battle_skin_preview"
+  },
+  "10513": {
+    "file": "f23ded52339e2f28f9306338.png",
+    "source": "Assets/Sprites/SkinPreview/SkinPreview-Archived/05/10513.png",
+    "portrait_id": "10513",
+    "size": [
+      356,
+      672
+    ],
+    "kind": "battle_skin_preview"
+  },
+  "10514": {
+    "file": "97f41df3b0fccd718eeea0fc.png",
+    "source": "Assets/Sprites/SkinPreview/SkinPreview05/10514.png",
+    "portrait_id": "10514",
+    "size": [
+      548,
+      593
+    ],
+    "kind": "battle_skin_preview"
+  },
+  "10601": {
+    "file": "e516558c013f0501399897b3.png",
+    "source": "Assets/Sprites/SkinPreview/SkinPreview-Archived/06/10601.png",
+    "portrait_id": "10601",
+    "size": [
+      609,
+      582
+    ],
+    "kind": "battle_skin_preview"
+  },
+  "10602": {
+    "file": "a90238f659e8aa8edec1a80b.png",
+    "source": "Assets/Sprites/SkinPreview/SkinPreview-Archived/06/10602.png",
+    "portrait_id": "10602",
+    "size": [
+      388,
+      569
+    ],
+    "kind": "battle_skin_preview"
+  },
+  "10603": {
+    "file": "acfee483e73a31155b540c62.png",
+    "source": "Assets/Sprites/SkinPreview/SkinPreview-Archived/06/10603.png",
+    "portrait_id": "10603",
+    "size": [
+      188,
+      448
+    ],
+    "kind": "battle_skin_preview"
+  },
+  "10604": {
+    "file": "76cc044aaa508430bf05f091.png",
+    "source": "Assets/Sprites/SkinPreview/SkinPreview-Archived/06/10604_Honglu_LiuAsso_54_idle.png",
+    "portrait_id": "10604",
+    "size": [
+      208,
+      452
+    ],
+    "kind": "battle_skin_preview"
+  },
+  "10606": {
+    "file": "ec42f66205c90917a3286808.png",
+    "source": "Assets/Sprites/SkinPreview/SkinPreview-Archived/06/10606_Honglu_WCorp_57_idle.png",
+    "portrait_id": "10606",
+    "size": [
+      505,
+      482
+    ],
+    "kind": "battle_skin_preview"
+  },
+  "10607": {
+    "file": "99b731894f74c0107baf4f31.png",
+    "source": "Assets/Sprites/SkinPreview/SkinPreview-Archived/06/10607_Honglu_Taein_58_idle.png",
+    "portrait_id": "10607",
+    "size": [
+      469,
+      567
+    ],
+    "kind": "battle_skin_preview"
+  },
+  "10608": {
+    "file": "ffd28cc4c4bf251f33636209.png",
+    "source": "Assets/Sprites/SkinPreview/SkinPreview-Archived/06/10608_Honglu_Dieci_59_idle.png",
+    "portrait_id": "10608",
+    "size": [
+      237,
+      453
+    ],
+    "kind": "battle_skin_preview"
+  },
+  "10609": {
+    "file": "e4976ee2618e62c9de6c87d7.png",
+    "source": "Assets/Sprites/SkinPreview/SkinPreview-Archived/06/10609_Honglu_Yurodivy_60_idle.png",
+    "portrait_id": "10609",
+    "size": [
+      270,
+      503
+    ],
+    "kind": "battle_skin_preview"
+  },
+  "10610": {
+    "file": "9b4069f9b4e833cd98bca02a.png",
+    "source": "Assets/Sprites/SkinPreview/SkinPreview-Archived/06/10610_Honglu_BloodfiendHunter_61_idle.png",
+    "portrait_id": "10610",
+    "size": [
+      404,
+      472
+    ],
+    "kind": "battle_skin_preview"
+  },
+  "10611": {
+    "file": "69810b4140c842989adddb32.png",
+    "source": "Assets/Sprites/SkinPreview/SkinPreview-Archived/06/10611_Honglu_FullStop_62_idle.png",
+    "portrait_id": "10611",
+    "size": [
+      197,
+      459
+    ],
+    "kind": "battle_skin_preview"
+  },
+  "10612": {
+    "file": "073f48ec71d215f6c4b59837.png",
+    "source": "Assets/Sprites/SkinPreview/SkinPreview-Archived/06/10612_Honglu_RCorp_63_idle.png",
+    "portrait_id": "10612",
+    "size": [
+      635,
+      614
+    ],
+    "kind": "battle_skin_preview"
+  },
+  "10613": {
+    "file": "88a950ae914c3c49cd93f544.png",
+    "source": "Assets/Sprites/SkinPreview/SkinPreview-Archived/06/10613_Honglu_Jiaqiu_64_idle.png",
+    "portrait_id": "10613",
+    "size": [
+      686,
+      509
+    ],
+    "kind": "battle_skin_preview"
+  },
+  "10701": {
+    "file": "249bb2f58eb8bbb72a2d69ec.png",
+    "source": "Assets/Sprites/SkinPreview/SkinPreview-Archived/07/10701.png",
+    "portrait_id": "10701",
+    "size": [
+      427,
+      558
+    ],
+    "kind": "battle_skin_preview"
+  },
+  "10702": {
+    "file": "79077c29a2a8cb1b73aa1213.png",
+    "source": "Assets/Sprites/SkinPreview/SkinPreview-Archived/07/10702.png",
+    "portrait_id": "10702",
+    "size": [
+      586,
+      550
+    ],
+    "kind": "battle_skin_preview"
+  },
+  "10703": {
+    "file": "2b5c7cdc3dbdfa33a90ecf2c.png",
+    "source": "Assets/Sprites/SkinPreview/SkinPreview-Archived/07/10703.png",
+    "portrait_id": "10703",
+    "size": [
+      381,
+      552
+    ],
+    "kind": "battle_skin_preview"
+  },
+  "10704": {
+    "file": "8ae495e5a431f6c19614267d.png",
+    "source": "Assets/Sprites/SkinPreview/SkinPreview-Archived/07/10704_Heathclif_NCorp_65_idle.png",
+    "portrait_id": "10704",
+    "size": [
+      452,
+      599
+    ],
+    "kind": "battle_skin_preview"
+  },
+  "10705": {
+    "file": "f86d4b2c9fd34a59adbce520.png",
+    "source": "Assets/Sprites/SkinPreview/SkinPreview-Archived/07/10705.png",
+    "portrait_id": "10705",
+    "size": [
+      660,
+      480
+    ],
+    "kind": "battle_skin_preview"
+  },
+  "10706": {
+    "file": "1b5c243273d4904be6099a84.png",
+    "source": "Assets/Sprites/SkinPreview/SkinPreview-Archived/07/10706_Heathclif_Seven_66_idle.png",
+    "portrait_id": "10706",
+    "size": [
+      281,
+      437
+    ],
+    "kind": "battle_skin_preview"
+  },
+  "10707": {
+    "file": "7a810ac5d570f5baded7e0f8.png",
+    "source": "Assets/Sprites/SkinPreview/SkinPreview-Archived/07/10707_Heathclif_Queequeg_67_idle.png",
+    "portrait_id": "10707",
+    "size": [
+      266,
+      454
+    ],
+    "kind": "battle_skin_preview"
+  },
+  "10708": {
+    "file": "606a12dd48590c80c773e1be.png",
+    "source": "Assets/Sprites/SkinPreview/SkinPreview-Archived/07/10708_Heathcliff_68_idle.png",
+    "portrait_id": "10708",
+    "size": [
+      275,
+      700
+    ],
+    "kind": "battle_skin_preview"
+  },
+  "10709": {
+    "file": "b185fc5e8733c0e11f5951cb.png",
+    "source": "Assets/Sprites/SkinPreview/SkinPreview-Archived/07/10709.png",
+    "portrait_id": "10709",
+    "size": [
+      672,
+      579
+    ],
+    "kind": "battle_skin_preview"
+  },
+  "10711": {
+    "file": "67dc6e2c49807b0f1cb43087.png",
+    "source": "Assets/Sprites/SkinPreview/SkinPreview-Archived/07/10711_Heathcliff_Tamaki_71_idle.png",
+    "portrait_id": "10711",
+    "size": [
+      446,
+      454
+    ],
+    "kind": "battle_skin_preview"
+  },
+  "10712": {
+    "file": "a148e91b75e63dc61e97e817.png",
+    "source": "Assets/Sprites/SkinPreview/SkinPreview-Archived/07/10712_Heathclif_Kurokumo_72_idle.png",
+    "portrait_id": "10712",
+    "size": [
+      490,
+      573
+    ],
+    "kind": "battle_skin_preview"
+  },
+  "10713": {
+    "file": "f3c569abab025b8cfa5e9288.png",
+    "source": "Assets/Sprites/SkinPreview/SkinPreview-Archived/07/10713.png",
+    "portrait_id": "10713",
+    "size": [
+      408,
+      545
+    ],
+    "kind": "battle_skin_preview"
+  },
+  "10714": {
+    "file": "7ac025c2b5c7d644c0d518df.png",
+    "source": "Assets/Sprites/SkinPreview/SkinPreview-Archived/07/10714_Heathcliff_Heishou_You_73_idle.png",
+    "portrait_id": "10714",
+    "size": [
+      706,
+      724
+    ],
+    "kind": "battle_skin_preview"
+  },
+  "10801": {
+    "file": "88c5b6e8c7ad85bcea1d7f09.png",
+    "source": "Assets/Sprites/SkinPreview/SkinPreview-Archived/08/10801.png",
+    "portrait_id": "10801",
+    "size": [
+      465,
+      526
+    ],
+    "kind": "battle_skin_preview"
+  },
+  "10802": {
+    "file": "a24a76f85f094c40e329095c.png",
+    "source": "Assets/Sprites/SkinPreview/SkinPreview-Archived/08/10802.png",
+    "portrait_id": "10802",
+    "size": [
+      500,
+      590
+    ],
+    "kind": "battle_skin_preview"
+  },
+  "10803": {
+    "file": "e68d89b12855fd86f1b32a53.png",
+    "source": "Assets/Sprites/SkinPreview/SkinPreview-Archived/08/10803.png",
+    "portrait_id": "10803",
+    "size": [
+      507,
+      528
+    ],
+    "kind": "battle_skin_preview"
+  },
+  "10804": {
+    "file": "bb4b82383a4dcdeb3ab63b3e.png",
+    "source": "Assets/Sprites/SkinPreview/SkinPreview-Archived/08/10804.png",
+    "portrait_id": "10804",
+    "size": [
+      436,
+      529
+    ],
+    "kind": "battle_skin_preview"
+  },
+  "10805": {
+    "file": "352299c3438114999341d3b6.png",
+    "source": "Assets/Sprites/SkinPreview/SkinPreview-Archived/08/10805_Ishmeal_Fairy_74_idle.png",
+    "portrait_id": "10805",
+    "size": [
+      602,
+      535
+    ],
+    "kind": "battle_skin_preview"
+  },
+  "10806": {
+    "file": "912b978d8af9ed6b89c79667.png",
+    "source": "Assets/Sprites/SkinPreview/SkinPreview-Archived/08/10806_Ishmael_Liu_75_idle.png",
+    "portrait_id": "10806",
+    "size": [
+      383,
+      533
+    ],
+    "kind": "battle_skin_preview"
+  },
+  "10807": {
+    "file": "8bf548a85e39e2b0470b0d84.png",
+    "source": "Assets/Sprites/SkinPreview/SkinPreview-Archived/08/10807_Ishmael_molar_76_idle.png",
+    "portrait_id": "10807",
+    "size": [
+      321,
+      436
+    ],
+    "kind": "battle_skin_preview"
+  },
+  "10808": {
+    "file": "917302228c85d82a129cbb52.png",
+    "source": "Assets/Sprites/SkinPreview/SkinPreview-Archived/08/10808_Ishmael_Ahab_77_idle.png",
+    "portrait_id": "10808",
+    "size": [
+      291,
+      528
+    ],
+    "kind": "battle_skin_preview"
+  },
+  "10809": {
+    "file": "a9e157460fc80b9815301270.png",
+    "source": "Assets/Sprites/SkinPreview/SkinPreview-Archived/08/10809_Ishmael_Maid_78_idle.png",
+    "portrait_id": "10809",
+    "size": [
+      452,
+      504
+    ],
+    "kind": "battle_skin_preview"
+  },
+  "10810": {
+    "file": "e4007b0f62201c19d85d3595.png",
+    "source": "Assets/Sprites/SkinPreview/SkinPreview-Archived/08/10810_Ishmael_Zwei_79_idle.png",
+    "portrait_id": "10810",
+    "size": [
+      303,
+      463
+    ],
+    "kind": "battle_skin_preview"
+  },
+  "10811": {
+    "file": "d7aaea970c6d8c59ee64962b.png",
+    "source": "Assets/Sprites/SkinPreview/SkinPreview-Archived/08/10811_Ishmael_kurokumo_80_idle.png",
+    "portrait_id": "10811",
+    "size": [
+      507,
+      560
+    ],
+    "kind": "battle_skin_preview"
+  },
+  "10812": {
+    "file": "d08b01c774612a6f83a127de.png",
+    "source": "Assets/Sprites/SkinPreview/SkinPreview-Archived/08/10812_Ishmael_Jiashichun_81_idle.png",
+    "portrait_id": "10812",
+    "size": [
+      297,
+      431
+    ],
+    "kind": "battle_skin_preview"
+  },
+  "10813": {
+    "file": "f95be6d30e9c172b21425091.png",
+    "source": "Assets/Sprites/SkinPreview/SkinPreview-Archived/08/10813_Ishmael_Hanafuda_82_idle.png",
+    "portrait_id": "10813",
+    "size": [
+      467,
+      550
+    ],
+    "kind": "battle_skin_preview"
+  },
+  "10814": {
+    "file": "4a508ccee87c16f5164f0a69.png",
+    "source": "Assets/Sprites/SkinPreview/SkinPreview-Archived/08/10814.png",
+    "portrait_id": "10814",
+    "size": [
+      287,
+      444
+    ],
+    "kind": "battle_skin_preview"
+  },
+  "10901": {
+    "file": "6930995cb80ea45398ddcb4b.png",
+    "source": "Assets/Sprites/SkinPreview/SkinPreview-Archived/09/10901.png",
+    "portrait_id": "10901",
+    "size": [
+      421,
+      556
+    ],
+    "kind": "battle_skin_preview"
+  },
+  "10902": {
+    "file": "acb9a85005b81b6593265cd1.png",
+    "source": "Assets/Sprites/SkinPreview/SkinPreview-Archived/09/10902.png",
+    "portrait_id": "10902",
+    "size": [
+      566,
+      555
+    ],
+    "kind": "battle_skin_preview"
+  },
+  "10903": {
+    "file": "6b54cf85305820374545236f.png",
+    "source": "Assets/Sprites/SkinPreview/SkinPreview-Archived/09/10903.png",
+    "portrait_id": "10903",
+    "size": [
+      462,
+      563
+    ],
+    "kind": "battle_skin_preview"
+  },
+  "10904": {
+    "file": "aa3f37611a4df9dec2937cd5.png",
+    "source": "Assets/Sprites/SkinPreview/SkinPreview-Archived/09/10904.png",
+    "portrait_id": "10904",
+    "size": [
+      434,
+      579
+    ],
+    "kind": "battle_skin_preview"
+  },
+  "10905": {
+    "file": "80b40bb6a8678d79467abf67.png",
+    "source": "Assets/Sprites/SkinPreview/SkinPreview-Archived/09/10905_Rodion_EliteFixer_83_idle.png",
+    "portrait_id": "10905",
+    "size": [
+      445,
+      611
+    ],
+    "kind": "battle_skin_preview"
+  },
+  "10906": {
+    "file": "d4d36dc1047deaf6e666a3aa.png",
+    "source": "Assets/Sprites/SkinPreview/SkinPreview-Archived/09/10906_Rodion_Zwei_84_idle.png",
+    "portrait_id": "10906",
+    "size": [
+      303,
+      454
+    ],
+    "kind": "battle_skin_preview"
+  },
+  "10907": {
+    "file": "0cd135af849ce13d05606abe.png",
+    "source": "Assets/Sprites/SkinPreview/SkinPreview-Archived/09/10907_Rodion_Dieci_85_idle.png",
+    "portrait_id": "10907",
+    "size": [
+      231,
+      455
+    ],
+    "kind": "battle_skin_preview"
+  },
+  "10908": {
+    "file": "4c31b9097a507127e5d719e7.png",
+    "source": "Assets/Sprites/SkinPreview/SkinPreview-Archived/09/10908_Rodion_Liu_86_idle.png",
+    "portrait_id": "10908",
+    "size": [
+      371,
+      431
+    ],
+    "kind": "battle_skin_preview"
+  },
+  "10909": {
+    "file": "bc2d3c9882e90786ed20f5ae.png",
+    "source": "Assets/Sprites/SkinPreview/SkinPreview-Archived/09/10909_Rodion_TCorp_87_idle.png",
+    "portrait_id": "10909",
+    "size": [
+      231,
+      535
+    ],
+    "kind": "battle_skin_preview"
+  },
+  "10910": {
+    "file": "2811c7ca701ba560aec65edd.png",
+    "source": "Assets/Sprites/SkinPreview/SkinPreview-Archived/09/10910_Rodion_Devyat_88_idle.png",
+    "portrait_id": "10910",
+    "size": [
+      470,
+      545
+    ],
+    "kind": "battle_skin_preview"
+  },
+  "10912": {
+    "file": "345eb832097d9cdf68c65707.png",
+    "source": "Assets/Sprites/SkinPreview/SkinPreview-Archived/09/10912_Rodion_Heishou_Si_92_idle.png",
+    "portrait_id": "10912",
+    "size": [
+      580,
+      473
+    ],
+    "kind": "battle_skin_preview"
+  },
+  "10913": {
+    "file": "19920010c0712d8a7c2b8033.png",
+    "source": "Assets/Sprites/SkinPreview/SkinPreview-Archived/09/10913_Rodion_KnightOfDespair_93_idle.png",
+    "portrait_id": "10913",
+    "size": [
+      512,
+      552
+    ],
+    "kind": "battle_skin_preview"
+  },
+  "11001": {
+    "file": "0682d0644a2fdcbadde51c86.png",
+    "source": "Assets/Sprites/SkinPreview/SkinPreview-Archived/10/11001.png",
+    "portrait_id": "11001",
+    "size": [
+      551,
+      553
+    ],
+    "kind": "battle_skin_preview"
+  },
+  "11002": {
+    "file": "3ba3c9054009f6a86e58e6aa.png",
+    "source": "Assets/Sprites/SkinPreview/SkinPreview-Archived/10/11002.png",
+    "portrait_id": "11002",
+    "size": [
+      430,
+      519
+    ],
+    "kind": "battle_skin_preview"
+  },
+  "11003": {
+    "file": "73815265d9e36cd321db0b9c.png",
+    "source": "Assets/Sprites/SkinPreview/SkinPreview-Archived/10/11003.png",
+    "portrait_id": "11003",
+    "size": [
+      314,
+      530
+    ],
+    "kind": "battle_skin_preview"
+  },
+  "11004": {
+    "file": "27cfd857cbe1b727fc699b21.png",
+    "source": "Assets/Sprites/SkinPreview/SkinPreview-Archived/10/11004.png",
+    "portrait_id": "11004",
+    "size": [
+      369,
+      550
+    ],
+    "kind": "battle_skin_preview"
+  },
+  "11005": {
+    "file": "8dd9889bfda7432c2440415f.png",
+    "source": "Assets/Sprites/SkinPreview/SkinPreview-Archived/10/11005_Sinclair_NCorp_100_idle.png",
+    "portrait_id": "11005",
+    "size": [
+      559,
+      521
+    ],
+    "kind": "battle_skin_preview"
+  },
+  "11006": {
+    "file": "c8a3c575aeab9ddd7b54c786.png",
+    "source": "Assets/Sprites/SkinPreview/SkinPreview-Archived/10/11006_Sinclair_Talisman_101_idle.png",
+    "portrait_id": "11006",
+    "size": [
+      328,
+      534
+    ],
+    "kind": "battle_skin_preview"
+  },
+  "11007": {
+    "file": "8cbe584e82743c084173d3bc.png",
+    "source": "Assets/Sprites/SkinPreview/SkinPreview-Archived/10/11007_Sinclair_WorkshopWorker_102_idle.png",
+    "portrait_id": "11007",
+    "size": [
+      647,
+      582
+    ],
+    "kind": "battle_skin_preview"
+  },
+  "11008": {
+    "file": "8e66c5a4a3c737ff4617f256.png",
+    "source": "Assets/Sprites/SkinPreview/SkinPreview-Archived/10/11008_Sinclair_Cinq_103_idle.png",
+    "portrait_id": "11008",
+    "size": [
+      388,
+      606
+    ],
+    "kind": "battle_skin_preview"
+  },
+  "11010": {
+    "file": "3e5c221519e3ca6fd7b78014.png",
+    "source": "Assets/Sprites/SkinPreview/SkinPreview-Archived/10/11010_Sinclair_Zwei_West_106_idle.png",
+    "portrait_id": "11010",
+    "size": [
+      236,
+      441
+    ],
+    "kind": "battle_skin_preview"
+  },
+  "11011": {
+    "file": "8f88db1d7ba4870e13b77a5b.png",
+    "source": "Assets/Sprites/SkinPreview/SkinPreview-Archived/10/11011_Sinclair_Devyat_107_idle.png",
+    "portrait_id": "11011",
+    "size": [
+      470,
+      521
+    ],
+    "kind": "battle_skin_preview"
+  },
+  "11012": {
+    "file": "0d6f4a4650c2b19617064e8f.png",
+    "source": "Assets/Sprites/SkinPreview/SkinPreview-Archived/10/11012_Sinclair_Middle_108_idle.png",
+    "portrait_id": "11012",
+    "size": [
+      214,
+      420
+    ],
+    "kind": "battle_skin_preview"
+  },
+  "11013": {
+    "file": "9dfee78395433b43bdcd43ad.png",
+    "source": "Assets/Sprites/SkinPreview/SkinPreview-Archived/10/11013_Sinclair_Thumb_Soldato_109_idle.png",
+    "portrait_id": "11013",
+    "size": [
+      386,
+      603
+    ],
+    "kind": "battle_skin_preview"
+  },
+  "11014": {
+    "file": "87c4b0ecf504050ff33a8723.png",
+    "source": "Assets/Sprites/SkinPreview/SkinPreview-Archived/10/11014_Sinclair_Heishou_You_110_idle.png",
+    "portrait_id": "11014",
+    "size": [
+      484,
+      551
+    ],
+    "kind": "battle_skin_preview"
+  },
+  "11015": {
+    "file": "bb7fb0606becac3b2432973e.png",
+    "source": "Assets/Sprites/SkinPreview/SkinPreview-Archived/10/11015.png",
+    "portrait_id": "11015",
+    "size": [
+      612,
+      521
+    ],
+    "kind": "battle_skin_preview"
+  },
+  "11101": {
+    "file": "2738be69dbed304743d1ae97.png",
+    "source": "Assets/Sprites/SkinPreview/SkinPreview-Archived/11/11101.png",
+    "portrait_id": "11101",
+    "size": [
+      391,
+      542
+    ],
+    "kind": "battle_skin_preview"
+  },
+  "11102": {
+    "file": "f9f00749233238900f616c1e.png",
+    "source": "Assets/Sprites/SkinPreview/SkinPreview-Archived/11/11102.png",
+    "portrait_id": "11102",
+    "size": [
+      482,
+      538
+    ],
+    "kind": "battle_skin_preview"
+  },
+  "11103": {
+    "file": "71df07d52f4a86d7071cd9aa.png",
+    "source": "Assets/Sprites/SkinPreview/SkinPreview-Archived/11/11103.png",
+    "portrait_id": "11103",
+    "size": [
+      283,
+      675
+    ],
+    "kind": "battle_skin_preview"
+  },
+  "11104": {
+    "file": "64faeb662b9b147037280026.png",
+    "source": "Assets/Sprites/SkinPreview/SkinPreview-Archived/11/11104_Outis_SevenAsso_111_idle.png",
+    "portrait_id": "11104",
+    "size": [
+      353,
+      544
+    ],
+    "kind": "battle_skin_preview"
+  },
+  "11105": {
+    "file": "f2843e3d1f218db5859e8b24.png",
+    "source": "Assets/Sprites/SkinPreview/SkinPreview-Archived/11/11105_Outis_Olga_112_idle.png",
+    "portrait_id": "11105",
+    "size": [
+      293,
+      446
+    ],
+    "kind": "battle_skin_preview"
+  },
+  "11106": {
+    "file": "aec2440ecaee7f980c145915.png",
+    "source": "Assets/Sprites/SkinPreview/SkinPreview-Archived/11/11106_Outis_Cinq_113_idle.png",
+    "portrait_id": "11106",
+    "size": [
+      236,
+      430
+    ],
+    "kind": "battle_skin_preview"
+  },
+  "11107": {
+    "file": "07906ddb49afc118a63a8c58.png",
+    "source": "Assets/Sprites/SkinPreview/SkinPreview-Archived/11/11107_Outis_DerFreischutz_114_idle.png",
+    "portrait_id": "11107",
+    "size": [
+      172,
+      588
+    ],
+    "kind": "battle_skin_preview"
+  },
+  "11108": {
+    "file": "9702236b8fd9364097000bd8.png",
+    "source": "Assets/Sprites/SkinPreview/SkinPreview-Archived/11/11108_Outis_Josephine_115_idle.png",
+    "portrait_id": "11108",
+    "size": [
+      230,
+      540
+    ],
+    "kind": "battle_skin_preview"
+  },
+  "11109": {
+    "file": "e20648f52206227c388b2521.png",
+    "source": "Assets/Sprites/SkinPreview/SkinPreview-Archived/11/11109_Outis_RingFingerAppearance_116_idle.png",
+    "portrait_id": "11109",
+    "size": [
+      253,
+      696
+    ],
+    "kind": "battle_skin_preview"
+  },
+  "11110": {
+    "file": "74492d1fec914a254bc8844e.png",
+    "source": "Assets/Sprites/SkinPreview/SkinPreview-Archived/11/11110_Outis_WCorp_117_idle.png",
+    "portrait_id": "11110",
+    "size": [
+      188,
+      438
+    ],
+    "kind": "battle_skin_preview"
+  },
+  "11112": {
+    "file": "1491c4cd4d0b5d5eb8bd63d7.png",
+    "source": "Assets/Sprites/SkinPreview/SkinPreview-Archived/11/11112_Outis_BlackHand_Mao_121_idle.png",
+    "portrait_id": "11112",
+    "size": [
+      274,
+      460
+    ],
+    "kind": "battle_skin_preview"
+  },
+  "11201": {
+    "file": "c32f14c1d34f5522a1c56611.png",
+    "source": "Assets/Sprites/SkinPreview/SkinPreview-Archived/12/11201.png",
+    "portrait_id": "11201",
+    "size": [
+      216,
+      441
+    ],
+    "kind": "battle_skin_preview"
+  },
+  "11202": {
+    "file": "8e383e9e6f49187962596f2c.png",
+    "source": "Assets/Sprites/SkinPreview/SkinPreview-Archived/12/11202.png",
+    "portrait_id": "11202",
+    "size": [
+      264,
+      530
+    ],
+    "kind": "battle_skin_preview"
+  },
+  "11203": {
+    "file": "1cdb31976df9140717a3c32d.png",
+    "source": "Assets/Sprites/SkinPreview/SkinPreview-Archived/12/11203.png",
+    "portrait_id": "11203",
+    "size": [
+      463,
+      505
+    ],
+    "kind": "battle_skin_preview"
+  },
+  "11204": {
+    "file": "657f9dbf1177755cb532e4dc.png",
+    "source": "Assets/Sprites/SkinPreview/SkinPreview-Archived/12/11204.png",
+    "portrait_id": "11204",
+    "size": [
+      304,
+      532
+    ],
+    "kind": "battle_skin_preview"
+  },
+  "11205": {
+    "file": "73d2fe8a98004c5181704ae9.png",
+    "source": "Assets/Sprites/SkinPreview/SkinPreview-Archived/12/11205_Gregor_ChainsawFixer_124_idle.png",
+    "portrait_id": "11205",
+    "size": [
+      373,
+      530
+    ],
+    "kind": "battle_skin_preview"
+  },
+  "11206": {
+    "file": "91a4e7298da6ec795948bd2e.png",
+    "source": "Assets/Sprites/SkinPreview/SkinPreview-Archived/12/11206_Gregor_Zwei_125_idle.png",
+    "portrait_id": "11206",
+    "size": [
+      621,
+      542
+    ],
+    "kind": "battle_skin_preview"
+  },
+  "11207": {
+    "file": "91d3eaad3e4112ff9a8bc03b.png",
+    "source": "Assets/Sprites/SkinPreview/SkinPreview-Archived/12/11207_Gregor_Smee_126_idle.png",
+    "portrait_id": "11207",
+    "size": [
+      250,
+      457
+    ],
+    "kind": "battle_skin_preview"
+  },
+  "11208": {
+    "file": "f882e048e4917635e511b1b0.png",
+    "source": "Assets/Sprites/SkinPreview/SkinPreview-Archived/12/11208_Gregor_Kurokumo_127_idle.png",
+    "portrait_id": "11208",
+    "size": [
+      362,
+      427
+    ],
+    "kind": "battle_skin_preview"
+  },
+  "11209": {
+    "file": "21fbf5d293c6172414ee17e7.png",
+    "source": "Assets/Sprites/SkinPreview/SkinPreview-Archived/12/11209_Gregor_Linton_128_idle.png",
+    "portrait_id": "11209",
+    "size": [
+      172,
+      453
+    ],
+    "kind": "battle_skin_preview"
+  },
+  "11211": {
+    "file": "8667dff408782ac78a9f0ead.png",
+    "source": "Assets/Sprites/SkinPreview/SkinPreview-Archived/12/11211_Gregor_FirePunch_132_idle.png",
+    "portrait_id": "11211",
+    "size": [
+      264,
+      432
+    ],
+    "kind": "battle_skin_preview"
+  },
+  "11212": {
+    "file": "ae80fbd92a4dc2034eebf135.png",
+    "source": "Assets/Sprites/SkinPreview/SkinPreview-Archived/12/11212.png",
+    "portrait_id": "11212",
+    "size": [
+      479,
+      448
+    ],
+    "kind": "battle_skin_preview"
+  },
+  "11213": {
+    "file": "ba473632bf88d0862d130982.png",
+    "source": "Assets/Sprites/SkinPreview/SkinPreview-Archived/12/11213_Gregor_Allen_133_idle.png",
+    "portrait_id": "11213",
+    "size": [
+      417,
+      541
+    ],
+    "kind": "battle_skin_preview"
+  },
+  "11214": {
+    "file": "8326d7a15bad27848747fcd3.png",
+    "source": "Assets/Sprites/SkinPreview/SkinPreview-Archived/12/11214.png",
+    "portrait_id": "11214",
+    "size": [
+      416,
+      588
+    ],
+    "kind": "battle_skin_preview"
+  },
+  "story_8103_QueequegAppearance": {
+    "file": "2040fa33fe4c0c4768e28583.png",
+    "source": "Assets/Resources_moved/Sprite/Unit/Portrait/8103_portrait.png",
+    "portrait_id": "8103",
+    "size": [
+      493,
+      434
+    ],
+    "kind": "battle_portrait"
+  },
+  "story_8104_StarbuckAppearance": {
+    "file": "d397715cbe6d38766f886b2a.png",
+    "source": "Assets/Resources_moved/Sprite/Unit/Portrait/8104_portrait.png",
+    "portrait_id": "8104",
+    "size": [
+      493,
+      434
+    ],
+    "kind": "battle_portrait"
+  },
+  "story_8105_AhabAppearance": {
+    "file": "707f4a3b76393cbe0feb9dfa.png",
+    "source": "Assets/Resources_moved/Sprite/Unit/Portrait/8105_portrait.png",
+    "portrait_id": "8105",
+    "size": [
+      493,
+      434
+    ],
+    "kind": "battle_portrait"
+  },
+  "story_8106_Ahab_AwakenAppearance": {
+    "file": "a7748d374ba106dd465510b1.png",
+    "source": "Assets/Resources_moved/Sprite/Unit/Portrait/8106_portrait.png",
+    "portrait_id": "8106",
+    "size": [
+      493,
+      434
+    ],
+    "kind": "battle_portrait"
+  },
+  "story_8582_Ahab_Awaken_MirrorAppearance": {
+    "file": "a7748d374ba106dd465510b1.png",
+    "source": "Assets/Resources_moved/Sprite/Unit/Portrait/8106_portrait.png",
+    "portrait_id": "8106",
+    "size": [
+      493,
+      434
+    ],
+    "kind": "battle_portrait"
+  },
+  "story_8101_WalkingPearlAppearance": {
+    "file": "1e3f4c3930255a27de353a67.png",
+    "source": "Assets/Resources_moved/Sprite/Unit/Portrait/8101_portrait.png",
+    "portrait_id": "8101",
+    "size": [
+      493,
+      434
+    ],
+    "kind": "battle_portrait"
+  },
+  "story_8100_ProphetofSkinAppearance": {
+    "file": "1b70db7bfe80a200fb408ef6.png",
+    "source": "Assets/Resources_moved/Sprite/Unit/Portrait/8100_portrait.png",
+    "portrait_id": "8100",
+    "size": [
+      493,
+      434
+    ],
+    "kind": "battle_portrait"
+  },
+  "story_90098_PequodAppearance": {
+    "file": "a7a206290d42250a844c693d.png",
+    "source": "Assets/Resources_moved/Sprite/Unit/Portrait/90098_portrait.png",
+    "portrait_id": "90098",
+    "size": [
+      493,
+      434
+    ],
+    "kind": "battle_portrait"
+  },
+  "story_8107_ProphetofSkinCandleAppearance": {
+    "file": "2f71bb72e8bd328adf6409f7.png",
+    "source": "Assets/Resources_moved/Sprite/Unit/Portrait/8107_portrait.png",
+    "portrait_id": "8107",
+    "size": [
+      493,
+      434
+    ],
+    "kind": "battle_portrait"
+  },
+  "story_8102_FluorescentWhaleAppearance": {
+    "file": "6dad07f6d45db5e6e31bcb8a.png",
+    "source": "Assets/Resources_moved/Sprite/Unit/Portrait/8102_portrait.png",
+    "portrait_id": "8102",
+    "size": [
+      493,
+      434
+    ],
+    "kind": "battle_portrait"
+  },
+  "story_90099_PequodAppearance": {
+    "file": "dd8fc7fbe71e80b9044923bc.png",
+    "source": "Assets/Resources_moved/Sprite/Unit/Portrait/90099_portrait.png",
+    "portrait_id": "90099",
+    "size": [
+      493,
+      434
+    ],
+    "kind": "battle_portrait"
+  },
+  "story_8030_Cromer_2pAppearance": {
+    "file": "dc224cb47b6026146fb1a10c.png",
+    "source": "Assets/Resources_moved/Sprite/Unit/Portrait/8030_portrait.png",
+    "portrait_id": "8030",
+    "size": [
+      493,
+      434
+    ],
+    "kind": "battle_portrait"
+  },
+  "story_8029_CromerAppearance": {
+    "file": "4308bae54fa249103719eef4.png",
+    "source": "Assets/Resources_moved/Sprite/Unit/Portrait/8029_portrait.png",
+    "portrait_id": "8029",
+    "size": [
+      493,
+      434
+    ],
+    "kind": "battle_portrait"
+  },
+  "story_99002_WolfAppearance": {
+    "file": "ed7cb8f5d8c0b046d2d86f8f.png",
+    "source": "Assets/Resources_moved/Sprite/Unit/Portrait/99002_portrait.png",
+    "portrait_id": "99002",
+    "size": [
+      493,
+      434
+    ],
+    "kind": "battle_portrait"
+  },
+  "story_99001_LionAppearance": {
+    "file": "0403f09e1b6c2f40ecea7f30.png",
+    "source": "Assets/Resources_moved/Sprite/Unit/Portrait/99001_portrait.png",
+    "portrait_id": "99001",
+    "size": [
+      493,
+      434
+    ],
+    "kind": "battle_portrait"
+  },
+  "story_99003_PantherAppearance": {
+    "file": "c1e034d55e38c1458aa9f09d.png",
+    "source": "Assets/Resources_moved/Sprite/Unit/Portrait/99003_portrait.png",
+    "portrait_id": "99003",
+    "size": [
+      493,
+      434
+    ],
+    "kind": "battle_portrait"
+  },
+  "story_8006_Septempeccata_GroundAppearance": {
+    "file": "02b632e90bfc2335b3d0ba79.png",
+    "source": "Assets/Resources_moved/Sprite/Unit/Portrait/8006_portrait.png",
+    "portrait_id": "8006",
+    "size": [
+      493,
+      434
+    ],
+    "kind": "battle_portrait"
+  },
+  "story_8032_LightningBeastAppearance": {
+    "file": "aafa470c917d564c1bcad064.png",
+    "source": "Assets/Resources_moved/Sprite/Unit/Portrait/8032_portrait.png",
+    "portrait_id": "8032",
+    "size": [
+      493,
+      434
+    ],
+    "kind": "battle_portrait"
+  },
+  "story_8009_Maggotapple_p2Appearance": {
+    "file": "0f4302b923cb8b6b3f0c7945.png",
+    "source": "Assets/Resources_moved/Sprite/Unit/Portrait/8009_portrait.png",
+    "portrait_id": "8009",
+    "size": [
+      493,
+      434
+    ],
+    "kind": "battle_portrait"
+  },
+  "story_8017_Septempeccata_BloodAppearance": {
+    "file": "d4150ffecd86308ebca5d57f.png",
+    "source": "Assets/Resources_moved/Sprite/Unit/Portrait/8017_portrait.png",
+    "portrait_id": "8017",
+    "size": [
+      493,
+      434
+    ],
+    "kind": "battle_portrait"
+  },
+  "story_8012_EnhancedMan_CAppearance": {
+    "file": "4c1e68c52e4372f77e06d136.png",
+    "source": "Assets/Resources_moved/Sprite/Unit/Portrait/8012_portrait.png",
+    "portrait_id": "8012",
+    "size": [
+      493,
+      434
+    ],
+    "kind": "battle_portrait"
+  },
+  "story_8015_PinkShose_CAppearance": {
+    "file": "3cf988742655fd78323ac186.png",
+    "source": "Assets/Resources_moved/Sprite/Unit/Portrait/8015_portrait.png",
+    "portrait_id": "8015",
+    "size": [
+      493,
+      434
+    ],
+    "kind": "battle_portrait"
+  },
+  "story_8016_Septempeccata_WaterAppearance": {
+    "file": "a24a4338e1b9bfda5013aa57.png",
+    "source": "Assets/Resources_moved/Sprite/Unit/Portrait/8016_portrait.png",
+    "portrait_id": "8016",
+    "size": [
+      493,
+      434
+    ],
+    "kind": "battle_portrait"
+  },
+  "story_8025_Wolf_EnhancedAppearance": {
+    "file": "303d61c0d4cf6ae8c20c87d4.png",
+    "source": "Assets/Resources_moved/Sprite/Unit/Portrait/8025_portrait.png",
+    "portrait_id": "8025",
+    "size": [
+      493,
+      434
+    ],
+    "kind": "battle_portrait"
+  },
+  "story_8005_Septempeccata_GrassAppearance": {
+    "file": "3b8331b5e7d13b8437ce246f.png",
+    "source": "Assets/Resources_moved/Sprite/Unit/Portrait/8005_portrait.png",
+    "portrait_id": "8005",
+    "size": [
+      493,
+      434
+    ],
+    "kind": "battle_portrait"
+  },
+  "story_8014_PinkShose_BAppearance": {
+    "file": "9b02ef16889c90a55828f17d.png",
+    "source": "Assets/Resources_moved/Sprite/Unit/Portrait/8014_portrait.png",
+    "portrait_id": "8014",
+    "size": [
+      493,
+      434
+    ],
+    "kind": "battle_portrait"
+  },
+  "story_8028_SnakeAppearance": {
+    "file": "3d09f782ca77835ecd18fded.png",
+    "source": "Assets/Resources_moved/Sprite/Unit/Portrait/8028_portrait.png",
+    "portrait_id": "8028",
+    "size": [
+      493,
+      434
+    ],
+    "kind": "battle_portrait"
+  },
+  "story_8019_Villager_Rodion_AAppearance": {
+    "file": "7b1f90095e5e48dd9308c136.png",
+    "source": "Assets/Resources_moved/Sprite/Unit/Portrait/8019_portrait.png",
+    "portrait_id": "8019",
+    "size": [
+      493,
+      434
+    ],
+    "kind": "battle_portrait"
+  },
+  "story_8537_WaterFishAppearance": {
+    "file": "fb0c9dba8a4db997591fccc4.png",
+    "source": "Assets/Resources_moved/Sprite/Unit/Portrait/8031_portrait.png",
+    "portrait_id": "8031",
+    "size": [
+      493,
+      434
+    ],
+    "kind": "battle_portrait"
+  },
+  "story_8002_Aztec_CircleAppearance": {
+    "file": "afd4decfea98692f76564b77.png",
+    "source": "Assets/Resources_moved/Sprite/Unit/Portrait/8002_portrait.png",
+    "portrait_id": "8002",
+    "size": [
+      493,
+      434
+    ],
+    "kind": "battle_portrait"
+  },
+  "story_8024_Nothing_ThereAppearance": {
+    "file": "0ea0de8b821865843f9a819e.png",
+    "source": "Assets/Resources_moved/Sprite/Unit/Portrait/8024_portrait.png",
+    "portrait_id": "8024",
+    "size": [
+      493,
+      434
+    ],
+    "kind": "battle_portrait"
+  },
+  "story_8018_Septempeccata_IronAppearance": {
+    "file": "e0af8efc8441eb65dfe7ec8f.png",
+    "source": "Assets/Resources_moved/Sprite/Unit/Portrait/8018_portrait.png",
+    "portrait_id": "8018",
+    "size": [
+      493,
+      434
+    ],
+    "kind": "battle_portrait"
+  },
+  "story_8026_Nothing_There_BossAppearance": {
+    "file": "0ea0de8b821865843f9a819e.png",
+    "source": "Assets/Resources_moved/Sprite/Unit/Portrait/8024_portrait.png",
+    "portrait_id": "8024",
+    "size": [
+      493,
+      434
+    ],
+    "kind": "battle_portrait"
+  },
+  "story_8033_Snake_weakAppearance": {
+    "file": "624c9191f73182623d00223f.png",
+    "source": "Assets/Resources_moved/Sprite/Unit/Portrait/8033_portrait.png",
+    "portrait_id": "8033",
+    "size": [
+      493,
+      434
+    ],
+    "kind": "battle_portrait"
+  },
+  "story_8021_BabayagaSlave_AAppearance": {
+    "file": "3f58c4afba786308ca4740e5.png",
+    "source": "Assets/Resources_moved/Sprite/Unit/Portrait/8021_portrait.png",
+    "portrait_id": "8021",
+    "size": [
+      493,
+      434
+    ],
+    "kind": "battle_portrait"
+  },
+  "story_8020_Villager_Rodion_BAppearance": {
+    "file": "a7814dd6ce24a9b4d56f2449.png",
+    "source": "Assets/Resources_moved/Sprite/Unit/Portrait/8020_portrait.png",
+    "portrait_id": "8020",
+    "size": [
+      493,
+      434
+    ],
+    "kind": "battle_portrait"
+  },
+  "story_8011_EnhancedMan_BAppearance": {
+    "file": "794b7437a7da9580ceaa13cf.png",
+    "source": "Assets/Resources_moved/Sprite/Unit/Portrait/8011_portrait.png",
+    "portrait_id": "8011",
+    "size": [
+      493,
+      434
+    ],
+    "kind": "battle_portrait"
+  },
+  "story_8031_WaterFishAppearance": {
+    "file": "fb0c9dba8a4db997591fccc4.png",
+    "source": "Assets/Resources_moved/Sprite/Unit/Portrait/8031_portrait.png",
+    "portrait_id": "8031",
+    "size": [
+      493,
+      434
+    ],
+    "kind": "battle_portrait"
+  },
+  "story_8027_Wolf_ErosionAppearance": {
+    "file": "2524d4f8cbbbdb42e50deead.png",
+    "source": "Assets/Resources_moved/Sprite/Unit/Portrait/8027_portrait.png",
+    "portrait_id": "8027",
+    "size": [
+      493,
+      434
+    ],
+    "kind": "battle_portrait"
+  },
+  "story_8010_EnhancedMan_AAppearance": {
+    "file": "008a3d512dea25669079541c.png",
+    "source": "Assets/Resources_moved/Sprite/Unit/Portrait/8010_portrait.png",
+    "portrait_id": "8010",
+    "size": [
+      493,
+      434
+    ],
+    "kind": "battle_portrait"
+  },
+  "story_8013_PinkShose_AAppearance": {
+    "file": "699af5feb16c6bbfe8057467.png",
+    "source": "Assets/Resources_moved/Sprite/Unit/Portrait/8013_portrait.png",
+    "portrait_id": "8013",
+    "size": [
+      493,
+      434
+    ],
+    "kind": "battle_portrait"
+  },
+  "story_8008_Maggotapple_p1Appearance": {
+    "file": "e8552a1a57073cca8be2cca7.png",
+    "source": "Assets/Resources_moved/Sprite/Unit/Portrait/8008_portrait.png",
+    "portrait_id": "8008",
+    "size": [
+      493,
+      434
+    ],
+    "kind": "battle_portrait"
+  },
+  "story_8007_Septempeccata_FireAppearance": {
+    "file": "9a60287a40ce0e0dc92f9f44.png",
+    "source": "Assets/Resources_moved/Sprite/Unit/Portrait/8007_portrait.png",
+    "portrait_id": "8007",
+    "size": [
+      493,
+      434
+    ],
+    "kind": "battle_portrait"
+  },
+  "story_8022_BabayagaSlave_BAppearance": {
+    "file": "4076e98e3640b74fff755d01.png",
+    "source": "Assets/Resources_moved/Sprite/Unit/Portrait/8022_portrait.png",
+    "portrait_id": "8022",
+    "size": [
+      493,
+      434
+    ],
+    "kind": "battle_portrait"
+  },
+  "story_1307_SnowWhite_Subspecies_RemakeAppearance": {
+    "file": "4786972dbb34219f62827dfb.png",
+    "source": "Assets/Resources_moved/Sprite/Unit/Portrait/8001_portrait.png",
+    "portrait_id": "8001",
+    "size": [
+      493,
+      434
+    ],
+    "kind": "battle_portrait"
+  },
+  "story_90023_VipAppearance": {
+    "file": "f7254946038548eef259ffd8.png",
+    "source": "Assets/Resources_moved/Sprite/Unit/Portrait/90023_portrait.png",
+    "portrait_id": "90023",
+    "size": [
+      256,
+      225
+    ],
+    "kind": "battle_portrait"
+  },
+  "story_91005_NCorpAppearance": {
+    "file": "a787b17b27826d4eab812129.png",
+    "source": "Assets/Resources_moved/Sprite/Unit/Portrait/91005_portrait.png",
+    "portrait_id": "91005",
+    "size": [
+      493,
+      434
+    ],
+    "kind": "battle_portrait"
+  },
+  "story_90022_VipAppearance": {
+    "file": "619b0fc32d539f0e331f18e3.png",
+    "source": "Assets/Resources_moved/Sprite/Unit/Portrait/90022_portrait.png",
+    "portrait_id": "90022",
+    "size": [
+      256,
+      225
+    ],
+    "kind": "battle_portrait"
+  },
+  "story_90019_ConconAppearance": {
+    "file": "39fd5590e75e846547b8706b.png",
+    "source": "Assets/Resources_moved/Sprite/Unit/Portrait/90019_portrait.png",
+    "portrait_id": "90019",
+    "size": [
+      256,
+      225
+    ],
+    "kind": "battle_portrait"
+  },
+  "story_91003_ConconAppearance": {
+    "file": "86c28a4c3021b7b85a7be193.png",
+    "source": "Assets/Resources_moved/Sprite/Unit/Portrait/91003_portrait.png",
+    "portrait_id": "91003",
+    "size": [
+      256,
+      225
+    ],
+    "kind": "battle_portrait"
+  },
+  "story_91004_EyedAppearance": {
+    "file": "cbd2c00e02b8380a7ad8d649.png",
+    "source": "Assets/Resources_moved/Sprite/Unit/Portrait/91004_portrait.png",
+    "portrait_id": "91004",
+    "size": [
+      256,
+      225
+    ],
+    "kind": "battle_portrait"
+  },
+  "story_90035_NCorpAppearance": {
+    "file": "6aebab323bef2d141a9557b3.png",
+    "source": "Assets/Resources_moved/Sprite/Unit/Portrait/90035_portrait.png",
+    "portrait_id": "90035",
+    "size": [
+      493,
+      434
+    ],
+    "kind": "battle_portrait"
+  },
+  "story_90027_CnBigGuyAppearance": {
+    "file": "e4b365801e3e1ea602b48f26.png",
+    "source": "Assets/Resources_moved/Sprite/Unit/Portrait/90027_portrait.png",
+    "portrait_id": "90027",
+    "size": [
+      256,
+      225
+    ],
+    "kind": "battle_portrait"
+  },
+  "story_90028_KCorpAppearance": {
+    "file": "bab45b1d5e47aafbffecbbee.png",
+    "source": "Assets/Resources_moved/Sprite/Unit/Portrait/90028_portrait.png",
+    "portrait_id": "90028",
+    "size": [
+      493,
+      434
+    ],
+    "kind": "battle_portrait"
+  },
+  "story_90026_CnBigGuyAppearance": {
+    "file": "34fc77a1962fd7f4cefb4e34.png",
+    "source": "Assets/Resources_moved/Sprite/Unit/Portrait/90026_portrait.png",
+    "portrait_id": "90026",
+    "size": [
+      256,
+      225
+    ],
+    "kind": "battle_portrait"
+  },
+  "story_91001_GCorp_Enhanced_BossAppearance": {
+    "file": "40242500fb7c676bf1650938.png",
+    "source": "Assets/Resources_moved/Sprite/Unit/Portrait/91001_portrait.png",
+    "portrait_id": "91001",
+    "size": [
+      256,
+      225
+    ],
+    "kind": "battle_portrait"
+  },
+  "story_90038_NCorpAppearance": {
+    "file": "8368529036918095a85f34c7.png",
+    "source": "Assets/Resources_moved/Sprite/Unit/Portrait/90038_portrait.png",
+    "portrait_id": "90038",
+    "size": [
+      493,
+      434
+    ],
+    "kind": "battle_portrait"
+  },
+  "story_90029_KCorpAppearance": {
+    "file": "132f64c44a132f4fb111f513.png",
+    "source": "Assets/Resources_moved/Sprite/Unit/Portrait/90029_portrait.png",
+    "portrait_id": "90029",
+    "size": [
+      493,
+      434
+    ],
+    "kind": "battle_portrait"
+  },
+  "story_90018_ConconAppearance": {
+    "file": "77d9657eff8fa15324b10fa4.png",
+    "source": "Assets/Resources_moved/Sprite/Unit/Portrait/90018_portrait.png",
+    "portrait_id": "90018",
+    "size": [
+      256,
+      225
+    ],
+    "kind": "battle_portrait"
+  },
+  "story_90024_MexicanAppearance": {
+    "file": "5a23fa86ae45ff5b6c07aead.png",
+    "source": "Assets/Resources_moved/Sprite/Unit/Portrait/90024_portrait.png",
+    "portrait_id": "90024",
+    "size": [
+      256,
+      225
+    ],
+    "kind": "battle_portrait"
+  },
+  "story_90025_MexicanAppearance": {
+    "file": "e82f13a7aa8e095b5a8a4dcb.png",
+    "source": "Assets/Resources_moved/Sprite/Unit/Portrait/90025_portrait.png",
+    "portrait_id": "90025",
+    "size": [
+      256,
+      225
+    ],
+    "kind": "battle_portrait"
+  },
+  "story_90021_VipAppearance": {
+    "file": "d0bc2304eaf379b9d04c47c0.png",
+    "source": "Assets/Resources_moved/Sprite/Unit/Portrait/90021_portrait.png",
+    "portrait_id": "90021",
+    "size": [
+      256,
+      225
+    ],
+    "kind": "battle_portrait"
+  },
+  "story_90017_ConconAppearance": {
+    "file": "62da7bc1b5230e6037ce2905.png",
+    "source": "Assets/Resources_moved/Sprite/Unit/Portrait/90017_portrait.png",
+    "portrait_id": "90017",
+    "size": [
+      256,
+      225
+    ],
+    "kind": "battle_portrait"
+  },
+  "story_90032_NCorpAppearance": {
+    "file": "3dff0dce6aa3f6255597ae53.png",
+    "source": "Assets/Resources_moved/Sprite/Unit/Portrait/90032_portrait.png",
+    "portrait_id": "90032",
+    "size": [
+      493,
+      434
+    ],
+    "kind": "battle_portrait"
+  },
+  "story_90041_SlaveAppearance": {
+    "file": "5c87113064d6368444ccc9b4.png",
+    "source": "Assets/Resources_moved/Sprite/Unit/Portrait/90041_portrait.png",
+    "portrait_id": "90041",
+    "size": [
+      493,
+      434
+    ],
+    "kind": "battle_portrait"
+  },
+  "story_90020_VipAppearance": {
+    "file": "f2df1f0af7985e61c3e67f88.png",
+    "source": "Assets/Resources_moved/Sprite/Unit/Portrait/90020_portrait.png",
+    "portrait_id": "90020",
+    "size": [
+      256,
+      225
+    ],
+    "kind": "battle_portrait"
+  },
+  "story_91006_NCorpAppearance": {
+    "file": "c5c54fb6d129e64756089fec.png",
+    "source": "Assets/Resources_moved/Sprite/Unit/Portrait/91006_portrait.png",
+    "portrait_id": "91006",
+    "size": [
+      493,
+      434
+    ],
+    "kind": "battle_portrait"
+  },
+  "story_1411_WaterFishAppearance": {
+    "file": "fb0c9dba8a4db997591fccc4.png",
+    "source": "Assets/Resources_moved/Sprite/Unit/Portrait/8031_portrait.png",
+    "portrait_id": "8031",
+    "size": [
+      493,
+      434
+    ],
+    "kind": "battle_portrait"
+  },
+  "10302": {
+    "file": "0aca499e8918da2fc9ee6d54.png",
+    "source": "Assets/Resources_moved/Sprite/Unit/Portrait/10302_portrait.png",
+    "portrait_id": "10302",
+    "size": [
+      499,
+      487
+    ],
+    "kind": "battle_portrait"
+  },
+  "10303": {
+    "file": "826bc47317819b38144d6e19.png",
+    "source": "Assets/Resources_moved/Sprite/Unit/Portrait/10303_portrait.png",
+    "portrait_id": "10303",
+    "size": [
+      499,
+      487
+    ],
+    "kind": "battle_portrait"
+  },
+  "story_8171_NellyAppearance": {
+    "file": "59eefa77e80cebd84b73c116.png",
+    "source": "Assets/Resources_moved/Sprite/Unit/Portrait/8171_portrait.png",
+    "portrait_id": "8171",
+    "size": [
+      493,
+      434
+    ],
+    "kind": "battle_portrait"
+  },
+  "story_90138_LintonWHAppearance": {
+    "file": "b02828bac54423d05b781351.png",
+    "source": "Assets/Resources_moved/Sprite/Unit/Portrait/8168_portrait.png",
+    "portrait_id": "8168",
+    "size": [
+      493,
+      434
+    ],
+    "kind": "battle_portrait"
+  },
+  "story_8172_MaouHeathclif_MainAppearance": {
+    "file": "8628aa998539919ded81eef3.png",
+    "source": "Assets/Resources_moved/Sprite/Unit/Portrait/8172_portrait.png",
+    "portrait_id": "8172",
+    "size": [
+      493,
+      434
+    ],
+    "kind": "battle_portrait"
+  },
+  "story_8173_MaouHeathclif_Main2Appearance": {
+    "file": "427e65dabf667a8238f35927.png",
+    "source": "Assets/Resources_moved/Sprite/Unit/Portrait/8173_portrait.png",
+    "portrait_id": "8173",
+    "size": [
+      493,
+      434
+    ],
+    "kind": "battle_portrait"
+  },
+  "story_8173_MaouHeathclif_RideAppearance": {
+    "file": "427e65dabf667a8238f35927.png",
+    "source": "Assets/Resources_moved/Sprite/Unit/Portrait/8173_portrait.png",
+    "portrait_id": "8173",
+    "size": [
+      493,
+      434
+    ],
+    "kind": "battle_portrait"
+  },
+  "story_90137_HindleyWHAppearance": {
+    "file": "1b955bcc5b38e3f74cbed747.png",
+    "source": "Assets/Resources_moved/Sprite/Unit/Portrait/8169_portrait.png",
+    "portrait_id": "8169",
+    "size": [
+      493,
+      434
+    ],
+    "kind": "battle_portrait"
+  },
+  "story_8161_Septempeccata_Fire3Appearance": {
+    "file": "7b64e68eee7109ec7f3ba7b0.png",
+    "source": "Assets/Resources_moved/Sprite/Unit/Portrait/8161_portrait.png",
+    "portrait_id": "8161",
+    "size": [
+      493,
+      434
+    ],
+    "kind": "battle_portrait"
+  },
+  "story_8166_DistortedAppearance": {
+    "file": "8b07b893fbf60c36d3666b33.png",
+    "source": "Assets/Resources_moved/Sprite/Unit/Portrait/8166_portrait.png",
+    "portrait_id": "8166",
+    "size": [
+      493,
+      434
+    ],
+    "kind": "battle_portrait"
+  },
+  "story_8170_Hindley_BeastWHAppearance": {
+    "file": "64e6e1b7b053e792dac214a2.png",
+    "source": "Assets/Resources_moved/Sprite/Unit/Portrait/8170_portrait.png",
+    "portrait_id": "8170",
+    "size": [
+      493,
+      434
+    ],
+    "kind": "battle_portrait"
+  },
+  "story_8174_CathyAppearance": {
+    "file": "111066872898873ccc65e2ba.png",
+    "source": "Assets/Resources_moved/Sprite/Unit/Portrait/8174_portrait.png",
+    "portrait_id": "8174",
+    "size": [
+      493,
+      434
+    ],
+    "kind": "battle_portrait"
+  },
+  "story_8192_CathyAppearance": {
+    "file": "a4843a4339940c5f91b3f60d.png",
+    "source": "Assets/Resources_moved/Sprite/Unit/Portrait/8192_portrait.png",
+    "portrait_id": "8192",
+    "size": [
+      493,
+      434
+    ],
+    "kind": "battle_portrait"
+  },
+  "story_90136_JosephineWHAppearance": {
+    "file": "c292ae7766d1dca10c97a585.png",
+    "source": "Assets/Resources_moved/Sprite/Unit/Portrait/8167_portrait.png",
+    "portrait_id": "8167",
+    "size": [
+      493,
+      434
+    ],
+    "kind": "battle_portrait"
+  },
+  "story_8099_MiddleFinger_RicardoAppearance": {
+    "file": "c0645266dbc1f06ea36c6039.png",
+    "source": "Assets/Resources_moved/Sprite/Unit/Portrait/8099_portrait.png",
+    "portrait_id": "8099",
+    "size": [
+      493,
+      434
+    ],
+    "kind": "battle_portrait"
+  },
+  "story_8099_MiddleFinger_Ricardo_2Appearance": {
+    "file": "c0645266dbc1f06ea36c6039.png",
+    "source": "Assets/Resources_moved/Sprite/Unit/Portrait/8099_portrait.png",
+    "portrait_id": "8099",
+    "size": [
+      493,
+      434
+    ],
+    "kind": "battle_portrait"
+  },
+  "story_90091_Fishman_Infested_CAppearance": {
+    "file": "f04a75494a90242371d67cdc.png",
+    "source": "Assets/Resources_moved/Sprite/Unit/Portrait/90091_portrait.png",
+    "portrait_id": "90091",
+    "size": [
+      493,
+      434
+    ],
+    "kind": "battle_portrait"
+  },
+  "story_90088_Fishman_CruiseAppearance": {
+    "file": "9101177668fa6dc813a1837b.png",
+    "source": "Assets/Resources_moved/Sprite/Unit/Portrait/90088_portrait.png",
+    "portrait_id": "90088",
+    "size": [
+      493,
+      434
+    ],
+    "kind": "battle_portrait"
+  },
+  "story_90089_Fishman_Infested_AAppearance": {
+    "file": "eda0959778c84c64bbef2f04.png",
+    "source": "Assets/Resources_moved/Sprite/Unit/Portrait/90089_portrait.png",
+    "portrait_id": "90089",
+    "size": [
+      493,
+      434
+    ],
+    "kind": "battle_portrait"
+  },
+  "story_90096_MiddleFinger_Mob_AAppearance": {
+    "file": "50e818fb3f26810d5b5b09d3.png",
+    "source": "Assets/Resources_moved/Sprite/Unit/Portrait/90096_portrait.png",
+    "portrait_id": "90096",
+    "size": [
+      493,
+      434
+    ],
+    "kind": "battle_portrait"
+  },
+  "story_90090_Fishman_Infested_BAppearance": {
+    "file": "6100cac74ffe22b7faaf6332.png",
+    "source": "Assets/Resources_moved/Sprite/Unit/Portrait/90090_portrait.png",
+    "portrait_id": "90090",
+    "size": [
+      493,
+      434
+    ],
+    "kind": "battle_portrait"
+  },
+  "story_90092_LCCB_Infested_AAppearance": {
+    "file": "127da4ba86248effeed0767e.png",
+    "source": "Assets/Resources_moved/Sprite/Unit/Portrait/90092_portrait.png",
+    "portrait_id": "90092",
+    "size": [
+      493,
+      434
+    ],
+    "kind": "battle_portrait"
+  },
+  "story_90095_DoubleHook_Infested_BAppearance": {
+    "file": "d71476c4f7f25033567c8cb3.png",
+    "source": "Assets/Resources_moved/Sprite/Unit/Portrait/90095_portrait.png",
+    "portrait_id": "90095",
+    "size": [
+      493,
+      434
+    ],
+    "kind": "battle_portrait"
+  },
+  "story_90094_DoubleHook_Infested_AAppearance": {
+    "file": "bb328c2390611abc191e813a.png",
+    "source": "Assets/Resources_moved/Sprite/Unit/Portrait/90094_portrait.png",
+    "portrait_id": "90094",
+    "size": [
+      493,
+      434
+    ],
+    "kind": "battle_portrait"
+  },
+  "story_90093_LCCB_Infested_BAppearance": {
+    "file": "127da4ba86248effeed0767e.png",
+    "source": "Assets/Resources_moved/Sprite/Unit/Portrait/90092_portrait.png",
+    "portrait_id": "90092",
+    "size": [
+      493,
+      434
+    ],
+    "kind": "battle_portrait"
+  },
+  "story_90097_MiddleFinger_Mob_BAppearance": {
+    "file": "9d062f98d9ff81bef1851d61.png",
+    "source": "Assets/Resources_moved/Sprite/Unit/Portrait/90097_portrait.png",
+    "portrait_id": "90097",
+    "size": [
+      493,
+      434
+    ],
+    "kind": "battle_portrait"
+  },
+  "story_90100_Fishman_Infested_BAppearance": {
+    "file": "6100cac74ffe22b7faaf6332.png",
+    "source": "Assets/Resources_moved/Sprite/Unit/Portrait/90090_portrait.png",
+    "portrait_id": "90090",
+    "size": [
+      493,
+      434
+    ],
+    "kind": "battle_portrait"
+  },
+  "story_1450_Distorted_ChoiAppearance2p": {
+    "file": "f23e4da778dd825d28133d5f.png",
+    "source": "Assets/Resources_moved/Sprite/Unit/Portrait/1451_portrait.png",
+    "portrait_id": "1451",
+    "size": [
+      493,
+      434
+    ],
+    "kind": "battle_portrait"
+  },
+  "story_1449_Distorted_Chunokkun_Mob_BAppearance": {
+    "file": "1add4aa3355e84edbd618bc0.png",
+    "source": "Assets/Resources_moved/Sprite/Unit/Portrait/1449_portrait.png",
+    "portrait_id": "1449",
+    "size": [
+      493,
+      434
+    ],
+    "kind": "battle_portrait"
+  },
+  "story_91057_Distorted_SwordGroup_Mob_AAppearance": {
+    "file": "b20086b3d58afdd851f0c7ad.png",
+    "source": "Assets/Resources_moved/Sprite/Unit/Portrait/91057_portrait.png",
+    "portrait_id": "91057",
+    "size": [
+      493,
+      434
+    ],
+    "kind": "battle_portrait"
+  },
+  "story_1453_NCorp_Photographer_Mob_BAppearance": {
+    "file": "9c1f0266c9bac73d6b9ab05a.png",
+    "source": "Assets/Resources_moved/Sprite/Unit/Portrait/1453_portrait.png",
+    "portrait_id": "1453",
+    "size": [
+      493,
+      434
+    ],
+    "kind": "battle_portrait"
+  },
+  "story_1448_Distorted_Chunokkun_Mob_AAppearance": {
+    "file": "dda93bcef2f200b2a543ebf4.png",
+    "source": "Assets/Resources_moved/Sprite/Unit/Portrait/1448_portrait.png",
+    "portrait_id": "1448",
+    "size": [
+      493,
+      434
+    ],
+    "kind": "battle_portrait"
+  },
+  "story_1452_NCorp_Photographer_Mob_AAppearance": {
+    "file": "faf4c98211ab36a9297a977b.png",
+    "source": "Assets/Resources_moved/Sprite/Unit/Portrait/1452_portrait.png",
+    "portrait_id": "1452",
+    "size": [
+      493,
+      434
+    ],
+    "kind": "battle_portrait"
+  },
+  "story_91058_Distorted_SwordGroup_Mob_BAppearance": {
+    "file": "f0f4df444e57246386a9b9cb.png",
+    "source": "Assets/Resources_moved/Sprite/Unit/Portrait/91058_portrait.png",
+    "portrait_id": "91058",
+    "size": [
+      493,
+      434
+    ],
+    "kind": "battle_portrait"
+  },
+  "story_1137_JiaqiuAppearance": {
+    "file": "8056fdb7143d08c90084913b.png",
+    "source": "Assets/Resources_moved/Sprite/Unit/Portrait/Ep8_2_Portrait/1137_portrait.png",
+    "portrait_id": "1137",
+    "size": [
+      493,
+      434
+    ],
+    "kind": "battle_portrait"
+  },
+  "story_1157_XueBanAppearance": {
+    "file": "cf4013aa6c747ddabf14478f.png",
+    "source": "Assets/Resources_moved/Sprite/Unit/Portrait/Ep8_2_Portrait/1157_portrait.png",
+    "portrait_id": "1157",
+    "size": [
+      493,
+      434
+    ],
+    "kind": "battle_portrait"
+  },
+  "story_1158_SaYihuaAppearance": {
+    "file": "bed8d3b1923b10d16dcb3ae4.png",
+    "source": "Assets/Resources_moved/Sprite/Unit/Portrait/Ep8_2_Portrait/1158_portrait.png",
+    "portrait_id": "1158",
+    "size": [
+      493,
+      434
+    ],
+    "kind": "battle_portrait"
+  },
+  "story_90209_WangFamily_Mob_EliteAppearance": {
+    "file": "1c4eb9214e3247f0d865f8a9.png",
+    "source": "Assets/Resources_moved/Sprite/Unit/Portrait/Ep8_2_Portrait/90209_portrait.png",
+    "portrait_id": "90209",
+    "size": [
+      493,
+      434
+    ],
+    "kind": "battle_portrait"
+  },
+  "story_1160_SaSajungAppearance": {
+    "file": "b1b467546b18b597d622b976.png",
+    "source": "Assets/Resources_moved/Sprite/Unit/Portrait/Ep8_2_Portrait/1160_portrait.png",
+    "portrait_id": "1160",
+    "size": [
+      493,
+      434
+    ],
+    "kind": "battle_portrait"
+  },
+  "story_90205_Hcorp_Mob_AAppearance": {
+    "file": "1073475fa60c2306cd361b16.png",
+    "source": "Assets/Resources_moved/Sprite/Unit/Portrait/Ep8_2_Portrait/90205_portrait.png",
+    "portrait_id": "90205",
+    "size": [
+      493,
+      434
+    ],
+    "kind": "battle_portrait"
+  },
+  "story_90207_Hcorp_Mob_CAppearance": {
+    "file": "4ac572343bc4354f0c6f9df7.png",
+    "source": "Assets/Resources_moved/Sprite/Unit/Portrait/Ep8_2_Portrait/90207_portrait.png",
+    "portrait_id": "90207",
+    "size": [
+      493,
+      434
+    ],
+    "kind": "battle_portrait"
+  },
+  "story_90210_SaFamily_Mob_AAppearance": {
+    "file": "e70a09b6026e4a398fd45c32.png",
+    "source": "Assets/Resources_moved/Sprite/Unit/Portrait/Ep8_2_Portrait/90210_portrait.png",
+    "portrait_id": "90210",
+    "size": [
+      493,
+      434
+    ],
+    "kind": "battle_portrait"
+  },
+  "story_90208_WangFamily_Mob_AAppearance": {
+    "file": "19b8893ee196244aee22795d.png",
+    "source": "Assets/Resources_moved/Sprite/Unit/Portrait/Ep8_2_Portrait/90208_portrait.png",
+    "portrait_id": "90208",
+    "size": [
+      493,
+      434
+    ],
+    "kind": "battle_portrait"
+  },
+  "story_1167_SaHwajungAppearance": {
+    "file": "d900d5f9a611fb35e19dd682.png",
+    "source": "Assets/Resources_moved/Sprite/Unit/Portrait/Ep8_2_Portrait/1167_portrait.png",
+    "portrait_id": "1167",
+    "size": [
+      493,
+      434
+    ],
+    "kind": "battle_portrait"
+  },
+  "story_90211_SaFamily_Mob_BAppearance": {
+    "file": "3a5cfa5bc39e39daf5cbb7cd.png",
+    "source": "Assets/Resources_moved/Sprite/Unit/Portrait/Ep8_2_Portrait/90211_portrait.png",
+    "portrait_id": "90211",
+    "size": [
+      493,
+      434
+    ],
+    "kind": "battle_portrait"
+  },
+  "story_90212_SaFamily_Mob_EliteAppearance": {
+    "file": "16281014390d4e4dc8dcf359.png",
+    "source": "Assets/Resources_moved/Sprite/Unit/Portrait/Ep8_2_Portrait/90212_portrait.png",
+    "portrait_id": "90212",
+    "size": [
+      493,
+      434
+    ],
+    "kind": "battle_portrait"
+  },
+  "story_90206_Hcorp_Mob_BAppearance": {
+    "file": "4780ea7b03a19982a9700e59.png",
+    "source": "Assets/Resources_moved/Sprite/Unit/Portrait/Ep8_2_Portrait/90206_portrait.png",
+    "portrait_id": "90206",
+    "size": [
+      493,
+      434
+    ],
+    "kind": "battle_portrait"
+  },
+  "story_1159_WangChungSanAppearance": {
+    "file": "a4964e1523f1fc9f2ea8d011.png",
+    "source": "Assets/Resources_moved/Sprite/Unit/Portrait/Ep8_2_Portrait/1159_portrait.png",
+    "portrait_id": "1159",
+    "size": [
+      493,
+      434
+    ],
+    "kind": "battle_portrait"
+  },
+  "story_8153_KimSatGat_ErodeAppearance": {
+    "file": "838ebdcc4e59e98773ea50ba.png",
+    "source": "Assets/Resources_moved/Sprite/Unit/Portrait/8153_portrait.png",
+    "portrait_id": "8153",
+    "size": [
+      493,
+      434
+    ],
+    "kind": "battle_portrait"
+  },
+  "story_90112_KuroKumo_Mob_3Appearance": {
+    "file": "62a912b80034c8cb8d9fe59f.png",
+    "source": "Assets/Resources_moved/Sprite/Unit/Portrait/90112_portrait.png",
+    "portrait_id": "90112",
+    "size": [
+      493,
+      434
+    ],
+    "kind": "battle_portrait"
+  },
+  "story_91013_Kurokumo_MiddleBossAppearance": {
+    "file": "8a441e187a6afdc217af9b1b.png",
+    "source": "Assets/Resources_moved/Sprite/Unit/Portrait/91013_portrait.png",
+    "portrait_id": "91013",
+    "size": [
+      493,
+      434
+    ],
+    "kind": "battle_portrait"
+  },
+  "story_8152_Septempeccata_Water2Appearance": {
+    "file": "efa15fb209bd0cc4e93c4bfc.png",
+    "source": "Assets/Resources_moved/Sprite/Unit/Portrait/8152_portrait.png",
+    "portrait_id": "8152",
+    "size": [
+      493,
+      434
+    ],
+    "kind": "battle_portrait"
+  },
+  "story_8151_Septempeccata_Fire2Appearance": {
+    "file": "476efd81ec9452bda83b466a.png",
+    "source": "Assets/Resources_moved/Sprite/Unit/Portrait/8151_portrait.png",
+    "portrait_id": "8151",
+    "size": [
+      493,
+      434
+    ],
+    "kind": "battle_portrait"
+  },
+  "story_90110_KuroKumo_Mob_1Appearance": {
+    "file": "f2236a7d748749eafc24d81a.png",
+    "source": "Assets/Resources_moved/Sprite/Unit/Portrait/90110_portrait.png",
+    "portrait_id": "90110",
+    "size": [
+      493,
+      434
+    ],
+    "kind": "battle_portrait"
+  },
+  "story_90111_KuroKumo_Mob_2Appearance": {
+    "file": "d1d08e7dc927b5ed6604cf87.png",
+    "source": "Assets/Resources_moved/Sprite/Unit/Portrait/90111_portrait.png",
+    "portrait_id": "90111",
+    "size": [
+      493,
+      434
+    ],
+    "kind": "battle_portrait"
+  },
+  "story_90113_KuroKumo_Mob_4Appearance": {
+    "file": "efd25061cb570bafaa8f821e.png",
+    "source": "Assets/Resources_moved/Sprite/Unit/Portrait/90113_portrait.png",
+    "portrait_id": "90113",
+    "size": [
+      493,
+      434
+    ],
+    "kind": "battle_portrait"
+  },
+  "story_91013_Kurokumo_MiddleBoss_v1Appearance": {
+    "file": "8a441e187a6afdc217af9b1b.png",
+    "source": "Assets/Resources_moved/Sprite/Unit/Portrait/91013_portrait.png",
+    "portrait_id": "91013",
+    "size": [
+      493,
+      434
+    ],
+    "kind": "battle_portrait"
+  },
+  "story_1322_Pinky_FatherAppearance": {
+    "file": "c53847fe98b92b2fc9a90bd9.png",
+    "source": "Assets/Resources_moved/Sprite/Unit/Portrait/Ep9_2_Portrait/1322_portrait.png",
+    "portrait_id": "1322",
+    "size": [
+      493,
+      434
+    ],
+    "kind": "battle_portrait"
+  },
+  "story_1325_Index_Disciple_NormalAppearance": {
+    "file": "205bc10f6f5a3db4541a6013.png",
+    "source": "Assets/Resources_moved/Sprite/Unit/Portrait/Ep9_2_Portrait/1325_portrait.png",
+    "portrait_id": "1325",
+    "size": [
+      493,
+      434
+    ],
+    "kind": "battle_portrait"
+  },
+  "story_1325_Index_discipleAppearance": {
+    "file": "205bc10f6f5a3db4541a6013.png",
+    "source": "Assets/Resources_moved/Sprite/Unit/Portrait/Ep9_2_Portrait/1325_portrait.png",
+    "portrait_id": "1325",
+    "size": [
+      493,
+      434
+    ],
+    "kind": "battle_portrait"
+  },
+  "story_1322_Pinky_Father2pAppearance": {
+    "file": "c53847fe98b92b2fc9a90bd9.png",
+    "source": "Assets/Resources_moved/Sprite/Unit/Portrait/Ep9_2_Portrait/1322_portrait.png",
+    "portrait_id": "1322",
+    "size": [
+      493,
+      434
+    ],
+    "kind": "battle_portrait"
+  },
+  "story_1327_MiddleFinger_fatherAppearance": {
+    "file": "50392a65c0c9cbd8a1fba070.png",
+    "source": "Assets/Resources_moved/Sprite/Unit/Portrait/Ep9_3_Portrait/1327_portrait.png",
+    "portrait_id": "1327",
+    "size": [
+      493,
+      434
+    ],
+    "kind": "battle_portrait"
+  },
+  "story_1327_MiddleFinger_father_Phase4Appearance": {
+    "file": "50392a65c0c9cbd8a1fba070.png",
+    "source": "Assets/Resources_moved/Sprite/Unit/Portrait/Ep9_3_Portrait/1327_portrait.png",
+    "portrait_id": "1327",
+    "size": [
+      493,
+      434
+    ],
+    "kind": "battle_portrait"
+  },
+  "story_1314_Thumb_FatherAppearance": {
+    "file": "d65f5ec904ce231270af9cc3.png",
+    "source": "Assets/Resources_moved/Sprite/Unit/Portrait/Ep9_3_Portrait/1314_portrait.png",
+    "portrait_id": "1314",
+    "size": [
+      493,
+      434
+    ],
+    "kind": "battle_portrait"
+  },
+  "story_1348_Index_father_Phase2Appearance": {
+    "file": "bd0c372d9c92ead2686b56ff.png",
+    "source": "Assets/Resources_moved/Sprite/Unit/Portrait/Ep9_3_Portrait/1347_portrait.png",
+    "portrait_id": "1347",
+    "size": [
+      493,
+      434
+    ],
+    "kind": "battle_portrait"
+  },
+  "story_1331_RingFinger_FatherAppearance": {
+    "file": "6ef8b4f5bd3174b42e34c330.png",
+    "source": "Assets/Resources_moved/Sprite/Unit/Portrait/Ep9_3_Portrait/1331_portrait.png",
+    "portrait_id": "1331",
+    "size": [
+      493,
+      434
+    ],
+    "kind": "battle_portrait"
+  },
+  "story_1328_MiddleFinger_discipleAppearance": {
+    "file": "9dfec6e229177481d3ff98b0.png",
+    "source": "Assets/Resources_moved/Sprite/Unit/Portrait/Ep9_3_Portrait/1328_portrait.png",
+    "portrait_id": "1328",
+    "size": [
+      493,
+      434
+    ],
+    "kind": "battle_portrait"
+  },
+  "story_1347_Index_fatherAppearance": {
+    "file": "bd0c372d9c92ead2686b56ff.png",
+    "source": "Assets/Resources_moved/Sprite/Unit/Portrait/Ep9_3_Portrait/1347_portrait.png",
+    "portrait_id": "1347",
+    "size": [
+      493,
+      434
+    ],
+    "kind": "battle_portrait"
+  },
+  "story_1343": {
+    "file": "f63d0f0ab016d933e4775c80.png",
+    "source": "Assets/Resources_moved/Sprite/Unit/Portrait/Ep9_3_Portrait/400015_portrait.png",
+    "portrait_id": "400015",
+    "size": [
+      493,
+      434
+    ],
+    "kind": "battle_portrait"
+  },
+  "story_400013_Sinclair_FutureAppearance": {
+    "file": "747bf20e81681a7cbaccda81.png",
+    "source": "Assets/Resources_moved/Sprite/Unit/Portrait/Ep9_3_Portrait/400013_portrait.png",
+    "portrait_id": "400013",
+    "size": [
+      493,
+      434
+    ],
+    "kind": "battle_portrait"
+  },
+  "story_1339": {
+    "file": "c28285a4a1f5172909a8cef9.png",
+    "source": "Assets/Resources_moved/Sprite/Unit/Portrait/Ep9_3_Portrait/1339_portrait.png",
+    "portrait_id": "1339",
+    "size": [
+      493,
+      434
+    ],
+    "kind": "battle_portrait"
+  },
+  "story_1318_Pinky_DiscipleAppearance": {
+    "file": "62c87c69fe125b173de62044.png",
+    "source": "Assets/Resources_moved/Sprite/Unit/Portrait/Ep9_1_Portrait/1318_portrait.png",
+    "portrait_id": "1318",
+    "size": [
+      493,
+      434
+    ],
+    "kind": "battle_portrait"
+  },
+  "story_1319_RingFinger_DiscipleAppearance": {
+    "file": "5552a8b272e1135ed84cea1e.png",
+    "source": "Assets/Resources_moved/Sprite/Unit/Portrait/Ep9_1_Portrait/1319_portrait.png",
+    "portrait_id": "1319",
+    "size": [
+      493,
+      434
+    ],
+    "kind": "battle_portrait"
+  },
+  "story_1306_Thumb_DiscipleAppearance": {
+    "file": "2aeb8c80cf3e61113c7bd87a.png",
+    "source": "Assets/Resources_moved/Sprite/Unit/Portrait/Ep9_1_Portrait/1306_portrait.png",
+    "portrait_id": "1306",
+    "size": [
+      493,
+      434
+    ],
+    "kind": "battle_portrait"
+  },
+  "story_1336_RingFinger_Disciple_CastoffAppearance": {
+    "file": "5552a8b272e1135ed84cea1e.png",
+    "source": "Assets/Resources_moved/Sprite/Unit/Portrait/Ep9_1_Portrait/1319_portrait.png",
+    "portrait_id": "1319",
+    "size": [
+      493,
+      434
+    ],
+    "kind": "battle_portrait"
+  },
+  "story_1354_RingFinger_DiscipleAppearance": {
+    "file": "5552a8b272e1135ed84cea1e.png",
+    "source": "Assets/Resources_moved/Sprite/Unit/Portrait/Ep9_1_Portrait/1319_portrait.png",
+    "portrait_id": "1319",
+    "size": [
+      493,
+      434
+    ],
+    "kind": "battle_portrait"
+  },
+  "story_91038_RingFinger_MobCAppearance": {
+    "file": "f8c65c387e139e8b1425345d.png",
+    "source": "Assets/Resources_moved/Sprite/Unit/Portrait/Ep9_1_Portrait/91038_portrait.png",
+    "portrait_id": "91038",
+    "size": [
+      493,
+      434
+    ],
+    "kind": "battle_portrait"
+  },
+  "story_91037_RingFinger_MobBAppearance": {
+    "file": "781c9d304677165d6f3e4d94.png",
+    "source": "Assets/Resources_moved/Sprite/Unit/Portrait/Ep9_1_Portrait/91037_portrait.png",
+    "portrait_id": "91037",
+    "size": [
+      493,
+      434
+    ],
+    "kind": "battle_portrait"
+  },
+  "story_91036_RingFinger_MobAAppearance": {
+    "file": "63383aad37f419a19c869390.png",
+    "source": "Assets/Resources_moved/Sprite/Unit/Portrait/Ep9_1_Portrait/91036_portrait.png",
+    "portrait_id": "91036",
+    "size": [
+      493,
+      434
+    ],
+    "kind": "battle_portrait"
+  },
+  "story_91035_Index_Mob_BAppearance": {
+    "file": "2a2b77b8c6b5fb2c9c26a50a.png",
+    "source": "Assets/Resources_moved/Sprite/Unit/Portrait/Ep9_1_Portrait/91035_portrait.png",
+    "portrait_id": "91035",
+    "size": [
+      493,
+      434
+    ],
+    "kind": "battle_portrait"
+  },
+  "story_91034_Index_Mob_AAppearance": {
+    "file": "227cc80b8974af134f930e31.png",
+    "source": "Assets/Resources_moved/Sprite/Unit/Portrait/Ep9_1_Portrait/91034_portrait.png",
+    "portrait_id": "91034",
+    "size": [
+      493,
+      434
+    ],
+    "kind": "battle_portrait"
+  },
+  "story_1465_LaNoirContemporaryAppearance": {
+    "file": "539eac3ff3044399a63b2cd0.png",
+    "source": "Assets/Resources_moved/Sprite/Unit/Portrait/Ep10_1_Portrait/1465_portrait.png",
+    "portrait_id": "1465",
+    "size": [
+      493,
+      434
+    ],
+    "kind": "battle_portrait"
+  },
+  "story_1481_3F_BossAppearance": {
+    "file": "4b5dc8a374a8b92890e7ba0e.png",
+    "source": "Assets/Resources_moved/Sprite/Unit/Portrait/Ep10_1_Portrait/1481_portrait.png",
+    "portrait_id": "1481",
+    "size": [
+      493,
+      434
+    ],
+    "kind": "battle_portrait"
+  },
+  "story_1474_B1SabsalPuppetAppearance": {
+    "file": "5a70a0202806ec6db3c5d24e.png",
+    "source": "Assets/Resources_moved/Sprite/Unit/Portrait/Ep10_1_Portrait/1474_portrait.png",
+    "portrait_id": "1474",
+    "size": [
+      493,
+      434
+    ],
+    "kind": "battle_portrait"
+  },
+  "story_91064_Pin_BAppearance": {
+    "file": "a346a00f12aa1e8750b8abb8.png",
+    "source": "Assets/Resources_moved/Sprite/Unit/Portrait/Ep10_1_Portrait/91064_portrait.png",
+    "portrait_id": "91064",
+    "size": [
+      493,
+      434
+    ],
+    "kind": "battle_portrait"
+  },
+  "story_91066_3F_LeNoir_FanaticAppearance": {
+    "file": "0d368879b957adb5fb5fba6e.png",
+    "source": "Assets/Resources_moved/Sprite/Unit/Portrait/Ep10_1_Portrait/91066_portrait.png",
+    "portrait_id": "91066",
+    "size": [
+      493,
+      434
+    ],
+    "kind": "battle_portrait"
+  },
+  "story_1466_LaRougeHighdomesticAppearance": {
+    "file": "6d185aa9f24f6fa6fc8e439b.png",
+    "source": "Assets/Resources_moved/Sprite/Unit/Portrait/Ep10_1_Portrait/1466_portrait.png",
+    "portrait_id": "1466",
+    "size": [
+      493,
+      434
+    ],
+    "kind": "battle_portrait"
+  },
+  "story_1497_UnstableCreatureAppearance": {
+    "file": "af5c7c6666abf7f60c649e12.png",
+    "source": "Assets/Resources_moved/Sprite/Unit/Portrait/Ep10_1_Portrait/1497_portrait.png",
+    "portrait_id": "1497",
+    "size": [
+      493,
+      434
+    ],
+    "kind": "battle_portrait"
+  },
+  "story_1496_B2_Needle_KingAppearance": {
+    "file": "5523ebb4d5cbf4bdcedc1f29.png",
+    "source": "Assets/Resources_moved/Sprite/Unit/Portrait/Ep10_1_Portrait/1496_portrait.png",
+    "portrait_id": "1496",
+    "size": [
+      493,
+      434
+    ],
+    "kind": "battle_portrait"
+  },
+  "story_91068_3F_LeNoir_FanaticAppearance": {
+    "file": "0d368879b957adb5fb5fba6e.png",
+    "source": "Assets/Resources_moved/Sprite/Unit/Portrait/Ep10_1_Portrait/91066_portrait.png",
+    "portrait_id": "91066",
+    "size": [
+      493,
+      434
+    ],
+    "kind": "battle_portrait"
+  },
+  "story_91062_B1_Local_BAppearance": {
+    "file": "291bb641588b3bb1bd3d5c33.png",
+    "source": "Assets/Resources_moved/Sprite/Unit/Portrait/Ep10_1_Portrait/91062_portrait.png",
+    "portrait_id": "91062",
+    "size": [
+      493,
+      434
+    ],
+    "kind": "battle_portrait"
+  },
+  "story_1494_LeRouge_SPA_EmployeeAppearance": {
+    "file": "b1baff46d198b4f3f70e8fda.png",
+    "source": "Assets/Resources_moved/Sprite/Unit/Portrait/Ep10_1_Portrait/1494_portrait.png",
+    "portrait_id": "1494",
+    "size": [
+      493,
+      434
+    ],
+    "kind": "battle_portrait"
+  },
+  "story_1480_B1CubeAppearance": {
+    "file": "34ce492a7e9f3924c6eb82da.png",
+    "source": "Assets/Resources_moved/Sprite/Unit/Portrait/Ep10_1_Portrait/1475_portrait.png",
+    "portrait_id": "1475",
+    "size": [
+      493,
+      434
+    ],
+    "kind": "battle_portrait"
+  },
+  "story_1483_4F_LeNoir_Shoes_BAppearance": {
+    "file": "8dc6f6eb96939ed7fd664cf8.png",
+    "source": "Assets/Resources_moved/Sprite/Unit/Portrait/Ep10_1_Portrait/1483_portrait.png",
+    "portrait_id": "1483",
+    "size": [
+      493,
+      434
+    ],
+    "kind": "battle_portrait"
+  },
+  "story_1484_Buffet_ImmatureAppearance": {
+    "file": "082f2f2381eee854f06410b4.png",
+    "source": "Assets/Resources_moved/Sprite/Unit/Portrait/Ep10_1_Portrait/1484_portrait.png",
+    "portrait_id": "1484",
+    "size": [
+      493,
+      434
+    ],
+    "kind": "battle_portrait"
+  },
+  "story_1493_3F_LeRouge_fanaticAppearance": {
+    "file": "098c1a23af3da12162eb1afe.png",
+    "source": "Assets/Resources_moved/Sprite/Unit/Portrait/Ep10_1_Portrait/1493_portrait.png",
+    "portrait_id": "1493",
+    "size": [
+      493,
+      434
+    ],
+    "kind": "battle_portrait"
+  },
+  "story_91063_Pin_AAppearance": {
+    "file": "4aad8e32f611f311d739226b.png",
+    "source": "Assets/Resources_moved/Sprite/Unit/Portrait/Ep10_1_Portrait/91063_portrait.png",
+    "portrait_id": "91063",
+    "size": [
+      493,
+      434
+    ],
+    "kind": "battle_portrait"
+  },
+  "story_1482_4F_LeNoir_Shoes_AAppearance": {
+    "file": "d974513b671bc8995cbbbc6a.png",
+    "source": "Assets/Resources_moved/Sprite/Unit/Portrait/Ep10_1_Portrait/1482_portrait.png",
+    "portrait_id": "1482",
+    "size": [
+      493,
+      434
+    ],
+    "kind": "battle_portrait"
+  },
+  "story_91059_GrandMagasin_Customer_AAppearance": {
+    "file": "6ec415e508567ce65a8dc8d8.png",
+    "source": "Assets/Resources_moved/Sprite/Unit/Portrait/Ep10_1_Portrait/91059_portrait.png",
+    "portrait_id": "91059",
+    "size": [
+      493,
+      434
+    ],
+    "kind": "battle_portrait"
+  },
+  "story_91061_B1_Local_AAppearance": {
+    "file": "172715004b7a95dda53fc4cd.png",
+    "source": "Assets/Resources_moved/Sprite/Unit/Portrait/Ep10_1_Portrait/91061_portrait.png",
+    "portrait_id": "91061",
+    "size": [
+      493,
+      434
+    ],
+    "kind": "battle_portrait"
+  },
+  "story_1136_NLONL_DerSchutze_GuboAppearance": {
+    "file": "4cb7d1da85bcb9ec744a36fe.png",
+    "source": "Assets/Resources_moved/Sprite/Unit/Portrait/Ep8_3_Portrait/1136_portrait.png",
+    "portrait_id": "1136",
+    "size": [
+      493,
+      434
+    ],
+    "kind": "battle_portrait"
+  },
+  "story_90213_NCorp_mob_1Appearance": {
+    "file": "e755142669b4ceed48d21c66.png",
+    "source": "Assets/Resources_moved/Sprite/Unit/Portrait/Ep8_3_Portrait/1139_portrait.png",
+    "portrait_id": "1139",
+    "size": [
+      493,
+      434
+    ],
+    "kind": "battle_portrait"
+  },
+  "story_1146_Elder_1Appearance": {
+    "file": "ed3018cf5fdf01e28fde1770.png",
+    "source": "Assets/Resources_moved/Sprite/Unit/Portrait/Ep8_3_Portrait/1146_portrait.png",
+    "portrait_id": "1146",
+    "size": [
+      493,
+      434
+    ],
+    "kind": "battle_portrait"
+  },
+  "story_1154_GamoAppearance": {
+    "file": "7be7b01faae0a94a89bf0ced.png",
+    "source": "Assets/Resources_moved/Sprite/Unit/Portrait/Ep8_3_Portrait/1154_portrait.png",
+    "portrait_id": "1154",
+    "size": [
+      493,
+      434
+    ],
+    "kind": "battle_portrait"
+  },
+  "story_90218_Thumb_mob_2Appearance": {
+    "file": "0d0a5b4ed7e054d350bee080.png",
+    "source": "Assets/Resources_moved/Sprite/Unit/Portrait/Ep8_3_Portrait/90218_portrait.png",
+    "portrait_id": "90218",
+    "size": [
+      493,
+      434
+    ],
+    "kind": "battle_portrait"
+  },
+  "story_90217_Thumb_mob_1Appearance": {
+    "file": "1e1f5c270b264882a42d758a.png",
+    "source": "Assets/Resources_moved/Sprite/Unit/Portrait/Ep8_3_Portrait/1171_portrait.png",
+    "portrait_id": "1171",
+    "size": [
+      493,
+      434
+    ],
+    "kind": "battle_portrait"
+  },
+  "story_1152_Elder_2Appearance": {
+    "file": "c8d16fde9d0a5ec2f6103ff2.png",
+    "source": "Assets/Resources_moved/Sprite/Unit/Portrait/Ep8_3_Portrait/1152_portrait.png",
+    "portrait_id": "1152",
+    "size": [
+      493,
+      434
+    ],
+    "kind": "battle_portrait"
+  },
+  "story_1135_NLONL_ContemptSpiral_JiahuanAppearance": {
+    "file": "7c30e83b0c147c194292fafc.png",
+    "source": "Assets/Resources_moved/Sprite/Unit/Portrait/Ep8_3_Portrait/1135_portrait.png",
+    "portrait_id": "1135",
+    "size": [
+      493,
+      434
+    ],
+    "kind": "battle_portrait"
+  },
+  "story_1145_Thumb_LeiHengAppearance": {
+    "file": "372ecd86696c1f26aa1835ea.png",
+    "source": "Assets/Resources_moved/Sprite/Unit/Portrait/Ep8_3_Portrait/1145_portrait.png",
+    "portrait_id": "1145",
+    "size": [
+      493,
+      434
+    ],
+    "kind": "battle_portrait"
+  },
+  "story_1153_GamoAppearance": {
+    "file": "1438d8431bed5a7387c9ebbc.png",
+    "source": "Assets/Resources_moved/Sprite/Unit/Portrait/Ep8_3_Portrait/1153_portrait.png",
+    "portrait_id": "1153",
+    "size": [
+      493,
+      434
+    ],
+    "kind": "battle_portrait"
+  },
+  "story_91015_HindleyAppearance": {
+    "file": "92168918f11843bd833213a5.png",
+    "source": "Assets/Resources_moved/Sprite/Unit/Portrait/91015_portrait.png",
+    "portrait_id": "91015",
+    "size": [
+      493,
+      434
+    ],
+    "kind": "battle_portrait"
+  },
+  "story_8164_MaouHeathclif_DeadRabbitsAppearance": {
+    "file": "b35313486c2be5cf836dbd3d.png",
+    "source": "Assets/Resources_moved/Sprite/Unit/Portrait/8164_portrait.png",
+    "portrait_id": "8164",
+    "size": [
+      493,
+      434
+    ],
+    "kind": "battle_portrait"
+  },
+  "story_8165_Hindley_BeastAppearance": {
+    "file": "cee25ce790bd3c6cea80790c.png",
+    "source": "Assets/Resources_moved/Sprite/Unit/Portrait/8165_portrait.png",
+    "portrait_id": "8165",
+    "size": [
+      493,
+      434
+    ],
+    "kind": "battle_portrait"
+  },
+  "story_90134_Oufi_Elite_v2Appearance": {
+    "file": "16eb8793872e14ad4798daa6.png",
+    "source": "Assets/Resources_moved/Sprite/Unit/Portrait/90130_portrait.png",
+    "portrait_id": "90130",
+    "size": [
+      493,
+      434
+    ],
+    "kind": "battle_portrait"
+  },
+  "story_90128_Oufi_1Appearance": {
+    "file": "4ee8c19823397d45628e3511.png",
+    "source": "Assets/Resources_moved/Sprite/Unit/Portrait/90128_portrait.png",
+    "portrait_id": "90128",
+    "size": [
+      493,
+      434
+    ],
+    "kind": "battle_portrait"
+  },
+  "story_90129_Oufi_2Appearance": {
+    "file": "4cd1c60ebd5cc77f6e00972d.png",
+    "source": "Assets/Resources_moved/Sprite/Unit/Portrait/90129_portrait.png",
+    "portrait_id": "90129",
+    "size": [
+      493,
+      434
+    ],
+    "kind": "battle_portrait"
+  },
+  "story_90131_Oufi_1_v1Appearance": {
+    "file": "4ee8c19823397d45628e3511.png",
+    "source": "Assets/Resources_moved/Sprite/Unit/Portrait/90128_portrait.png",
+    "portrait_id": "90128",
+    "size": [
+      493,
+      434
+    ],
+    "kind": "battle_portrait"
+  },
+  "story_8159_SeptempeccataAppearance": {
+    "file": "6ba1c5c8bc3c7ff89dd177ea.png",
+    "source": "Assets/Resources_moved/Sprite/Unit/Portrait/8159_portrait.png",
+    "portrait_id": "8159",
+    "size": [
+      493,
+      434
+    ],
+    "kind": "battle_portrait"
+  },
+  "story_8160_SeptempeccataAppearance": {
+    "file": "14060e68bd7fa7c009b2bbc5.png",
+    "source": "Assets/Resources_moved/Sprite/Unit/Portrait/8160_portrait.png",
+    "portrait_id": "8160",
+    "size": [
+      493,
+      434
+    ],
+    "kind": "battle_portrait"
+  },
+  "story_90133_Oufi_Elite_v1Appearance": {
+    "file": "16eb8793872e14ad4798daa6.png",
+    "source": "Assets/Resources_moved/Sprite/Unit/Portrait/90130_portrait.png",
+    "portrait_id": "90130",
+    "size": [
+      493,
+      434
+    ],
+    "kind": "battle_portrait"
+  },
+  "story_90132_Oufi_2_v1Appearance": {
+    "file": "4cd1c60ebd5cc77f6e00972d.png",
+    "source": "Assets/Resources_moved/Sprite/Unit/Portrait/90129_portrait.png",
+    "portrait_id": "90129",
+    "size": [
+      493,
+      434
+    ],
+    "kind": "battle_portrait"
+  },
+  "story_91016_DeadRabbits_BossAppearance": {
+    "file": "5ce2f92138d0810c02de879d.png",
+    "source": "Assets/Resources_moved/Sprite/Unit/Portrait/91016_portrait.png",
+    "portrait_id": "91016",
+    "size": [
+      493,
+      434
+    ],
+    "kind": "battle_portrait"
+  },
+  "story_90130_Oufi_EliteAppearance": {
+    "file": "16eb8793872e14ad4798daa6.png",
+    "source": "Assets/Resources_moved/Sprite/Unit/Portrait/90130_portrait.png",
+    "portrait_id": "90130",
+    "size": [
+      493,
+      434
+    ],
+    "kind": "battle_portrait"
+  },
+  "story_1423_RingFinger_FauvismeDocent_Wolf2pAppearance": {
+    "file": "4d1135309e1b53db0028f6ca.png",
+    "source": "Assets/Resources_moved/Sprite/Unit/Portrait/1422_portrait.png",
+    "portrait_id": "1422",
+    "size": [
+      493,
+      434
+    ],
+    "kind": "battle_portrait"
+  },
+  "story_91044_RingFinger_Fauvism_Bear_BAppearance": {
+    "file": "305d0e7b6503beb296a376df.png",
+    "source": "Assets/Resources_moved/Sprite/Unit/Portrait/91044_portrait.png",
+    "portrait_id": "91044",
+    "size": [
+      493,
+      434
+    ],
+    "kind": "battle_portrait"
+  },
+  "story_91045_RingFinger_Fauvism_Bird_AAppearance": {
+    "file": "e9f38d7973335a15c05ddad8.png",
+    "source": "Assets/Resources_moved/Sprite/Unit/Portrait/91045_portrait.png",
+    "portrait_id": "91045",
+    "size": [
+      493,
+      434
+    ],
+    "kind": "battle_portrait"
+  },
+  "story_91046_RingFinger_Fauvism_Bird_BAppearance": {
+    "file": "3e67d48f6a9ca108c1426f87.png",
+    "source": "Assets/Resources_moved/Sprite/Unit/Portrait/91046_portrait.png",
+    "portrait_id": "91046",
+    "size": [
+      493,
+      434
+    ],
+    "kind": "battle_portrait"
+  },
+  "story_91043_RingFinger_Fauvism_Bear_AAppearance": {
+    "file": "2350a86a80e7bacb9caa2b4d.png",
+    "source": "Assets/Resources_moved/Sprite/Unit/Portrait/91043_portrait.png",
+    "portrait_id": "91043",
+    "size": [
+      493,
+      434
+    ],
+    "kind": "battle_portrait"
+  },
+  "story_1355_Index_Disciple_NormalAppearance": {
+    "file": "96363058fe9be71558ba709b.png",
+    "source": "Assets/Resources_moved/Sprite/Unit/Portrait/1355_portrait.png",
+    "portrait_id": "1355",
+    "size": [
+      493,
+      434
+    ],
+    "kind": "battle_portrait"
+  },
+  "story_1353_Pinky_DiscipleAppearance": {
+    "file": "a8825ec3388c0834814d6a23.png",
+    "source": "Assets/Resources_moved/Sprite/Unit/Portrait/1353_portrait.png",
+    "portrait_id": "1353",
+    "size": [
+      493,
+      434
+    ],
+    "kind": "battle_portrait"
+  },
+  "story_1355_Index_DiscipleAppearance": {
+    "file": "96363058fe9be71558ba709b.png",
+    "source": "Assets/Resources_moved/Sprite/Unit/Portrait/1355_portrait.png",
+    "portrait_id": "1355",
+    "size": [
+      493,
+      434
+    ],
+    "kind": "battle_portrait"
+  },
+  "story_8049_DongLang_3pAppearance": {
+    "file": "8656bc90f859516711574f61.png",
+    "source": "Assets/Resources_moved/Sprite/Unit/Portrait/8049_portrait.png",
+    "portrait_id": "8049",
+    "size": [
+      493,
+      434
+    ],
+    "kind": "battle_portrait"
+  },
+  "story_8049_DongLang_1pAppearance": {
+    "file": "8656bc90f859516711574f61.png",
+    "source": "Assets/Resources_moved/Sprite/Unit/Portrait/8049_portrait.png",
+    "portrait_id": "8049",
+    "size": [
+      493,
+      434
+    ],
+    "kind": "battle_portrait"
+  },
+  "story_8049_DongLang_2pAppearance": {
+    "file": "8656bc90f859516711574f61.png",
+    "source": "Assets/Resources_moved/Sprite/Unit/Portrait/8049_portrait.png",
+    "portrait_id": "8049",
+    "size": [
+      493,
+      434
+    ],
+    "kind": "battle_portrait"
+  },
+  "story_8050_DongLang_AwakenAppearance": {
+    "file": "5d353fa514e23847aea5b77a.png",
+    "source": "Assets/Resources_moved/Sprite/Unit/Portrait/8050_portrait.png",
+    "portrait_id": "8050",
+    "size": [
+      493,
+      434
+    ],
+    "kind": "battle_portrait"
+  },
+  "story_90070_TCorpAppearance": {
+    "file": "3188ccf137558af1e7d82491.png",
+    "source": "Assets/Resources_moved/Sprite/Unit/Portrait/90070_portrait.png",
+    "portrait_id": "90070",
+    "size": [
+      493,
+      434
+    ],
+    "kind": "battle_portrait"
+  },
+  "story_8053_Camellia_RainbowAppearance": {
+    "file": "389b9c5078fe4dfa68624271.png",
+    "source": "Assets/Resources_moved/Sprite/Unit/Portrait/8052_portrait.png",
+    "portrait_id": "8052",
+    "size": [
+      493,
+      434
+    ],
+    "kind": "battle_portrait"
+  },
+  "story_90144_TCorp_EliteAppearance": {
+    "file": "3188ccf137558af1e7d82491.png",
+    "source": "Assets/Resources_moved/Sprite/Unit/Portrait/90070_portrait.png",
+    "portrait_id": "90070",
+    "size": [
+      493,
+      434
+    ],
+    "kind": "battle_portrait"
+  },
+  "story_8046_UmbrellaFoxAppearance": {
+    "file": "454e62c5b387a75bb00eb97f.png",
+    "source": "Assets/Resources_moved/Sprite/Unit/Portrait/8046_portrait.png",
+    "portrait_id": "8046",
+    "size": [
+      493,
+      434
+    ],
+    "kind": "battle_portrait"
+  },
+  "story_8048_GentleFairyAppearance": {
+    "file": "c475abb3cc66c4d683deb5bc.png",
+    "source": "Assets/Resources_moved/Sprite/Unit/Portrait/8048_portrait.png",
+    "portrait_id": "8048",
+    "size": [
+      493,
+      434
+    ],
+    "kind": "battle_portrait"
+  },
+  "story_8045_ElectricCentipedeAppearance": {
+    "file": "57231b92f85fb37f485f1f1e.png",
+    "source": "Assets/Resources_moved/Sprite/Unit/Portrait/8045_portrait.png",
+    "portrait_id": "8045",
+    "size": [
+      493,
+      434
+    ],
+    "kind": "battle_portrait"
+  },
+  "story_8056_DongLang_TreeAppearance": {
+    "file": "a90f8ed86c20a8eb53da6773.png",
+    "source": "Assets/Resources_moved/Sprite/Unit/Portrait/8056_portrait.png",
+    "portrait_id": "8056",
+    "size": [
+      493,
+      434
+    ],
+    "kind": "battle_portrait"
+  },
+  "story_8047_DontcryAppearance": {
+    "file": "8305e093326252e7844899e9.png",
+    "source": "Assets/Resources_moved/Sprite/Unit/Portrait/8047_portrait.png",
+    "portrait_id": "8047",
+    "size": [
+      493,
+      434
+    ],
+    "kind": "battle_portrait"
+  },
+  "story_90047_KCorpAppearance": {
+    "file": "d0189814162e94bc66cdec0d.png",
+    "source": "Assets/Resources_moved/Sprite/Unit/Portrait/90047_portrait.png",
+    "portrait_id": "90047",
+    "size": [
+      493,
+      434
+    ],
+    "kind": "battle_portrait"
+  },
+  "story_90046_KCorpAppearance": {
+    "file": "816b337314930b3eb02f5ac9.png",
+    "source": "Assets/Resources_moved/Sprite/Unit/Portrait/8042_portrait.png",
+    "portrait_id": "8042",
+    "size": [
+      493,
+      434
+    ],
+    "kind": "battle_portrait"
+  },
+  "story_90048_KCorpAppearance": {
+    "file": "f1236a2b85734439741b6afa.png",
+    "source": "Assets/Resources_moved/Sprite/Unit/Portrait/90048_portrait.png",
+    "portrait_id": "90048",
+    "size": [
+      493,
+      434
+    ],
+    "kind": "battle_portrait"
+  },
+  "story_90052_TroubleshooterAppearance": {
+    "file": "cf10f1cbae0715ffe2f9a9de.png",
+    "source": "Assets/Resources_moved/Sprite/Unit/Portrait/90052_portrait.png",
+    "portrait_id": "90052",
+    "size": [
+      493,
+      434
+    ],
+    "kind": "battle_portrait"
+  },
+  "story_90071_KCorpAppearance": {
+    "file": "6e9de01a29865fe64b403d6f.png",
+    "source": "Assets/Resources_moved/Sprite/Unit/Portrait/90071_portrait.png",
+    "portrait_id": "90071",
+    "size": [
+      493,
+      434
+    ],
+    "kind": "battle_portrait"
+  },
+  "story_90053_TroubleshooterAppearance": {
+    "file": "f2274c7da472ef1411b9398e.png",
+    "source": "Assets/Resources_moved/Sprite/Unit/Portrait/90053_portrait.png",
+    "portrait_id": "90053",
+    "size": [
+      493,
+      434
+    ],
+    "kind": "battle_portrait"
+  },
+  "story_91007_KCorpAppearance": {
+    "file": "b7a8bc867b44090c21e9b4e9.png",
+    "source": "Assets/Resources_moved/Sprite/Unit/Portrait/91007_portrait.png",
+    "portrait_id": "91007",
+    "size": [
+      493,
+      434
+    ],
+    "kind": "battle_portrait"
+  },
+  "story_90050_KCorpAppearance": {
+    "file": "3d24c4f0ba04338049a6ba44.png",
+    "source": "Assets/Resources_moved/Sprite/Unit/Portrait/90050_portrait.png",
+    "portrait_id": "90050",
+    "size": [
+      493,
+      434
+    ],
+    "kind": "battle_portrait"
+  },
+  "story_90051_TroubleshooterAppearance": {
+    "file": "ab5cc2a9d68e52871c4d7b40.png",
+    "source": "Assets/Resources_moved/Sprite/Unit/Portrait/90051_portrait.png",
+    "portrait_id": "90051",
+    "size": [
+      493,
+      434
+    ],
+    "kind": "battle_portrait"
+  },
+  "story_91008_TroubleshooterAppearance": {
+    "file": "b5ad625d40951391bbf3bfec.png",
+    "source": "Assets/Resources_moved/Sprite/Unit/Portrait/91008_portrait.png",
+    "portrait_id": "91008",
+    "size": [
+      493,
+      434
+    ],
+    "kind": "battle_portrait"
+  },
+  "story_90049_KCorpAppearance": {
+    "file": "173bf83b4ca070d6ceba2622.png",
+    "source": "Assets/Resources_moved/Sprite/Unit/Portrait/90049_portrait.png",
+    "portrait_id": "90049",
+    "size": [
+      493,
+      434
+    ],
+    "kind": "battle_portrait"
+  },
+  "story_8041_BrassBullAppearance": {
+    "file": "db9e2e36de18f189fc36c0bd.png",
+    "source": "Assets/Resources_moved/Sprite/Unit/Portrait/8041_portrait.png",
+    "portrait_id": "8041",
+    "size": [
+      493,
+      434
+    ],
+    "kind": "battle_portrait"
+  },
+  "story_8366_Ordeal_Noon_Purple_LoveMeAppearance": {
+    "file": "16133db29b1a9aff8179ee7a.png",
+    "source": "Assets/Resources_moved/Sprite/Unit/Portrait/8366_portrait.png",
+    "portrait_id": "8366",
+    "size": [
+      493,
+      434
+    ],
+    "kind": "battle_portrait"
+  },
+  "story_8366_TestAppearance": {
+    "file": "16133db29b1a9aff8179ee7a.png",
+    "source": "Assets/Resources_moved/Sprite/Unit/Portrait/8366_portrait.png",
+    "portrait_id": "8366",
+    "size": [
+      493,
+      434
+    ],
+    "kind": "battle_portrait"
+  },
+  "story_8058_FairyLanternAppearance": {
+    "file": "7696dd97e887267d5a5aae2a.png",
+    "source": "Assets/Resources_moved/Sprite/Unit/Portrait/8549_portrait.png",
+    "portrait_id": "8549",
+    "size": [
+      493,
+      434
+    ],
+    "kind": "battle_portrait"
+  },
+  "story_8550_LostPassengerAppearance": {
+    "file": "3cf65489230147d0b05c1f83.png",
+    "source": "Assets/Resources_moved/Sprite/Unit/Portrait/8550_portrait.png",
+    "portrait_id": "8550",
+    "size": [
+      493,
+      434
+    ],
+    "kind": "battle_portrait"
+  },
+  "story_8556_RoseSignAppearance": {
+    "file": "9bbe3f6c0281133f751e14ed.png",
+    "source": "Assets/Resources_moved/Sprite/Unit/Portrait/8556_portrait.png",
+    "portrait_id": "8556",
+    "size": [
+      493,
+      434
+    ],
+    "kind": "battle_portrait"
+  },
+  "story_8555_SteamMachineAppearance": {
+    "file": "dd7b231722719d0ec44b3ed2.png",
+    "source": "Assets/Resources_moved/Sprite/Unit/Portrait/8555_portrait.png",
+    "portrait_id": "8555",
+    "size": [
+      493,
+      434
+    ],
+    "kind": "battle_portrait"
+  },
+  "story_8551_LostPassengerPortalAppearance": {
+    "file": "4640b696e0d6fe69aaa3cee8.png",
+    "source": "Assets/Resources_moved/Sprite/Unit/Portrait/8560_portrait.png",
+    "portrait_id": "8560",
+    "size": [
+      493,
+      434
+    ],
+    "kind": "battle_portrait"
+  },
+  "story_8564_RoseSign_RoseAppearance": {
+    "file": "b9704a1df639550de01b0e04.png",
+    "source": "Assets/Resources_moved/Sprite/Unit/Portrait/8564_portrait.png",
+    "portrait_id": "8564",
+    "size": [
+      493,
+      434
+    ],
+    "kind": "battle_portrait"
+  },
+  "story_8059_FairyLongLegsAppearance": {
+    "file": "e614c8a53ea506e9a6e49561.png",
+    "source": "Assets/Resources_moved/Sprite/Unit/Portrait/8059_portrait.png",
+    "portrait_id": "8059",
+    "size": [
+      493,
+      434
+    ],
+    "kind": "battle_portrait"
+  },
+  "story_8113_SantaOgreAppearance": {
+    "file": "7a149e8ef3dce3d2fd51e08f.png",
+    "source": "Assets/Resources_moved/Sprite/Unit/Portrait/8113_portrait.png",
+    "portrait_id": "8113",
+    "size": [
+      493,
+      434
+    ],
+    "kind": "battle_portrait"
+  },
+  "story_90103_Gnome_BlackAppearance": {
+    "file": "15aa8fc15aa682ff1df9c80f.png",
+    "source": "Assets/Resources_moved/Sprite/Unit/Portrait/90103_portrait.png",
+    "portrait_id": "90103",
+    "size": [
+      493,
+      434
+    ],
+    "kind": "battle_portrait"
+  },
+  "story_90104_Gnome_EliteAppearance": {
+    "file": "98ef74cff35a760205951a45.png",
+    "source": "Assets/Resources_moved/Sprite/Unit/Portrait/90104_portrait.png",
+    "portrait_id": "90104",
+    "size": [
+      493,
+      434
+    ],
+    "kind": "battle_portrait"
+  },
+  "story_90102_Gnome_RedAppearance": {
+    "file": "d8d0dc8614ba8c4966a6267a.png",
+    "source": "Assets/Resources_moved/Sprite/Unit/Portrait/90102_portrait.png",
+    "portrait_id": "90102",
+    "size": [
+      493,
+      434
+    ],
+    "kind": "battle_portrait"
+  },
+  "story_90101_Gnome_GreenAppearance": {
+    "file": "ee2850152cf2689d1be2fdda.png",
+    "source": "Assets/Resources_moved/Sprite/Unit/Portrait/90101_portrait.png",
+    "portrait_id": "90101",
+    "size": [
+      493,
+      434
+    ],
+    "kind": "battle_portrait"
+  },
+  "story_90119_DeadRabbits_RedEye_2Appearance": {
+    "file": "e1b8441274b58702ee606e5f.png",
+    "source": "Assets/Resources_moved/Sprite/Unit/Portrait/90119_portrait.png",
+    "portrait_id": "90119",
+    "size": [
+      493,
+      434
+    ],
+    "kind": "battle_portrait"
+  },
+  "story_90121_Maid_2Appearance": {
+    "file": "b8cd01211cfd5f97cade8641.png",
+    "source": "Assets/Resources_moved/Sprite/Unit/Portrait/90121_portrait.png",
+    "portrait_id": "90121",
+    "size": [
+      493,
+      434
+    ],
+    "kind": "battle_portrait"
+  },
+  "story_90114_TCrop_Gang_1Appearance": {
+    "file": "0120dd7528a3c0794238a1f6.png",
+    "source": "Assets/Resources_moved/Sprite/Unit/Portrait/90114_portrait.png",
+    "portrait_id": "90114",
+    "size": [
+      493,
+      434
+    ],
+    "kind": "battle_portrait"
+  },
+  "story_90124_Butler_2Appearance": {
+    "file": "00693f187ed63e50996e3c49.png",
+    "source": "Assets/Resources_moved/Sprite/Unit/Portrait/90124_portrait.png",
+    "portrait_id": "90124",
+    "size": [
+      493,
+      434
+    ],
+    "kind": "battle_portrait"
+  },
+  "story_90123_Butler_1Appearance": {
+    "file": "a43fbbe37794e5a5d8c277f5.png",
+    "source": "Assets/Resources_moved/Sprite/Unit/Portrait/90123_portrait.png",
+    "portrait_id": "90123",
+    "size": [
+      493,
+      434
+    ],
+    "kind": "battle_portrait"
+  },
+  "story_90126_Butler_W_1Appearance": {
+    "file": "5b8407d434f914a9df64c72b.png",
+    "source": "Assets/Resources_moved/Sprite/Unit/Portrait/90126_portrait.png",
+    "portrait_id": "90126",
+    "size": [
+      493,
+      434
+    ],
+    "kind": "battle_portrait"
+  },
+  "story_90115_TCrop_Gang_2Appearance": {
+    "file": "5a986a9865740e872431cf01.png",
+    "source": "Assets/Resources_moved/Sprite/Unit/Portrait/90115_portrait.png",
+    "portrait_id": "90115",
+    "size": [
+      493,
+      434
+    ],
+    "kind": "battle_portrait"
+  },
+  "story_90122_Maid_3Appearance": {
+    "file": "da96675bc993464da38d435f.png",
+    "source": "Assets/Resources_moved/Sprite/Unit/Portrait/90122_portrait.png",
+    "portrait_id": "90122",
+    "size": [
+      493,
+      434
+    ],
+    "kind": "battle_portrait"
+  },
+  "story_90127_Butler_W_2Appearance": {
+    "file": "f047a8d7b9c9ac6fab4c8810.png",
+    "source": "Assets/Resources_moved/Sprite/Unit/Portrait/90127_portrait.png",
+    "portrait_id": "90127",
+    "size": [
+      493,
+      434
+    ],
+    "kind": "battle_portrait"
+  },
+  "story_90116_DeadRabbits_1Appearance": {
+    "file": "94dfcca82085e4bd2ed49a77.png",
+    "source": "Assets/Resources_moved/Sprite/Unit/Portrait/90116_portrait.png",
+    "portrait_id": "90116",
+    "size": [
+      493,
+      434
+    ],
+    "kind": "battle_portrait"
+  },
+  "story_90125_Butler_3Appearance": {
+    "file": "ecf4eac243d9e4d572addb11.png",
+    "source": "Assets/Resources_moved/Sprite/Unit/Portrait/90125_portrait.png",
+    "portrait_id": "90125",
+    "size": [
+      493,
+      434
+    ],
+    "kind": "battle_portrait"
+  },
+  "story_90118_DeadRabbits_RedEye_1Appearance": {
+    "file": "46faf221974972868ceab24c.png",
+    "source": "Assets/Resources_moved/Sprite/Unit/Portrait/90118_portrait.png",
+    "portrait_id": "90118",
+    "size": [
+      493,
+      434
+    ],
+    "kind": "battle_portrait"
+  },
+  "story_90117_DeadRabbits_2Appearance": {
+    "file": "cfc75c5eb6961b45409bcbd0.png",
+    "source": "Assets/Resources_moved/Sprite/Unit/Portrait/90117_portrait.png",
+    "portrait_id": "90117",
+    "size": [
+      493,
+      434
+    ],
+    "kind": "battle_portrait"
+  },
+  "story_90120_Maid_1Appearance": {
+    "file": "1608e4f13d4db535624ab247.png",
+    "source": "Assets/Resources_moved/Sprite/Unit/Portrait/90120_portrait.png",
+    "portrait_id": "90120",
+    "size": [
+      493,
+      434
+    ],
+    "kind": "battle_portrait"
+  },
+  "story_91014_JosephineAppearance": {
+    "file": "b145666b97e6786ad75a10a4.png",
+    "source": "Assets/Resources_moved/Sprite/Unit/Portrait/91014_portrait.png",
+    "portrait_id": "91014",
+    "size": [
+      493,
+      434
+    ],
+    "kind": "battle_portrait"
+  },
+  "story_90126_Butler_W_1_v1Appearance": {
+    "file": "5b8407d434f914a9df64c72b.png",
+    "source": "Assets/Resources_moved/Sprite/Unit/Portrait/90126_portrait.png",
+    "portrait_id": "90126",
+    "size": [
+      493,
+      434
+    ],
+    "kind": "battle_portrait"
+  },
+  "story_90127_Butler_W_2_v1Appearance": {
+    "file": "f047a8d7b9c9ac6fab4c8810.png",
+    "source": "Assets/Resources_moved/Sprite/Unit/Portrait/90127_portrait.png",
+    "portrait_id": "90127",
+    "size": [
+      493,
+      434
+    ],
+    "kind": "battle_portrait"
+  },
+  "story_8503_CryToadAppearance": {
+    "file": "777ab6df672b82c2586efbfd.png",
+    "source": "Assets/Resources_moved/Sprite/Unit/Portrait/8510_portrait.png",
+    "portrait_id": "8510",
+    "size": [
+      493,
+      434
+    ],
+    "kind": "battle_portrait"
+  },
+  "story_8504_kqe1j23Appearance": {
+    "file": "6914eb8a389cde5f97221ac0.png",
+    "source": "Assets/Resources_moved/Sprite/Unit/Portrait/8519_portrait.png",
+    "portrait_id": "8519",
+    "size": [
+      493,
+      434
+    ],
+    "kind": "battle_portrait"
+  },
+  "story_8505_RedBuddhaAppearance": {
+    "file": "5a5e11a99aee488acfab94f3.png",
+    "source": "Assets/Resources_moved/Sprite/Unit/Portrait/8527_portrait.png",
+    "portrait_id": "8527",
+    "size": [
+      493,
+      434
+    ],
+    "kind": "battle_portrait"
+  },
+  "story_8502_KCorp_Grade3_FuryAppearance": {
+    "file": "f9c937e07e3cdeed75220bce.png",
+    "source": "Assets/Resources_moved/Sprite/Unit/Portrait/8523_portrait.png",
+    "portrait_id": "8523",
+    "size": [
+      493,
+      434
+    ],
+    "kind": "battle_portrait"
+  },
+  "story_8501_KCorp_Grade3Appearance": {
+    "file": "46ce27236ed2e2a869baf79e.png",
+    "source": "Assets/Resources_moved/Sprite/Unit/Portrait/8521_portrait.png",
+    "portrait_id": "8521",
+    "size": [
+      493,
+      434
+    ],
+    "kind": "battle_portrait"
+  },
+  "story_8034_Chicken_NormalAppearance": {
+    "file": "c2467d640d47a31af40bae83.png",
+    "source": "Assets/Resources_moved/Sprite/Unit/Portrait/8034_portrait.png",
+    "portrait_id": "8034",
+    "size": [
+      493,
+      434
+    ],
+    "kind": "battle_portrait"
+  },
+  "story_8035_Chicken_SeasoningAppearance": {
+    "file": "7aa139d1c1c0304b05d4eb8e.png",
+    "source": "Assets/Resources_moved/Sprite/Unit/Portrait/8035_portrait.png",
+    "portrait_id": "8035",
+    "size": [
+      493,
+      434
+    ],
+    "kind": "battle_portrait"
+  },
+  "story_8037_Chicken_EliteAppearance": {
+    "file": "0840f2a1735eb41e1924774b.png",
+    "source": "Assets/Resources_moved/Sprite/Unit/Portrait/8037_portrait.png",
+    "portrait_id": "8037",
+    "size": [
+      493,
+      434
+    ],
+    "kind": "battle_portrait"
+  },
+  "story_8036_Chicken_SoyAppearance": {
+    "file": "47e6dbdcc4733f1d8414474e.png",
+    "source": "Assets/Resources_moved/Sprite/Unit/Portrait/8036_portrait.png",
+    "portrait_id": "8036",
+    "size": [
+      493,
+      434
+    ],
+    "kind": "battle_portrait"
+  },
+  "story_8038_Chicken_ChefAppearance": {
+    "file": "4c886d8959da110b7383b58d.png",
+    "source": "Assets/Resources_moved/Sprite/Unit/Portrait/8038_portrait.png",
+    "portrait_id": "8038",
+    "size": [
+      493,
+      434
+    ],
+    "kind": "battle_portrait"
+  },
+  "story_8038_Chicken_Chef_MirrorAppearance": {
+    "file": "4c886d8959da110b7383b58d.png",
+    "source": "Assets/Resources_moved/Sprite/Unit/Portrait/8038_portrait.png",
+    "portrait_id": "8038",
+    "size": [
+      493,
+      434
+    ],
+    "kind": "battle_portrait"
+  },
+  "story_90043_KCorp_Chick_StickLAppearance": {
+    "file": "d22f760dfa3e6eb709aebd78.png",
+    "source": "Assets/Resources_moved/Sprite/Unit/Portrait/90043_portrait.png",
+    "portrait_id": "90043",
+    "size": [
+      493,
+      434
+    ],
+    "kind": "battle_portrait"
+  },
+  "story_90042_KCorp_Chick_StickAppearance": {
+    "file": "8a691cd0c01327435ba13e5e.png",
+    "source": "Assets/Resources_moved/Sprite/Unit/Portrait/90042_portrait.png",
+    "portrait_id": "90042",
+    "size": [
+      493,
+      434
+    ],
+    "kind": "battle_portrait"
+  },
+  "story_90045_KCorp_Chick_ShieldAppearance": {
+    "file": "214b8810070a7303d1e4946e.png",
+    "source": "Assets/Resources_moved/Sprite/Unit/Portrait/90045_portrait.png",
+    "portrait_id": "90045",
+    "size": [
+      493,
+      434
+    ],
+    "kind": "battle_portrait"
+  },
+  "story_90044_KCorp_Chick_AxeAppearance": {
+    "file": "431e73f1cfdc3296fe172a83.png",
+    "source": "Assets/Resources_moved/Sprite/Unit/Portrait/90044_portrait.png",
+    "portrait_id": "90044",
+    "size": [
+      493,
+      434
+    ],
+    "kind": "battle_portrait"
+  },
+  "story_8375A_Barber_Blood_RoseAppearance": {
+    "file": "2c2a85713122d18c677c3c6f.png",
+    "source": "Assets/Resources_moved/Sprite/Unit/Portrait/Ep7_3_Portrait/90162_portrait.png",
+    "portrait_id": "90162",
+    "size": [
+      493,
+      434
+    ],
+    "kind": "battle_portrait"
+  },
+  "story_8377_RoseHunter_VineAppearance": {
+    "file": "8b188d355bd294144009e517.png",
+    "source": "Assets/Resources_moved/Sprite/Unit/Portrait/Ep7_3_Portrait/8377_portrait.png",
+    "portrait_id": "8377",
+    "size": [
+      493,
+      434
+    ],
+    "kind": "battle_portrait"
+  },
+  "story_8390_RealDon_1pAppearance": {
+    "file": "d0632e16ab521f5d9ec19671.png",
+    "source": "Assets/Resources_moved/Sprite/Unit/Portrait/Ep7_3_Portrait/8390_portrait.png",
+    "portrait_id": "8390",
+    "size": [
+      493,
+      434
+    ],
+    "kind": "battle_portrait"
+  },
+  "story_8378_Priest_BossAppearance": {
+    "file": "af9c5646796039ca1b8b2a39.png",
+    "source": "Assets/Resources_moved/Sprite/Unit/Portrait/Ep7_3_Portrait/8378_portrait.png",
+    "portrait_id": "8378",
+    "size": [
+      493,
+      434
+    ],
+    "kind": "battle_portrait"
+  },
+  "story_8375D_Dulcinea_Vamp_RoseAppearance": {
+    "file": "f376637798521039432f8646.png",
+    "source": "Assets/Resources_moved/Sprite/Unit/Portrait/Ep7_3_Portrait/90168_portrait.png",
+    "portrait_id": "90168",
+    "size": [
+      493,
+      434
+    ],
+    "kind": "battle_portrait"
+  },
+  "story_8373_Septempeccata_Blood2Appearance": {
+    "file": "620a0f6dc55bdb223d4b4f4d.png",
+    "source": "Assets/Resources_moved/Sprite/Unit/Portrait/Ep7_3_Portrait/8373_portrait.png",
+    "portrait_id": "8373",
+    "size": [
+      493,
+      434
+    ],
+    "kind": "battle_portrait"
+  },
+  "story_8405_RealDon_Car_PriestAppearance": {
+    "file": "70f99044fabcd797eb8c667a.png",
+    "source": "Assets/Resources_moved/Sprite/Unit/Portrait/Ep7_3_Portrait/8403_portrait.png",
+    "portrait_id": "8403",
+    "size": [
+      493,
+      434
+    ],
+    "kind": "battle_portrait"
+  },
+  "story_8403_RealDon_Car_BarberAppearance": {
+    "file": "70f99044fabcd797eb8c667a.png",
+    "source": "Assets/Resources_moved/Sprite/Unit/Portrait/Ep7_3_Portrait/8403_portrait.png",
+    "portrait_id": "8403",
+    "size": [
+      493,
+      434
+    ],
+    "kind": "battle_portrait"
+  },
+  "story_8375_Camille_RoseAppearance": {
+    "file": "c5c353f18e6067271c28166c.png",
+    "source": "Assets/Resources_moved/Sprite/Unit/Portrait/Ep7_3_Portrait/8375_portrait.png",
+    "portrait_id": "8375",
+    "size": [
+      493,
+      434
+    ],
+    "kind": "battle_portrait"
+  },
+  "story_8376_RoseHunterAppearance": {
+    "file": "b2e4036768d0bc05f2cad51a.png",
+    "source": "Assets/Resources_moved/Sprite/Unit/Portrait/Ep7_3_Portrait/8376_portrait.png",
+    "portrait_id": "8376",
+    "size": [
+      493,
+      434
+    ],
+    "kind": "battle_portrait"
+  },
+  "story_8394_FourHundredRoses_ZweiAppearance": {
+    "file": "77b4be7a41949d3d7868fe6f.png",
+    "source": "Assets/Resources_moved/Sprite/Unit/Portrait/Ep7_3_Portrait/8394_portrait.png",
+    "portrait_id": "8394",
+    "size": [
+      493,
+      434
+    ],
+    "kind": "battle_portrait"
+  },
+  "story_8410_RealDon_2pAppearance": {
+    "file": "199bb72cfc03cc6cc8623d93.png",
+    "source": "Assets/Resources_moved/Sprite/Unit/Portrait/Ep7_3_Portrait/8410_portrait.png",
+    "portrait_id": "8410",
+    "size": [
+      493,
+      434
+    ],
+    "kind": "battle_portrait"
+  },
+  "story_8379_TeddyAppearance": {
+    "file": "f2bddba37040aa5b857d3612.png",
+    "source": "Assets/Resources_moved/Sprite/Unit/Portrait/Ep7_3_Portrait/8379_portrait.png",
+    "portrait_id": "8379",
+    "size": [
+      493,
+      434
+    ],
+    "kind": "battle_portrait"
+  },
+  "story_8375C_Priest_Vamp_RoseAppearance": {
+    "file": "f51cdf8fe2aa878390af0a99.png",
+    "source": "Assets/Resources_moved/Sprite/Unit/Portrait/Ep7_3_Portrait/90167_portrait.png",
+    "portrait_id": "90167",
+    "size": [
+      493,
+      434
+    ],
+    "kind": "battle_portrait"
+  },
+  "story_8404_RealDon_Car_DulcineaAppearance": {
+    "file": "70f99044fabcd797eb8c667a.png",
+    "source": "Assets/Resources_moved/Sprite/Unit/Portrait/Ep7_3_Portrait/8403_portrait.png",
+    "portrait_id": "8403",
+    "size": [
+      493,
+      434
+    ],
+    "kind": "battle_portrait"
+  },
+  "story_8380_SanchoAppearance": {
+    "file": "e7cbc3096db228b692b78f86.png",
+    "source": "Assets/Resources_moved/Sprite/Unit/Portrait/Ep7_3_Portrait/8380_portrait.png",
+    "portrait_id": "8380",
+    "size": [
+      493,
+      434
+    ],
+    "kind": "battle_portrait"
+  },
+  "story_90058_LobotomyAppearance": {
+    "file": "2cc6c325e7e63ed86bfbd5ae.png",
+    "source": "Assets/Resources_moved/Sprite/Unit/Portrait/90058_portrait.png",
+    "portrait_id": "90058",
+    "size": [
+      493,
+      434
+    ],
+    "kind": "battle_portrait"
+  },
+  "story_90059_LobotomyAppearance": {
+    "file": "94698d6431934225cdfc7174.png",
+    "source": "Assets/Resources_moved/Sprite/Unit/Portrait/90059_portrait.png",
+    "portrait_id": "90059",
+    "size": [
+      493,
+      434
+    ],
+    "kind": "battle_portrait"
+  },
+  "story_90056_KCorpAppearance": {
+    "file": "1a5078741e618180c7f8f513.png",
+    "source": "Assets/Resources_moved/Sprite/Unit/Portrait/90056_portrait.png",
+    "portrait_id": "90056",
+    "size": [
+      493,
+      434
+    ],
+    "kind": "battle_portrait"
+  },
+  "story_90055_KCorpAppearance": {
+    "file": "cc305e5e7a0274fba9befdc9.png",
+    "source": "Assets/Resources_moved/Sprite/Unit/Portrait/90055_portrait.png",
+    "portrait_id": "90055",
+    "size": [
+      493,
+      434
+    ],
+    "kind": "battle_portrait"
+  },
+  "story_91009_LobotomyEGOBossAppearance": {
+    "file": "95b79197c44b75668169fa0b.png",
+    "source": "Assets/Resources_moved/Sprite/Unit/Portrait/91009_portrait.png",
+    "portrait_id": "91009",
+    "size": [
+      493,
+      434
+    ],
+    "kind": "battle_portrait"
+  },
+  "story_90054_KCorpAppearance": {
+    "file": "bfab2f43385cfe98711ad2f5.png",
+    "source": "Assets/Resources_moved/Sprite/Unit/Portrait/90054_portrait.png",
+    "portrait_id": "90054",
+    "size": [
+      493,
+      434
+    ],
+    "kind": "battle_portrait"
+  },
+  "story_8044_Camellia_AwakenAppearance": {
+    "file": "aa600da99da9ea4a1d9d64f6.png",
+    "source": "Assets/Resources_moved/Sprite/Unit/Portrait/8044_portrait.png",
+    "portrait_id": "8044",
+    "size": [
+      493,
+      434
+    ],
+    "kind": "battle_portrait"
+  },
+  "story_8054_Camellia_FlowerAppearance": {
+    "file": "31d4fe99fccb4f985846b4d8.png",
+    "source": "Assets/Resources_moved/Sprite/Unit/Portrait/8054_portrait.png",
+    "portrait_id": "8054",
+    "size": [
+      493,
+      434
+    ],
+    "kind": "battle_portrait"
+  },
+  "story_8043_CamelliaAppearance": {
+    "file": "e6ee41c40ca2d48d590e8f6e.png",
+    "source": "Assets/Resources_moved/Sprite/Unit/Portrait/8043_portrait.png",
+    "portrait_id": "8043",
+    "size": [
+      493,
+      434
+    ],
+    "kind": "battle_portrait"
+  },
+  "story_90086_DoubleHook_Elite_AAppearance": {
+    "file": "57628e1de4f2da5fa69e6de0.png",
+    "source": "Assets/Resources_moved/Sprite/Unit/Portrait/90086_portrait.png",
+    "portrait_id": "90086",
+    "size": [
+      493,
+      434
+    ],
+    "kind": "battle_portrait"
+  },
+  "story_90084_DoubleHook_Mob_AAppearance": {
+    "file": "3578d2e8010243d90f4067b8.png",
+    "source": "Assets/Resources_moved/Sprite/Unit/Portrait/90084_portrait.png",
+    "portrait_id": "90084",
+    "size": [
+      493,
+      434
+    ],
+    "kind": "battle_portrait"
+  },
+  "story_90085_DoubleHook_Mob_BAppearance": {
+    "file": "4f0486db6c6282bb1554fe15.png",
+    "source": "Assets/Resources_moved/Sprite/Unit/Portrait/90085_portrait.png",
+    "portrait_id": "90085",
+    "size": [
+      493,
+      434
+    ],
+    "kind": "battle_portrait"
+  },
+  "story_91012_DoubleHook_SmeeAppearance": {
+    "file": "c88da103e51193dc8af6d838.png",
+    "source": "Assets/Resources_moved/Sprite/Unit/Portrait/91012_portrait.png",
+    "portrait_id": "91012",
+    "size": [
+      493,
+      434
+    ],
+    "kind": "battle_portrait"
+  },
+  "story_90083_FishCreatureAppearance": {
+    "file": "68f8af96edbc03044ce0f182.png",
+    "source": "Assets/Resources_moved/Sprite/Unit/Portrait/90083_portrait.png",
+    "portrait_id": "90083",
+    "size": [
+      493,
+      434
+    ],
+    "kind": "battle_portrait"
+  },
+  "story_91011_FishCreature_EliteAppearance": {
+    "file": "eed71cd6a8946d79119e9df0.png",
+    "source": "Assets/Resources_moved/Sprite/Unit/Portrait/91011_portrait.png",
+    "portrait_id": "91011",
+    "size": [
+      493,
+      434
+    ],
+    "kind": "battle_portrait"
+  },
+  "story_90087_DoubleHook_Elite_BAppearance": {
+    "file": "fbd8cdaaedd4678456db5614.png",
+    "source": "Assets/Resources_moved/Sprite/Unit/Portrait/90087_portrait.png",
+    "portrait_id": "90087",
+    "size": [
+      493,
+      434
+    ],
+    "kind": "battle_portrait"
+  },
+  "story_91023_Heishou_Si_Mob_EliteAppearance": {
+    "file": "6c772335810c8cf96373ab35.png",
+    "source": "Assets/Resources_moved/Sprite/Unit/Portrait/Ep8_Cultivation_Portrait/91023_portrait.png",
+    "portrait_id": "91023",
+    "size": [
+      493,
+      434
+    ],
+    "kind": "battle_portrait"
+  },
+  "story_1247_Wei_BerserkAppearance": {
+    "file": "de43f82b48bfea1c9657b6ef.png",
+    "source": "Assets/Resources_moved/Sprite/Unit/Portrait/Ep8_Cultivation_Portrait/1247_portrait.png",
+    "portrait_id": "1247",
+    "size": [
+      493,
+      434
+    ],
+    "kind": "battle_portrait"
+  },
+  "story_90215_Heishou_Si_mob_AAppearance": {
+    "file": "84cbf6ab8757872195dd671e.png",
+    "source": "Assets/Resources_moved/Sprite/Unit/Portrait/Ep8_Cultivation_Portrait/90215_portrait.png",
+    "portrait_id": "90215",
+    "size": [
+      493,
+      434
+    ],
+    "kind": "battle_portrait"
+  },
+  "story_90216_Heishou_Si_mob_BAppearance": {
+    "file": "a6f6ddc62cbf46bdd94e4fc5.png",
+    "source": "Assets/Resources_moved/Sprite/Unit/Portrait/Ep8_Cultivation_Portrait/90216_portrait.png",
+    "portrait_id": "90216",
+    "size": [
+      493,
+      434
+    ],
+    "kind": "battle_portrait"
+  },
+  "story_1286_SFamily_Mob_Named_UpgradeAppearance": {
+    "file": "13ac214dbf8f612d23c2db6b.png",
+    "source": "Assets/Resources_moved/Sprite/Unit/Portrait/Ep8_1_Portrait/91021_portrait.png",
+    "portrait_id": "91021",
+    "size": [
+      493,
+      434
+    ],
+    "kind": "battle_portrait"
+  },
+  "story_90198_SFamily_Mob_AAppearance": {
+    "file": "01bdeed82577482e41b2da96.png",
+    "source": "Assets/Resources_moved/Sprite/Unit/Portrait/Ep8_1_Portrait/90198_portrait.png",
+    "portrait_id": "90198",
+    "size": [
+      493,
+      434
+    ],
+    "kind": "battle_portrait"
+  },
+  "story_90197_Pot_Mob_CAppearance": {
+    "file": "776be1e38b46822995a66ca5.png",
+    "source": "Assets/Resources_moved/Sprite/Unit/Portrait/Ep8_1_Portrait/90197_portrait.png",
+    "portrait_id": "90197",
+    "size": [
+      493,
+      434
+    ],
+    "kind": "battle_portrait"
+  },
+  "story_90196_Pot_Mob_BAppearance": {
+    "file": "23a57cd5fc9d7740bd24e940.png",
+    "source": "Assets/Resources_moved/Sprite/Unit/Portrait/Ep8_1_Portrait/90196_portrait.png",
+    "portrait_id": "90196",
+    "size": [
+      493,
+      434
+    ],
+    "kind": "battle_portrait"
+  },
+  "story_90204_Strangers_BAppearance": {
+    "file": "91836bc9eb02e4264b2a2dc3.png",
+    "source": "Assets/Resources_moved/Sprite/Unit/Portrait/Ep8_1_Portrait/90204_portrait.png",
+    "portrait_id": "90204",
+    "size": [
+      493,
+      434
+    ],
+    "kind": "battle_portrait"
+  },
+  "story_90202_WoodenDummy_BAppearance": {
+    "file": "e00ff1738922011e7201acea.png",
+    "source": "Assets/Resources_moved/Sprite/Unit/Portrait/Ep8_1_Portrait/90202_portrait.png",
+    "portrait_id": "90202",
+    "size": [
+      493,
+      434
+    ],
+    "kind": "battle_portrait"
+  },
+  "story_90199_SFamily_Mob_BAppearance": {
+    "file": "cd00947494cc1f7b2d369bc1.png",
+    "source": "Assets/Resources_moved/Sprite/Unit/Portrait/Ep8_1_Portrait/90199_portrait.png",
+    "portrait_id": "90199",
+    "size": [
+      493,
+      434
+    ],
+    "kind": "battle_portrait"
+  },
+  "story_91022_Pot_Mob_Elite_AAppearance": {
+    "file": "129360a879601d27207df46e.png",
+    "source": "Assets/Resources_moved/Sprite/Unit/Portrait/Ep8_1_Portrait/91022_portrait.png",
+    "portrait_id": "91022",
+    "size": [
+      493,
+      434
+    ],
+    "kind": "battle_portrait"
+  },
+  "story_90203_Strangers_AAppearance": {
+    "file": "2f718d1d50e2b7c3686aadb7.png",
+    "source": "Assets/Resources_moved/Sprite/Unit/Portrait/Ep8_1_Portrait/90203_portrait.png",
+    "portrait_id": "90203",
+    "size": [
+      493,
+      434
+    ],
+    "kind": "battle_portrait"
+  },
+  "story_90200_SFamily_Mob_EliteAppearance": {
+    "file": "5b1cd2675e6d57b0d5097ec5.png",
+    "source": "Assets/Resources_moved/Sprite/Unit/Portrait/Ep8_1_Portrait/90200_portrait.png",
+    "portrait_id": "90200",
+    "size": [
+      493,
+      434
+    ],
+    "kind": "battle_portrait"
+  },
+  "story_90195_Pot_Mob_AAppearance": {
+    "file": "7d6c303ef6911eb448113d54.png",
+    "source": "Assets/Resources_moved/Sprite/Unit/Portrait/Ep8_1_Portrait/90195_portrait.png",
+    "portrait_id": "90195",
+    "size": [
+      493,
+      434
+    ],
+    "kind": "battle_portrait"
+  },
+  "story_91021_SFamily_Mob_NamedAppearance": {
+    "file": "13ac214dbf8f612d23c2db6b.png",
+    "source": "Assets/Resources_moved/Sprite/Unit/Portrait/Ep8_1_Portrait/91021_portrait.png",
+    "portrait_id": "91021",
+    "size": [
+      493,
+      434
+    ],
+    "kind": "battle_portrait"
+  },
+  "story_90201_WoodenDummy_AAppearance": {
+    "file": "f049d1eb63f9ab96a4133d2b.png",
+    "source": "Assets/Resources_moved/Sprite/Unit/Portrait/Ep8_1_Portrait/90201_portrait.png",
+    "portrait_id": "90201",
+    "size": [
+      493,
+      434
+    ],
+    "kind": "battle_portrait"
+  },
+  "story_90185_BlackHand_Mao_AAppearance": {
+    "file": "d1e3ff5620f798ba444431f5.png",
+    "source": "Assets/Resources_moved/Sprite/Unit/Portrait/90185_portrait.png",
+    "portrait_id": "90185",
+    "size": [
+      493,
+      434
+    ],
+    "kind": "battle_portrait"
+  },
+  "story_90194_JangOffice_B2Appearance": {
+    "file": "364065976734a590a737ce73.png",
+    "source": "Assets/Resources_moved/Sprite/Unit/Portrait/90194_portrait.png",
+    "portrait_id": "90194",
+    "size": [
+      493,
+      434
+    ],
+    "kind": "battle_portrait"
+  },
+  "story_1126_BlackHand_Mao_JaroAppearance": {
+    "file": "0fea9e8a429497d6c0ee002b.png",
+    "source": "Assets/Resources_moved/Sprite/Unit/Portrait/1126_portrait.png",
+    "portrait_id": "1126",
+    "size": [
+      493,
+      434
+    ],
+    "kind": "battle_portrait"
+  },
+  "story_90193_JangOffice_A2Appearance": {
+    "file": "129aa165ddcd06d4b83c2a4b.png",
+    "source": "Assets/Resources_moved/Sprite/Unit/Portrait/90193_portrait.png",
+    "portrait_id": "90193",
+    "size": [
+      493,
+      434
+    ],
+    "kind": "battle_portrait"
+  },
+  "story_90184_JangOffice_B1Appearance": {
+    "file": "9a8b483efc07301f107b2c47.png",
+    "source": "Assets/Resources_moved/Sprite/Unit/Portrait/90184_portrait.png",
+    "portrait_id": "90184",
+    "size": [
+      493,
+      434
+    ],
+    "kind": "battle_portrait"
+  },
+  "story_91020_MiddleFinger_MiddleBroAppearance": {
+    "file": "3272add6bc4276dd7ba70372.png",
+    "source": "Assets/Resources_moved/Sprite/Unit/Portrait/1128_portrait.png",
+    "portrait_id": "1128",
+    "size": [
+      493,
+      434
+    ],
+    "kind": "battle_portrait"
+  },
+  "story_90187_Sweepers_AAppearance": {
+    "file": "2831154089408f1ac3ab992c.png",
+    "source": "Assets/Resources_moved/Sprite/Unit/Portrait/90187_portrait.png",
+    "portrait_id": "90187",
+    "size": [
+      493,
+      434
+    ],
+    "kind": "battle_portrait"
+  },
+  "story_90186_BlackHand_Mao_BAppearance": {
+    "file": "58353bafa98a620dabeb85f2.png",
+    "source": "Assets/Resources_moved/Sprite/Unit/Portrait/90186_portrait.png",
+    "portrait_id": "90186",
+    "size": [
+      493,
+      434
+    ],
+    "kind": "battle_portrait"
+  },
+  "story_90183_JangOffice_A1Appearance": {
+    "file": "268370d4d69356d26798e634.png",
+    "source": "Assets/Resources_moved/Sprite/Unit/Portrait/90183_portrait.png",
+    "portrait_id": "90183",
+    "size": [
+      493,
+      434
+    ],
+    "kind": "battle_portrait"
+  },
+  "story_90189_Sweepers_CAppearance": {
+    "file": "898d44a10add98f1a1e06df5.png",
+    "source": "Assets/Resources_moved/Sprite/Unit/Portrait/90189_portrait.png",
+    "portrait_id": "90189",
+    "size": [
+      493,
+      434
+    ],
+    "kind": "battle_portrait"
+  },
+  "story_90188_Sweepers_BAppearance": {
+    "file": "a3dd3d4c4776d67b554b1147.png",
+    "source": "Assets/Resources_moved/Sprite/Unit/Portrait/90188_portrait.png",
+    "portrait_id": "90188",
+    "size": [
+      493,
+      434
+    ],
+    "kind": "battle_portrait"
+  },
+  "story_90190_Sweepers_DAppearance": {
+    "file": "f9a09a4a0984c635789a806d.png",
+    "source": "Assets/Resources_moved/Sprite/Unit/Portrait/90190_portrait.png",
+    "portrait_id": "90190",
+    "size": [
+      493,
+      434
+    ],
+    "kind": "battle_portrait"
+  },
+  "story_1133_BlackHand_Mao_JaroAppearance": {
+    "file": "0fea9e8a429497d6c0ee002b.png",
+    "source": "Assets/Resources_moved/Sprite/Unit/Portrait/1126_portrait.png",
+    "portrait_id": "1126",
+    "size": [
+      493,
+      434
+    ],
+    "kind": "battle_portrait"
+  },
+  "story_1081_Septempeccata_Water3Appearance": {
+    "file": "e1af07e5130e5a899c37d29b.png",
+    "source": "Assets/Resources_moved/Sprite/Unit/Portrait/1081_portrait.png",
+    "portrait_id": "1081",
+    "size": [
+      493,
+      434
+    ],
+    "kind": "battle_portrait"
+  },
+  "story_90181_Lobotomy_Employees_AAppearance": {
+    "file": "0fd47190dfed026257142454.png",
+    "source": "Assets/Resources_moved/Sprite/Unit/Portrait/90181_portrait.png",
+    "portrait_id": "90181",
+    "size": [
+      493,
+      434
+    ],
+    "kind": "battle_portrait"
+  },
+  "story_1082_Distorted_HohenheimAppearance": {
+    "file": "c9369d33561f637d80d9dbeb.png",
+    "source": "Assets/Resources_moved/Sprite/Unit/Portrait/1082_portrait.png",
+    "portrait_id": "1082",
+    "size": [
+      493,
+      434
+    ],
+    "kind": "battle_portrait"
+  },
+  "story_1080_Septempeccata_Ground3Appearance": {
+    "file": "f0dd938adcd18bf5d08cbdbb.png",
+    "source": "Assets/Resources_moved/Sprite/Unit/Portrait/1080_portrait.png",
+    "portrait_id": "1080",
+    "size": [
+      493,
+      434
+    ],
+    "kind": "battle_portrait"
+  },
+  "story_90182_Lobotomy_Employees_BAppearance": {
+    "file": "96980ec171fcfb274d8e6b43.png",
+    "source": "Assets/Resources_moved/Sprite/Unit/Portrait/90182_portrait.png",
+    "portrait_id": "90182",
+    "size": [
+      493,
+      434
+    ],
+    "kind": "battle_portrait"
+  },
+  "story_1079": {
+    "file": "71f6680c2466447259b830c3.png",
+    "source": "Assets/Resources_moved/Sprite/Unit/Portrait/1079_portrait.png",
+    "portrait_id": "1079",
+    "size": [
+      493,
+      434
+    ],
+    "kind": "battle_portrait"
+  },
+  "story_1488_B3_ControllerAppearance": {
+    "file": "0927eae2b120caf0e99d1f99.png",
+    "source": "Assets/Resources_moved/Sprite/Unit/Portrait/Ep10_2_Portrait/1488_portrait.png",
+    "portrait_id": "1488",
+    "size": [
+      493,
+      434
+    ],
+    "kind": "battle_portrait"
+  },
+  "story_1495_3F_ScissorsAppearance": {
+    "file": "8a12202eaf37c6285fe9f97a.png",
+    "source": "Assets/Resources_moved/Sprite/Unit/Portrait/Ep10_2_Portrait/1495_portrait.png",
+    "portrait_id": "1495",
+    "size": [
+      493,
+      434
+    ],
+    "kind": "battle_portrait"
+  },
+  "story_1503_BlackThreadAppearance": {
+    "file": "21ea3fd14c6b5b369ed236c9.png",
+    "source": "Assets/Resources_moved/Sprite/Unit/Portrait/Ep10_2_Portrait/1503_portrait.png",
+    "portrait_id": "1503",
+    "size": [
+      493,
+      434
+    ],
+    "kind": "battle_portrait"
+  },
+  "story_1506_5F_LeNoir_CaptainAppearance": {
+    "file": "2c4ab72b43e7021180de41e2.png",
+    "source": "Assets/Resources_moved/Sprite/Unit/Portrait/Ep10_2_Portrait/1506_portrait.png",
+    "portrait_id": "1506",
+    "size": [
+      493,
+      434
+    ],
+    "kind": "battle_portrait"
+  },
+  "story_1519_B2_Dye_GuardAppearance": {
+    "file": "10bf34859b57ac46e4ed043e.png",
+    "source": "Assets/Resources_moved/Sprite/Unit/Portrait/Ep10_2_Portrait/1519_portrait.png",
+    "portrait_id": "1519",
+    "size": [
+      493,
+      434
+    ],
+    "kind": "battle_portrait"
+  },
+  "story_1365_Chicken_SuperElite_MirrorAppearance": {
+    "file": "b5f5d1b7cc3ed539c43b1d82.png",
+    "source": "Assets/Resources_moved/Sprite/Unit/Portrait/1365_portrait.png",
+    "portrait_id": "1365",
+    "size": [
+      493,
+      434
+    ],
+    "kind": "battle_portrait"
+  },
+  "story_1365_Chicken_SuperEliteAppearance": {
+    "file": "b5f5d1b7cc3ed539c43b1d82.png",
+    "source": "Assets/Resources_moved/Sprite/Unit/Portrait/1365_portrait.png",
+    "portrait_id": "1365",
+    "size": [
+      493,
+      434
+    ],
+    "kind": "battle_portrait"
+  },
+  "story_91039_Bonge_Mob_GcorpAppearance": {
+    "file": "d466238e0c4f5fde6d73d8cb.png",
+    "source": "Assets/Resources_moved/Sprite/Unit/Portrait/91039_portrait.png",
+    "portrait_id": "91039",
+    "size": [
+      493,
+      434
+    ],
+    "kind": "battle_portrait"
+  },
+  "story_91040_Bonge_Mob_CasinoAppearance": {
+    "file": "53ad3737bf3f8222546edddb.png",
+    "source": "Assets/Resources_moved/Sprite/Unit/Portrait/91040_portrait.png",
+    "portrait_id": "91040",
+    "size": [
+      493,
+      434
+    ],
+    "kind": "battle_portrait"
+  },
+  "story_91041_Bonge_Mob_KcorpAppearance": {
+    "file": "642099391acef4e316bae053.png",
+    "source": "Assets/Resources_moved/Sprite/Unit/Portrait/91041_portrait.png",
+    "portrait_id": "91041",
+    "size": [
+      493,
+      434
+    ],
+    "kind": "battle_portrait"
+  },
+  "story_9566_ButterflyofEntangledLives_FutureAppearance": {
+    "file": "6619de41d0cbe20a95dd5126.png",
+    "source": "Assets/Resources_moved/Sprite/Unit/Portrait/9566_portrait.png",
+    "portrait_id": "9566",
+    "size": [
+      493,
+      434
+    ],
+    "kind": "battle_portrait"
+  },
+  "story_9563_ButterflyofEntangledLives_CocoonAppearance": {
+    "file": "e5ae915ca92e6277f86e8db7.png",
+    "source": "Assets/Resources_moved/Sprite/Unit/Portrait/9563_portrait.png",
+    "portrait_id": "9563",
+    "size": [
+      493,
+      434
+    ],
+    "kind": "battle_portrait"
+  },
+  "story_9572_Yinglong2pAppearance": {
+    "file": "30db311e764fac407415c6b1.png",
+    "source": "Assets/Resources_moved/Sprite/Unit/Portrait/9570_portrait.png",
+    "portrait_id": "9570",
+    "size": [
+      493,
+      434
+    ],
+    "kind": "battle_portrait"
+  },
+  "story_9568_YinglongAppearance": {
+    "file": "834ca72a002c0cb5f8243324.png",
+    "source": "Assets/Resources_moved/Sprite/Unit/Portrait/9568_portrait.png",
+    "portrait_id": "9568",
+    "size": [
+      493,
+      434
+    ],
+    "kind": "battle_portrait"
+  },
+  "story_9564_ButterflyofEntangledLives_PastAppearance": {
+    "file": "911a901619e9a24aff65dfb7.png",
+    "source": "Assets/Resources_moved/Sprite/Unit/Portrait/9564_portrait.png",
+    "portrait_id": "9564",
+    "size": [
+      493,
+      434
+    ],
+    "kind": "battle_portrait"
+  },
+  "story_9556_WillYouPlayAppearance": {
+    "file": "b04575006dd1a7551d41aee3.png",
+    "source": "Assets/Resources_moved/Sprite/Unit/Portrait/9556_portrait.png",
+    "portrait_id": "9556",
+    "size": [
+      493,
+      434
+    ],
+    "kind": "battle_portrait"
+  },
+  "story_9569_Yinglong3pAppearance": {
+    "file": "243c076b6f80a0eac867e25f.png",
+    "source": "Assets/Resources_moved/Sprite/Unit/Portrait/9569_portrait.png",
+    "portrait_id": "9569",
+    "size": [
+      493,
+      434
+    ],
+    "kind": "battle_portrait"
+  },
+  "story_9567_ButterflyofEntangledLivesAppearance": {
+    "file": "a6996e1802bd02d0404765c6.png",
+    "source": "Assets/Resources_moved/Sprite/Unit/Portrait/9567_portrait.png",
+    "portrait_id": "9567",
+    "size": [
+      493,
+      434
+    ],
+    "kind": "battle_portrait"
+  },
+  "story_9565_ButterflyofEntangledLives_PresentAppearance": {
+    "file": "25b441bc7b6cf4af87195a65.png",
+    "source": "Assets/Resources_moved/Sprite/Unit/Portrait/9565_portrait.png",
+    "portrait_id": "9565",
+    "size": [
+      493,
+      434
+    ],
+    "kind": "battle_portrait"
+  },
+  "story_8063_Crab_BossAppearance": {
+    "file": "e88ee44eb15e1530db877c41.png",
+    "source": "Assets/Resources_moved/Sprite/Unit/Portrait/8063_portrait.png",
+    "portrait_id": "8063",
+    "size": [
+      493,
+      434
+    ],
+    "kind": "battle_portrait"
+  },
+  "story_90081_Crab_Elite_AAppearance": {
+    "file": "cce91f009b3c93b09480897a.png",
+    "source": "Assets/Resources_moved/Sprite/Unit/Portrait/8074_portrait.png",
+    "portrait_id": "8074",
+    "size": [
+      493,
+      434
+    ],
+    "kind": "battle_portrait"
+  },
+  "story_90080_Crab_Elite_BAppearance": {
+    "file": "4e4698619a5cf1a2a328743e.png",
+    "source": "Assets/Resources_moved/Sprite/Unit/Portrait/8073_portrait.png",
+    "portrait_id": "8073",
+    "size": [
+      493,
+      434
+    ],
+    "kind": "battle_portrait"
+  },
+  "story_90077_Crab_SlashAppearance": {
+    "file": "2dacb498cd1f5a5b2d7aa7fd.png",
+    "source": "Assets/Resources_moved/Sprite/Unit/Portrait/8070_portrait.png",
+    "portrait_id": "8070",
+    "size": [
+      493,
+      434
+    ],
+    "kind": "battle_portrait"
+  },
+  "story_90078_Crab_PenetrateAppearance": {
+    "file": "8116da3006f32de5dbd7450d.png",
+    "source": "Assets/Resources_moved/Sprite/Unit/Portrait/8071_portrait.png",
+    "portrait_id": "8071",
+    "size": [
+      493,
+      434
+    ],
+    "kind": "battle_portrait"
+  },
+  "story_90079_Crab_HitAppearance": {
+    "file": "e39b59a0ae50de3025f0fd23.png",
+    "source": "Assets/Resources_moved/Sprite/Unit/Portrait/8072_portrait.png",
+    "portrait_id": "8072",
+    "size": [
+      493,
+      434
+    ],
+    "kind": "battle_portrait"
+  },
+  "story_8632_NebulizerAppearance": {
+    "file": "c1aebd84f684108348943db7.png",
+    "source": "Assets/Resources_moved/Sprite/Unit/Portrait/8632_portrait.png",
+    "portrait_id": "8632",
+    "size": [
+      493,
+      434
+    ],
+    "kind": "battle_portrait"
+  },
+  "story_8630_DerSchutzeAppearance": {
+    "file": "26dd0983f5fe68097f5728e4.png",
+    "source": "Assets/Resources_moved/Sprite/Unit/Portrait/8630_portrait.png",
+    "portrait_id": "8630",
+    "size": [
+      493,
+      434
+    ],
+    "kind": "battle_portrait"
+  },
+  "story_8633_FourHundredRosesAppearance": {
+    "file": "65d30b9dc8a13ae6911dcc7c.png",
+    "source": "Assets/Resources_moved/Sprite/Unit/Portrait/8633_portrait.png",
+    "portrait_id": "8633",
+    "size": [
+      493,
+      434
+    ],
+    "kind": "battle_portrait"
+  },
+  "story_90178_ChurchOfGears_GearWorshiper_AAppearance": {
+    "file": "aefc52a313036194b5778813.png",
+    "source": "Assets/Resources_moved/Sprite/Unit/Portrait/90178_portrait.png",
+    "portrait_id": "90178",
+    "size": [
+      493,
+      434
+    ],
+    "kind": "battle_portrait"
+  },
+  "story_90179_ChurchOfGears_GearWorshiper_BAppearance": {
+    "file": "288439299c2aa6034546dc3b.png",
+    "source": "Assets/Resources_moved/Sprite/Unit/Portrait/90179_portrait.png",
+    "portrait_id": "90179",
+    "size": [
+      493,
+      434
+    ],
+    "kind": "battle_portrait"
+  },
+  "story_90180_ChurchOfGears_GearWorshiper_EliteAppearance": {
+    "file": "e965d5b95f0ddb9c460c1c39.png",
+    "source": "Assets/Resources_moved/Sprite/Unit/Portrait/90180_portrait.png",
+    "portrait_id": "90180",
+    "size": [
+      493,
+      434
+    ],
+    "kind": "battle_portrait"
+  },
+  "story_90146_Passenger_Blood_BAppearance": {
+    "file": "f5190fd58c99dc213f5c6e4d.png",
+    "source": "Assets/Resources_moved/Sprite/Unit/Portrait/90146_portrait.png",
+    "portrait_id": "90146",
+    "size": [
+      493,
+      434
+    ],
+    "kind": "battle_portrait"
+  },
+  "story_90149_WCorp_Blood_DuelswordAppearance": {
+    "file": "6386f37244453d48d1dd4962.png",
+    "source": "Assets/Resources_moved/Sprite/Unit/Portrait/90149_portrait.png",
+    "portrait_id": "90149",
+    "size": [
+      493,
+      434
+    ],
+    "kind": "battle_portrait"
+  },
+  "story_90151_CyborgFixer_Blood_SpearAppearance": {
+    "file": "5e7004444c5779d31ae9cb64.png",
+    "source": "Assets/Resources_moved/Sprite/Unit/Portrait/90151_portrait.png",
+    "portrait_id": "90151",
+    "size": [
+      493,
+      434
+    ],
+    "kind": "battle_portrait"
+  },
+  "story_90148_WCorp_Blood_AxeAppearance": {
+    "file": "91fb19340e8db7d10c729a15.png",
+    "source": "Assets/Resources_moved/Sprite/Unit/Portrait/90148_portrait.png",
+    "portrait_id": "90148",
+    "size": [
+      493,
+      434
+    ],
+    "kind": "battle_portrait"
+  },
+  "story_91018_CyborgFixer_Blood_SwordAppearance": {
+    "file": "d1763d6a3242cdb9ca33d8dd.png",
+    "source": "Assets/Resources_moved/Sprite/Unit/Portrait/91018_portrait.png",
+    "portrait_id": "91018",
+    "size": [
+      493,
+      434
+    ],
+    "kind": "battle_portrait"
+  },
+  "story_8350_CassetteAppearance": {
+    "file": "d2c5ee89cd1e1a56fc233640.png",
+    "source": "Assets/Resources_moved/Sprite/Unit/Portrait/8350_portrait.png",
+    "portrait_id": "8350",
+    "size": [
+      493,
+      434
+    ],
+    "kind": "battle_portrait"
+  },
+  "story_90145_Passenger_Blood_AAppearance": {
+    "file": "9826f3c90dfd0d0a83f6c01f.png",
+    "source": "Assets/Resources_moved/Sprite/Unit/Portrait/90145_portrait.png",
+    "portrait_id": "90145",
+    "size": [
+      493,
+      434
+    ],
+    "kind": "battle_portrait"
+  },
+  "story_90150_WCorp_Blood_SpearAppearance": {
+    "file": "ebe697295a914ec37b91098e.png",
+    "source": "Assets/Resources_moved/Sprite/Unit/Portrait/90150_portrait.png",
+    "portrait_id": "90150",
+    "size": [
+      493,
+      434
+    ],
+    "kind": "battle_portrait"
+  },
+  "story_90147_Passenger_Blood_CAppearance": {
+    "file": "3b7a9453610df643eb13cdec.png",
+    "source": "Assets/Resources_moved/Sprite/Unit/Portrait/90147_portrait.png",
+    "portrait_id": "90147",
+    "size": [
+      493,
+      434
+    ],
+    "kind": "battle_portrait"
+  },
+  "story_90172_Priest_Vamp_BAppearance": {
+    "file": "be07842151f988df918603dc.png",
+    "source": "Assets/Resources_moved/Sprite/Unit/Portrait/Ep7_2_Portrait/90172_portrait.png",
+    "portrait_id": "90172",
+    "size": [
+      493,
+      434
+    ],
+    "kind": "battle_portrait"
+  },
+  "story_90159_BloodfiendHunter_Blood_BAppearance": {
+    "file": "bdf41558288472a77042b843.png",
+    "source": "Assets/Resources_moved/Sprite/Unit/Portrait/Ep7_2_Portrait/90159_portrait.png",
+    "portrait_id": "90159",
+    "size": [
+      493,
+      434
+    ],
+    "kind": "battle_portrait"
+  },
+  "story_90169_Priest_Blood_AAppearance": {
+    "file": "f7c7870e3ecd10c93eb3a56f.png",
+    "source": "Assets/Resources_moved/Sprite/Unit/Portrait/Ep7_2_Portrait/90169_portrait.png",
+    "portrait_id": "90169",
+    "size": [
+      493,
+      434
+    ],
+    "kind": "battle_portrait"
+  },
+  "story_90175_Dulcinea_Vamp_AAppearance": {
+    "file": "0095696ee9c8cc3618463838.png",
+    "source": "Assets/Resources_moved/Sprite/Unit/Portrait/Ep7_2_Portrait/90175_portrait.png",
+    "portrait_id": "90175",
+    "size": [
+      493,
+      434
+    ],
+    "kind": "battle_portrait"
+  },
+  "story_90171_Priest_Vamp_AAppearance": {
+    "file": "8df2cb7d8897f286176e92ce.png",
+    "source": "Assets/Resources_moved/Sprite/Unit/Portrait/Ep7_2_Portrait/90171_portrait.png",
+    "portrait_id": "90171",
+    "size": [
+      493,
+      434
+    ],
+    "kind": "battle_portrait"
+  },
+  "story_8389_Theatre_BariAppearance": {
+    "file": "0ad9e21abb4f6aca608f5a9a.png",
+    "source": "Assets/Resources_moved/Sprite/Unit/Portrait/Ep7_2_Portrait/8389_portrait.png",
+    "portrait_id": "8389",
+    "size": [
+      493,
+      434
+    ],
+    "kind": "battle_portrait"
+  },
+  "story_90174_Dulcinea_Blood_BAppearance": {
+    "file": "ae94c7c62e096dc195409bc0.png",
+    "source": "Assets/Resources_moved/Sprite/Unit/Portrait/Ep7_2_Portrait/90174_portrait.png",
+    "portrait_id": "90174",
+    "size": [
+      493,
+      434
+    ],
+    "kind": "battle_portrait"
+  },
+  "story_90176_Dulcinea_Vamp_BAppearance": {
+    "file": "b8479da58cbdfff7d81019d5.png",
+    "source": "Assets/Resources_moved/Sprite/Unit/Portrait/Ep7_2_Portrait/90176_portrait.png",
+    "portrait_id": "90176",
+    "size": [
+      493,
+      434
+    ],
+    "kind": "battle_portrait"
+  },
+  "story_90158_BloodfiendHunter_Blood_AAppearance": {
+    "file": "62b8331ecfb782d8e59d72cb.png",
+    "source": "Assets/Resources_moved/Sprite/Unit/Portrait/Ep7_2_Portrait/90158_portrait.png",
+    "portrait_id": "90158",
+    "size": [
+      493,
+      434
+    ],
+    "kind": "battle_portrait"
+  },
+  "story_8381_Dulcinea_BossAppearance": {
+    "file": "fd5af2fb17e09eaeb54f7176.png",
+    "source": "Assets/Resources_moved/Sprite/Unit/Portrait/Ep7_2_Portrait/8381_portrait.png",
+    "portrait_id": "8381",
+    "size": [
+      493,
+      434
+    ],
+    "kind": "battle_portrait"
+  },
+  "story_90173_Dulcinea_Blood_AAppearance": {
+    "file": "429f699fc100a2a010b8562a.png",
+    "source": "Assets/Resources_moved/Sprite/Unit/Portrait/Ep7_2_Portrait/90173_portrait.png",
+    "portrait_id": "90173",
+    "size": [
+      493,
+      434
+    ],
+    "kind": "battle_portrait"
+  },
+  "story_90170_Priest_Blood_BAppearance": {
+    "file": "0e3a2fdd212d9401128706b7.png",
+    "source": "Assets/Resources_moved/Sprite/Unit/Portrait/Ep7_2_Portrait/90170_portrait.png",
+    "portrait_id": "90170",
+    "size": [
+      493,
+      434
+    ],
+    "kind": "battle_portrait"
+  },
+  "story_1369_Ordeal_Dusk_Amber_Food_ChainAppearance": {
+    "file": "8e92ddd6307423dbd02824d6.png",
+    "source": "Assets/Resources_moved/Sprite/Unit/Portrait/1369_portrait.png",
+    "portrait_id": "1369",
+    "size": [
+      493,
+      434
+    ],
+    "kind": "battle_portrait"
+  },
+  "story_90161_Theatre_BearAppearance": {
+    "file": "f5fcf8fdc4248fa6f85db36e.png",
+    "source": "Assets/Resources_moved/Sprite/Unit/Portrait/90161_portrait.png",
+    "portrait_id": "90161",
+    "size": [
+      493,
+      434
+    ],
+    "kind": "battle_portrait"
+  },
+  "story_8372_Barber_NicoleAppearance": {
+    "file": "c7b9ccbfadf40d6180c3bb8b.png",
+    "source": "Assets/Resources_moved/Sprite/Unit/Portrait/8372_portrait.png",
+    "portrait_id": "8372",
+    "size": [
+      493,
+      434
+    ],
+    "kind": "battle_portrait"
+  },
+  "story_90160_Theatre_BanditAppearance": {
+    "file": "09b415510a79acdca9b0239e.png",
+    "source": "Assets/Resources_moved/Sprite/Unit/Portrait/90160_portrait.png",
+    "portrait_id": "90160",
+    "size": [
+      493,
+      434
+    ],
+    "kind": "battle_portrait"
+  },
+  "story_90153_Barber_Blood_BAppearance": {
+    "file": "425e3cd7bec1f2aaa1d6b70b.png",
+    "source": "Assets/Resources_moved/Sprite/Unit/Portrait/90153_portrait.png",
+    "portrait_id": "90153",
+    "size": [
+      493,
+      434
+    ],
+    "kind": "battle_portrait"
+  },
+  "story_8371_Cinq_CamilleAppearance": {
+    "file": "f695a2343d070e068aed4c18.png",
+    "source": "Assets/Resources_moved/Sprite/Unit/Portrait/8371_portrait.png",
+    "portrait_id": "8371",
+    "size": [
+      493,
+      434
+    ],
+    "kind": "battle_portrait"
+  },
+  "story_90154_barber_vamp_1Appearance": {
+    "file": "b0b0324329927e33d97e7472.png",
+    "source": "Assets/Resources_moved/Sprite/Unit/Portrait/90154_portrait.png",
+    "portrait_id": "90154",
+    "size": [
+      493,
+      434
+    ],
+    "kind": "battle_portrait"
+  },
+  "story_90155_barber_vamp_2Appearance": {
+    "file": "03a9400ea9d6aafa60100c90.png",
+    "source": "Assets/Resources_moved/Sprite/Unit/Portrait/90155_portrait.png",
+    "portrait_id": "90155",
+    "size": [
+      493,
+      434
+    ],
+    "kind": "battle_portrait"
+  },
+  "story_90157_BloodfiendHunter_Mob_BAppearance": {
+    "file": "5ba682e653f32998f1acde43.png",
+    "source": "Assets/Resources_moved/Sprite/Unit/Portrait/90157_portrait.png",
+    "portrait_id": "90157",
+    "size": [
+      493,
+      434
+    ],
+    "kind": "battle_portrait"
+  },
+  "story_90152_Barber_Blood_AAppearance": {
+    "file": "325a3917ea85e61018fbbd02.png",
+    "source": "Assets/Resources_moved/Sprite/Unit/Portrait/90152_portrait.png",
+    "portrait_id": "90152",
+    "size": [
+      493,
+      434
+    ],
+    "kind": "battle_portrait"
+  },
+  "story_90156_BloodfiendHunter_Mob_AAppearance": {
+    "file": "37e5beaf43de489fd9e2b987.png",
+    "source": "Assets/Resources_moved/Sprite/Unit/Portrait/90156_portrait.png",
+    "portrait_id": "90156",
+    "size": [
+      493,
+      434
+    ],
+    "kind": "battle_portrait"
+  },
+  "story_8605_BygoneDaysAppearance": {
+    "file": "9f150549a90dd970c6e48990.png",
+    "source": "Assets/Resources_moved/Sprite/Unit/Portrait/8605_portrait.png",
+    "portrait_id": "8605",
+    "size": [
+      493,
+      434
+    ],
+    "kind": "battle_portrait"
+  },
+  "story_8608_ElcSheep_AbnormalityAppearance": {
+    "file": "e9347e2d71bd03edbdcf29c5.png",
+    "source": "Assets/Resources_moved/Sprite/Unit/Portrait/8608_portrait.png",
+    "portrait_id": "8608",
+    "size": [
+      493,
+      434
+    ],
+    "kind": "battle_portrait"
+  },
+  "story_8628_SheepGeneratorAppearance": {
+    "file": "321f06cbd7b8d90faa61cfba.png",
+    "source": "Assets/Resources_moved/Sprite/Unit/Portrait/8628_portrait.png",
+    "portrait_id": "8628",
+    "size": [
+      493,
+      434
+    ],
+    "kind": "battle_portrait"
+  },
+  "story_8629_TiedKingAppearance": {
+    "file": "fb1a446e52ede8cc39088462.png",
+    "source": "Assets/Resources_moved/Sprite/Unit/Portrait/8629_portrait.png",
+    "portrait_id": "8629",
+    "size": [
+      493,
+      434
+    ],
+    "kind": "battle_portrait"
+  },
+  "story_90141_Euro_Mob_2Appearance": {
+    "file": "06661b2a8ac881d7295bab54.png",
+    "source": "Assets/Resources_moved/Sprite/Unit/Portrait/90141_portrait.png",
+    "portrait_id": "90141",
+    "size": [
+      493,
+      434
+    ],
+    "kind": "battle_portrait"
+  },
+  "story_8277_TimeGolemAppearance": {
+    "file": "3b029630bd91942fb4743e7a.png",
+    "source": "Assets/Resources_moved/Sprite/Unit/Portrait/8277_portrait.png",
+    "portrait_id": "8277",
+    "size": [
+      493,
+      434
+    ],
+    "kind": "battle_portrait"
+  },
+  "story_90140_Euro_Mob_1Appearance": {
+    "file": "cc1a8735d1d94c1559740f3e.png",
+    "source": "Assets/Resources_moved/Sprite/Unit/Portrait/90140_portrait.png",
+    "portrait_id": "90140",
+    "size": [
+      493,
+      434
+    ],
+    "kind": "battle_portrait"
+  },
+  "story_90143_TCorp_EliteAppearance": {
+    "file": "b14a221e59a7a7d20687fd41.png",
+    "source": "Assets/Resources_moved/Sprite/Unit/Portrait/90143_portrait.png",
+    "portrait_id": "90143",
+    "size": [
+      493,
+      434
+    ],
+    "kind": "battle_portrait"
+  },
+  "story_8279_TCorp_Brain_MonAppearance": {
+    "file": "bf17070efe642040703bc593.png",
+    "source": "Assets/Resources_moved/Sprite/Unit/Portrait/8279_portrait.png",
+    "portrait_id": "8279",
+    "size": [
+      493,
+      434
+    ],
+    "kind": "battle_portrait"
+  },
+  "story_91017_Yuro_EliteAppearance": {
+    "file": "80bf72fdd18b039fc7e9e8d5.png",
+    "source": "Assets/Resources_moved/Sprite/Unit/Portrait/91017_portrait.png",
+    "portrait_id": "91017",
+    "size": [
+      493,
+      434
+    ],
+    "kind": "battle_portrait"
+  },
+  "story_8278_TimeGolemAppearance": {
+    "file": "e94caaec854b6f2b54135bc6.png",
+    "source": "Assets/Resources_moved/Sprite/Unit/Portrait/8278_portrait.png",
+    "portrait_id": "8278",
+    "size": [
+      493,
+      434
+    ],
+    "kind": "battle_portrait"
+  },
+  "story_90142_TCorp_StaffAppearance": {
+    "file": "9d1d3f651320bd68dccf13b9.png",
+    "source": "Assets/Resources_moved/Sprite/Unit/Portrait/90142_portrait.png",
+    "portrait_id": "90142",
+    "size": [
+      493,
+      434
+    ],
+    "kind": "battle_portrait"
+  },
+  "story_8577_FireMothAppearance": {
+    "file": "b9f92f4da9a747dc6b3c7327.png",
+    "source": "Assets/Resources_moved/Sprite/Unit/Portrait/8577_portrait.png",
+    "portrait_id": "8577",
+    "size": [
+      493,
+      434
+    ],
+    "kind": "battle_portrait"
+  },
+  "story_8585_ContemptSpiralAppearance": {
+    "file": "a5b9beb35412285147a7d6d3.png",
+    "source": "Assets/Resources_moved/Sprite/Unit/Portrait/8585_portrait.png",
+    "portrait_id": "8585",
+    "size": [
+      493,
+      434
+    ],
+    "kind": "battle_portrait"
+  },
+  "story_8578_BloodSoakedCottonAppearance": {
+    "file": "09549e9620c91bc56fbf20df.png",
+    "source": "Assets/Resources_moved/Sprite/Unit/Portrait/8578_portrait.png",
+    "portrait_id": "8578",
+    "size": [
+      493,
+      434
+    ],
+    "kind": "battle_portrait"
+  },
+  "story_8150_Ordeal_Dawn_Green_EliteAppearance": {
+    "file": "75c2bc942645ea1c5cea1b78.png",
+    "source": "Assets/Resources_moved/Sprite/Unit/Portrait/8150_portrait.png",
+    "portrait_id": "8150",
+    "size": [
+      493,
+      434
+    ],
+    "kind": "battle_portrait"
+  },
+  "story_8148_Ordeal_Dawn_Green_BAppearance": {
+    "file": "84f5fcd7d53442307fd3269c.png",
+    "source": "Assets/Resources_moved/Sprite/Unit/Portrait/8148_portrait.png",
+    "portrait_id": "8148",
+    "size": [
+      493,
+      434
+    ],
+    "kind": "battle_portrait"
+  },
+  "story_8147_Ordeal_Dawn_Green_AAppearance": {
+    "file": "01acc5b679db11fdd86c0da6.png",
+    "source": "Assets/Resources_moved/Sprite/Unit/Portrait/8147_portrait.png",
+    "portrait_id": "8147",
+    "size": [
+      493,
+      434
+    ],
+    "kind": "battle_portrait"
+  },
+  "story_8149_Ordeal_Dawn_Green_CAppearance": {
+    "file": "29f4e67f3721d00565b0dfdb.png",
+    "source": "Assets/Resources_moved/Sprite/Unit/Portrait/8149_portrait.png",
+    "portrait_id": "8149",
+    "size": [
+      493,
+      434
+    ],
+    "kind": "battle_portrait"
+  },
+  "story_1223_KnightOfDespairAppearance": {
+    "file": "af06c306163774f5849972bf.png",
+    "source": "Assets/Resources_moved/Sprite/Unit/Portrait/1223_portrait.png",
+    "portrait_id": "1223",
+    "size": [
+      493,
+      434
+    ],
+    "kind": "battle_portrait"
+  },
+  "story_1224_KnightOfDespairSwordAppearance": {
+    "file": "b044397d72e53a67797f9094.png",
+    "source": "Assets/Resources_moved/Sprite/Unit/Portrait/1224_portrait.png",
+    "portrait_id": "1224",
+    "size": [
+      493,
+      434
+    ],
+    "kind": "battle_portrait"
+  },
+  "10312": {
+    "file": "820d340048cd688e1bd5cb2d.png",
+    "source": "Assets/Sprites/SkinPreview/SkinPreview-Archived/03/10312_Donquixote_Hatred_30_idle.png",
+    "portrait_id": "10312",
+    "size": [
+      589,
+      548
+    ],
+    "kind": "battle_skin_preview"
+  },
+  "10911": {
+    "file": "392b604722732031b4e8d32f.png",
+    "source": "Assets/Sprites/SkinPreview/SkinPreview-Archived/09/10911_Rodion_Dulcinea_90_idle.png",
+    "portrait_id": "10911",
+    "size": [
+      549,
+      671
+    ],
+    "kind": "battle_skin_preview"
+  },
+  "10410": {
+    "file": "bd522143055e3b68e7406ef6.png",
+    "source": "Assets/Sprites/SkinPreview/SkinPreview-Archived/04/10410_Ryoshu_SpiderBud_37_idle.png",
+    "portrait_id": "10410",
+    "size": [
+      438,
+      473
+    ],
+    "kind": "battle_skin_preview"
+  },
+  "11210": {
+    "file": "f9c94ba8af05bc122844bf14.png",
+    "source": "Assets/Sprites/SkinPreview/SkinPreview-Archived/12/11210_Gregor_Priest_129_idle.png",
+    "portrait_id": "11210",
+    "size": [
+      279,
+      552
+    ],
+    "kind": "battle_skin_preview"
+  },
+  "10914": {
+    "file": "14dd360b948db2792d6fefbe.png",
+    "source": "Assets/Sprites/SkinPreview/SkinPreview-Archived/09/10914_Rodion_RCorp_94_idle.png",
+    "portrait_id": "10914",
+    "size": [
+      490,
+      633
+    ],
+    "kind": "battle_skin_preview"
+  },
+  "10309": {
+    "file": "47ea9afbe7cbfdd5bf93b58c.png",
+    "source": "Assets/Sprites/SkinPreview/SkinPreview-Archived/03/10309_Donquixote_TCorp_24_idle.png",
+    "portrait_id": "10309",
+    "size": [
+      684,
+      642
+    ],
+    "kind": "battle_skin_preview"
+  },
+  "11111": {
+    "file": "a53bd2bec22e9d6de3806c76.png",
+    "source": "Assets/Sprites/SkinPreview/SkinPreview-Archived/11/11111_Outis_Barber_118_idle.png",
+    "portrait_id": "11111",
+    "size": [
+      606,
+      573
+    ],
+    "kind": "battle_skin_preview"
+  },
+  "10314": {
+    "file": "0743b75666039ac6f0fd9a73.png",
+    "source": "Assets/Sprites/SkinPreview/SkinPreview-Archived/03/10314_Donquixote_Index_Disciple_177_idle.png",
+    "portrait_id": "10314",
+    "size": [
+      470,
+      498
+    ],
+    "kind": "battle_skin_preview"
+  },
+  "10710": {
+    "file": "49e14194f94cb17f15f688aa.png",
+    "source": "Assets/Sprites/SkinPreview/SkinPreview-Archived/07/10710_Heathclif_WHunt_69_idle.png",
+    "portrait_id": "10710",
+    "size": [
+      350,
+      566
+    ],
+    "kind": "battle_skin_preview"
+  },
+  "10506": {
+    "file": "b0edbe81380cf8e456c7aaeb.png",
+    "source": "Assets/Sprites/SkinPreview/SkinPreview-Archived/05/10506_Meursault_RCorp_45_idle.png",
+    "portrait_id": "10506",
+    "size": [
+      469,
+      586
+    ],
+    "kind": "battle_skin_preview"
+  },
+  "10512": {
+    "file": "ee13dc9384b9713d24b977e9.png",
+    "source": "Assets/Sprites/SkinPreview/SkinPreview-Archived/05/10512_Meursault_LeiHeng_53_idle.png",
+    "portrait_id": "10512",
+    "size": [
+      429,
+      576
+    ],
+    "kind": "battle_skin_preview"
+  },
+  "11009": {
+    "file": "69929a3fd982f51cd9e7bb2f.png",
+    "source": "Assets/Sprites/SkinPreview/SkinPreview-Archived/10/11009_SInclair_Philip_105_idle.png",
+    "portrait_id": "11009",
+    "size": [
+      459,
+      672
+    ],
+    "kind": "battle_skin_preview"
+  },
+  "11114": {
+    "file": "93ba563f09ecbac47329c308.png",
+    "source": "Assets/Sprites/SkinPreview/SkinPreview-Archived/11/11114_Outis_LCA_174_idle.png",
+    "portrait_id": "11114",
+    "size": [
+      270,
+      439
+    ],
+    "kind": "battle_skin_preview"
+  },
+  "10412": {
+    "file": "7c936c64fe2c7e0d081ee2ce.png",
+    "source": "Assets/Sprites/SkinPreview/SkinPreview-Archived/04/10412_Ryoshu_Jiahuan_42_idle.png",
+    "portrait_id": "10412",
+    "size": [
+      628,
+      461
+    ],
+    "kind": "battle_skin_preview"
+  },
+  "11113": {
+    "file": "43303a8046e4e18bb125ebf3.png",
+    "source": "Assets/Sprites/SkinPreview/SkinPreview-Archived/11/11113_Outis_Tcorp_ThirdAppearance_123_idle.png",
+    "portrait_id": "11113",
+    "size": [
+      294,
+      547
+    ],
+    "kind": "battle_skin_preview"
+  },
+  "10605": {
+    "file": "1913e1762e05fac5bacd4c32.png",
+    "source": "Assets/Sprites/SkinPreview/SkinPreview-Archived/06/10605_Honglu_Ksuit_56_idle.png",
+    "portrait_id": "10605",
+    "size": [
+      487,
+      580
+    ],
+    "kind": "battle_skin_preview"
+  },
+  "10515": {
+    "file": "b7ddc83467698ce995b9a32a.png",
+    "source": "Assets/Resources_moved/Sprite/Unit/Info/Normal/10515_normal_info.png",
+    "portrait_id": "10515",
+    "size": [
+      537,
+      827
+    ],
+    "kind": "battle_skin_preview"
+  },
+  "11115": {
+    "file": "7722aa6b768d3fb010825c46.png",
+    "source": "Assets/Resources_moved/Sprite/Unit/Info/Normal/11115_normal_info.png",
+    "portrait_id": "11115",
+    "size": [
+      537,
+      827
+    ],
+    "kind": "battle_skin_preview"
+  },
+  "10215": {
+    "file": "809bcdc9ad26d933899dfc0d.png",
+    "source": "Assets/Resources_moved/Sprite/Unit/Info/Normal/10215_normal_info.png",
+    "portrait_id": "10215",
+    "size": [
+      537,
+      827
+    ],
+    "kind": "battle_skin_preview"
+  },
+  "10715": {
+    "file": "ec0978faee279bf8bf8c1d46.png",
+    "source": "Assets/Resources_moved/Sprite/Unit/Info/Normal/10715_normal_info.png",
+    "portrait_id": "10715",
+    "size": [
+      537,
+      827
+    ],
+    "kind": "battle_skin_preview"
+  },
+  "10116": {
+    "file": "685d3d78c16f16770c1d533a.png",
+    "source": "Assets/Resources_moved/Sprite/Unit/Info/Normal/10116_normal_info.png",
+    "portrait_id": "10116",
+    "size": [
+      537,
+      827
+    ],
+    "kind": "battle_skin_preview"
+  },
+  "10716": {
+    "file": "b822fdf7ead0d861e6ac8fbb.png",
+    "source": "Assets/Resources_moved/Sprite/Unit/Info/Normal/10716_normal_info.png",
+    "portrait_id": "10716",
+    "size": [
+      537,
+      827
+    ],
+    "kind": "battle_skin_preview"
+  },
+  "10216": {
+    "file": "8c649c43a50317588bcbdc90.png",
+    "source": "Assets/Resources_moved/Sprite/Unit/Info/Normal/10216_normal_info.png",
+    "portrait_id": "10216",
+    "size": [
+      537,
+      827
+    ],
+    "kind": "battle_skin_preview"
+  },
+  "11215": {
+    "file": "7f9864b8bd0f4eddea7881e9.png",
+    "source": "Assets/Resources_moved/Sprite/Unit/Info/Normal/11215_normal_info.png",
+    "portrait_id": "11215",
+    "size": [
+      537,
+      827
+    ],
+    "kind": "battle_skin_preview"
+  },
+  "10717": {
+    "file": "fd69fcb06d3351c3e8d1c327.png",
+    "source": "Assets/Resources_moved/Sprite/Unit/Info/Normal/10717_normal_info.png",
+    "portrait_id": "10717",
+    "size": [
+      537,
+      827
+    ],
+    "kind": "battle_skin_preview"
+  },
+  "10816": {
+    "file": "3256a035f5bf7b0fb0e4fcb7.png",
+    "source": "Assets/Resources_moved/Sprite/Unit/Info/Normal/10816_normal_info.png",
+    "portrait_id": "10816",
+    "size": [
+      537,
+      827
+    ],
+    "kind": "battle_skin_preview"
+  },
+  "10416": {
+    "file": "400e1b1c7b62384f03b09f31.png",
+    "source": "Assets/Resources_moved/Sprite/Unit/Info/Normal/10416_normal_info.png",
+    "portrait_id": "10416",
+    "size": [
+      537,
+      827
+    ],
+    "kind": "battle_skin_preview"
+  },
+  "10617": {
+    "file": "3e98b66dae23ccf5088c94f7.png",
+    "source": "Assets/Resources_moved/Sprite/Unit/Info/Normal/10617_normal_info.png",
+    "portrait_id": "10617",
+    "size": [
+      537,
+      827
+    ],
+    "kind": "battle_skin_preview"
+  },
+  "11216": {
+    "file": "da73954dfe38f3c56351878e.png",
+    "source": "Assets/Resources_moved/Sprite/Unit/Info/Normal/11216_normal_info.png",
+    "portrait_id": "11216",
+    "size": [
+      537,
+      827
+    ],
+    "kind": "battle_skin_preview"
+  },
+  "11016": {
+    "file": "0a2fd4b84ab4fd475718249c.png",
+    "source": "Assets/Resources_moved/Sprite/Unit/Info/Normal/11016_normal_info.png",
+    "portrait_id": "11016",
+    "size": [
+      537,
+      827
+    ],
+    "kind": "battle_skin_preview"
+  },
+  "10917": {
+    "file": "c720981ad41bd9f051d97361.png",
+    "source": "Assets/Resources_moved/Sprite/Unit/Info/Normal/10917_normal_info.png",
+    "portrait_id": "10917",
+    "size": [
+      537,
+      827
+    ],
+    "kind": "battle_skin_preview"
+  },
+  "10315": {
+    "file": "f938b54a635a83660cc73d89.png",
+    "source": "Assets/Resources_moved/Sprite/Unit/Info/Normal/10315_normal_info.png",
+    "portrait_id": "10315",
+    "size": [
+      537,
+      827
+    ],
+    "kind": "battle_skin_preview"
+  },
+  "story_400001_JiashichunAppearance": {
+    "file": "cf53e678a2750c134a7d9db8.png",
+    "source": "Assets/Resources_moved/Sprite/Unit/Portrait/Ep7_2_Portrait/400001_portrait.png",
+    "portrait_id": "400001",
+    "size": [
+      493,
+      434
+    ],
+    "kind": "battle_portrait"
+  },
+  "story_400002_LindaiyuAppearance": {
+    "file": "7532c2be4c0db6d60a10ee99.png",
+    "source": "Assets/Resources_moved/Sprite/Unit/Portrait/Ep8_2_Portrait/400002_portrait.png",
+    "portrait_id": "400002",
+    "size": [
+      493,
+      434
+    ],
+    "kind": "battle_portrait"
+  },
+  "story_400006_VespaAppearance": {
+    "file": "e2377707c0e62f33f1587726.png",
+    "source": "Assets/Resources_moved/Sprite/Unit/Portrait/Ep9_2_Portrait/400006_portrait.png",
+    "portrait_id": "400006",
+    "size": [
+      493,
+      434
+    ],
+    "kind": "battle_portrait"
+  },
+  "story_400007_LCE_AlyssaAppearance": {
+    "file": "00645a9d185ac1dbd94dc892.png",
+    "source": "Assets/Resources_moved/Sprite/Unit/Portrait/Ep9_3_Portrait/400007_portrait.png",
+    "portrait_id": "400007",
+    "size": [
+      493,
+      434
+    ],
+    "kind": "battle_portrait"
+  },
+  "story_400008_LCE_HoheheimAppearance": {
+    "file": "116f30719e8713643dc1a270.png",
+    "source": "Assets/Resources_moved/Sprite/Unit/Portrait/Ep9_3_Portrait/400008_portrait.png",
+    "portrait_id": "400008",
+    "size": [
+      493,
+      434
+    ],
+    "kind": "battle_portrait"
+  },
+  "story_400010_MosesAppearance": {
+    "file": "b68ab470c9179c80083d6b63.png",
+    "source": "Assets/Resources_moved/Sprite/Unit/Portrait/Ep9_3_Portrait/400010_portrait.png",
+    "portrait_id": "400010",
+    "size": [
+      493,
+      434
+    ],
+    "kind": "battle_portrait"
+  },
+  "story_400011_EzraAppearance": {
+    "file": "ec8715ddf6cd437f998424c1.png",
+    "source": "Assets/Resources_moved/Sprite/Unit/Portrait/Ep9_3_Portrait/400011_portrait.png",
+    "portrait_id": "400011",
+    "size": [
+      493,
+      434
+    ],
+    "kind": "battle_portrait"
+  },
+  "story_400037_MiddleFinger_discipleAllyAppearance": {
+    "file": "faac20a6a25d3e44f970c04b.png",
+    "source": "Assets/Resources_moved/Sprite/Unit/Portrait/400037_portrait.png",
+    "portrait_id": "400037",
+    "size": [
+      493,
+      434
+    ],
+    "kind": "battle_portrait"
+  },
+  "story_400038_LCD_AengduAppearance": {
+    "file": "9990294c542035e2b95b15ff.png",
+    "source": "Assets/Resources_moved/Sprite/Unit/Portrait/400038_portrait.png",
+    "portrait_id": "400038",
+    "size": [
+      493,
+      434
+    ],
+    "kind": "battle_portrait"
+  },
+  "story_400040_LCD_KimSatGatAppearance": {
+    "file": "fa3ca62c42ddcefb829b7054.png",
+    "source": "Assets/Resources_moved/Sprite/Unit/Portrait/400040_portrait.png",
+    "portrait_id": "400040",
+    "size": [
+      493,
+      434
+    ],
+    "kind": "battle_portrait"
+  },
+  "story_400041_LittleBuffeAppearance": {
+    "file": "deb40d56a71b1e297d5ae6fd.png",
+    "source": "Assets/Resources_moved/Sprite/Unit/Portrait/Ep10_2_Portrait/400041_portrait.png",
+    "portrait_id": "400041",
+    "size": [
+      493,
+      434
+    ],
+    "kind": "battle_portrait"
+  },
+  "story_400041_LittleBuffe_2pAppearance": {
+    "file": "deb40d56a71b1e297d5ae6fd.png",
+    "source": "Assets/Resources_moved/Sprite/Unit/Portrait/Ep10_2_Portrait/400041_portrait.png",
+    "portrait_id": "400041",
+    "size": [
+      493,
+      434
+    ],
+    "kind": "battle_portrait"
+  },
+  "story_400041_LittleBuffe_3pAppearance": {
+    "file": "deb40d56a71b1e297d5ae6fd.png",
+    "source": "Assets/Resources_moved/Sprite/Unit/Portrait/Ep10_2_Portrait/400041_portrait.png",
+    "portrait_id": "400041",
+    "size": [
+      493,
+      434
+    ],
+    "kind": "battle_portrait"
+  },
+  "story_9999_VergiliusAppearance": {
+    "file": "78c5bd1147d3b2736c1dff26.png",
+    "source": "Sprite/Unit/Portrait/9999_portrait.png",
+    "portrait_id": "9999",
+    "kind": "battle_portrait"
+  },
+  "story_9999_Vergilius_EgoAppearance": {
+    "file": "ba011936f47e4d2477af518b.png",
+    "source": "Sprite/Unit/Portrait/9999_portrait.png",
+    "portrait_id": "9999",
+    "kind": "battle_portrait"
+  },
+  "story_90004_backstreet_slashmobAppearance": {
+    "file": "99b9dba55775a70c5299619e.png",
+    "source": "Assets/Resources_moved/Sprite/Unit/Portrait/90004_portrait.png",
+    "portrait_id": "90004",
+    "size": [
+      256,
+      225
+    ],
+    "kind": "battle_portrait"
+  },
+  "story_90005_backstreet_piercemobAppearance": {
+    "file": "9edf261accd625932e457c3e.png",
+    "source": "Assets/Resources_moved/Sprite/Unit/Portrait/90005_portrait.png",
+    "portrait_id": "90005",
+    "size": [
+      256,
+      225
+    ],
+    "kind": "battle_portrait"
+  },
+  "story_90006_backstreet_hitmobAppearance": {
+    "file": "28d0ff43241421ed950fc476.png",
+    "source": "Assets/Resources_moved/Sprite/Unit/Portrait/90006_portrait.png",
+    "portrait_id": "90006",
+    "size": [
+      256,
+      225
+    ],
+    "kind": "battle_portrait"
+  },
+  "story_8001_SnowWhite_Subspecies_Appearance": {
+    "file": "4786972dbb34219f62827dfb.png",
+    "source": "Assets/Resources_moved/Sprite/Unit/Portrait/8001_portrait.png",
+    "portrait_id": "8001",
+    "size": [
+      493,
+      434
+    ],
+    "kind": "battle_portrait"
+  },
+  "story_8003_Aztec_Tow_p1Appearance": {
+    "file": "8db427aa9c9541b1efb98d70.png",
+    "source": "Assets/Resources_moved/Sprite/Unit/Portrait/8003_portrait.png",
+    "portrait_id": "8003",
+    "size": [
+      493,
+      434
+    ],
+    "kind": "battle_portrait"
+  },
+  "story_8004_Aztec_Tow_p2Appearance": {
+    "file": "8b98cec4bdf9213ca46731d3.png",
+    "source": "Assets/Resources_moved/Sprite/Unit/Portrait/8004_portrait.png",
+    "portrait_id": "8004",
+    "size": [
+      493,
+      434
+    ],
+    "kind": "battle_portrait"
+  },
+  "story_90001_GCorp_Enhanced_BaldAppearance": {
+    "file": "85ea030838c34f0aededfeb9.png",
+    "source": "Assets/Resources_moved/Sprite/Unit/Portrait/90001_portrait.png",
+    "portrait_id": "90001",
+    "size": [
+      256,
+      225
+    ],
+    "kind": "battle_portrait"
+  },
+  "story_90002_GCorp_Enhanced_ShortcutAppearance": {
+    "file": "aeda5b95355e783e06bd7cc3.png",
+    "source": "Assets/Resources_moved/Sprite/Unit/Portrait/90002_portrait.png",
+    "portrait_id": "90002",
+    "size": [
+      256,
+      225
+    ],
+    "kind": "battle_portrait"
+  },
+  "story_90003_GCorp_Enhanced_BobAppearance": {
+    "file": "61f20c130a381b13ad332972.png",
+    "source": "Assets/Resources_moved/Sprite/Unit/Portrait/90003_portrait.png",
+    "portrait_id": "90003",
+    "size": [
+      256,
+      225
+    ],
+    "kind": "battle_portrait"
+  },
+  "story_90012_GCorp_Normal_BobAppearance": {
+    "file": "4a9b0ba9cc9c57e8348fe286.png",
+    "source": "Assets/Resources_moved/Sprite/Unit/Portrait/90012_portrait.png",
+    "portrait_id": "90012",
+    "size": [
+      256,
+      225
+    ],
+    "kind": "battle_portrait"
+  },
+  "story_90013_GCorp_Normal_ShortcutAppearance": {
+    "file": "239d7fc804cf9e50c0a7d4f6.png",
+    "source": "Assets/Resources_moved/Sprite/Unit/Portrait/90013_portrait.png",
+    "portrait_id": "90013",
+    "size": [
+      256,
+      225
+    ],
+    "kind": "battle_portrait"
+  },
+  "story_90014_GCorp_Infested_BaldAppearance": {
+    "file": "7699ce45fa8cd3bf5078b1c7.png",
+    "source": "Assets/Resources_moved/Sprite/Unit/Portrait/90014_portrait.png",
+    "portrait_id": "90014",
+    "size": [
+      256,
+      225
+    ],
+    "kind": "battle_portrait"
+  },
+  "story_90015_GCorp_Infested_BobAppearance": {
+    "file": "7e20573320bbb82e733fbbce.png",
+    "source": "Assets/Resources_moved/Sprite/Unit/Portrait/90015_portrait.png",
+    "portrait_id": "90015",
+    "size": [
+      256,
+      225
+    ],
+    "kind": "battle_portrait"
+  },
+  "story_90016_GCorp_Infested_ShortcutAppearance": {
+    "file": "7a8d762be23af9b830e38354.png",
+    "source": "Assets/Resources_moved/Sprite/Unit/Portrait/90016_portrait.png",
+    "portrait_id": "90016",
+    "size": [
+      256,
+      225
+    ],
+    "kind": "battle_portrait"
+  },
+  "story_91002_GCorp_Infested_BossAppearance": {
+    "file": "fab15200056afe7cb2d621dd.png",
+    "source": "Assets/Resources_moved/Sprite/Unit/Portrait/91002_portrait.png",
+    "portrait_id": "91002",
+    "size": [
+      256,
+      225
+    ],
+    "kind": "battle_portrait"
+  },
+  "story_90007_backstreet_bossAppearance": {
+    "file": "56afb242a0eea57042a65d27.png",
+    "source": "Assets/Resources_moved/Sprite/Unit/Portrait/90007_portrait.png",
+    "portrait_id": "90007",
+    "size": [
+      256,
+      225
+    ],
+    "kind": "battle_portrait"
+  },
+  "story_8374_Septempeccata_Iron2Appearance": {
+    "file": "90ab345c5bfecb09a425132f.png",
+    "source": "Assets/Resources_moved/Sprite/Unit/Portrait/Ep7_3_Portrait/8374_portrait.png",
+    "portrait_id": "8374",
+    "size": [
+      493,
+      434
+    ],
+    "kind": "battle_portrait"
+  },
+  "story_8375B_barber_vamp_RoseAppearance": {
+    "file": "c5c353f18e6067271c28166c.png",
+    "source": "Assets/Resources_moved/Sprite/Unit/Portrait/Ep7_3_Portrait/8375_portrait.png",
+    "portrait_id": "8375",
+    "size": [
+      493,
+      434
+    ],
+    "kind": "battle_portrait"
+  },
+  "story_90214_NCorp_mob_2Appearance": {
+    "file": "8afa154e04cb4d8a5a760492.png",
+    "source": "Assets/Resources_moved/Sprite/Unit/Portrait/Ep8_3_Portrait/1140_portrait.png",
+    "portrait_id": "1140",
+    "size": [
+      493,
+      434
+    ],
+    "kind": "battle_portrait"
+  },
+  "story_1422_RingFinger_FauvismeDocent_WolfAppearance": {
+    "file": "4d1135309e1b53db0028f6ca.png",
+    "source": "Assets/Resources_moved/Sprite/Unit/Portrait/1422_portrait.png",
+    "portrait_id": "1422",
+    "size": [
+      493,
+      434
+    ],
+    "kind": "battle_portrait"
+  },
+  "story_1450_Distorted_ChoiAppearance": {
+    "file": "00c4b02fa77fdd2148883365.png",
+    "source": "Assets/Resources_moved/Sprite/Unit/Portrait/1450_portrait.png",
+    "portrait_id": "1450",
+    "size": [
+      493,
+      434
+    ],
+    "kind": "battle_portrait"
+  },
+  "story_400025_YiSang_KidAppearance": {
+    "file": "222548c44b06cb5607a9ceca.png",
+    "source": "Assets/Sprites/SkinPreview/SkinPreview-Archived/01/10101.png",
+    "portrait_id": "10101",
+    "size": [
+      279,
+      551
+    ],
+    "kind": "battle_skin_preview"
+  },
+  "story_Fools_10101_YiSang_BaseAppearance": {
+    "file": "222548c44b06cb5607a9ceca.png",
+    "source": "Assets/Sprites/SkinPreview/SkinPreview-Archived/01/10101.png",
+    "portrait_id": "10101",
+    "size": [
+      279,
+      551
+    ],
+    "kind": "battle_skin_preview"
+  },
+  "story_91060_GrandMagasin_Customer_BAppearance": {
+    "file": "bc5fa18eaa9e95d39deb6dc8.png",
+    "source": "Assets/Resources_moved/Sprite/Unit/Portrait/Ep10_1_Portrait/91060_portrait.png",
+    "portrait_id": "91060",
+    "size": [
+      493,
+      434
+    ],
+    "kind": "battle_portrait"
+  },
+  "story_90008_GCorp_Homeless_BaldAppearance": {
+    "file": "5ca95cf99785bdd809fa42af.png",
+    "source": "Assets/Resources_moved/Sprite/Unit/Portrait/90008_portrait.png",
+    "portrait_id": "90008",
+    "size": [
+      256,
+      225
+    ],
+    "kind": "battle_portrait"
+  },
+  "story_90009_GCorp_Homeless_BobAppearance": {
+    "file": "4207f81af95b18bd2a14c4b1.png",
+    "source": "Assets/Resources_moved/Sprite/Unit/Portrait/90009_portrait.png",
+    "portrait_id": "90009",
+    "size": [
+      256,
+      225
+    ],
+    "kind": "battle_portrait"
+  },
+  "story_90010_GCorp_Homeless_ShortcutAppearance": {
+    "file": "446be6bb62b8495b21ed5ceb.png",
+    "source": "Assets/Resources_moved/Sprite/Unit/Portrait/90010_portrait.png",
+    "portrait_id": "90010",
+    "size": [
+      256,
+      225
+    ],
+    "kind": "battle_portrait"
+  },
+  "story_90011_GCorp_Normal_BaldAppearance": {
+    "file": "9b1e5c38b4e718ab91cb58f3.png",
+    "source": "Assets/Resources_moved/Sprite/Unit/Portrait/90011_portrait.png",
+    "portrait_id": "90011",
+    "size": [
+      256,
+      225
+    ],
+    "kind": "battle_portrait"
+  },
+  "story_400026_Faust_KidAppearance": {
+    "file": "0dc31cb23a799a30e83cb237.png",
+    "source": "Assets/Sprites/SkinPreview/SkinPreview-Archived/02/10201.png",
+    "portrait_id": "10201",
+    "size": [
+      565,
+      545
+    ],
+    "kind": "battle_skin_preview"
+  },
+  "story_Fools_10201_Faust_BaseAppearance": {
+    "file": "0dc31cb23a799a30e83cb237.png",
+    "source": "Assets/Sprites/SkinPreview/SkinPreview-Archived/02/10201.png",
+    "portrait_id": "10201",
+    "size": [
+      565,
+      545
+    ],
+    "kind": "battle_skin_preview"
+  },
+  "story_400027_Donquixote_KidAppearance": {
+    "file": "0b163dc64454036da4ac45ff.png",
+    "source": "Assets/Sprites/SkinPreview/SkinPreview-Archived/03/10301.png",
+    "portrait_id": "10301",
+    "size": [
+      206,
+      630
+    ],
+    "kind": "battle_skin_preview"
+  },
+  "story_Fools_10301_Donquixote_BaseAppearance": {
+    "file": "0b163dc64454036da4ac45ff.png",
+    "source": "Assets/Sprites/SkinPreview/SkinPreview-Archived/03/10301.png",
+    "portrait_id": "10301",
+    "size": [
+      206,
+      630
+    ],
+    "kind": "battle_skin_preview"
+  },
+  "story_400028_Ryoshu_KidAppearance": {
+    "file": "92b2303bc7c23709b648adc2.png",
+    "source": "Assets/Sprites/SkinPreview/SkinPreview-Archived/04/10401.png",
+    "portrait_id": "10401",
+    "size": [
+      421,
+      539
+    ],
+    "kind": "battle_skin_preview"
+  },
+  "story_Fools_10401_Ryoshu_BaseAppearance": {
+    "file": "92b2303bc7c23709b648adc2.png",
+    "source": "Assets/Sprites/SkinPreview/SkinPreview-Archived/04/10401.png",
+    "portrait_id": "10401",
+    "size": [
+      421,
+      539
+    ],
+    "kind": "battle_skin_preview"
+  },
+  "story_400029_Meursault_KidAppearance": {
+    "file": "f099e05850b5ee71e8187f97.png",
+    "source": "Assets/Sprites/SkinPreview/SkinPreview-Archived/05/10501.png",
+    "portrait_id": "10501",
+    "size": [
+      262,
+      574
+    ],
+    "kind": "battle_skin_preview"
+  },
+  "story_Fools_10501_Meursault_BaseAppearance": {
+    "file": "f099e05850b5ee71e8187f97.png",
+    "source": "Assets/Sprites/SkinPreview/SkinPreview-Archived/05/10501.png",
+    "portrait_id": "10501",
+    "size": [
+      262,
+      574
+    ],
+    "kind": "battle_skin_preview"
+  },
+  "story_30501_Meursault_KimSatGatAwakenAppearance": {
+    "file": "f099e05850b5ee71e8187f97.png",
+    "source": "Assets/Sprites/SkinPreview/SkinPreview-Archived/05/10501.png",
+    "portrait_id": "10501",
+    "size": [
+      262,
+      574
+    ],
+    "kind": "battle_skin_preview"
+  },
+  "story_40501_Meursault_KimSatGatBeforeAppearance": {
+    "file": "f099e05850b5ee71e8187f97.png",
+    "source": "Assets/Sprites/SkinPreview/SkinPreview-Archived/05/10501.png",
+    "portrait_id": "10501",
+    "size": [
+      262,
+      574
+    ],
+    "kind": "battle_skin_preview"
+  },
+  "story_400030_Honglu_KidAppearance": {
+    "file": "e516558c013f0501399897b3.png",
+    "source": "Assets/Sprites/SkinPreview/SkinPreview-Archived/06/10601.png",
+    "portrait_id": "10601",
+    "size": [
+      609,
+      582
+    ],
+    "kind": "battle_skin_preview"
+  },
+  "story_Fools_10601_Honglu_BaseAppearance": {
+    "file": "e516558c013f0501399897b3.png",
+    "source": "Assets/Sprites/SkinPreview/SkinPreview-Archived/06/10601.png",
+    "portrait_id": "10601",
+    "size": [
+      609,
+      582
+    ],
+    "kind": "battle_skin_preview"
+  },
+  "story_400031_Heathcliff_KidAppearance": {
+    "file": "249bb2f58eb8bbb72a2d69ec.png",
+    "source": "Assets/Sprites/SkinPreview/SkinPreview-Archived/07/10701.png",
+    "portrait_id": "10701",
+    "size": [
+      427,
+      558
+    ],
+    "kind": "battle_skin_preview"
+  },
+  "story_Fools_10701_Heathclif_BaseAppearance": {
+    "file": "249bb2f58eb8bbb72a2d69ec.png",
+    "source": "Assets/Sprites/SkinPreview/SkinPreview-Archived/07/10701.png",
+    "portrait_id": "10701",
+    "size": [
+      427,
+      558
+    ],
+    "kind": "battle_skin_preview"
+  },
+  "story_400032_Ishmael_KidAppearance": {
+    "file": "88c5b6e8c7ad85bcea1d7f09.png",
+    "source": "Assets/Sprites/SkinPreview/SkinPreview-Archived/08/10801.png",
+    "portrait_id": "10801",
+    "size": [
+      465,
+      526
+    ],
+    "kind": "battle_skin_preview"
+  },
+  "story_Fools_10801_Ishmael_BaseAppearance": {
+    "file": "88c5b6e8c7ad85bcea1d7f09.png",
+    "source": "Assets/Sprites/SkinPreview/SkinPreview-Archived/08/10801.png",
+    "portrait_id": "10801",
+    "size": [
+      465,
+      526
+    ],
+    "kind": "battle_skin_preview"
+  },
+  "story_400033_Rodion_KidAppearance": {
+    "file": "6930995cb80ea45398ddcb4b.png",
+    "source": "Assets/Sprites/SkinPreview/SkinPreview-Archived/09/10901.png",
+    "portrait_id": "10901",
+    "size": [
+      421,
+      556
+    ],
+    "kind": "battle_skin_preview"
+  },
+  "story_Fools_10901_Rodion_BaseAppearance": {
+    "file": "6930995cb80ea45398ddcb4b.png",
+    "source": "Assets/Sprites/SkinPreview/SkinPreview-Archived/09/10901.png",
+    "portrait_id": "10901",
+    "size": [
+      421,
+      556
+    ],
+    "kind": "battle_skin_preview"
+  },
+  "story_400034_Sinclair_KidAppearance": {
+    "file": "0682d0644a2fdcbadde51c86.png",
+    "source": "Assets/Sprites/SkinPreview/SkinPreview-Archived/10/11001.png",
+    "portrait_id": "11001",
+    "size": [
+      551,
+      553
+    ],
+    "kind": "battle_skin_preview"
+  },
+  "story_Fools_11001_Sinclair_BaseAppearance": {
+    "file": "0682d0644a2fdcbadde51c86.png",
+    "source": "Assets/Sprites/SkinPreview/SkinPreview-Archived/10/11001.png",
+    "portrait_id": "11001",
+    "size": [
+      551,
+      553
+    ],
+    "kind": "battle_skin_preview"
+  },
+  "story_400035_Outis_KidAppearance": {
+    "file": "2738be69dbed304743d1ae97.png",
+    "source": "Assets/Sprites/SkinPreview/SkinPreview-Archived/11/11101.png",
+    "portrait_id": "11101",
+    "size": [
+      391,
+      542
+    ],
+    "kind": "battle_skin_preview"
+  },
+  "story_Fools_11101_Outis_BaseAppearance": {
+    "file": "2738be69dbed304743d1ae97.png",
+    "source": "Assets/Sprites/SkinPreview/SkinPreview-Archived/11/11101.png",
+    "portrait_id": "11101",
+    "size": [
+      391,
+      542
+    ],
+    "kind": "battle_skin_preview"
+  },
+  "story_400036_Gregor_KidAppearance": {
+    "file": "c32f14c1d34f5522a1c56611.png",
+    "source": "Assets/Sprites/SkinPreview/SkinPreview-Archived/12/11201.png",
+    "portrait_id": "11201",
+    "size": [
+      216,
+      441
+    ],
+    "kind": "battle_skin_preview"
+  },
+  "story_Fools_11201_Gregor_BaseAppearance": {
+    "file": "c32f14c1d34f5522a1c56611.png",
+    "source": "Assets/Sprites/SkinPreview/SkinPreview-Archived/12/11201.png",
+    "portrait_id": "11201",
+    "size": [
+      216,
+      441
+    ],
+    "kind": "battle_skin_preview"
+  },
+  "story_Fools_9999_VergiliusAppearance": {
+    "file": "78c5bd1147d3b2736c1dff26.png",
+    "source": "Sprite/Unit/Portrait/9999_portrait.png",
+    "portrait_id": "9999",
+    "kind": "battle_portrait"
+  },
+  "story_400012_VergiliusAppearance": {
+    "file": "78c5bd1147d3b2736c1dff26.png",
+    "source": "Sprite/Unit/Portrait/9999_portrait.png",
+    "portrait_id": "9999",
+    "kind": "battle_portrait"
+  },
+  "story_400012_Vergilius_EgoAppearance": {
+    "file": "78c5bd1147d3b2736c1dff26.png",
+    "source": "Sprite/Unit/Portrait/9999_portrait.png",
+    "portrait_id": "9999",
+    "kind": "battle_portrait"
+  },
+  "story_91026_Sinclair_Base_TrainingAppearance": {
+    "file": "0682d0644a2fdcbadde51c86.png",
+    "source": "Assets/Sprites/SkinPreview/SkinPreview-Archived/10/11001.png",
+    "portrait_id": "11001",
+    "size": [
+      551,
+      553
+    ],
+    "kind": "battle_skin_preview"
+  },
+  "story_400005_Jiashichun_CultivationAppearance": {
+    "file": "cf53e678a2750c134a7d9db8.png",
+    "source": "Assets/Resources_moved/Sprite/Unit/Portrait/Ep7_2_Portrait/400001_portrait.png",
+    "portrait_id": "400001",
+    "size": [
+      493,
+      434
+    ],
+    "kind": "battle_portrait"
+  },
+  "story_1460_ProjectorAppearance": {
+    "source": "Assets/Resources_moved/Sprite/Unit/Portrait/1460_portrait.png",
+    "kind": "portrait",
+    "file": "de4573c4ba5405e74816d9cd.png"
+  },
+  "story_8051_FairyWineAppearance": {
+    "source": "Assets/Resources_moved/Sprite/Unit/Portrait/8051_portrait.png",
+    "kind": "portrait",
+    "file": "2ddf4f46a9e65a494e7c569d.png"
+  },
+  "story_400003_QueenOfHatred": {
+    "source": "Assets/Resources_moved/Sprite/Unit/Portrait/400003_portrait.png",
+    "kind": "portrait",
+    "file": "6a7dbd61ae6f5a8cfeda0217.png"
+  },
+  "story_8108_FluorescentWhaleAppearance": {
+    "source": "Assets/Resources_moved/Sprite/Unit/Portrait/8108_portrait.png",
+    "kind": "portrait",
+    "file": "f00a350f81055413a2d4446d.png"
+  },
+  "story_8109_WalkingPearlAppearance": {
+    "source": "Assets/Resources_moved/Sprite/Unit/Portrait/8109_portrait.png",
+    "kind": "portrait",
+    "file": "a2ac51f32dd6fc06ddfb6e44.png"
+  },
+  "story_8106_MobiDick_HeartAppearance": {
+    "source": "Assets/Resources_moved/Sprite/Unit/Portrait/8106_portrait.png",
+    "kind": "portrait",
+    "file": "a7748d374ba106dd465510b1.png"
+  },
+  "story_8604_ContemptSpiralHandAppearance": {
+    "source": "Assets/Resources_moved/Sprite/Unit/Portrait/8604_portrait.png",
+    "kind": "portrait",
+    "file": "70a11ac927f1cbe9abfed16a.png"
+  },
+  "story_1582_PhilipAppearance": {
+    "source": "Assets/Resources_moved/Sprite/Unit/Portrait/1582_portrait.png",
+    "kind": "portrait",
+    "file": "3cf2113fc9f2d4180b0c6063.png"
+  },
+  "story_1587_Philip_AwakenAppearance": {
+    "source": "Assets/Resources_moved/Sprite/Unit/Portrait/1587_portrait.png",
+    "kind": "portrait",
+    "file": "ce25b281558bf43bef3a3d17.png"
+  },
+  "story_1581_YunaAppearance": {
+    "source": "Assets/Resources_moved/Sprite/Unit/Portrait/1581_portrait.png",
+    "kind": "portrait",
+    "file": "f4cdd7bde83b0d9828a7471f.png"
+  },
+  "story_1584_PamelyAppearance": {
+    "source": "Assets/Resources_moved/Sprite/Unit/Portrait/1584_portrait.png",
+    "kind": "portrait",
+    "file": "a6795a860b772b0ef2dcd9e7.png"
+  },
+  "story_1580_SalvadorAppearance": {
+    "source": "Assets/Resources_moved/Sprite/Unit/Portrait/1580_portrait.png",
+    "kind": "portrait",
+    "file": "d20f007aaa01ddc0c41eb1c1.png"
+  },
+  "story_1585_PamelaAppearance": {
+    "source": "Assets/Resources_moved/Sprite/Unit/Portrait/1585_portrait.png",
+    "kind": "portrait",
+    "file": "e546f5b564f7fecc31c9c968.png"
+  },
+  "story_1583_OscarAppearance": {
+    "source": "Assets/Resources_moved/Sprite/Unit/Portrait/1583_portrait.png",
+    "kind": "portrait",
+    "file": "b11b5cd8712c6164ac2f4d0e.png"
+  },
+  "story_9571_YinglongSpearAppearance": {
+    "source": "Assets/Resources_moved/Sprite/Unit/Portrait/9571_portrait.png",
+    "kind": "portrait",
+    "file": "fe841ba2eb8d298bfa0fc3fb.png"
+  },
+  "story_8606_BygoneDaysAppearance": {
+    "source": "Assets/Resources_moved/Sprite/Unit/Portrait/8606_portrait.png",
+    "kind": "portrait",
+    "file": "e076e7f67307485ab5688b7d.png"
+  },
+  "story_8062_FairyLongLegs_CloverAppearance": {
+    "source": "Assets/Resources_moved/Sprite/Unit/Portrait/8062_portrait.png",
+    "kind": "portrait",
+    "file": "7f5fa1e73114119e5e43244a.png"
+  },
+  "story_BRolandBaseAppearance": {
+    "file": "5d4e22d0e11103dffee63aee.png"
+  },
+  "BRolandBaseAppearance": {
+    "file": "5d4e22d0e11103dffee63aee.png"
+  }
+}

@@ -1,0 +1,596 @@
+{
+  "sinner": "101",
+  "identity_id": "story_BRolandBaseAppearance",
+  "appearance_name": "BRolandBaseAppearance",
+  "asset_key": "Roland/BRolandBase.prefab",
+  "name": "罗兰·漆黑缄默",
+  "weight": 0,
+  "story_metadata": {
+    "AppearanceName": "BRolandBaseAppearance",
+    "motionList": [
+      {
+        "motionDetail": 7,
+        "motionTimelineDatas": [
+          {
+            "motionIndex": 0,
+            "duration": 1.166666666665667,
+            "hitMarkerTime": 0.6333333333333336,
+            "endMarkerTime": -1,
+            "giveDamageDelay": 0.10000000149011612
+          },
+          {
+            "motionIndex": 1,
+            "duration": 0.6166666666666685,
+            "hitMarkerTime": 0.26666666666666844,
+            "endMarkerTime": -1,
+            "giveDamageDelay": 0.10000000149011612
+          },
+          {
+            "motionIndex": 2,
+            "duration": 0.9999999999999988,
+            "hitMarkerTime": 0.45000000000000373,
+            "endMarkerTime": -1,
+            "giveDamageDelay": 0.30000001192092896
+          }
+        ]
+      },
+      {
+        "motionDetail": 8,
+        "motionTimelineDatas": [
+          {
+            "motionIndex": 0,
+            "duration": 0.75,
+            "hitMarkerTime": 0.14999999999999986,
+            "endMarkerTime": -1,
+            "giveDamageDelay": 0.0
+          },
+          {
+            "motionIndex": 1,
+            "duration": 1.05,
+            "hitMarkerTime": 0.3,
+            "endMarkerTime": -1,
+            "giveDamageDelay": 0.20000000298023224
+          },
+          {
+            "motionIndex": 2,
+            "duration": 0.9833333333333366,
+            "hitMarkerTime": 0.3833333333333382,
+            "endMarkerTime": -1,
+            "giveDamageDelay": 0.15000000596046448
+          }
+        ]
+      },
+      {
+        "motionDetail": 9,
+        "motionTimelineDatas": [
+          {
+            "motionIndex": 0,
+            "duration": 1.0166666666666662,
+            "hitMarkerTime": 0.31666666666666554,
+            "endMarkerTime": -1,
+            "giveDamageDelay": 0.10000000149011612
+          },
+          {
+            "motionIndex": 1,
+            "duration": 1.1666666666666683,
+            "hitMarkerTime": 0.3833333333333376,
+            "endMarkerTime": -1,
+            "giveDamageDelay": 0.30000001192092896
+          },
+          {
+            "motionIndex": 2,
+            "duration": 2.350000000000001,
+            "hitMarkerTime": 0.4166666666666686,
+            "endMarkerTime": -1,
+            "giveDamageDelay": 0.0
+          }
+        ]
+      },
+      {
+        "motionDetail": 10,
+        "motionTimelineDatas": [
+          {
+            "motionIndex": 0,
+            "duration": 1.2333333333333332,
+            "hitMarkerTime": 0.23333333333333325,
+            "endMarkerTime": -1,
+            "giveDamageDelay": 0.0
+          },
+          {
+            "motionIndex": 1,
+            "duration": 1.1499999999999992,
+            "hitMarkerTime": 0.0666666666666673,
+            "endMarkerTime": -1,
+            "giveDamageDelay": 0.0
+          },
+          {
+            "motionIndex": 2,
+            "duration": 1.1500000000000012,
+            "hitMarkerTime": 0.1500000000000038,
+            "endMarkerTime": -1,
+            "giveDamageDelay": 0.20000000298023224
+          }
+        ]
+      },
+      {
+        "motionDetail": 11,
+        "motionTimelineDatas": [
+          {
+            "motionIndex": 0,
+            "duration": 1.0166666666666668,
+            "hitMarkerTime": 0.24999999999999994,
+            "endMarkerTime": -1,
+            "giveDamageDelay": 0.0
+          },
+          {
+            "motionIndex": 1,
+            "duration": 1.3000000000000047,
+            "hitMarkerTime": 0.43333333333333357,
+            "endMarkerTime": -1,
+            "giveDamageDelay": 0.20000000298023224
+          },
+          {
+            "motionIndex": 2,
+            "duration": 1.1500000000000048,
+            "hitMarkerTime": 0.38333333333334024,
+            "endMarkerTime": -1,
+            "giveDamageDelay": 0.20000000298023224
+          }
+        ]
+      },
+      {
+        "motionDetail": 12,
+        "motionTimelineDatas": [
+          {
+            "motionIndex": 0,
+            "duration": 1.0666666666666667,
+            "hitMarkerTime": 0.24999999999999994,
+            "endMarkerTime": -1,
+            "giveDamageDelay": 0.0
+          },
+          {
+            "motionIndex": 1,
+            "duration": 1.300000000000005,
+            "hitMarkerTime": 0.43333333333333446,
+            "endMarkerTime": -1,
+            "giveDamageDelay": 0.20000000298023224
+          },
+          {
+            "motionIndex": 2,
+            "duration": 1.066666666666,
+            "hitMarkerTime": 0.3833333333333396,
+            "endMarkerTime": -1,
+            "giveDamageDelay": 0.5
+          }
+        ]
+      },
+      {
+        "motionDetail": 13,
+        "motionTimelineDatas": [
+          {
+            "motionIndex": 0,
+            "duration": 0.9166666666669989,
+            "hitMarkerTime": 0.28333333333333316,
+            "endMarkerTime": -1,
+            "giveDamageDelay": 0.10000000149011612
+          },
+          {
+            "motionIndex": 1,
+            "duration": 1.1000000000000028,
+            "hitMarkerTime": 0.30000000000000043,
+            "endMarkerTime": -1,
+            "giveDamageDelay": 0.10000000149011612
+          },
+          {
+            "motionIndex": 2,
+            "duration": 0.9333333333333432,
+            "hitMarkerTime": 0.250000000000007,
+            "endMarkerTime": -1,
+            "giveDamageDelay": 0.5
+          }
+        ]
+      },
+      {
+        "motionDetail": 14,
+        "motionTimelineDatas": [
+          {
+            "motionIndex": 0,
+            "duration": 1.350000000000001,
+            "hitMarkerTime": 0.2833333333333341,
+            "endMarkerTime": -1,
+            "giveDamageDelay": 0.15000000596046448
+          },
+          {
+            "motionIndex": 1,
+            "duration": 0.9666666666666691,
+            "hitMarkerTime": 0.16666666666666732,
+            "endMarkerTime": -1,
+            "giveDamageDelay": 0.15000000596046448
+          },
+          {
+            "motionIndex": 2,
+            "duration": 1.2500000000000024,
+            "hitMarkerTime": 0.4500000000000027,
+            "endMarkerTime": -1,
+            "giveDamageDelay": 0.3499999940395355
+          }
+        ]
+      },
+      {
+        "motionDetail": 15,
+        "motionTimelineDatas": [
+          {
+            "motionIndex": 0,
+            "duration": 1.0166666666666708,
+            "hitMarkerTime": 0.31666666666666554,
+            "endMarkerTime": -1,
+            "giveDamageDelay": 0.10000000149011612
+          },
+          {
+            "motionIndex": 1,
+            "duration": 1.1666666666666716,
+            "hitMarkerTime": 0.3833333333333336,
+            "endMarkerTime": -1,
+            "giveDamageDelay": 0.30000001192092896
+          },
+          {
+            "motionIndex": 2,
+            "duration": 2.25,
+            "hitMarkerTime": 0.41666666666666835,
+            "endMarkerTime": -1,
+            "giveDamageDelay": 0.0
+          }
+        ]
+      },
+      {
+        "motionDetail": 16,
+        "motionTimelineDatas": [
+          {
+            "motionIndex": 0,
+            "duration": 4.416666666666667,
+            "hitMarkerTime": 0.31666666666666554,
+            "endMarkerTime": -1,
+            "giveDamageDelay": 0.10000000149011612
+          }
+        ]
+      },
+      {
+        "motionDetail": 24,
+        "motionTimelineDatas": [
+          {
+            "motionIndex": 0,
+            "duration": 1.649999999999,
+            "hitMarkerTime": 0.6166666666663332,
+            "endMarkerTime": -1,
+            "giveDamageDelay": 0.0
+          },
+          {
+            "motionIndex": 1,
+            "duration": 1.5166666666666666,
+            "hitMarkerTime": 0.10000000000000042,
+            "endMarkerTime": -1,
+            "giveDamageDelay": 0.0
+          },
+          {
+            "motionIndex": 2,
+            "duration": 2.866666666666,
+            "hitMarkerTime": 0.553164243419056,
+            "endMarkerTime": -1,
+            "giveDamageDelay": 0.0
+          },
+          {
+            "motionIndex": 3,
+            "duration": 1.1333333333336655,
+            "hitMarkerTime": 0.11983091008572243,
+            "endMarkerTime": -1,
+            "giveDamageDelay": 0.0
+          },
+          {
+            "motionIndex": 4,
+            "duration": 2.2223099379790585,
+            "hitMarkerTime": 0.9438413992524183,
+            "endMarkerTime": -1,
+            "giveDamageDelay": 0.0
+          },
+          {
+            "motionIndex": 5,
+            "duration": 1.1166666666666667,
+            "hitMarkerTime": 0.5666666666666664,
+            "endMarkerTime": -1,
+            "giveDamageDelay": 0.0
+          },
+          {
+            "motionIndex": 6,
+            "duration": 1.7,
+            "hitMarkerTime": 0.866666666666334,
+            "endMarkerTime": -1,
+            "giveDamageDelay": 0.0
+          },
+          {
+            "motionIndex": 7,
+            "duration": 1.633333333333334,
+            "hitMarkerTime": 0.1499999999999994,
+            "endMarkerTime": -1,
+            "giveDamageDelay": 0.0
+          },
+          {
+            "motionIndex": 8,
+            "duration": 2.7666666666666693,
+            "hitMarkerTime": 0.8000000000000025,
+            "endMarkerTime": -1,
+            "giveDamageDelay": 0.25
+          },
+          {
+            "motionIndex": 9,
+            "duration": 1.166666666666999,
+            "hitMarkerTime": 0.553164243419056,
+            "endMarkerTime": -1,
+            "giveDamageDelay": 0.0
+          },
+          {
+            "motionIndex": 10,
+            "duration": 1.0833333333333326,
+            "hitMarkerTime": 0.11666666666666652,
+            "endMarkerTime": -1,
+            "giveDamageDelay": 0.0
+          },
+          {
+            "motionIndex": 11,
+            "duration": 2.3,
+            "hitMarkerTime": 0.9438413992524183,
+            "endMarkerTime": -1,
+            "giveDamageDelay": 0.25
+          },
+          {
+            "motionIndex": 12,
+            "duration": 1.1166666666666667,
+            "hitMarkerTime": 0.5666666666666664,
+            "endMarkerTime": -1,
+            "giveDamageDelay": 0.0
+          },
+          {
+            "motionIndex": 13,
+            "duration": 1.533333333332,
+            "hitMarkerTime": 0.8666666666663323,
+            "endMarkerTime": -1,
+            "giveDamageDelay": 0.0
+          },
+          {
+            "motionIndex": 14,
+            "duration": 1.633333333332,
+            "hitMarkerTime": 0.1500000000003347,
+            "endMarkerTime": -1,
+            "giveDamageDelay": 0.0
+          },
+          {
+            "motionIndex": 15,
+            "duration": 2.9666666666666672,
+            "hitMarkerTime": 0.8499999999999991,
+            "endMarkerTime": -1,
+            "giveDamageDelay": 0.0
+          }
+        ]
+      },
+      {
+        "motionDetail": 25,
+        "motionTimelineDatas": [
+          {
+            "motionIndex": 0,
+            "duration": 1.166666666666,
+            "hitMarkerTime": 0.8333333333333334,
+            "endMarkerTime": -1,
+            "giveDamageDelay": 0.30000001192092896
+          },
+          {
+            "motionIndex": 1,
+            "duration": 1.166666666666,
+            "hitMarkerTime": 0.13333333333333341,
+            "endMarkerTime": -1,
+            "giveDamageDelay": 0.30000001192092896
+          },
+          {
+            "motionIndex": 2,
+            "duration": 1.1999999999989999,
+            "hitMarkerTime": 0.866666666666667,
+            "endMarkerTime": -1,
+            "giveDamageDelay": 0.30000001192092896
+          },
+          {
+            "motionIndex": 3,
+            "duration": 1.25,
+            "hitMarkerTime": 0.13333333333333341,
+            "endMarkerTime": -1,
+            "giveDamageDelay": 0.30000001192092896
+          },
+          {
+            "motionIndex": 4,
+            "duration": 2.699999999999,
+            "hitMarkerTime": 0.466666666666667,
+            "endMarkerTime": -1,
+            "giveDamageDelay": 0.30000001192092896
+          },
+          {
+            "motionIndex": 5,
+            "duration": 3.25,
+            "hitMarkerTime": 1.733333253860645,
+            "endMarkerTime": -1,
+            "giveDamageDelay": 0.30000001192092896
+          },
+          {
+            "motionIndex": 6,
+            "duration": 2.966666666666519,
+            "hitMarkerTime": 0.7999999999999101,
+            "endMarkerTime": -1,
+            "giveDamageDelay": 0.30000001192092896
+          },
+          {
+            "motionIndex": 7,
+            "duration": 5.133333333333334,
+            "hitMarkerTime": 2.0999999999999424,
+            "endMarkerTime": -1,
+            "giveDamageDelay": 0.30000001192092896
+          },
+          {
+            "motionIndex": 8,
+            "duration": 1.166666666666,
+            "hitMarkerTime": 0.13333333333333341,
+            "endMarkerTime": -1,
+            "giveDamageDelay": 0.30000001192092896
+          },
+          {
+            "motionIndex": 9,
+            "duration": 3.1833333333333327,
+            "hitMarkerTime": 0.466666666666667,
+            "endMarkerTime": -1,
+            "giveDamageDelay": 0.30000001192092896
+          },
+          {
+            "motionIndex": 10,
+            "duration": 3.083333333332,
+            "hitMarkerTime": 1.733333253860645,
+            "endMarkerTime": -1,
+            "giveDamageDelay": 0.30000001192092896
+          },
+          {
+            "motionIndex": 11,
+            "duration": 1.166666666666,
+            "hitMarkerTime": 0.13333333333333341,
+            "endMarkerTime": -1,
+            "giveDamageDelay": 0.30000001192092896
+          },
+          {
+            "motionIndex": 12,
+            "duration": 2.699999999999,
+            "hitMarkerTime": 0.466666666666667,
+            "endMarkerTime": -1,
+            "giveDamageDelay": 0.30000001192092896
+          },
+          {
+            "motionIndex": 13,
+            "duration": 1.616666666666,
+            "hitMarkerTime": 0.1333333333333357,
+            "endMarkerTime": -1,
+            "giveDamageDelay": 0.30000001192092896
+          },
+          {
+            "motionIndex": 14,
+            "duration": 5.133333333333334,
+            "hitMarkerTime": 2.0999999999999424,
+            "endMarkerTime": -1,
+            "giveDamageDelay": 0.30000001192092896
+          },
+          {
+            "motionIndex": 15,
+            "duration": 1.616666666666,
+            "hitMarkerTime": 0.1333333333333357,
+            "endMarkerTime": -1,
+            "giveDamageDelay": 0.30000001192092896
+          }
+        ]
+      }
+    ]
+  },
+  "story_timeline_names": {
+    "7": [
+      "Index_father_Phase2_S1_Timeline_1",
+      "Index_father_Phase2_S1_Timeline_2",
+      "Index_father_Phase2_S1_Timeline_3"
+    ],
+    "8": [
+      "Index_father_Phase2_S2_Timeline_1",
+      "Index_father_Phase2_S2_Timeline_2",
+      "Index_father_Phase2_S2_Timeline_3"
+    ],
+    "9": [
+      "Index_father_Phase2_S3_Timeline_1",
+      "Index_father_Phase2_S3_Timeline_2",
+      "Index_father_Phase2_S3_Timeline_3"
+    ],
+    "10": [
+      "Index_father_Phase2_S4_Timeline_1",
+      "Index_father_Phase2_S4_Timeline_2",
+      "Index_father_Phase2_S4_Timeline_3"
+    ],
+    "11": [
+      "Index_father_Phase2_S5_Timeline_1",
+      "Index_father_Phase2_S5_Timeline_2",
+      "Index_father_Phase2_S5_Timeline_3"
+    ],
+    "12": [
+      "Index_father_Phase2_S6_Timeline_1",
+      "Index_father_Phase2_S6_Timeline_2",
+      "Index_father_Phase2_S6_Timeline_3"
+    ],
+    "13": [
+      "Index_father_Phase2_S7_Timeline_1",
+      "Index_father_Phase2_S7_Timeline_2",
+      "Index_father_Phase2_S7_Timeline_3"
+    ],
+    "14": [
+      "Index_father_Phase2_S8_Timeline_1",
+      "Index_father_Phase2_S8_Timeline_2",
+      "Index_father_Phase2_S8_Timeline_3"
+    ],
+    "15": [
+      "Index_father_Phase2_S9_Timeline_1",
+      "Index_father_Phase2_S9_Timeline_2",
+      "Index_father_Phase2_S9_Timeline_3"
+    ],
+    "16": [
+      "Index_father_Phase2_S10_Timeline_1"
+    ],
+    "24": [
+      "Meursault_Hornet_S1_Timeline_01",
+      "Meursault_Hornet_S1_Timeline_02",
+      "Meursault_Hornet_S2_Timeline_01",
+      "Meursault_Hornet_S2_Timeline_02",
+      "Meursault_Hornet_S2_Timeline_03",
+      "Meursault_Hornet_S3_Timeline_01",
+      "Meursault_Hornet_S3_Timeline_02",
+      "Meursault_Hornet_S3_Timeline_03",
+      "Meursault_Hornet_S3_Timeline_04",
+      "Meursault_Hornet_S9_Timeline_01",
+      "Meursault_Hornet_S9_Timeline_02",
+      "Meursault_Hornet_S9_Timeline_03",
+      "Meursault_Hornet_S10_Timeline_01",
+      "Meursault_Hornet_S10_Timeline_02",
+      "Meursault_Hornet_S10_Timeline_03",
+      "Meursault_Hornet_S10_Timeline_04"
+    ],
+    "25": [
+      "Meursault_LeiHeng_S1_Timeline",
+      "Meursault_LeiHeng_S1_Timeline_2",
+      "Meursault_LeiHeng_S2_Timeline_1",
+      "Meursault_LeiHeng_S2_Timeline_2",
+      "Meursault_LeiHeng_S2_Timeline_3",
+      "Meursault_LeiHeng_S3_Timeline_1",
+      "Meursault_LeiHeng_S3_Timeline_2",
+      "Meursault_LeiHeng_S3_Timeline_3",
+      "Meursault_LeiHeng_S4_Timeline_1",
+      "Meursault_LeiHeng_S4_Timeline_2",
+      "Meursault_LeiHeng_S5_Timeline_1",
+      "Meursault_LeiHeng_S5_Timeline_2",
+      "Meursault_LeiHeng_S5_Timeline_3",
+      "Meursault_LeiHeng_S5_Timeline_4",
+      "Meursault_LeiHeng_S5_Timeline_5",
+      "Meursault_LeiHeng_S5_Timeline_4"
+    ]
+  },
+  "excluded_actions": [],
+  "category": "humanoid_boss",
+  "verified_attack_details": [
+    7,
+    8,
+    9,
+    10,
+    11,
+    12,
+    13,
+    14,
+    15,
+    16,
+    24,
+    25
+  ],
+  "metadata_evidence": "serialized timelines"
+}

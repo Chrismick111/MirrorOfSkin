@@ -1,0 +1,1746 @@
+{
+  "schema": 1,
+  "pairs": [
+    {
+      "identity": 10104,
+      "personality": "10104_YiSang_SpicebushFlowerAppearance",
+      "aliases": [],
+      "appearance": "story_8044_Camellia_AwakenAppearance",
+      "pool_id": "story_8044_Camellia_AwakenAppearance",
+      "family": "named",
+      "evidence": [
+        "Dongbaek wielding Effloresced E.G.O Spicebush",
+        "Identity title: Effloresced E.G.O::Spicebush",
+        "Encounter names: Dongbaek E.G.O::Spicebush",
+        "Shared attack sound cues: dongbaek02_3_1"
+      ]
+    },
+    {
+      "identity": 10107,
+      "personality": "10107_Yisang_StarbuckAppearance",
+      "aliases": [],
+      "appearance": "story_8104_StarbuckAppearance",
+      "pool_id": "story_8104_StarbuckAppearance",
+      "family": "named",
+      "evidence": [
+        "Starbuck, first mate of the Pequod",
+        "Identity title: The Pequod First Mate",
+        "Encounter names: Refracted Starbuck / Starbuck",
+        "Shared attack names: Ambush / Impale",
+        "Shared attack sound cues: Starb_3_1-1"
+      ]
+    },
+    {
+      "identity": 10111,
+      "personality": "10111_Yisang_FairyLanternAppearance",
+      "aliases": [],
+      "appearance": "story_8058_FairyLanternAppearance",
+      "pool_id": "story_8058_FairyLanternAppearance",
+      "family": "named",
+      "evidence": [
+        "Faelantern, source of the FairyLantern LCE identity and its root attacks",
+        "Identity title: LCE E.G.O:: Lantern",
+        "Encounter names: Faelantern / Refracted Faelantern",
+        "Shared attack sound cues: fairytree_1_1"
+      ]
+    },
+    {
+      "identity": 10113,
+      "personality": "10113_YiSang_DerSchutzeAppearance",
+      "aliases": [],
+      "appearance": "story_1136_NLONL_DerSchutze_GuboAppearance",
+      "pool_id": "story_1136_NLONL_DerSchutze_GuboAppearance",
+      "family": "named",
+      "evidence": [
+        "Fell Bullet: Gubo wielding the E.G.O and its source Der Fluchschütze share its firing sequence",
+        "Identity title: N Corp. E.G.O:: Fell Bullet",
+        "Encounter names: N Corp. E.G.O::Fell Bullet Gubo",
+        "Shared attack sound cues: fallbullet_2_1-2 / fallbullet_3_1 / fallbullet_4_1-5 / gubo_7_1-1"
+      ]
+    },
+    {
+      "identity": 10113,
+      "personality": "10113_YiSang_DerSchutzeAppearance",
+      "aliases": [],
+      "appearance": "story_8630_DerSchutzeAppearance",
+      "pool_id": "story_8630_DerSchutzeAppearance",
+      "family": "named",
+      "evidence": [
+        "Fell Bullet: Gubo wielding the E.G.O and its source Der Fluchschütze share its firing sequence",
+        "Identity title: N Corp. E.G.O:: Fell Bullet",
+        "Encounter names: Der Fluchschütze / Refracted Der Fluchschütze",
+        "Shared attack names: Punch Through / See Through Defenses / Target Readjustment Fire",
+        "Shared attack sound cues: fallbullet_1_1-3 / fallbullet_2_1-2 / fallbullet_3_1 / fallbullet_4_1-5"
+      ]
+    },
+    {
+      "identity": 10115,
+      "personality": "10115_YiSang_Index_FatherAppearance",
+      "aliases": [],
+      "appearance": "story_1347_Index_fatherAppearance",
+      "pool_id": "story_1347_Index_fatherAppearance",
+      "family": "chapter9",
+      "evidence": [
+        "Chapter IX actor and phase contract",
+        "Identity title: The House of Spiders: The Index Nursefather",
+        "Encounter names: The Index Nursefather - Rien / The Refracted Index Nursefather - Rien",
+        "Shared attack names: Furioso-Replica",
+        "Shared attack sound cues: human_rush / human_stretch / indexfather_1_1-1 / indexfather_1_1-2"
+      ]
+    },
+    {
+      "identity": 10115,
+      "personality": "10115_YiSang_Index_FatherAppearance",
+      "aliases": [],
+      "appearance": "story_1348_Index_father_Phase2Appearance",
+      "pool_id": "story_1348_Index_father_Phase2Appearance",
+      "family": "chapter9",
+      "evidence": [
+        "Chapter IX actor and phase contract",
+        "Identity title: The House of Spiders: The Index Nursefather",
+        "Encounter names: The Index Nursefather - Rien / The Refracted Index Nursefather - Rien",
+        "Shared attack sound cues: human_rush / human_stretch / indexfather_1_1-1 / indexfather_1_1-2"
+      ]
+    },
+    {
+      "identity": 10116,
+      "personality": "10116_Yisang_LostPassangerAppearance",
+      "aliases": [],
+      "appearance": "story_8550_LostPassengerAppearance",
+      "pool_id": "story_8550_LostPassengerAppearance",
+      "family": "named",
+      "evidence": [
+        "Dimension Shredder uses Wayward Passenger dimensional cuts",
+        "Identity title: LCE E.G.O:: Dimension Shredder",
+        "Encounter names: Refracted Wayward Passenger / Wayward Passenger",
+        "Shared attack names: Consecutive Dimensional Slice / Dimensional Slice / Rip Space"
+      ]
+    },
+    {
+      "identity": 10204,
+      "personality": "10204_Faust_CromerAppearance",
+      "aliases": [],
+      "appearance": "story_8029_CromerAppearance",
+      "pool_id": "story_8029_CromerAppearance",
+      "family": "named",
+      "evidence": [
+        "Kromer, the One Who Grips, including her second encounter form",
+        "Identity title: The One Who Grips",
+        "Encounter names: Kromer",
+        "Shared attack names: Cackle / The Gripping",
+        "Shared attack sound cues: 140_ishmael_base_ego-2_a_v1_First / Myo_Special_Atk2 / Purple_Guard / Stab2"
+      ]
+    },
+    {
+      "identity": 10204,
+      "personality": "10204_Faust_CromerAppearance",
+      "aliases": [],
+      "appearance": "story_8030_Cromer_2pAppearance",
+      "pool_id": "story_8030_Cromer_2pAppearance",
+      "family": "named",
+      "evidence": [
+        "Kromer, the One Who Grips, including her second encounter form",
+        "Identity title: The One Who Grips",
+        "Encounter names: Kromer the Dreamer of Human Wholeness"
+      ]
+    },
+    {
+      "identity": 10209,
+      "personality": "10209_Faust_ButlerAppearance",
+      "aliases": [],
+      "appearance": "story_90126_Butler_W_1Appearance",
+      "pool_id": "story_90126_Butler_W_1Appearance",
+      "family": "named",
+      "evidence": [
+        "Wuthering Heights butler with Interloper Reception",
+        "Identity title: Wuthering Heights Butler",
+        "Encounter names: Hostile Wuthering Heights Butler",
+        "Shared attack names: Interloper Reception"
+      ]
+    },
+    {
+      "identity": 10209,
+      "personality": "10209_Faust_ButlerAppearance",
+      "aliases": [],
+      "appearance": "story_90126_Butler_W_1_v1Appearance",
+      "pool_id": "story_90126_Butler_W_1_v1Appearance",
+      "family": "named",
+      "evidence": [
+        "Wuthering Heights butler with Interloper Reception",
+        "Identity title: Wuthering Heights Butler",
+        "Encounter names: Hostile Wuthering Heights Butler / Refracted Hostile Wuthering Heights Butler",
+        "Shared attack names: Interloper Reception"
+      ]
+    },
+    {
+      "identity": 10210,
+      "personality": "10210_Faust_CyborgFixerAppearance",
+      "aliases": [],
+      "appearance": "story_91018_CyborgFixer_Blood_SwordAppearance",
+      "pool_id": "story_91018_CyborgFixer_Blood_SwordAppearance",
+      "family": "named",
+      "evidence": [
+        "MultiCrack Office representative Sasha; bloodbag encounter",
+        "Identity title: MultiCrack Office Rep",
+        "Encounter names: Sasha"
+      ]
+    },
+    {
+      "identity": 10211,
+      "personality": "10211_Faust_FireMothAppearance",
+      "aliases": [],
+      "appearance": "story_400007_LCE_AlyssaAppearance",
+      "pool_id": "story_400007_LCE_AlyssaAppearance",
+      "family": "named",
+      "evidence": [
+        "LCE researcher Alyssa using Ardor Blossom Star and the Ardor Blossom Moth supplying its E.G.O",
+        "Identity title: LCE E.G.O:: Ardor Blossom Star",
+        "Shared attack sound cues: dead_AppearanceBreak / firefaust_1_1-1 / firefaust_1_1-2 / firefaust_1_2-1"
+      ]
+    },
+    {
+      "identity": 10211,
+      "personality": "10211_Faust_FireMothAppearance",
+      "aliases": [],
+      "appearance": "story_8577_FireMothAppearance",
+      "pool_id": "story_8577_FireMothAppearance",
+      "family": "named",
+      "evidence": [
+        "LCE researcher Alyssa using Ardor Blossom Star and the Ardor Blossom Moth supplying its E.G.O",
+        "Identity title: LCE E.G.O:: Ardor Blossom Star",
+        "Encounter names: Ardor Blossom Moth / Refracted Ardor Blossom Moth"
+      ]
+    },
+    {
+      "identity": 10212,
+      "personality": "10212_Faust_Heishou_JaroAppearance",
+      "aliases": [],
+      "appearance": "story_1126_BlackHand_Mao_JaroAppearance",
+      "pool_id": "story_1126_BlackHand_Mao_JaroAppearance",
+      "family": "named",
+      "evidence": [
+        "Zilu, Mao branch adept, including both encounter prefabs",
+        "Identity title: Heishou Pack - Mao Branch Adept",
+        "Encounter names: Zilu",
+        "Shared attack sound cues: zilu_2_1-1 / zilu_3_2-1 / zilu_3_2-2 / zilu_4_1-1"
+      ]
+    },
+    {
+      "identity": 10212,
+      "personality": "10212_Faust_Heishou_JaroAppearance",
+      "aliases": [],
+      "appearance": "story_1133_BlackHand_Mao_JaroAppearance",
+      "pool_id": "story_1133_BlackHand_Mao_JaroAppearance",
+      "family": "named",
+      "evidence": [
+        "Zilu, Mao branch adept, including both encounter prefabs",
+        "Identity title: Heishou Pack - Mao Branch Adept",
+        "Encounter names: Zilu",
+        "Shared attack names: Ascendant Heishou - Mao Technique: Cloudsplitting Manifestation",
+        "Shared attack sound cues: human_rush / zilu_2_1-1 / zilu_3_2-1 / zilu_3_2-2"
+      ]
+    },
+    {
+      "identity": 10215,
+      "personality": "10215_Faust_Ring_DiscipleAppearance",
+      "aliases": [
+        "10215_Faust_Ring_Disciple_CastOffAppearance"
+      ],
+      "appearance": "story_1319_RingFinger_DiscipleAppearance",
+      "pool_id": "story_1319_RingFinger_DiscipleAppearance",
+      "family": "chapter9",
+      "evidence": [
+        "Chapter IX actor and phase contract",
+        "Identity title: The House of Spiders: The Ring Apprentice",
+        "Encounter names: The Ring Apprentice - Albina",
+        "Shared attack names: Butcher - Ribs / Fascia Hungers / Repressed Flesh",
+        "Shared attack sound cues: ringssword_1_2-1 / ringssword_4_5-1"
+      ]
+    },
+    {
+      "identity": 10215,
+      "personality": "10215_Faust_Ring_DiscipleAppearance",
+      "aliases": [
+        "10215_Faust_Ring_Disciple_CastOffAppearance"
+      ],
+      "appearance": "story_1336_RingFinger_Disciple_CastoffAppearance",
+      "pool_id": "story_1336_RingFinger_Disciple_CastoffAppearance",
+      "family": "chapter9",
+      "evidence": [
+        "Chapter IX actor and phase contract",
+        "Identity title: The House of Spiders: The Ring Apprentice",
+        "Encounter names: The Refracted Ring Apprentice - Albina / The Ring Apprentice - Albina",
+        "Shared attack names: Butcher - Ribs / Liberation of the Repressed Flesh",
+        "Shared attack sound cues: human_rush"
+      ]
+    },
+    {
+      "identity": 10215,
+      "personality": "10215_Faust_Ring_DiscipleAppearance",
+      "aliases": [
+        "10215_Faust_Ring_Disciple_CastOffAppearance"
+      ],
+      "appearance": "story_1354_RingFinger_DiscipleAppearance",
+      "pool_id": "story_1354_RingFinger_DiscipleAppearance",
+      "family": "chapter9",
+      "evidence": [
+        "Chapter IX actor and phase contract",
+        "Identity title: The House of Spiders: The Ring Apprentice",
+        "Encounter names: The Ring Apprentice - Albina",
+        "Shared attack sound cues: ringssword_1_2-1 / ringssword_4_5-1"
+      ]
+    },
+    {
+      "identity": 10216,
+      "personality": "10216_Faust_YunaAppearance",
+      "aliases": [],
+      "appearance": "story_1581_YunaAppearance",
+      "pool_id": "story_1581_YunaAppearance",
+      "family": "named",
+      "evidence": [
+        "Yuna, Dawn Office fixer",
+        "Identity title: Dawn Office Fixer",
+        "Encounter names: Yuna",
+        "Shared attack names: Butterfly Slash / Eject / Eject - High Noon / Seconded Offensive",
+        "Shared attack sound cues: human_cloth / human_rush / human_stretch / yunafaust_1_1-1"
+      ]
+    },
+    {
+      "identity": 10309,
+      "personality": "10309_Donquixote_TCorpAppearance",
+      "aliases": [],
+      "appearance": "story_90143_TCorp_EliteAppearance",
+      "pool_id": "story_90143_TCorp_EliteAppearance",
+      "family": "named",
+      "evidence": [
+        "Class 3 collector with T Corp. Accelerated Amputator",
+        "Identity title: T Corp. Class 3 Collection Staff",
+        "Encounter names: T Corp. Class 3 Collector - Neutralize",
+        "Shared attack names: T Corp. Accelerated Amputator"
+      ]
+    },
+    {
+      "identity": 10310,
+      "personality": "10310_Donquixote_DarkSanchoAppearance",
+      "aliases": [],
+      "appearance": "story_1079_Sancho_BerserkAppearance",
+      "pool_id": "story_1079",
+      "family": "named",
+      "evidence": [
+        "Sancho and berserk Sancho; the DarkSancho identity assumes management of La Manchaland",
+        "Identity title: The Manager of La Manchaland",
+        "Encounter names: Sancho",
+        "Shared attack sound cues: Shi_Skill2_2 / sanchodon_w3_3-2"
+      ]
+    },
+    {
+      "identity": 10310,
+      "personality": "10310_Donquixote_DarkSanchoAppearance",
+      "aliases": [],
+      "appearance": "story_8380_SanchoAppearance",
+      "pool_id": "story_8380_SanchoAppearance",
+      "family": "named",
+      "evidence": [
+        "Sancho and berserk Sancho; the DarkSancho identity assumes management of La Manchaland",
+        "Identity title: The Manager of La Manchaland",
+        "Encounter names: Sancho"
+      ]
+    },
+    {
+      "identity": 10312,
+      "personality": "10312_Donquixote_HatredAppearance",
+      "aliases": [],
+      "appearance": "story_400003_QueenOfHatred",
+      "pool_id": "story_400003_QueenOfHatred",
+      "family": "named",
+      "evidence": [
+        "Queen of Hatred: the magical girl E.G.O identity uses her Arcana attack",
+        "Identity title: Lobotomy E.G.O:: In the Name of Love and Hate"
+      ]
+    },
+    {
+      "identity": 10314,
+      "personality": "10314_Donquixote_Index_DiscipleAppearance",
+      "aliases": [
+        "10314_Donquixote_Index_Disciple_AwakenAppearance"
+      ],
+      "appearance": "story_1325_Index_Disciple_NormalAppearance",
+      "pool_id": "story_1325_Index_Disciple_NormalAppearance",
+      "family": "chapter9",
+      "evidence": [
+        "Chapter IX actor and phase contract",
+        "Identity title: The Index Proxy - Effloresced E.G.O:: Procuration",
+        "Encounter names: The Index Apprentice - Sora",
+        "Shared attack names: Procuration: Annihilate / Procuration: Engrave / Skull Crushing",
+        "Shared attack sound cues: human_jump / indexpunch_1_1-1 / indexpunch_1_1-2 / indexpunch_2_2"
+      ]
+    },
+    {
+      "identity": 10314,
+      "personality": "10314_Donquixote_Index_DiscipleAppearance",
+      "aliases": [
+        "10314_Donquixote_Index_Disciple_AwakenAppearance"
+      ],
+      "appearance": "story_1325_Index_discipleAppearance",
+      "pool_id": "story_1325_Index_discipleAppearance",
+      "family": "chapter9",
+      "evidence": [
+        "Chapter IX actor and phase contract",
+        "Identity title: The Index Proxy - Effloresced E.G.O:: Procuration",
+        "Shared attack sound cues: human_cloth / human_jump / human_stretch"
+      ]
+    },
+    {
+      "identity": 10314,
+      "personality": "10314_Donquixote_Index_DiscipleAppearance",
+      "aliases": [
+        "10314_Donquixote_Index_Disciple_AwakenAppearance"
+      ],
+      "appearance": "story_1355_Index_DiscipleAppearance",
+      "pool_id": "story_1355_Index_DiscipleAppearance",
+      "family": "chapter9",
+      "evidence": [
+        "Chapter IX actor and phase contract",
+        "Identity title: The Index Proxy - Effloresced E.G.O:: Procuration",
+        "Shared attack sound cues: human_cloth / human_jump / human_stretch"
+      ]
+    },
+    {
+      "identity": 10314,
+      "personality": "10314_Donquixote_Index_DiscipleAppearance",
+      "aliases": [
+        "10314_Donquixote_Index_Disciple_AwakenAppearance"
+      ],
+      "appearance": "story_1355_Index_Disciple_NormalAppearance",
+      "pool_id": "story_1355_Index_Disciple_NormalAppearance",
+      "family": "chapter9",
+      "evidence": [
+        "Chapter IX actor and phase contract",
+        "Identity title: The Index Proxy - Effloresced E.G.O:: Procuration",
+        "Encounter names: ???",
+        "Shared attack sound cues: human_jump / indexpunch_1_1-1 / indexpunch_1_1-2 / indexpunch_2_2"
+      ]
+    },
+    {
+      "identity": 10315,
+      "personality": "10315_Donquixote_LeNoir_CaptainAppearance",
+      "aliases": [],
+      "appearance": "story_1506_5F_LeNoir_CaptainAppearance",
+      "pool_id": "story_1506_5F_LeNoir_CaptainAppearance",
+      "family": "named",
+      "evidence": [
+        "Le Noir brand manager; Cometh the Nail and Summoneth the Nail",
+        "Identity title: Haute Couture:: Le Noir Brand Manager",
+        "Encounter names: Le Noir's Brand Manager",
+        "Shared attack names: Cometh the Nail / Summoneth the Nail / With each smite, I sever thine advent!"
+      ]
+    },
+    {
+      "identity": 10316,
+      "personality": "10316_Donquixote_WedgeAppearance",
+      "aliases": [],
+      "appearance": "story_1585_PamelaAppearance",
+      "pool_id": "story_1585_PamelaAppearance",
+      "family": "wedge",
+      "evidence": [
+        "Wedge Office role and authentic link timeline",
+        "Identity title: Wedge Office Fixer",
+        "Encounter names: Pamela",
+        "Shared attack names: Collision / Gap Strike / Speared Sweep",
+        "Shared attack sound cues: pameladon_1_1-1 / pameladon_1_1-2 / pameladon_1_2-1 / pameladon_1_2-2"
+      ]
+    },
+    {
+      "identity": 10408,
+      "personality": "10408_Ryoshu_NellyAppearance",
+      "aliases": [],
+      "appearance": "story_8171_NellyAppearance",
+      "pool_id": "story_8171_NellyAppearance",
+      "family": "named",
+      "evidence": [
+        "Nelly, chief butler of the Edgar family",
+        "Identity title: Edgar Family Chief Butler",
+        "Encounter names: Nelly / Refracted Nelly",
+        "Shared attack names: Receiving Arts 1: The Hunt / Receiving Arts 7: Capture"
+      ]
+    },
+    {
+      "identity": 10412,
+      "personality": "10412_Ryoshu_JiahuanAppearance",
+      "aliases": [],
+      "appearance": "story_1135_NLONL_ContemptSpiral_JiahuanAppearance",
+      "pool_id": "story_1135_NLONL_ContemptSpiral_JiahuanAppearance",
+      "family": "named",
+      "evidence": [
+        "Jia Huan wielding Contempt, Awe",
+        "Identity title: N Corp. E.G.O:: Contempt, Awe",
+        "Encounter names: N Corp. E.G.O::Contempt, Awe Jia Huan",
+        "Shared attack names: Be Awed / Contemptuous Thing"
+      ]
+    },
+    {
+      "identity": 10413,
+      "personality": "10413_Ryoshu_LindaiyuAppearance",
+      "aliases": [],
+      "appearance": "story_400002_LindaiyuAppearance",
+      "pool_id": "story_400002_LindaiyuAppearance",
+      "family": "named",
+      "evidence": [
+        "Lin Daiyu, drifting blade of Hongyuan",
+        "Identity title: Drifting Blade of Hongyuan",
+        "Shared attack sound cues: human_cloth"
+      ]
+    },
+    {
+      "identity": 10415,
+      "personality": "10415_Ryoshu_Pinky_FatherAppearance",
+      "aliases": [],
+      "appearance": "story_1322_Pinky_Father2pAppearance",
+      "pool_id": "story_1322_Pinky_Father2pAppearance",
+      "family": "chapter9",
+      "evidence": [
+        "Chapter IX actor and phase contract",
+        "Identity title: Blade of the House of Spiders",
+        "Encounter names: The Pinky Nursefather - ???",
+        "Shared attack names: Inevitable Termination [必然殺] / Tripleslash [三連]",
+        "Shared attack sound cues: pinkyfather_1_1-2 / pinkyfather_1_2 / pinkyfather_2_2 / pinkyfather_3_1-1"
+      ]
+    },
+    {
+      "identity": 10415,
+      "personality": "10415_Ryoshu_Pinky_FatherAppearance",
+      "aliases": [],
+      "appearance": "story_1322_Pinky_FatherAppearance",
+      "pool_id": "story_1322_Pinky_FatherAppearance",
+      "family": "chapter9",
+      "evidence": [
+        "Chapter IX actor and phase contract",
+        "Identity title: Blade of the House of Spiders",
+        "Encounter names: The Pinky Nursefather - Shiomi Yoru / The Refracted Pinky Nursefather - Shiomi Yoru",
+        "Shared attack names: Rend Space [空間斬] / Tripleslash [三連]",
+        "Shared attack sound cues: pinkyfather_1_1-2 / pinkyfather_1_2 / pinkyfather_2_2 / pinkyfather_3_1-1"
+      ]
+    },
+    {
+      "identity": 10416,
+      "personality": "10416_Ryoshu_LeNoirAppearance",
+      "aliases": [],
+      "appearance": "story_1483_4F_LeNoir_Shoes_BAppearance",
+      "pool_id": "story_1483_4F_LeNoir_Shoes_BAppearance",
+      "family": "named",
+      "evidence": [
+        "Le Noir Footwear Hall: One-leg uses the matching couture kick sequence",
+        "Identity title: Haute Couture:: Le Noir Footwear Hall",
+        "Encounter names: One-leg",
+        "Shared attack names: Single Kick - Couture Multiple",
+        "Shared attack sound cues: human_cloth / human_stretch"
+      ]
+    },
+    {
+      "identity": 10504,
+      "personality": "10504_Meursault_NCorpGuidoAppearance",
+      "aliases": [],
+      "appearance": "story_91005_NCorpAppearance",
+      "pool_id": "story_91005_NCorpAppearance",
+      "family": "named",
+      "evidence": [
+        "Guido the Persistent, N Corp. Großhammer",
+        "Identity title: N Corp. Großhammer",
+        "Encounter names: Guido the Persistent",
+        "Shared attack names: Drive / You Are Cleansed of Sin",
+        "Shared attack sound cues: Argarlia_Tempest_Whoosh / Purple_Guard / Roland_Duralandal_Down / Roland_Duralandal_Up"
+      ]
+    },
+    {
+      "identity": 10504,
+      "personality": "10504_Meursault_NCorpGuidoAppearance",
+      "aliases": [],
+      "appearance": "story_91006_NCorpAppearance",
+      "pool_id": "story_91006_NCorpAppearance",
+      "family": "named",
+      "evidence": [
+        "Guido the Persistent, N Corp. Großhammer",
+        "Identity title: N Corp. Großhammer",
+        "Encounter names: Guido the Persistent / Lured Guido",
+        "Shared attack names: Annihilate Heretics / Drive",
+        "Shared attack sound cues: Argarlia_Tempest_Whoosh / Purple_Guard / Roland_Duralandal_Down / Roland_Duralandal_Up"
+      ]
+    },
+    {
+      "identity": 10505,
+      "personality": "10505_Meursault_HammerFixerAppearance",
+      "aliases": [],
+      "appearance": "story_90051_TroubleshooterAppearance",
+      "pool_id": "story_90051_TroubleshooterAppearance",
+      "family": "named",
+      "evidence": [
+        "Rosespanner fixer with the same Meursault hammer attack recordings",
+        "Identity title: Rosespanner Workshop Fixer",
+        "Encounter names: Confident Rosespanner Workshop Fixer",
+        "Shared attack sound cues: Fixer_meursault_1_1 / Fixer_meursault_2_1"
+      ]
+    },
+    {
+      "identity": 10508,
+      "personality": "10508_Meursault_KimSatGatAppearance",
+      "aliases": [],
+      "appearance": "story_30501_Meursault_KimSatGatAwakenAppearance",
+      "pool_id": "story_30501_Meursault_KimSatGatAwakenAppearance",
+      "family": "named",
+      "evidence": [
+        "Bamboo-hatted Kim; Blade Lineage mentor, original combat forms and LCD appearance",
+        "Identity title: Blade Lineage Mentor",
+        "Shared attack sound cues: Blade_outis_Skill3_4 / EgoCutScene / blademeur_1_1-1 / blademeur_1_1-2"
+      ]
+    },
+    {
+      "identity": 10508,
+      "personality": "10508_Meursault_KimSatGatAppearance",
+      "aliases": [],
+      "appearance": "story_400040_LCD_KimSatGatAppearance",
+      "pool_id": "story_400040_LCD_KimSatGatAppearance",
+      "family": "named",
+      "evidence": [
+        "Bamboo-hatted Kim; Blade Lineage mentor, original combat forms and LCD appearance",
+        "Identity title: Blade Lineage Mentor"
+      ]
+    },
+    {
+      "identity": 10508,
+      "personality": "10508_Meursault_KimSatGatAppearance",
+      "aliases": [],
+      "appearance": "story_40501_Meursault_KimSatGatBeforeAppearance",
+      "pool_id": "story_40501_Meursault_KimSatGatBeforeAppearance",
+      "family": "named",
+      "evidence": [
+        "Bamboo-hatted Kim; Blade Lineage mentor, original combat forms and LCD appearance",
+        "Identity title: Blade Lineage Mentor",
+        "Shared attack sound cues: Blade_outis_Skill3_4 / EgoCutScene / blademeur_1_1-1 / blademeur_1_1-2"
+      ]
+    },
+    {
+      "identity": 10508,
+      "personality": "10508_Meursault_KimSatGatAppearance",
+      "aliases": [],
+      "appearance": "story_8153_KimSatGat_ErodeAppearance",
+      "pool_id": "story_8153_KimSatGat_ErodeAppearance",
+      "family": "named",
+      "evidence": [
+        "Bamboo-hatted Kim; Blade Lineage mentor, original combat forms and LCD appearance",
+        "Identity title: Blade Lineage Mentor",
+        "Encounter names: Distorted Bamboo-hatted Kim / Distorting Bamboo-hatted Kim",
+        "Shared attack names: Draw of the Sword / Yield My Flesh"
+      ]
+    },
+    {
+      "identity": 10509,
+      "personality": "10509_Meursault_DeadrabbitsAppearance",
+      "aliases": [],
+      "appearance": "story_91016_DeadRabbits_BossAppearance",
+      "pool_id": "story_91016_DeadRabbits_BossAppearance",
+      "family": "named",
+      "evidence": [
+        "Dead Rabbits Boss: same rank and Smackdown",
+        "Identity title: Dead Rabbits Boss",
+        "Encounter names: Dead Rabbits Boss",
+        "Shared attack names: Smackdown"
+      ]
+    },
+    {
+      "identity": 10511,
+      "personality": "10511_Meursault_CinqAppearance",
+      "aliases": [],
+      "appearance": "story_8371_Cinq_CamilleAppearance",
+      "pool_id": "story_8371_Cinq_CamilleAppearance",
+      "family": "named",
+      "evidence": [
+        "Camille of Cinq West Section 3 and his bloodbag form",
+        "Identity title: Cinq Assoc. West Section 3",
+        "Encounter names: Cinq West Section 3 Camille",
+        "Shared attack names: Allez / Fente / Salut"
+      ]
+    },
+    {
+      "identity": 10511,
+      "personality": "10511_Meursault_CinqAppearance",
+      "aliases": [],
+      "appearance": "story_8375_Camille_RoseAppearance",
+      "pool_id": "story_8375_Camille_RoseAppearance",
+      "family": "named",
+      "evidence": [
+        "Camille of Cinq West Section 3 and his bloodbag form",
+        "Identity title: Cinq Assoc. West Section 3",
+        "Encounter names: Budding Cinq West Fixer"
+      ]
+    },
+    {
+      "identity": 10512,
+      "personality": "10512_Meursault_LeiHengAppearance",
+      "aliases": [],
+      "appearance": "story_1145_Thumb_LeiHengAppearance",
+      "pool_id": "story_1145_Thumb_LeiHengAppearance",
+      "family": "named",
+      "evidence": [
+        "Lei Heng, Thumb East Capo IIII",
+        "Identity title: The Thumb East Capo IIII",
+        "Encounter names: Lei Heng",
+        "Shared attack names: Double Slash - Blast [爆] / Savage Tigerslayer's Perfected Flurry of Blades [超絕猛虎殺擊亂斬] / Tanglecleaver [快刀亂麻] / Triple Slash - Blast [爆]",
+        "Shared attack sound cues: eomcapo_1_1-0 / eomcapo_1_1-1 / eomcapo_2_1-1 / eomcapo_4_1-1"
+      ]
+    },
+    {
+      "identity": 10513,
+      "personality": "10513_Meursault_CassettiAppearance",
+      "aliases": [],
+      "appearance": "story_8350_CassetteAppearance",
+      "pool_id": "story_8350_CassetteAppearance",
+      "family": "named",
+      "evidence": [
+        "Cassetti, Prince of La Manchaland",
+        "Identity title: The Prince of La Manchaland",
+        "Encounter names: Cassetti",
+        "Shared attack sound cues: Casette_7_4-2"
+      ]
+    },
+    {
+      "identity": 10515,
+      "personality": "10515_Meursault_RingFinger_Fauvism_BearAppearance",
+      "aliases": [],
+      "appearance": "story_91043_RingFinger_Fauvism_Bear_AAppearance",
+      "pool_id": "story_91043_RingFinger_Fauvism_Bear_AAppearance",
+      "family": "named",
+      "evidence": [
+        "Bear variant of the Ring Fauvist students",
+        "Identity title: The Ring Fauvist Student",
+        "Encounter names: Impulsive Fauvist Student of the Ring",
+        "Shared attack sound cues: human_cloth / human_rush"
+      ]
+    },
+    {
+      "identity": 10515,
+      "personality": "10515_Meursault_RingFinger_Fauvism_BearAppearance",
+      "aliases": [],
+      "appearance": "story_91044_RingFinger_Fauvism_Bear_BAppearance",
+      "pool_id": "story_91044_RingFinger_Fauvism_Bear_BAppearance",
+      "family": "named",
+      "evidence": [
+        "Bear variant of the Ring Fauvist students",
+        "Identity title: The Ring Fauvist Student",
+        "Encounter names: Instinctive Fauvist Student of the Ring",
+        "Shared attack sound cues: human_cloth / human_rush"
+      ]
+    },
+    {
+      "identity": 10603,
+      "personality": "10603_Honglu_ConconAppearance",
+      "aliases": [],
+      "appearance": "story_91003_ConconAppearance",
+      "pool_id": "story_91003_ConconAppearance",
+      "family": "named",
+      "evidence": [
+        "Tingtang boss and his three knife attacks",
+        "Identity title: Tingtang Gang Gangleader",
+        "Encounter names: Tingtang Boss",
+        "Shared attack names: Mutilate / Shank / Throat Slit"
+      ]
+    },
+    {
+      "identity": 10605,
+      "personality": "10605_Honglu_KsuitAppearance",
+      "aliases": [],
+      "appearance": "story_8501_KCorp_Grade3Appearance",
+      "pool_id": "story_8501_KCorp_Grade3Appearance",
+      "family": "named",
+      "evidence": [
+        "K Corp. Class 3 Excision Staff; ordinary and empowered forms",
+        "Identity title: K Corp. Class 3 Excision Staff",
+        "Encounter names: K Corp. Class 3 Staff / Revived K Corp. Class 3 Staff"
+      ]
+    },
+    {
+      "identity": 10605,
+      "personality": "10605_Honglu_KsuitAppearance",
+      "aliases": [],
+      "appearance": "story_8502_KCorp_Grade3_FuryAppearance",
+      "pool_id": "story_8502_KCorp_Grade3_FuryAppearance",
+      "family": "named",
+      "evidence": [
+        "K Corp. Class 3 Excision Staff; ordinary and empowered forms",
+        "Identity title: K Corp. Class 3 Excision Staff",
+        "Encounter names: K Corp. Class 3 Empowered Staff / K Corp. Class 3 Excision Staff / Revived K Corp. Class 3 Empowered Staff"
+      ]
+    },
+    {
+      "identity": 10610,
+      "personality": "10610_Honglu_BloodfiendHunterAppearance",
+      "aliases": [],
+      "appearance": "story_90156_BloodfiendHunter_Mob_AAppearance",
+      "pool_id": "story_90156_BloodfiendHunter_Mob_AAppearance",
+      "family": "named",
+      "evidence": [
+        "Fanghunt Office fixers wielding the same Slam attack",
+        "Identity title: Fanghunt Office Fixer",
+        "Encounter names: Combative Fanghunt Office Fixer / Refracted Combative Fanghunt Office Fixer",
+        "Shared attack names: Slam"
+      ]
+    },
+    {
+      "identity": 10610,
+      "personality": "10610_Honglu_BloodfiendHunterAppearance",
+      "aliases": [],
+      "appearance": "story_90157_BloodfiendHunter_Mob_BAppearance",
+      "pool_id": "story_90157_BloodfiendHunter_Mob_BAppearance",
+      "family": "named",
+      "evidence": [
+        "Fanghunt Office fixers wielding the same Slam attack",
+        "Identity title: Fanghunt Office Fixer",
+        "Encounter names: Prideful Fanghunt Office Fixer / Refracted Prideful Fanghunt Office Fixer",
+        "Shared attack names: Slam"
+      ]
+    },
+    {
+      "identity": 10613,
+      "personality": "10613_Honglu_JiaqiuAppearance",
+      "aliases": [],
+      "appearance": "story_1137_JiaqiuAppearance",
+      "pool_id": "story_1137_JiaqiuAppearance",
+      "family": "named",
+      "evidence": [
+        "Jia Qiu, the Lord of Hongyuan",
+        "Identity title: The Lord of Hongyuan",
+        "Encounter names: Jia Qiu"
+      ]
+    },
+    {
+      "identity": 10614,
+      "personality": "10614_Honglu_RingFinger_FatherAppearance",
+      "aliases": [],
+      "appearance": "story_1331_RingFinger_FatherAppearance",
+      "pool_id": "story_1331_RingFinger_FatherAppearance",
+      "family": "chapter9",
+      "evidence": [
+        "Chapter IX actor and phase contract",
+        "Identity title: The House of Spiders: The Ring Nursefather",
+        "Encounter names: The Refracted Ring Nursefather - Callisto / The Ring Nursefather - Callisto",
+        "Shared attack names: Anatomize / Closing Time - Installation Art no. 1: Your Flesh and Bones as the Gallery's Seats / Gather Ingredient - Blood-bathed Objet / Installation Art no. 3: Improvised Ribcage / Tibia's Melody - Anatomization of the Unanatomized by the Anatomized",
+        "Shared attack sound cues: human_cloth / human_jump / human_rush / human_stretch"
+      ]
+    },
+    {
+      "identity": 10615,
+      "personality": "10615_Honglu_Scorp_SlaveHunterAppearance",
+      "aliases": [],
+      "appearance": "story_1448_Distorted_Chunokkun_Mob_AAppearance",
+      "pool_id": "story_1448_Distorted_Chunokkun_Mob_AAppearance",
+      "family": "named",
+      "evidence": [
+        "S Corp. Ch’unokkun: Incapacitate and Bind share distinct attacks with this identity",
+        "Identity title: S Corp. Ch'unokkun",
+        "Encounter names: Ch'unokkun - Incapacitate",
+        "Shared attack names: Avulsion Slash / Constricting Ohra Bonds"
+      ]
+    },
+    {
+      "identity": 10615,
+      "personality": "10615_Honglu_Scorp_SlaveHunterAppearance",
+      "aliases": [],
+      "appearance": "story_1449_Distorted_Chunokkun_Mob_BAppearance",
+      "pool_id": "story_1449_Distorted_Chunokkun_Mob_BAppearance",
+      "family": "named",
+      "evidence": [
+        "S Corp. Ch’unokkun: Incapacitate and Bind share distinct attacks with this identity",
+        "Identity title: S Corp. Ch'unokkun",
+        "Encounter names: Ch'unokkun - Bind",
+        "Shared attack names: Hunter's Scouring"
+      ]
+    },
+    {
+      "identity": 10617,
+      "personality": "10617_Honglu_3F_FloorManagerAppearance",
+      "aliases": [],
+      "appearance": "story_1481_3F_BossAppearance",
+      "pool_id": "story_1481_3F_BossAppearance",
+      "family": "named",
+      "evidence": [
+        "3F floor manager in the Le Noir public address room",
+        "Identity title: Haute Couture:: Le Noir 3F Public Address Room",
+        "Encounter names: 3F Floor Manager"
+      ]
+    },
+    {
+      "identity": 10701,
+      "personality": "10701_Heathclif_BaseAppearance",
+      "aliases": [
+        "10701_Heathclif_Base_C6Appearance"
+      ],
+      "appearance": "story_8164_MaouHeathclif_DeadRabbitsAppearance",
+      "pool_id": "story_8164_MaouHeathclif_DeadRabbitsAppearance",
+      "family": "named",
+      "evidence": [
+        "Heathcliff in the Dead Rabbits disguise performs all three LCB Heathcliff attacks",
+        "Identity title: LCB Sinner",
+        "Encounter names: Heathcliff?",
+        "Shared attack names: Bat Bash / Smackdown / Upheaval"
+      ]
+    },
+    {
+      "identity": 10704,
+      "personality": "10704_Heathclif_NCorpAppearance",
+      "aliases": [],
+      "appearance": "story_90032_NCorpAppearance",
+      "pool_id": "story_90032_NCorpAppearance",
+      "family": "named",
+      "evidence": [
+        "N Corp. Kleinhammer using the matching mace recordings",
+        "Identity title: N Corp. Kleinhammer",
+        "Encounter names: Compliant N Corp. Inquisitor / Servile N Corp. Inquisitor / Worshipping N Corp. Inquisitor",
+        "Shared attack sound cues: Roland_Mace / Stab2"
+      ]
+    },
+    {
+      "identity": 10705,
+      "personality": "10705_Heathclif_WolfoxAppearance",
+      "aliases": [],
+      "appearance": "story_8043_CamelliaAppearance",
+      "pool_id": "story_8043_CamelliaAppearance",
+      "family": "named",
+      "evidence": [
+        "Dongbaek wearing Sunshower and the Drifting Fox supplying its umbrella E.G.O",
+        "Identity title: Lobotomy E.G.O:: Sunshower",
+        "Encounter names: Lobotomy E.G.O::Sunshower - Dongbaek"
+      ]
+    },
+    {
+      "identity": 10705,
+      "personality": "10705_Heathclif_WolfoxAppearance",
+      "aliases": [],
+      "appearance": "story_8046_UmbrellaFoxAppearance",
+      "pool_id": "story_8046_UmbrellaFoxAppearance",
+      "family": "named",
+      "evidence": [
+        "Dongbaek wearing Sunshower and the Drifting Fox supplying its umbrella E.G.O",
+        "Identity title: Lobotomy E.G.O:: Sunshower",
+        "Encounter names: Drifting Fox / Refracted Drifting Fox"
+      ]
+    },
+    {
+      "identity": 10707,
+      "personality": "10707_Heathclif_QueequegAppearance",
+      "aliases": [],
+      "appearance": "story_8103_QueequegAppearance",
+      "pool_id": "story_8103_QueequegAppearance",
+      "family": "named",
+      "evidence": [
+        "Queequeg, Pequod harpooneer",
+        "Identity title: The Pequod Harpooneer",
+        "Encounter names: ??? / Queequeg / Refracted Queequeg",
+        "Shared attack names: Stalk Prey"
+      ]
+    },
+    {
+      "identity": 10710,
+      "personality": "10710_Heathclif_WHuntAppearance",
+      "aliases": [
+        "10710_Heathclif_WHunt_RideAppearance"
+      ],
+      "appearance": "story_8172_MaouHeathclif_MainAppearance",
+      "pool_id": "story_8172_MaouHeathclif_MainAppearance",
+      "family": "named",
+      "evidence": [
+        "Erlking Heathcliff and his mounted Wild Hunt form",
+        "Identity title: Wild Hunt",
+        "Encounter names: Erlking Heathcliff",
+        "Shared attack sound cues: konigheath_5_2 / konigheath_6_1-2 / konigheath_6_1-3 / konigheath_h_1"
+      ]
+    },
+    {
+      "identity": 10710,
+      "personality": "10710_Heathclif_WHuntAppearance",
+      "aliases": [
+        "10710_Heathclif_WHunt_RideAppearance"
+      ],
+      "appearance": "story_8173_MaouHeathclif_Main2Appearance",
+      "pool_id": "story_8173_MaouHeathclif_Main2Appearance",
+      "family": "named",
+      "evidence": [
+        "Erlking Heathcliff and his mounted Wild Hunt form",
+        "Identity title: Wild Hunt",
+        "Encounter names: Erlking Heathcliff",
+        "Shared attack sound cues: konigheath_5_2 / konigheath_6_1-2 / konigheath_6_1-3 / konigheath_h_1"
+      ]
+    },
+    {
+      "identity": 10710,
+      "personality": "10710_Heathclif_WHuntAppearance",
+      "aliases": [
+        "10710_Heathclif_WHunt_RideAppearance"
+      ],
+      "appearance": "story_8173_MaouHeathclif_RideAppearance",
+      "pool_id": "story_8173_MaouHeathclif_RideAppearance",
+      "family": "named",
+      "evidence": [
+        "Erlking Heathcliff and his mounted Wild Hunt form",
+        "Identity title: Wild Hunt",
+        "Encounter names: Erlking Heathcliff",
+        "Shared attack sound cues: konigheath_5_2 / konigheath_6_1-2 / konigheath_6_1-3 / konigheath_h_1"
+      ]
+    },
+    {
+      "identity": 10715,
+      "personality": "10715_Heathcliff_MiddleFinger_RicardoAppearance",
+      "aliases": [],
+      "appearance": "story_8099_MiddleFinger_RicardoAppearance",
+      "pool_id": "story_8099_MiddleFinger_RicardoAppearance",
+      "family": "named",
+      "evidence": [
+        "Ricardo, Middle Big Brother, including his second encounter",
+        "Identity title: The Middle Big Brother",
+        "Encounter names: Ricardo",
+        "Shared attack names: Kicking / Watch Your Back!",
+        "Shared attack sound cues: Ricardo_6_1-1"
+      ]
+    },
+    {
+      "identity": 10715,
+      "personality": "10715_Heathcliff_MiddleFinger_RicardoAppearance",
+      "aliases": [],
+      "appearance": "story_8099_MiddleFinger_Ricardo_2Appearance",
+      "pool_id": "story_8099_MiddleFinger_Ricardo_2Appearance",
+      "family": "named",
+      "evidence": [
+        "Ricardo, Middle Big Brother, including his second encounter",
+        "Identity title: The Middle Big Brother",
+        "Encounter names: Ricardo",
+        "Shared attack names: Kicking / Watch Your Back!",
+        "Shared attack sound cues: Ricardo_6_1-1"
+      ]
+    },
+    {
+      "identity": 10716,
+      "personality": "10716_Heathcliff_Thumb_DiscipleAppearance",
+      "aliases": [],
+      "appearance": "story_1306_Thumb_DiscipleAppearance",
+      "pool_id": "story_1306_Thumb_DiscipleAppearance",
+      "family": "chapter9",
+      "evidence": [
+        "Chapter IX actor and phase contract",
+        "Identity title: The House of Spiders: The Thumb Apprentice",
+        "Encounter names: The Thumb Apprentice - Lucio",
+        "Shared attack names: Colpi Sottani / Il Cacciatore / La Spada di Palermo / Sezionatura di Cervo",
+        "Shared attack sound cues: human_rush / thumbsword_1_1 / thumbsword_1_2 / thumbsword_1_3"
+      ]
+    },
+    {
+      "identity": 10717,
+      "personality": "10717_Heathcliff_Needle_KingAppearance",
+      "aliases": [],
+      "appearance": "story_1496_B2_Needle_KingAppearance",
+      "pool_id": "story_1496_B2_Needle_KingAppearance",
+      "family": "named",
+      "evidence": [
+        "Le Rouge King of Needleworks",
+        "Identity title: Haute Couture:: Le Rouge King of Needleworks",
+        "Encounter names: King of Needleworks",
+        "Shared attack names: Double stitching past the side seam? Double-needle! Rejected! / Stitch! Per! Inch!"
+      ]
+    },
+    {
+      "identity": 10805,
+      "personality": "10805_Ishmeal_FairyAppearance",
+      "aliases": [],
+      "appearance": "story_90058_LobotomyAppearance",
+      "pool_id": "story_90058_LobotomyAppearance",
+      "family": "named",
+      "evidence": [
+        "Lobotomy E.G.O Sloshing wielder in Canto IV",
+        "Identity title: Lobotomy E.G.O::Sloshing",
+        "Encounter names: Lobotomy E.G.O::Sloshing / Reawakened Lobotomy E.G.O::Sloshing"
+      ]
+    },
+    {
+      "identity": 10808,
+      "personality": "10808_Ishmael_AhabAppearance",
+      "aliases": [],
+      "appearance": "story_8105_AhabAppearance",
+      "pool_id": "story_8105_AhabAppearance",
+      "family": "named",
+      "evidence": [
+        "Ahab, captain of the Pequod; ordinary and awakened appearances",
+        "Identity title: The Pequod Captain",
+        "Encounter names: Ahab / Refracted Ahab",
+        "Shared attack names: To Me!"
+      ]
+    },
+    {
+      "identity": 10808,
+      "personality": "10808_Ishmael_AhabAppearance",
+      "aliases": [],
+      "appearance": "story_8106_Ahab_AwakenAppearance",
+      "pool_id": "story_8106_Ahab_AwakenAppearance",
+      "family": "named",
+      "evidence": [
+        "Ahab, captain of the Pequod; ordinary and awakened appearances",
+        "Identity title: The Pequod Captain",
+        "Encounter names: Effloresced E.G.O::GasHarpoon / Refracted Effloresced E.G.O::GasHarpoon"
+      ]
+    },
+    {
+      "identity": 10808,
+      "personality": "10808_Ishmael_AhabAppearance",
+      "aliases": [],
+      "appearance": "story_8582_Ahab_Awaken_MirrorAppearance",
+      "pool_id": "story_8582_Ahab_Awaken_MirrorAppearance",
+      "family": "named",
+      "evidence": [
+        "Ahab, captain of the Pequod; ordinary and awakened appearances",
+        "Identity title: The Pequod Captain",
+        "Encounter names: Effloresced E.G.O::GasHarpoon / Refracted Effloresced E.G.O::GasHarpoon"
+      ]
+    },
+    {
+      "identity": 10809,
+      "personality": "10809_Ishmael_MaidAppearance",
+      "aliases": [],
+      "appearance": "story_90122_Maid_3Appearance",
+      "pool_id": "story_90122_Maid_3Appearance",
+      "family": "named",
+      "evidence": [
+        "Veteran Edgar Family Butler using Housekeeping and Restraining Technique",
+        "Identity title: Edgar Family Butler",
+        "Encounter names: Refracted Veteran Edgar Family Butler / Veteran Edgar Family Butler",
+        "Shared attack names: Housekeeping / Restraining Technique"
+      ]
+    },
+    {
+      "identity": 10812,
+      "personality": "10812_Ishmael_JiashichunAppearance",
+      "aliases": [],
+      "appearance": "story_400001_JiashichunAppearance",
+      "pool_id": "story_400001_JiashichunAppearance",
+      "family": "named",
+      "evidence": [
+        "Jia Xichun, including her cultivation form",
+        "Identity title: Family Hierarch Candidate"
+      ]
+    },
+    {
+      "identity": 10812,
+      "personality": "10812_Ishmael_JiashichunAppearance",
+      "aliases": [],
+      "appearance": "story_400005_Jiashichun_CultivationAppearance",
+      "pool_id": "story_400005_Jiashichun_CultivationAppearance",
+      "family": "named",
+      "evidence": [
+        "Jia Xichun, including her cultivation form",
+        "Identity title: Family Hierarch Candidate",
+        "Shared attack sound cues: xichunish_3_2 / xichunish_3_3-1 / xichunish_o_1"
+      ]
+    },
+    {
+      "identity": 10814,
+      "personality": "10814_Ishmael_MiddleFinger_DiscipleAppearacne",
+      "aliases": [],
+      "appearance": "story_1328_MiddleFinger_discipleAppearance",
+      "pool_id": "story_1328_MiddleFinger_discipleAppearance",
+      "family": "chapter9",
+      "evidence": [
+        "Chapter IX actor and phase contract",
+        "Identity title: The House of Spiders: The Middle Apprentice",
+        "Encounter names: The Middle Apprentice - Kira",
+        "Shared attack names: Totally Badass Ass-kicking",
+        "Shared attack sound cues: human_rush"
+      ]
+    },
+    {
+      "identity": 10814,
+      "personality": "10814_Ishmael_MiddleFinger_DiscipleAppearacne",
+      "aliases": [],
+      "appearance": "story_400037_MiddleFinger_discipleAllyAppearance",
+      "pool_id": "story_400037_MiddleFinger_discipleAllyAppearance",
+      "family": "named",
+      "evidence": [
+        "Kira, the allied form of the Middle Apprentice",
+        "Identity title: The House of Spiders: The Middle Apprentice",
+        "Shared attack sound cues: human_rush"
+      ]
+    },
+    {
+      "identity": 10815,
+      "personality": "10815_Ishmael_LCD_AengduAppearance",
+      "aliases": [],
+      "appearance": "story_400038_LCD_AengduAppearance",
+      "pool_id": "story_400038_LCD_AengduAppearance",
+      "family": "named",
+      "evidence": [
+        "Aeng-du, LCD OSIR agent",
+        "Identity title: LCD OSIR Team",
+        "Shared attack sound cues: human_cloth / human_rush"
+      ]
+    },
+    {
+      "identity": 10816,
+      "personality": "10816_Ishmael_LeRouge_HighdomesticAppearance",
+      "aliases": [],
+      "appearance": "story_1466_LaRougeHighdomesticAppearance",
+      "pool_id": "story_1466_LaRougeHighdomesticAppearance",
+      "family": "named",
+      "evidence": [
+        "Le Rouge high domestic, L’Inamovible",
+        "Identity title: Haute Couture:: Boutique du Rouge",
+        "Encounter names: L'Inamovible"
+      ]
+    },
+    {
+      "identity": 10904,
+      "personality": "10904_Rodion_NCorpAppearance",
+      "aliases": [],
+      "appearance": "story_90035_NCorpAppearance",
+      "pool_id": "story_90035_NCorpAppearance",
+      "family": "named",
+      "evidence": [
+        "N Corp. Mittelhammer using the matching Rodion attacks",
+        "Identity title: N Corp. Mittelhammer",
+        "Encounter names: Interrogative N Corp. Inquisitor / Sadistic N Corp. Inquisitor / Scourging N Corp. Inquisitor",
+        "Shared attack sound cues: Hit / Purple_Guard / Stab2 / Stab5"
+      ]
+    },
+    {
+      "identity": 10905,
+      "personality": "10905_Rodion_EliteFixerAppearance",
+      "aliases": [],
+      "appearance": "story_91008_TroubleshooterAppearance",
+      "pool_id": "story_91008_TroubleshooterAppearance",
+      "family": "named",
+      "evidence": [
+        "Rosespanner representative Niko and Vibration Compression",
+        "Identity title: Rosespanner Workshop Rep",
+        "Encounter names: Rosespanner Workshop Rep Niko",
+        "Shared attack names: Vibration Compression"
+      ]
+    },
+    {
+      "identity": 10909,
+      "personality": "10909_Rodion_TCorpAppearance",
+      "aliases": [],
+      "appearance": "story_90142_TCorp_StaffAppearance",
+      "pool_id": "story_90142_TCorp_StaffAppearance",
+      "family": "named",
+      "evidence": [
+        "T Corp. Class 2 Collection Staff: matching rank and collector equipment",
+        "Identity title: T Corp. Class 2 Collection Staff",
+        "Encounter names: T Corp. Class 2 Collection Staff"
+      ]
+    },
+    {
+      "identity": 10911,
+      "personality": "10911_Rodion_DulcineaAppearance",
+      "aliases": [],
+      "appearance": "story_8381_Dulcinea_BossAppearance",
+      "pool_id": "story_8381_Dulcinea_BossAppearance",
+      "family": "named",
+      "evidence": [
+        "Dulcinea, Princess of La Manchaland",
+        "Identity title: The Princess of La Manchaland",
+        "Encounter names: Dulcinea / Refracted Dulcinea"
+      ]
+    },
+    {
+      "identity": 10913,
+      "personality": "10913_Rodion_KnightOfDespairAppearance",
+      "aliases": [],
+      "appearance": "story_1223_KnightOfDespairAppearance",
+      "pool_id": "story_1223_KnightOfDespairAppearance",
+      "family": "named",
+      "evidence": [
+        "The Knight of Despair: Arcana: Tear and Pierce",
+        "Identity title: Lobotomy E.G.O:: The Sword Sharpened with Tears",
+        "Encounter names: The Knight of Despair",
+        "Shared attack names: Arcana: Tear and Pierce"
+      ]
+    },
+    {
+      "identity": 10915,
+      "personality": "10915_Rodion_RingFinger_FauvismeDocentAppearance",
+      "aliases": [
+        "10915_Rodion_RingFinger_FauvismeDocent_MaskAppearance"
+      ],
+      "appearance": "story_1422_RingFinger_FauvismeDocent_WolfAppearance",
+      "pool_id": "story_1422_RingFinger_FauvismeDocent_WolfAppearance",
+      "family": "named",
+      "evidence": [
+        "Rufo, the Ring Fauvist docent, including his wolf form",
+        "Identity title: The Ring Fauvist Docent",
+        "Encounter names: Rufo",
+        "Shared attack names: Expression of Primary Colors / Vehement Overpainting",
+        "Shared attack sound cues: ringsrodion_4_1-2"
+      ]
+    },
+    {
+      "identity": 10915,
+      "personality": "10915_Rodion_RingFinger_FauvismeDocentAppearance",
+      "aliases": [
+        "10915_Rodion_RingFinger_FauvismeDocent_MaskAppearance"
+      ],
+      "appearance": "story_1423_RingFinger_FauvismeDocent_Wolf2pAppearance",
+      "pool_id": "story_1423_RingFinger_FauvismeDocent_Wolf2pAppearance",
+      "family": "named",
+      "evidence": [
+        "Rufo, the Ring Fauvist docent, including his wolf form",
+        "Identity title: The Ring Fauvist Docent",
+        "Encounter names: Rufo",
+        "Shared attack names: Le Fauvisme - Déchaînement Brutal"
+      ]
+    },
+    {
+      "identity": 10916,
+      "personality": "10916_Rodion_Thumb_FatherAppearance",
+      "aliases": [],
+      "appearance": "story_1314_Thumb_FatherAppearance",
+      "pool_id": "story_1314_Thumb_FatherAppearance",
+      "family": "chapter9",
+      "evidence": [
+        "Chapter IX actor and phase contract",
+        "Identity title: The House of Spiders: The Thumb Nursefather",
+        "Encounter names: The Thumb Nursefather - Valencina",
+        "Shared attack names: Colpi di Taglio / Disposal / Sezionatura di Cervo / Sezionatura di Coniglio / Sezionatura di Elefante",
+        "Shared attack sound cues: human_jump / thumbfather_1_1-1 / thumbfather_1_1-2 / thumbfather_1_2"
+      ]
+    },
+    {
+      "identity": 10917,
+      "personality": "10917_Rodion_ScissorsAppearance",
+      "aliases": [],
+      "appearance": "story_1495_3F_ScissorsAppearance",
+      "pool_id": "story_1495_3F_ScissorsAppearance",
+      "family": "named",
+      "evidence": [
+        "Annette the Alterationist, Le Rouge alteration shop",
+        "Identity title: Haute Couture:: Alteration Shop",
+        "Encounter names: Annette the Alterationist",
+        "Shared attack names: Coupez dans le Biais / Patterning / Pin and Trim Along the Patterns",
+        "Shared attack sound cues: human_cloth"
+      ]
+    },
+    {
+      "identity": 11001,
+      "personality": "11001_Sinclair_BaseAppearance",
+      "aliases": [],
+      "appearance": "story_91026_Sinclair_Base_TrainingAppearance",
+      "pool_id": "story_91026_Sinclair_Base_TrainingAppearance",
+      "family": "named",
+      "evidence": [
+        "Training opponent Sinclair uses the LCB base appearance and belongs to Limbus Company LCB",
+        "Identity title: LCB Sinner",
+        "Encounter names: Sinclair",
+        "Shared attack sound cues: sinclair_1_1-1"
+      ]
+    },
+    {
+      "identity": 11004,
+      "personality": "11004_Sinclair_MexicanAppearance",
+      "aliases": [],
+      "appearance": "story_91004_EyedAppearance",
+      "pool_id": "story_91004_EyedAppearance",
+      "family": "named",
+      "evidence": [
+        "Aida, Los Mariachis jefe; enemy plays Sinclair’s mariachi skill recordings",
+        "Identity title: Los Mariachis Jefe",
+        "Encounter names: Aida / Lured Aida",
+        "Shared attack sound cues: 103_sinclair_mexican_skill1-1_a_v1 / 103_sinclair_mexican_skill1-2_a_v1 / 104_sinclair_mexican_skill2-1_a_v1 / 104_sinclair_mexican_skill2-2_a_v1"
+      ]
+    },
+    {
+      "identity": 11006,
+      "personality": "11006_Sinclair_TalismanAppearance",
+      "aliases": [],
+      "appearance": "story_90059_LobotomyAppearance",
+      "pool_id": "story_90059_LobotomyAppearance",
+      "family": "named",
+      "evidence": [
+        "Marile and Canto IV wearers of the same Red Sheet E.G.O equipment",
+        "Identity title: Lobotomy E.G.O::Red Sheet",
+        "Encounter names: Lobotomy E.G.O::Red Sheet / Reawakened Lobotomy E.G.O::Red Sheet"
+      ]
+    },
+    {
+      "identity": 11006,
+      "personality": "11006_Sinclair_TalismanAppearance",
+      "aliases": [],
+      "appearance": "story_91009_LobotomyEGOBossAppearance",
+      "pool_id": "story_91009_LobotomyEGOBossAppearance",
+      "family": "named",
+      "evidence": [
+        "Marile and Canto IV wearers of the same Red Sheet E.G.O equipment",
+        "Identity title: Lobotomy E.G.O::Red Sheet",
+        "Encounter names: Lobotomy E.G.O::Red Sheet - Marile / Reawakened Lobotomy E.G.O::Red Sheet - Marile",
+        "Shared attack sound cues: mar_3_1"
+      ]
+    },
+    {
+      "identity": 11009,
+      "personality": "11009_Sinclair_PhilipAppearance",
+      "aliases": [
+        "11009_Sinclair_Philip_AwakenAppearance"
+      ],
+      "appearance": "story_1582_PhilipAppearance",
+      "pool_id": "story_1582_PhilipAppearance",
+      "family": "named",
+      "evidence": [
+        "Philip of Dawn Office and his awakened Waxen Pinion",
+        "Identity title: Dawn Office Fixer",
+        "Encounter names: Philip",
+        "Shared attack names: Stigmatize / Sunset Blade",
+        "Shared attack sound cues: philipsinc_1_0 / philipsinc_1_1 / philipsinc_2_2 / philipsinc_2_3"
+      ]
+    },
+    {
+      "identity": 11009,
+      "personality": "11009_Sinclair_PhilipAppearance",
+      "aliases": [
+        "11009_Sinclair_Philip_AwakenAppearance"
+      ],
+      "appearance": "story_1587_Philip_AwakenAppearance",
+      "pool_id": "story_1587_Philip_AwakenAppearance",
+      "family": "named",
+      "evidence": [
+        "Philip of Dawn Office and his awakened Waxen Pinion",
+        "Identity title: Dawn Office Fixer",
+        "Encounter names: Volatile Effloresced E.G.O::Waxen Pinion",
+        "Shared attack names: Blazing Strike / Fierce Charge",
+        "Shared attack sound cues: philipsinc_gak_1_0 / philipsinc_gak_1_1 / philipsinc_gak_2_2 / philipsinc_gak_2_3"
+      ]
+    },
+    {
+      "identity": 11012,
+      "personality": "11012_Sinclair_MiddleAppearance",
+      "aliases": [],
+      "appearance": "story_91020_MiddleFinger_MiddleBroAppearance",
+      "pool_id": "story_91020_MiddleFinger_MiddleBroAppearance",
+      "family": "named",
+      "evidence": [
+        "Werner, the Little Brother, with shared Middle attack recordings",
+        "Identity title: The Middle Little Brother",
+        "Encounter names: Little Brother Werner",
+        "Shared attack sound cues: middlemiddle_3_3-1 / middlemiddle_3_3-2"
+      ]
+    },
+    {
+      "identity": 11015,
+      "personality": "11015_Sinclair_PinkyFinger_DiscipleAppearance",
+      "aliases": [],
+      "appearance": "story_1318_Pinky_DiscipleAppearance",
+      "pool_id": "story_1318_Pinky_DiscipleAppearance",
+      "family": "chapter9",
+      "evidence": [
+        "Chapter IX actor and phase contract",
+        "Identity title: The House of Spiders: The Pinky Apprentice",
+        "Encounter names: The Pinky Apprentice - Ren",
+        "Shared attack names: Fallstar Slayer [落星一殺]",
+        "Shared attack sound cues: pinkylong_2_1-2"
+      ]
+    },
+    {
+      "identity": 11015,
+      "personality": "11015_Sinclair_PinkyFinger_DiscipleAppearance",
+      "aliases": [],
+      "appearance": "story_1353_Pinky_DiscipleAppearance",
+      "pool_id": "story_1353_Pinky_DiscipleAppearance",
+      "family": "chapter9",
+      "evidence": [
+        "Chapter IX actor and phase contract",
+        "Identity title: The House of Spiders: The Pinky Apprentice",
+        "Encounter names: ???",
+        "Shared attack sound cues: pinkylong_2_1-2"
+      ]
+    },
+    {
+      "identity": 11016,
+      "personality": "11016_Sinclair_BuffetAppearance",
+      "aliases": [
+        "11016_Sinclair_Buffet_PerfectAppearance"
+      ],
+      "appearance": "story_1484_Buffet_ImmatureAppearance",
+      "pool_id": "story_1484_Buffet_ImmatureAppearance",
+      "family": "named",
+      "evidence": [
+        "The Crimson God of Le Rouge, inchoate and adult combat forms",
+        "Identity title: Haute Couture:: The Crimson God of Le Rouge",
+        "Encounter names: The Crimson God [Inchoate Life]"
+      ]
+    },
+    {
+      "identity": 11016,
+      "personality": "11016_Sinclair_BuffetAppearance",
+      "aliases": [
+        "11016_Sinclair_Buffet_PerfectAppearance"
+      ],
+      "appearance": "story_1517_Buffet_PerfectAppearance",
+      "pool_id": "story_1517_Buffet_PerfectAppearance",
+      "family": "named",
+      "evidence": [
+        "The Crimson God of Le Rouge, inchoate and adult combat forms",
+        "Identity title: Haute Couture:: The Crimson God of Le Rouge",
+        "Encounter names: The Crimson God [Adulthood]",
+        "Shared attack names: Je m'abjecte / Je m'expulse / La Castration / La Demande / La Pulsion / Le Manque-à-être",
+        "Shared attack sound cues: giantred_4_1-2"
+      ]
+    },
+    {
+      "identity": 11017,
+      "personality": "11017_Sinclair_WedgeAppearance",
+      "aliases": [],
+      "appearance": "story_1584_PamelyAppearance",
+      "pool_id": "story_1584_PamelyAppearance",
+      "family": "wedge",
+      "evidence": [
+        "Wedge Office role and authentic link timeline",
+        "Identity title: Wedge Office Fixer",
+        "Encounter names: Pameli",
+        "Shared attack names: Collision / I'll Run You Through Quick & True / Riding the Tide of the Offensive / Speared Sweep",
+        "Shared attack sound cues: pameladon_1_1-1 / pameladon_1_1-2 / pameladon_1_2-1 / pameladon_1_2-2"
+      ]
+    },
+    {
+      "identity": 11103,
+      "personality": "11103_Outis_GCorpAppearance",
+      "aliases": [],
+      "appearance": "story_91001_GCorp_Enhanced_BossAppearance",
+      "pool_id": "story_91001_GCorp_Enhanced_BossAppearance",
+      "family": "named",
+      "evidence": [
+        "Old G Corp. head manager and festered head manager; both use Onslaught Command",
+        "Identity title: G Corp. Head Manager",
+        "Encounter names: Old G Corp. Head Manager / Recollected Festered G Corp. H. Manager / Refracted Old G Corp. Head Manager",
+        "Shared attack names: Onslaught Command",
+        "Shared attack sound cues: gcorp_normal_boss_skill4"
+      ]
+    },
+    {
+      "identity": 11103,
+      "personality": "11103_Outis_GCorpAppearance",
+      "aliases": [],
+      "appearance": "story_91002_GCorp_Infested_BossAppearance",
+      "pool_id": "story_91002_GCorp_Infested_BossAppearance",
+      "family": "named",
+      "evidence": [
+        "Old G Corp. head manager and festered head manager; both use Onslaught Command",
+        "Identity title: G Corp. Head Manager",
+        "Encounter names: Lured Festered G Corp. H. Manager / Recollected Festered G Corp. H. Manager",
+        "Shared attack names: Onslaught Command",
+        "Shared attack sound cues: 013_gcorp_normal_boss_skill1_a_v1 / 014_gcorp_normal_boss_skill2_a_v1"
+      ]
+    },
+    {
+      "identity": 11108,
+      "personality": "11108_Outis_JosephineAppearance",
+      "aliases": [],
+      "appearance": "story_90136_JosephineWHAppearance",
+      "pool_id": "story_90136_JosephineWHAppearance",
+      "family": "named",
+      "evidence": [
+        "Josephine, Wuthering Heights chief butler, and her Wild Hunt appearance",
+        "Identity title: Wuthering Heights Chief Butler",
+        "Encounter names: Josephine of the Wild Hunt"
+      ]
+    },
+    {
+      "identity": 11108,
+      "personality": "11108_Outis_JosephineAppearance",
+      "aliases": [],
+      "appearance": "story_91014_JosephineAppearance",
+      "pool_id": "story_91014_JosephineAppearance",
+      "family": "named",
+      "evidence": [
+        "Josephine, Wuthering Heights chief butler, and her Wild Hunt appearance",
+        "Identity title: Wuthering Heights Chief Butler",
+        "Encounter names: Josephine / Refracted Josephine",
+        "Shared attack names: Knocking"
+      ]
+    },
+    {
+      "identity": 11111,
+      "personality": "11111_Outis_BarberAppearance",
+      "aliases": [],
+      "appearance": "story_8372_Barber_NicoleAppearance",
+      "pool_id": "story_8372_Barber_NicoleAppearance",
+      "family": "named",
+      "evidence": [
+        "Nicolina, the Barber of La Manchaland",
+        "Identity title: The Barber of La Manchaland",
+        "Encounter names: ??? / The Barber / The Refracted Barber"
+      ]
+    },
+    {
+      "identity": 11115,
+      "personality": "11115_Outis_Middle_FatherAppearance",
+      "aliases": [],
+      "appearance": "story_1327_MiddleFinger_fatherAppearance",
+      "pool_id": "story_1327_MiddleFinger_fatherAppearance",
+      "family": "chapter9",
+      "evidence": [
+        "Chapter IX actor and phase contract",
+        "Identity title: The House of Spiders: The Middle Nursefather",
+        "Encounter names: The Middle Nursefather - Matthias",
+        "Shared attack names: Gut Stab [Lævateinn] / Stamp of Vengeance / Stomping",
+        "Shared attack sound cues: human_cloth / human_rush / middlefather_0_1 / middlefather_0_3"
+      ]
+    },
+    {
+      "identity": 11115,
+      "personality": "11115_Outis_Middle_FatherAppearance",
+      "aliases": [],
+      "appearance": "story_1327_MiddleFinger_father_Phase4Appearance",
+      "pool_id": "story_1327_MiddleFinger_father_Phase4Appearance",
+      "family": "chapter9",
+      "evidence": [
+        "Chapter IX actor and phase contract",
+        "Identity title: The House of Spiders: The Middle Nursefather",
+        "Shared attack sound cues: human_jump / human_rush / human_stretch / middlefather_1_1"
+      ]
+    },
+    {
+      "identity": 11116,
+      "personality": "11116_Outis_Wedge_OscarAppearance",
+      "aliases": [],
+      "appearance": "story_1583_OscarAppearance",
+      "pool_id": "story_1583_OscarAppearance",
+      "family": "wedge",
+      "evidence": [
+        "Wedge Office role and authentic link timeline",
+        "Identity title: Wedge Office Rep",
+        "Encounter names: Oscar",
+        "Shared attack names: Assume Wedge Formation / High-speed Stabbing / Sparking Spear / Transpierce",
+        "Shared attack sound cues: human_cloth / oscaroutis_1_1 / oscaroutis_1_2 / oscaroutis_1_3-1"
+      ]
+    },
+    {
+      "identity": 11205,
+      "personality": "11205_Gregor_ChainsawFixerAppearance",
+      "aliases": [],
+      "appearance": "story_90053_TroubleshooterAppearance",
+      "pool_id": "story_90053_TroubleshooterAppearance",
+      "family": "named",
+      "evidence": [
+        "Rosespanner saw wielder with the Rev Up attack and enemy_sawhuman sound cues",
+        "Identity title: Rosespanner Workshop Fixer",
+        "Encounter names: Shaking Rosespanner Workshop Fixer",
+        "Shared attack names: Rev Up"
+      ]
+    },
+    {
+      "identity": 11207,
+      "personality": "11207_Gregor_SmeeAppearance",
+      "aliases": [],
+      "appearance": "story_91012_DoubleHook_SmeeAppearance",
+      "pool_id": "story_91012_DoubleHook_SmeeAppearance",
+      "family": "named",
+      "evidence": [
+        "Smee, first mate of the Twinhook Pirates",
+        "Identity title: Twinhook Pirates First Mate",
+        "Encounter names: Refracted Twinhook Pirates First Mate Smee / Twinhook Pirates First Mate Smee"
+      ]
+    },
+    {
+      "identity": 11209,
+      "personality": "11209_Gregor_LintonAppearance",
+      "aliases": [],
+      "appearance": "story_90138_LintonWHAppearance",
+      "pool_id": "story_90138_LintonWHAppearance",
+      "family": "named",
+      "evidence": [
+        "Linton, heir to the Edgar family; Wild Hunt appearance",
+        "Identity title: Edgar Family Heir",
+        "Encounter names: Linton of the Wild Hunt"
+      ]
+    },
+    {
+      "identity": 11210,
+      "personality": "11210_Gregor_PriestAppearance",
+      "aliases": [],
+      "appearance": "story_8378_Priest_BossAppearance",
+      "pool_id": "story_8378_Priest_BossAppearance",
+      "family": "named",
+      "evidence": [
+        "Priest of La Manchaland, Sacrifice for the Family",
+        "Identity title: The Priest of La Manchaland",
+        "Encounter names: The Priest / The Refracted Priest",
+        "Shared attack names: Sacrifice for the Family"
+      ]
+    },
+    {
+      "identity": 11215,
+      "personality": "11215_Gregor_ElectricCentipedeAppearacne",
+      "aliases": [],
+      "appearance": "story_8045_ElectricCentipedeAppearance",
+      "pool_id": "story_8045_ElectricCentipedeAppearance",
+      "family": "named",
+      "evidence": [
+        "Shock Centipede, source of AEDD, with Electric Release",
+        "Identity title: LCE E.G.O:: AEDD",
+        "Encounter names: Refracted Shock Centipede / Shock Centipede",
+        "Shared attack names: Electric Release"
+      ]
+    },
+    {
+      "identity": 11216,
+      "personality": "11216_Gregor_SalvadorAppearance",
+      "aliases": [],
+      "appearance": "story_1580_SalvadorAppearance",
+      "pool_id": "story_1580_SalvadorAppearance",
+      "family": "named",
+      "evidence": [
+        "Salvador, Dawn Office representative",
+        "Identity title: Dawn Office Rep",
+        "Encounter names: Salvador",
+        "Shared attack names: Crack of Dawn / Dawnsplitter / Flash of Sunup / Sunset Blade",
+        "Shared attack sound cues: human_cloth / human_rush / human_stretch / salvagreg_1_1-1"
+      ]
+    }
+  ],
+  "native_forms": [
+    {
+      "identity": 10710,
+      "player": [
+        "10710_Heathclif_WHuntAppearance",
+        "10710_Heathclif_WHunt_RideAppearance"
+      ],
+      "appearances": [
+        "story_8172_MaouHeathclif_MainAppearance",
+        "story_8173_MaouHeathclif_RideAppearance"
+      ]
+    },
+    {
+      "identity": 10915,
+      "player": [
+        "10915_Rodion_RingFinger_FauvismeDocentAppearance",
+        "10915_Rodion_RingFinger_FauvismeDocent_MaskAppearance"
+      ],
+      "appearances": [
+        "story_1422_RingFinger_FauvismeDocent_WolfAppearance",
+        "story_1423_RingFinger_FauvismeDocent_Wolf2pAppearance"
+      ]
+    },
+    {
+      "identity": 11009,
+      "player": [
+        "11009_Sinclair_PhilipAppearance",
+        "11009_Sinclair_Philip_AwakenAppearance"
+      ],
+      "appearances": [
+        "story_1582_PhilipAppearance",
+        "story_1587_Philip_AwakenAppearance"
+      ]
+    },
+    {
+      "identity": 11016,
+      "player": [
+        "11016_Sinclair_BuffetAppearance",
+        "11016_Sinclair_Buffet_PerfectAppearance"
+      ],
+      "appearances": [
+        "story_1484_Buffet_ImmatureAppearance",
+        "story_1517_Buffet_PerfectAppearance"
+      ]
+    }
+  ]
+}

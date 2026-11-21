@@ -1,0 +1,23 @@
+{
+  "category": {"id":"walpurgis_10", "label":"第10次 · 瓦尔普吉斯之夜", "rank":1050, "source":"abnormality-unit-walpu10.json and 2026-11-12 official event preview", "members":["10316","11017","11116","story_1580_SalvadorAppearance","story_1581_YunaAppearance","story_1582_PhilipAppearance","story_1583_OscarAppearance","story_1584_PamelyAppearance","story_1585_PamelaAppearance","story_1587_Philip_AwakenAppearance"]},
+  "translations": {
+    "10316":{"name":"楔事务所 收尾人 堂吉诃德", "original":"Wedge Office Fixer Don Quixote"},
+    "11017":{"name":"楔事务所 收尾人 辛克莱", "original":"Wedge Office Fixer Sinclair"},
+    "11116":{"name":"楔事务所 代表 奥提斯", "original":"Wedge Office Rep Outis"},
+    "story_8103_QueequegAppearance":{"name":"魁魁格", "original":"Queequeg"},
+    "story_1501_4F_AlriuneAppearance":{"name":"阿尔劳娜", "original":"Alriune"},
+    "story_1353_Pinky_DiscipleAppearance":{"name":"小指子辈", "original":"Pinky Disciple"},
+    "story_1355_Index_DiscipleAppearance":{"name":"食指子辈", "original":"Index Disciple"},
+    "story_1355_Index_Disciple_NormalAppearance":{"name":"食指子辈（普通形态）", "original":"Index Disciple Normal"},
+    "story_1460_ProjectorAppearance":{"name":"放映机", "original":"Projector"},
+    "story_400042_Buffe_CocoonAppearance":{"name":"巴菲之茧", "original":"Buffe Cocoon"},
+    "story_1528_Warder_Candle_BAppearance":{"name":"看守者蜡烛 B", "original":"Warder Candle B"},
+    "story_1585_PamelaAppearance":{"name":"帕梅拉", "original":"Pamela"},
+    "story_1584_PamelyAppearance":{"name":"帕梅莉", "original":"Pamely"},
+    "story_1580_SalvadorAppearance":{"name":"萨尔瓦多", "original":"Salvador"},
+    "story_1581_YunaAppearance":{"name":"尤娜", "original":"Yuna"},
+    "story_1583_OscarAppearance":{"name":"奥斯卡", "original":"Oscar"},
+    "story_1582_PhilipAppearance":{"name":"菲利普", "original":"Philip"},
+    "story_1587_Philip_AwakenAppearance":{"name":"菲利普（觉醒）", "original":"Philip Awaken"}
+  }
+}

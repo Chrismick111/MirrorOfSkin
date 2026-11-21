@@ -1,0 +1,4493 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>镜像幻化</title>
+    <style>
+      * {
+        box-sizing: border-box;
+      }
+      html,
+      body {
+        height: 100%;
+      }
+      body {
+        margin: 0;
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+        font:
+          15px "Microsoft YaHei",
+          sans-serif;
+        background: #17191d;
+        color: #e7e7e7;
+      }
+      #app-bg {
+        position: fixed;
+        inset: 0;
+        z-index: 0;
+        overflow: hidden;
+        background: #17191d;
+        pointer-events: none;
+      }
+      .app-bg-image {
+        position: absolute;
+        inset: -24px;
+        background-position: center;
+        background-repeat: no-repeat;
+        background-size: cover;
+        filter: blur(var(--launcher-bg-blur, 8px)) saturate(1.05);
+        transform: scale(1.04);
+        opacity: 0;
+        transition: opacity 0.9s ease;
+      }
+      .app-bg-image.on {
+        opacity: 1;
+      }
+      #app-bg-mask {
+        position: absolute;
+        inset: 0;
+        background: linear-gradient(
+          180deg,
+          rgba(5, 7, 10, 0.62),
+          rgba(5, 7, 10, 0.82)
+        );
+      }
+      * {
+        scrollbar-width: thin;
+        scrollbar-color: #5b606a #1c1f24;
+      }
+      *::-webkit-scrollbar {
+        width: 10px;
+        height: 10px;
+      }
+      *::-webkit-scrollbar-track {
+        background: #1c1f24;
+        border-radius: 999px;
+      }
+      *::-webkit-scrollbar-thumb {
+        background: #4b505a;
+        border-radius: 999px;
+        border: 2px solid #1c1f24;
+      }
+      *::-webkit-scrollbar-thumb:hover {
+        background: #deb970;
+      }
+      header {
+        position: relative;
+        z-index: 2;
+        flex: 0 0 auto;
+        padding: 11px 24px;
+        border-bottom: 0;
+        background: rgba(30, 33, 40, 0.8);
+        backdrop-filter: blur(14px);
+        -webkit-backdrop-filter: blur(14px);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+      }
+      h1 {
+        font-size: 20px;
+        margin: 0;
+      }
+      main {
+        position: relative;
+        z-index: 1;
+        flex: 1;
+        min-height: 0;
+        display: grid;
+        grid-template-columns: 170px minmax(0, 1fr);
+        overflow: hidden;
+      }
+      main::after {
+        content: "";
+        position: absolute;
+        left: 170px;
+        top: 0;
+        bottom: 0;
+        width: 1px;
+        z-index: 4;
+        background: linear-gradient(
+          180deg,
+          transparent,
+          rgba(255, 255, 255, 0.14) 12%,
+          rgba(255, 255, 255, 0.14) 88%,
+          transparent
+        );
+        pointer-events: none;
+      }
+      nav {
+        padding: 20px;
+        border-right: 0;
+        overflow-y: auto;
+        scrollbar-gutter: stable;
+        display: flex;
+        flex-direction: column;
+        min-height: 0;
+      }
+      nav button {
+        background: rgba(41, 44, 50, 0.62);
+        backdrop-filter: blur(6px);
+        -webkit-backdrop-filter: blur(6px);
+        transition:
+          background 0.15s,
+          border-color 0.15s,
+          box-shadow 0.15s;
+      }
+      nav button:hover {
+        background: rgba(55, 59, 67, 0.8);
+      }
+      nav button.active {
+        background: rgba(104, 81, 37, 0.84);
+        border-color: #deb970;
+        color: #fff;
+        box-shadow: inset 3px 0 0 #deb970;
+      }
+      button,
+      select,
+      input {
+        background: #292c32;
+        color: #eee;
+        border: 1px solid #60646c;
+        padding: 9px;
+        border-radius: 4px;
+      }
+      button {
+        cursor: pointer;
+        transition:
+          background 0.15s,
+          border-color 0.15s,
+          color 0.15s;
+      }
+      button:not(:disabled):active {
+        transform: translateY(1px);
+      }
+      button:hover {
+        border-color: #deb970;
+      }
+      nav button {
+        display: block;
+        width: 100%;
+        margin-bottom: 12px;
+        text-align: left;
+      }
+      article {
+        padding: 5px 24px 24px;
+        min-width: 0;
+        overflow-y: auto;
+        overflow-x: hidden;
+        scrollbar-gutter: stable;
+      }
+      article section {
+        width: 100%;
+        max-width: 1360px;
+        margin: 0 auto;
+        padding: 22px;
+        border: 1px solid rgba(255, 255, 255, 0.07);
+        border-radius: 16px;
+        background: rgba(15, 18, 24, 0.8);
+        box-shadow: 0 18px 50px rgba(0, 0, 0, 0.28);
+      }
+      @media (max-width: 700px) {
+        article section {
+          padding: 16px;
+          border-radius: 12px;
+        }
+      }
+      .bar {
+        display: flex;
+        gap: 12px;
+        align-items: center;
+        flex-wrap: wrap;
+        margin-bottom: 16px;
+      }
+      .muted {
+        color: #b4b8c1;
+        font-size: 13px;
+      }
+      .notice {
+        padding: 12px;
+        background: #272a30;
+        border-left: 3px solid #deb970;
+        margin: 12px 0;
+      }
+      table {
+        width: 100%;
+        border-collapse: collapse;
+      }
+      td,
+      th {
+        text-align: left;
+        padding: 9px;
+        border-bottom: 1px solid #343840;
+      }
+      th {
+        position: sticky;
+        top: 0;
+        background: #22252b;
+      }
+      td input[type="number"] {
+        width: 110px;
+      }
+      .avatar {
+        width: 72px;
+        height: 72px;
+        object-fit: contain;
+        display: block;
+        background: #202329;
+        border-radius: 5px;
+      }
+      .scroll {
+        max-height: 65vh;
+        overflow: auto;
+        scrollbar-gutter: stable;
+      }
+      .hidden {
+        display: none;
+      }
+      @keyframes pageIn {
+        from {
+          opacity: 0;
+          transform: translateY(6px);
+        }
+        to {
+          opacity: 1;
+          transform: none;
+        }
+      }
+      @keyframes modalIn {
+        from {
+          opacity: 0;
+          transform: translateY(10px) scale(0.98);
+        }
+        to {
+          opacity: 1;
+          transform: none;
+        }
+      }
+      @keyframes backdropIn {
+        from {
+          opacity: 0;
+        }
+        to {
+          opacity: 1;
+        }
+      }
+      article section:not(.hidden) {
+        animation: pageIn 0.26s ease;
+      }
+      .modal-backdrop {
+        opacity: 1;
+        transition: opacity 0.18s ease;
+      }
+      .modal-backdrop:not(.hidden) {
+        animation: backdropIn 0.18s ease;
+      }
+      .modal-backdrop .modal {
+        transition:
+          transform 0.18s ease,
+          opacity 0.18s ease;
+      }
+      .modal-backdrop:not(.hidden) .modal {
+        animation: modalIn 0.22s cubic-bezier(0.2, 0.8, 0.3, 1);
+      }
+      .modal-backdrop.closing {
+        opacity: 0;
+        pointer-events: none;
+      }
+      .modal-backdrop.closing .modal {
+        opacity: 0;
+        transform: translateY(8px) scale(0.98);
+      }
+      @media (prefers-reduced-motion: reduce) {
+        article section:not(.hidden),
+        .modal-backdrop:not(.hidden),
+        .modal-backdrop:not(.hidden) .modal {
+          animation: none;
+        }
+        .modal-backdrop,
+        .modal-backdrop .modal,
+        .app-bg-image,
+        .pool-card {
+          transition: none;
+        }
+      }
+      .primary {
+        background: #685125;
+      }
+      textarea {
+        width: 100%;
+        height: 220px;
+        background: #202329;
+        color: #eee;
+      }
+      pre {
+        white-space: pre-wrap;
+        word-break: break-word;
+        background: #202329;
+        padding: 15px;
+      }
+      .toasts {
+        position: fixed;
+        top: 56px;
+        left: 50%;
+        z-index: 220;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 6px;
+        width: min(200px, calc(100vw - 40px));
+        transform: translateX(-50%);
+        pointer-events: none;
+      }
+      .toast {
+        width: 100%;
+        max-width: 100%;
+        padding: 7px 13px;
+        background: rgba(24, 27, 33, 0.72);
+        border: 1px solid rgba(255, 255, 255, 0.13);
+        border-radius: 999px;
+        box-shadow: 0 8px 22px rgba(0, 0, 0, 0.3);
+        backdrop-filter: blur(12px);
+        -webkit-backdrop-filter: blur(12px);
+        color: #e7e7e7;
+        font-size: 12.5px;
+        line-height: 1.35;
+        text-align: center;
+        overflow-wrap: anywhere;
+        animation: toastIn 0.2s ease;
+        transition:
+          opacity 0.2s ease,
+          transform 0.2s ease;
+      }
+      .toast.leaving {
+        opacity: 0;
+        transform: translateY(-6px);
+      }
+      @keyframes toastIn {
+        from {
+          opacity: 0;
+          transform: translateY(-6px);
+        }
+        to {
+          opacity: 1;
+          transform: none;
+        }
+      }
+      .scan-mini {
+        position: fixed;
+        right: 24px;
+        bottom: 84px;
+        z-index: 90;
+        width: 270px;
+        padding: 10px 12px;
+        text-align: left;
+        border-radius: 12px;
+        box-shadow: 0 14px 40px #000a;
+      }
+      .scan-mini-top {
+        display: flex;
+        justify-content: space-between;
+        gap: 8px;
+        margin-bottom: 8px;
+        font-size: 12px;
+        color: #d8dbe1;
+      }
+      .scan-mini-track {
+        height: 7px;
+        overflow: hidden;
+        border-radius: 999px;
+        background: #343840;
+      }
+      .scan-mini-track > div {
+        height: 100%;
+        width: 0;
+        border-radius: inherit;
+        background: linear-gradient(90deg, #b98d3c, #f0d79b);
+        transition: width 0.25s ease;
+      }
+      #scanDetailText {
+        max-height: 50vh;
+        overflow: auto;
+      }
+      .pool-top {
+        position: fixed;
+        right: 24px;
+        bottom: 24px;
+        z-index: 90;
+        width: 44px;
+        height: 44px;
+        padding: 0;
+        border-radius: 50%;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        box-shadow: 0 10px 28px #0008;
+      }
+      .pool-top.hidden {
+        display: none;
+      }
+      .pool-top .icon {
+        width: 21px;
+        height: 21px;
+      }
+      label {
+        display: inline-flex;
+        gap: 6px;
+        align-items: center;
+      }
+      .header-actions {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        flex-wrap: wrap;
+      }
+      .header-actions .icon-btn {
+        width: 36px;
+        height: 36px;
+        border: 1px solid #4b505a;
+        background: #202329;
+      }
+      .header-actions .icon-btn:hover {
+        border-color: #deb970;
+        background: #2c2f35;
+      }
+      .version-pill {
+        padding: 4px 9px;
+        border: 1px solid #4b505a;
+        border-radius: 999px;
+        color: #b4b8c1;
+        font-size: 13px;
+        white-space: nowrap;
+      }
+      .action-group {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        position: relative;
+      }
+      .scheme-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+        gap: 12px;
+      }
+      .scheme-card {
+        border: 1px solid #444;
+        border-radius: 6px;
+        padding: 12px;
+        background: #202328;
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+      }
+      .scheme-card:hover {
+        border-color: #deb970;
+      }
+      .scheme-card .muted {
+        display: block;
+        font-size: 13px;
+        margin-top: 4px;
+      }
+      .scheme-actions {
+        display: flex;
+        gap: 8px;
+      }
+      .scheme-bar {
+        width: 100%;
+        flex-wrap: nowrap;
+        justify-content: space-between;
+      }
+      .scheme-bar input {
+        flex: 1 1 0;
+        width: auto;
+        min-width: 0;
+        max-width: none;
+      }
+      .scheme-bar .scheme-actions {
+        flex: 0 0 auto;
+        margin-left: 8px;
+        align-items: center;
+      }
+      .scheme-action,
+      .event-export {
+        width: 40px;
+        height: 40px;
+        padding: 0;
+        border-radius: 50%;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+      }
+      .scheme-action .icon,
+      .event-export .icon {
+        width: 20px;
+        height: 20px;
+      }
+      .scheme-empty {
+        grid-column: 1 / -1;
+        width: 100%;
+        text-align: center;
+        margin: 42px 0;
+      }
+      #events {
+        height: calc(100vh - 71px);
+        min-height: 320px;
+      }
+      #events:not(.hidden) {
+        display: flex;
+        flex-direction: column;
+      }
+      .events-toolbar {
+        flex: 0 0 auto;
+        justify-content: flex-end;
+      }
+      .run-log {
+        flex: 1 1 auto;
+        min-height: 0;
+        max-height: none;
+        overflow: auto;
+        margin: 0;
+        padding: 12px;
+        background: rgb(10 12 16 / 45%);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        border-radius: 10px;
+        font:
+          12px/1.45 "Cascadia Code",
+          Consolas,
+          monospace;
+        white-space: pre-wrap;
+        overflow-wrap: anywhere;
+        scrollbar-gutter: stable;
+      }
+      .scheme-tip {
+        position: fixed;
+        z-index: 50;
+        max-width: 420px;
+        max-height: 60vh;
+        overflow: auto;
+        background: #111317;
+        border: 1px solid #deb970;
+        border-radius: 6px;
+        padding: 10px 12px;
+        font-size: 13px;
+        pointer-events: none;
+      }
+      .scheme-tip h4 {
+        margin: 8px 0 4px;
+        color: #deb970;
+      }
+      .scheme-tip h4:first-child {
+        margin-top: 0;
+      }
+      .scheme-tip p {
+        margin: 0;
+      }
+      .menu-wrap {
+        position: relative;
+      }
+      .menu {
+        position: absolute;
+        right: 0;
+        top: calc(100% + 6px);
+        min-width: 170px;
+        background: #22252b;
+        border: 1px solid #565b66;
+        border-radius: 8px;
+        padding: 6px;
+        z-index: 60;
+        box-shadow: 0 16px 36px #000a;
+      }
+      .menu button {
+        display: block;
+        width: 100%;
+        text-align: left;
+        border: 0;
+        background: transparent;
+        padding: 9px 10px;
+        border-radius: 5px;
+      }
+      .menu button:hover {
+        background: #333842;
+      }
+      .tutorial-layer {
+        position: fixed;
+        inset: 0;
+        z-index: 300;
+        pointer-events: none;
+      }
+      .tutorial-layer.hidden {
+        display: none;
+      }
+      .tutorial-spot {
+        position: absolute;
+        border: 2px solid #f0d79b;
+        border-radius: 14px;
+        box-shadow:
+          0 0 0 9999px rgba(3, 5, 8, 0.7),
+          0 0 0 4px rgba(240, 215, 155, 0.16),
+          0 0 28px rgba(240, 215, 155, 0.45);
+        transition:
+          left 0.22s ease,
+          top 0.22s ease,
+          width 0.22s ease,
+          height 0.22s ease;
+        animation: tutorialPulse 1.8s ease-in-out infinite;
+        pointer-events: none;
+      }
+      .tutorial-spot.hidden {
+        display: none;
+      }
+      @keyframes tutorialPulse {
+        0%,
+        100% {
+          box-shadow:
+            0 0 0 9999px rgba(3, 5, 8, 0.7),
+            0 0 0 4px rgba(240, 215, 155, 0.14),
+            0 0 24px rgba(240, 215, 155, 0.35);
+        }
+        50% {
+          box-shadow:
+            0 0 0 9999px rgba(3, 5, 8, 0.7),
+            0 0 0 7px rgba(240, 215, 155, 0.24),
+            0 0 34px rgba(240, 215, 155, 0.62);
+        }
+      }
+      .tutorial-tip {
+        position: absolute;
+        width: min(380px, calc(100vw - 32px));
+        max-height: min(70vh, 520px);
+        overflow: auto;
+        background: #202329;
+        border: 1px solid #6b6047;
+        border-radius: 12px;
+        box-shadow: 0 24px 70px #000d;
+        padding: 16px 18px;
+        pointer-events: auto;
+      }
+      .tutorial-tip-kicker {
+        margin: 0 0 4px;
+        color: #f0d79b;
+        font-size: 12px;
+        letter-spacing: 0.08em;
+      }
+      .tutorial-tip h3 {
+        margin: 0 0 8px;
+        font-size: 18px;
+      }
+      .tutorial-tip-body {
+        line-height: 1.65;
+        color: #d8dbe1;
+      }
+      .tutorial-tip-body ul {
+        margin: 8px 0;
+        padding-left: 1.25em;
+      }
+      .tutorial-tip-body li {
+        margin: 4px 0;
+      }
+      .tutorial-tip-footer {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 10px;
+        margin-top: 14px;
+      }
+      .tutorial-tip-actions {
+        display: flex;
+        gap: 8px;
+      }
+      .tutorial-tip-actions button {
+        min-width: 66px;
+      }
+      .tutorial-progress {
+        color: #b4b8c1;
+        font-size: 12px;
+      }
+      .tutorial-modal {
+        width: min(720px, 100%);
+      }
+      .tutorial-body {
+        line-height: 1.7;
+        color: #d8dbe1;
+      }
+      .tutorial-body h3 {
+        margin: 4px 0 8px;
+        color: #f0d79b;
+      }
+      .tutorial-body ul {
+        margin: 8px 0;
+        padding-left: 1.4em;
+      }
+      .tutorial-body li {
+        margin: 4px 0;
+      }
+      .tutorial-footer {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        margin-top: 18px;
+      }
+      .tutorial-footer .modal-actions {
+        margin-top: 0;
+      }
+      .tutorial-progress {
+        color: #b4b8c1;
+        font-size: 13px;
+      }
+      .tutorial-modal .modal-actions button {
+        min-width: 76px;
+      }
+      .modal-backdrop {
+        position: fixed;
+        inset: 0;
+        background: #0009;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 20px;
+        z-index: 100;
+      }
+      .modal-backdrop.hidden,
+      .mini-progress.hidden {
+        display: none;
+      }
+      #confirmModal {
+        z-index: 200;
+      }
+      .modal-backdrop:not(.hidden) {
+        display: flex !important;
+      }
+      .modal {
+        width: min(560px, 100%);
+        background: #202329;
+        border: 1px solid #565b66;
+        border-radius: 12px;
+        box-shadow: 0 28px 90px #000c;
+        padding: 22px;
+      }
+      .modal-title {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        margin-bottom: 8px;
+      }
+      .modal-title h2 {
+        margin: 0;
+        font-size: 19px;
+      }
+      .progress-track {
+        height: 12px;
+        background: #343840;
+        border-radius: 999px;
+        overflow: hidden;
+        margin: 18px 0 10px;
+      }
+      .progress-bar {
+        height: 100%;
+        width: 0;
+        background: linear-gradient(90deg, #b98d3c, #f0d79b);
+        border-radius: 999px;
+        transition: width 0.25s ease;
+      }
+      .progress-meta {
+        display: flex;
+        justify-content: space-between;
+        gap: 12px;
+        color: #b4b8c1;
+        font-size: 13px;
+      }
+      .modal-actions {
+        display: flex;
+        justify-content: flex-end;
+        gap: 10px;
+        margin-top: 20px;
+      }
+      .confirm-text {
+        margin: 8px 0 0;
+        line-height: 1.55;
+        color: #d8dbe1;
+        white-space: pre-wrap;
+      }
+      .mini-progress {
+        position: fixed;
+        right: 22px;
+        bottom: 22px;
+        width: 230px;
+        background: #202329;
+        border: 1px solid #565b66;
+        border-radius: 10px;
+        padding: 10px 12px;
+        box-shadow: 0 14px 40px #000a;
+        z-index: 90;
+        cursor: pointer;
+      }
+      .mini-progress .progress-track {
+        height: 6px;
+        margin: 9px 0 0;
+      }
+      .mini-top {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 8px;
+        font-size: 13px;
+      }
+      .mini-close {
+        border: 0;
+        background: transparent;
+        padding: 0 2px;
+        color: #b4b8c1;
+        font-size: 16px;
+        line-height: 1;
+        cursor: pointer;
+      }
+      .mini-close:hover {
+        color: #fff;
+      }
+      .icon {
+        width: 1.3em;
+        height: 1.3em;
+        display: inline-block;
+        vertical-align: -0.15em;
+        fill: none;
+        stroke: currentColor;
+        stroke-width: 2.25;
+        stroke-linecap: round;
+        stroke-linejoin: round;
+      }
+      .primary .icon,
+      .pool-add .icon,
+      .ruleset-add .icon {
+        color: #f0d79b;
+      }
+      .icon-btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        padding: 8px;
+        border: 0;
+        border-radius: 50%;
+        background: transparent;
+        color: #b4b8c1;
+        line-height: 1;
+        font-size: 20px;
+        text-decoration: none;
+        transition:
+          color 0.15s,
+          background 0.15s;
+      }
+      .icon-btn:hover {
+        color: #fff;
+        background: #2c2f35;
+      }
+      .icon-btn .icon {
+        width: 22px;
+        height: 22px;
+      }
+      .icon-btn.hidden {
+        display: none;
+      }
+      .stage-icon {
+        display: flex;
+        justify-content: center;
+        margin: 18px 0 0;
+        color: #deb970;
+      }
+      .stage-icon .icon {
+        width: 56px;
+        height: 56px;
+        stroke-width: 1.8;
+      }
+      .stage-icon.done {
+        color: #7ddc9a;
+      }
+      .stage-icon.error {
+        color: #ff8d8d;
+      }
+      .mini-label {
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+      }
+
+      .scope-card {
+        position: sticky;
+        top: 5px;
+        z-index: 30;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 8px 12px;
+        border: 1px solid #565b66;
+        border-radius: 999px;
+        background: rgba(32, 35, 41, 0.94);
+        backdrop-filter: blur(12px);
+        -webkit-backdrop-filter: blur(12px);
+        box-shadow: 0 10px 24px #0004;
+        margin-bottom: 18px;
+      }
+      .scope-copy {
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+        min-width: 0;
+      }
+      .scope-copy strong {
+        font-size: 18px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+      .scope-actions {
+        margin-left: auto;
+        display: flex;
+        gap: 8px;
+        align-items: center;
+        flex-wrap: wrap;
+      }
+      .scope-action {
+        width: 40px;
+        height: 40px;
+        padding: 0;
+        border-radius: 50%;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+      }
+      .scope-action .icon {
+        width: 20px;
+        height: 20px;
+      }
+      .scope-action:disabled {
+        opacity: 0.4;
+        cursor: default;
+      }
+      .ruleset-layout {
+        display: flex;
+        justify-content: center;
+      }
+      .ruleset-list {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        max-height: 70vh;
+        overflow: auto;
+      }
+      .ruleset-item {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        text-align: left;
+        padding: 9px;
+        border-radius: 8px;
+        border: 1px solid #444a53;
+        background: #202329;
+        width: 100%;
+      }
+      .ruleset-item.active {
+        border-color: #deb970;
+        background: #2c271d;
+      }
+      .ruleset-item.conflict {
+        opacity: 0.42;
+      }
+      .ruleset-item img,
+      .ruleset-placeholder {
+        width: 40px;
+        height: 40px;
+        flex: 0 0 40px;
+        object-fit: contain;
+        border-radius: 6px;
+        background: #292c32;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: #b4b8c1;
+        font-size: 16px;
+      }
+      .ruleset-copy {
+        display: flex;
+        flex-direction: column;
+        gap: 3px;
+        min-width: 0;
+      }
+      .ruleset-copy strong {
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+      .ruleset-copy small {
+        color: #b4b8c1;
+      }
+      .ruleset-grid {
+        display: grid;
+        grid-template-columns: repeat(5, minmax(0, 1fr));
+        gap: 18px;
+        width: 100%;
+        max-width: 980px;
+        margin: 0 auto;
+        align-items: start;
+      }
+      @media (max-width: 900px) {
+        .ruleset-grid {
+          grid-template-columns: repeat(4, minmax(0, 1fr));
+        }
+      }
+      @media (max-width: 720px) {
+        .ruleset-grid {
+          grid-template-columns: repeat(3, minmax(0, 1fr));
+        }
+      }
+      @media (max-width: 520px) {
+        .ruleset-grid {
+          grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+      }
+      .ruleset-card {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 10px;
+        padding: 14px 8px;
+        border: 0;
+        background: transparent;
+        border-radius: 14px;
+        min-width: 0;
+      }
+      .ruleset-card:hover {
+        background: transparent;
+      }
+      .ruleset-card:hover .ruleset-orb {
+        border-color: #deb970;
+        box-shadow: 0 0 0 3px #deb97024;
+      }
+      .ruleset-orb {
+        width: 112px;
+        height: 112px;
+        border-radius: 50%;
+        border: 2px solid #4b505a;
+        background: #202329;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        overflow: hidden;
+        color: #b4b8c1;
+        font-size: 18px;
+        font-weight: 700;
+        transition:
+          border-color 0.15s,
+          box-shadow 0.15s;
+      }
+      .ruleset-orb img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        object-position: center top;
+      }
+      .ruleset-orb .icon {
+        width: 50px;
+        height: 50px;
+      }
+      .ruleset-add .ruleset-orb {
+        border-style: dashed;
+        color: #deb970;
+        background: #1d2025;
+      }
+      .ruleset-add:hover .ruleset-orb {
+        border-color: #f0d79b;
+        box-shadow: 0 0 0 3px #deb97022;
+      }
+      .ruleset-card.active .ruleset-orb {
+        border-color: #deb970;
+        box-shadow: 0 0 0 3px #deb97033;
+      }
+      .ruleset-name {
+        font-size: 13px;
+        line-height: 1.3;
+        text-align: center;
+        color: #d7d9dd;
+        max-width: 100%;
+        overflow: hidden;
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+        word-break: break-word;
+      }
+      .ruleset-card.active .ruleset-name {
+        color: #f0d79b;
+      }
+
+      .mini-label .icon {
+        width: 18px;
+        height: 18px;
+      }
+      .sinner-tabs {
+        display: flex;
+        gap: 6px;
+        flex-wrap: wrap;
+        margin-bottom: 18px;
+      }
+      .sinner-tab {
+        padding: 8px 14px;
+        border-radius: 999px;
+        border-color: #4b505a;
+      }
+      .sinner-tab.active {
+        background: #685125;
+        border-color: #deb970;
+        color: #fff;
+      }
+      .pool-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(188px, 1fr));
+        gap: 18px;
+        width: 100%;
+        max-width: 1180px;
+        margin: 0 auto;
+        align-items: stretch;
+      }
+      .pool-card {
+        position: relative;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 7px;
+        min-height: 276px;
+        padding: 16px 12px;
+        border: 1px solid #3d424b;
+        border-radius: 18px;
+        background: #202329;
+        min-width: 0;
+        overflow: hidden;
+      }
+      .pool-bg {
+        position: absolute;
+        inset: 0;
+        z-index: 0;
+        background-position: right bottom;
+        background-repeat: no-repeat;
+        background-size: cover;
+        opacity: 0.2;
+        pointer-events: none;
+      }
+      .pool-card > :not(.pool-bg) {
+        position: relative;
+        z-index: 1;
+      }
+      .pool-card {
+        transition:
+          border-color 0.18s,
+          transform 0.18s,
+          box-shadow 0.18s;
+      }
+      .pool-card:hover {
+        border-color: #deb970;
+        transform: translateY(-2px);
+        box-shadow: 0 10px 24px #0005;
+      }
+      .pool-orb {
+        width: 128px;
+        height: 128px;
+        border-radius: 50%;
+        border: 2px solid #4b505a;
+        background: #292c32;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        overflow: hidden;
+        color: #b4b8c1;
+        font-size: 28px;
+        font-weight: 700;
+      }
+      .pool-orb img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        object-position: center top;
+      }
+      .pool-name {
+        max-width: 100%;
+        min-height: 2.6em;
+        text-align: center;
+        font-size: 14px;
+        line-height: 1.3;
+        overflow: hidden;
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+        word-break: break-word;
+      }
+      .pool-source {
+        max-width: 100%;
+        min-height: 2.7em;
+        color: #b4b8c1;
+        font-size: 12px;
+        line-height: 1.35;
+        text-align: center;
+        overflow: hidden;
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+        overflow-wrap: anywhere;
+      }
+      .pool-meta {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+      }
+      .pool-meta input {
+        width: 68px;
+        padding: 4px 6px;
+      }
+      .pool-meta-ghost {
+        width: 100%;
+        min-height: 28px;
+      }
+      .pool-meta .share {
+        color: #b4b8c1;
+        font-size: 11px;
+      }
+      .pool-add {
+        border-style: dashed;
+        background: transparent;
+        cursor: pointer;
+      }
+      .pool-add .pool-orb {
+        border-style: dashed;
+        background: #1d2025;
+      }
+      .pool-add .pool-orb .icon {
+        width: 54px;
+        height: 54px;
+      }
+      .pool-add.is-disabled {
+        opacity: 0.45;
+      }
+      .identity-cell {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        min-width: 0;
+      }
+      .identity-orb {
+        width: 64px;
+        height: 64px;
+        flex: 0 0 64px;
+        border-radius: 50%;
+        border: 1px solid #4b505a;
+        background: #292c32;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        overflow: hidden;
+        color: #b4b8c1;
+        font-weight: 700;
+      }
+      .identity-orb img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        object-position: center top;
+      }
+      .pool-orb .icon {
+        width: 52px;
+        height: 52px;
+        color: #deb970;
+      }
+      .identity-orb .icon {
+        width: 30px;
+        height: 30px;
+        color: #deb970;
+      }
+      .new-rule-orb .icon {
+        width: 32px;
+        height: 32px;
+        color: #deb970;
+      }
+      #identityModal .modal {
+        padding: 14px 16px;
+      }
+      #identityModal .modal-title {
+        margin-bottom: 6px;
+      }
+      #identityModal .identity-filters {
+        gap: 6px;
+        margin-bottom: 6px;
+      }
+      #identityModal .chapter-browser {
+        margin: 4px 0;
+      }
+      #identityModal .identity-scroll table {
+        table-layout: fixed;
+      }
+      #identityModal .identity-scroll td {
+        padding: 6px 8px;
+      }
+      #identityModal .identity-scroll td:last-child {
+        width: 58px;
+        padding-right: 10px;
+        text-align: right;
+      }
+      #identityModal .identity-add {
+        width: 38px;
+        height: 38px;
+        border-radius: 50%;
+      }
+      #identityModal .identity-add .icon {
+        width: 18px;
+        height: 18px;
+      }
+      .identity-copy {
+        display: flex;
+        flex-direction: column;
+        gap: 3px;
+        min-width: 0;
+      }
+      .identity-copy small {
+        color: #b4b8c1;
+      }
+      .new-rule-identities {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(104px, 1fr));
+        gap: 10px;
+        max-height: 46vh;
+        overflow: auto;
+        padding: 4px;
+        margin-top: 10px;
+        scrollbar-gutter: stable;
+      }
+      .new-rule-identity {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 6px;
+        padding: 8px 4px;
+        border: 1px solid transparent;
+        border-radius: 12px;
+        background: transparent;
+        min-width: 0;
+      }
+      .new-rule-identity.active {
+        border-color: #deb970;
+        background: #2c271d;
+      }
+      .new-rule-orb {
+        width: 72px;
+        height: 72px;
+        border-radius: 50%;
+        border: 1px solid #4b505a;
+        background: #292c32;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        overflow: hidden;
+        color: #b4b8c1;
+        font-weight: 700;
+      }
+      .new-rule-orb img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        object-position: center top;
+      }
+      .new-rule-identity span:last-child {
+        max-width: 100%;
+        text-align: center;
+        font-size: 12px;
+        line-height: 1.3;
+        overflow: hidden;
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+        word-break: break-word;
+      }
+      .pool-toolbar {
+        justify-content: space-between;
+      }
+      .pool-heading {
+        display: flex;
+        align-items: baseline;
+        gap: 10px;
+        flex-wrap: wrap;
+      }
+      .save-state {
+        font-size: 12px;
+        color: #8fd49f;
+      }
+      .save-state.error {
+        color: #ff8d8d;
+      }
+      .hint {
+        margin: 0 0 10px;
+        color: #b4b8c1;
+        font-size: 13px;
+      }
+      .empty-row {
+        text-align: center;
+        color: #b4b8c1;
+        padding: 28px;
+      }
+      .context-menu {
+        position: fixed;
+        z-index: 120;
+        min-width: 190px;
+        background: #22252b;
+        border: 1px solid #565b66;
+        border-radius: 8px;
+        padding: 6px;
+        box-shadow: 0 16px 36px #000a;
+      }
+      .context-menu:not(.hidden) {
+        animation: pageIn 0.14s ease;
+      }
+      .context-menu button {
+        display: flex;
+        width: 100%;
+        text-align: left;
+        border: 0;
+        background: transparent;
+        padding: 9px 10px;
+        border-radius: 5px;
+      }
+      .context-menu button:hover {
+        background: #333842;
+      }
+      .context-menu button:disabled {
+        opacity: 0.4;
+        cursor: default;
+      }
+      .context-menu .danger {
+        color: #ff8d8d;
+      }
+      .context-menu .sep {
+        height: 1px;
+        background: #3b4048;
+        margin: 5px 4px;
+      }
+      .context-title {
+        padding: 7px 10px 5px;
+        color: #b4b8c1;
+        font-size: 12px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+      .identity-modal {
+        width: min(920px, 96vw);
+        max-height: calc(100vh - 40px);
+        overflow-y: auto;
+      }
+      #identityModal .identity-modal {
+        height: calc(100vh - 40px);
+        max-height: calc(100vh - 40px);
+        overflow: hidden;
+        display: flex;
+        flex-direction: column;
+      }
+      #identityModal .identity-scroll {
+        flex: 1 1 0;
+        min-height: 0;
+        max-height: none;
+        overflow-y: auto;
+      }
+      #identityModal .modal-title,
+      #identityModal .identity-filters,
+      #identityModal .chapter-browser {
+        flex: 0 0 auto;
+      }
+      #identityModal .chapter-cards {
+        max-height: min(28vh, 220px);
+      }
+      .identity-scroll {
+        max-height: 60vh;
+      }
+      .identity-count {
+        margin: 8px 0;
+      }
+      .chapter-browser {
+        margin: 10px 0;
+      }
+      .chapter-browser summary {
+        cursor: pointer;
+        color: #d5b780;
+        font-weight: 600;
+        padding: 5px 0;
+      }
+      .chapter-cards {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
+        gap: 8px;
+        max-height: 220px;
+        overflow: auto;
+        padding: 5px 2px;
+        scrollbar-gutter: stable;
+      }
+      .chapter-card {
+        position: relative;
+        min-height: 76px;
+        overflow: hidden;
+        border: 2px solid #81755e;
+        border-radius: 5px;
+        background: linear-gradient(110deg, #291d1d, #15171b);
+        color: #f0d8a2;
+        cursor: pointer;
+        text-align: left;
+        padding: 8px 10px;
+        display: flex;
+        align-items: flex-end;
+      }
+      .chapter-card img {
+        position: absolute;
+        width: 100%;
+        height: 100%;
+        inset: 0;
+        object-fit: cover;
+        opacity: 0.68;
+      }
+      .chapter-card::after {
+        content: "";
+        position: absolute;
+        inset: 0;
+        background: linear-gradient(
+          90deg,
+          rgba(15, 12, 12, 0.26),
+          rgba(16, 9, 9, 0.72)
+        );
+      }
+      .chapter-card span {
+        position: relative;
+        z-index: 1;
+        text-shadow: 0 1px 4px #000;
+        font-size: 14px;
+        font-weight: 700;
+      }
+      .chapter-card .chapter-name {
+        margin-left: auto;
+        text-align: right;
+      }
+      .chapter-card .chapter-tag {
+        position: absolute;
+        top: 3px;
+        left: 4px;
+        padding: 1px 5px;
+        background: #721d18;
+      }
+      .chapter-card .chapter-time {
+        position: absolute;
+        top: 5px;
+        right: 6px;
+        color: #e63c25;
+      }
+      .chapter-card .chapter-art-note {
+        position: absolute;
+        bottom: 3px;
+        left: 4px;
+        padding: 1px 4px;
+        background: #252019d9;
+        color: #d6c29a;
+        font-size: 10px;
+      }
+      .chapter-card:hover,
+      .chapter-card:focus-visible {
+        border-color: #e4bc71;
+        outline: none;
+      }
+      @media (max-width: 620px) {
+        .chapter-cards {
+          grid-template-columns: repeat(2, minmax(0, 1fr));
+          max-height: 160px;
+        }
+        .chapter-card {
+          min-height: 64px;
+        }
+      }
+      .identity-add {
+        width: 42px;
+        height: 42px;
+        padding: 0;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+      }
+      .identity-add .icon {
+        width: 20px;
+        height: 20px;
+      }
+      .identity-add.remove {
+        background: #352125;
+        border-color: #7a3a3f;
+        color: #ff9a9a;
+      }
+      .identity-add.remove:hover {
+        border-color: #ff8d8d;
+      }
+      .prep-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+        gap: 10px;
+        margin: 14px 0;
+      }
+      .prep-status,
+      .prep-list {
+        padding: 14px;
+        border: 1px solid #4a4c53;
+        border-radius: 8px;
+        background: #24272d;
+      }
+      .prep-status {
+        display: flex;
+        justify-content: space-between;
+        gap: 12px;
+      }
+      .prep-ok {
+        color: #98d5ae;
+      }
+      .prep-wait {
+        color: #e5c58a;
+      }
+      .prep-list {
+        margin: 12px 0;
+      }
+      .prep-list h3 {
+        margin: 0 0 10px;
+      }
+      .prep-list h3 small {
+        font-weight: normal;
+        color: #b6b8bc;
+      }
+      .prep-list ul {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+        gap: 6px 24px;
+        margin: 0;
+        padding-left: 20px;
+        max-height: 250px;
+        overflow: auto;
+        scrollbar-gutter: stable;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="app-bg" aria-hidden="true">
+      <div id="app-bg-image-a" class="app-bg-image"></div>
+      <div id="app-bg-image-b" class="app-bg-image"></div>
+      <div id="app-bg-mask"></div>
+    </div>
+    <svg
+      aria-hidden="true"
+      style="position: absolute; width: 0; height: 0; overflow: hidden"
+    >
+      <symbol id="i-download" viewBox="0 0 24 24">
+        <path d="M12 3v12m0 0l-4-4m4 4l4-4M5 21h14" />
+      </symbol>
+      <symbol id="i-check" viewBox="0 0 24 24">
+        <path d="M5 13l4 4L19 7" />
+      </symbol>
+      <symbol id="i-alert" viewBox="0 0 24 24">
+        <path d="M12 3l9 16H3L12 3zM12 9v5M12 17h.01" />
+      </symbol>
+      <symbol id="i-close" viewBox="0 0 24 24">
+        <path d="M6 6l12 12M18 6L6 18" />
+      </symbol>
+      <symbol id="i-minimize" viewBox="0 0 24 24">
+        <path d="M5 12h14" />
+      </symbol>
+      <symbol id="i-refresh" viewBox="0 0 24 24">
+        <path d="M20 5v7h-7M20 12a8 8 0 11-2.34-5.66" />
+      </symbol>
+      <symbol id="i-package" viewBox="0 0 24 24">
+        <path d="M4 7l8-4 8 4-8 4-8-4zM4 7v10l8 4 8-4V7M12 11v10" />
+      </symbol>
+      <symbol id="i-plus" viewBox="0 0 24 24">
+        <path d="M12 5v14M5 12h14" />
+      </symbol>
+      <symbol id="i-minus" viewBox="0 0 24 24">
+        <path d="M5 12h14" />
+      </symbol>
+      <symbol id="i-user" viewBox="0 0 24 24">
+        <path
+          d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2M12 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8z"
+        />
+      </symbol>
+      <symbol id="i-users" viewBox="0 0 24 24">
+        <path
+          d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM22 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"
+        />
+      </symbol>
+      <symbol id="i-shuffle" viewBox="0 0 24 24">
+        <path d="M16 3h5v5M4 20L21 3M21 16v5h-5M15 15l6 6M4 4l5 5" />
+      </symbol>
+      <symbol id="i-grid" viewBox="0 0 24 24">
+        <path d="M4 4h6v6H4zM14 4h6v6h-6zM4 14h6v6H4zM14 14h6v6h-6z" />
+      </symbol>
+      <symbol id="i-save" viewBox="0 0 24 24">
+        <path d="M5 3h11l3 3v15H5zM8 3v6h8V3M8 21v-7h8v7" />
+      </symbol>
+      <symbol id="i-upload" viewBox="0 0 24 24">
+        <path d="M12 16V4M12 4L7 9M12 4l5 5M5 21h14" />
+      </symbol>
+      <symbol id="i-arrow-up" viewBox="0 0 24 24">
+        <path d="M12 19V5M6 11l6-6 6 6" />
+      </symbol>
+      <symbol id="i-spark" viewBox="0 0 24 24">
+        <path
+          d="M12 3l1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8L12 3zM19 16l.8 2.2L22 19l-2.2.8L19 22l-.8-2.2L16 19l2.2-.8L19 16z"
+        />
+      </symbol>
+      <symbol id="i-help" viewBox="0 0 24 24">
+        <path d="M9.1 9a3 3 0 1 1 5.1 2.1c-.8.8-1.7 1.4-1.7 2.9M12 18h.01" />
+      </symbol>
+    </svg>
+    <header>
+      <h1>镜像幻化</h1>
+      <div class="header-actions">
+        <button
+          id="headerImportLocalSkin"
+          class="icon-btn"
+          type="button"
+          title="导入本地外观"
+          aria-label="导入本地外观"
+        >
+          <svg class="icon" aria-hidden="true">
+            <use href="#i-plus"></use>
+          </svg>
+        </button>
+        <button
+          id="helpButton"
+          class="icon-btn"
+          type="button"
+          title="使用教程"
+          aria-label="使用教程"
+        >
+          <svg class="icon" aria-hidden="true">
+            <use href="#i-help"></use>
+          </svg>
+        </button>
+        <a
+          class="icon-btn"
+          href="effect-editor"
+          target="_blank"
+          rel="noopener"
+          title="特效方案"
+          aria-label="特效方案"
+        >
+          <svg class="icon" aria-hidden="true">
+            <use href="#i-spark"></use>
+          </svg>
+        </a>
+        <span id="version" class="version-pill"></span>
+      </div>
+    </header>
+    <main>
+      <nav>
+        <button data-page="pool">人格池</button
+        ><button data-page="rulesets">规则集</button
+        ><button data-page="schemes">方案管理</button
+        ><button data-page="prepare">准备状态</button
+        ><button data-page="events">运行日志</button>
+      </nav>
+      <article>
+        <section id="pool">
+          <div id="scopeCard" class="scope-card">
+            <div class="scope-copy">
+              <strong id="scopeName">未选择规则集</strong>
+            </div>
+            <div class="scope-actions">
+              <button
+                id="fillDefault"
+                class="scope-action"
+                title="填入默认全随机"
+                aria-label="填入默认全随机"
+              >
+                <svg class="icon" aria-hidden="true">
+                  <use href="#i-shuffle"></use>
+                </svg>
+              </button>
+              <button
+                id="scopeGo"
+                class="scope-action"
+                title="选择规则集"
+                aria-label="选择规则集"
+              >
+                <svg class="icon" aria-hidden="true">
+                  <use href="#i-grid"></use>
+                </svg>
+              </button>
+            </div>
+          </div>
+          <span id="saveState" class="hidden" aria-live="polite"></span>
+          <div id="poolGrid" class="pool-grid"></div>
+        </section>
+        <section id="rulesets" class="hidden">
+          <div class="ruleset-layout">
+            <div id="rulesetList" class="ruleset-grid"></div>
+          </div>
+        </section>
+        <section id="events" class="hidden">
+          <div class="bar events-toolbar">
+            <button
+              id="exportEvents"
+              class="event-export"
+              title="导出当前记录"
+              aria-label="导出当前记录"
+            >
+              <svg class="icon" aria-hidden="true">
+                <use href="#i-download"></use>
+              </svg>
+            </button>
+          </div>
+          <pre id="eventLog" class="run-log">暂无日志</pre>
+        </section>
+        <section id="rules" class="hidden">
+          <h2>抽取编排 · <span id="rulesTarget"></span></h2>
+          <p>
+            按当前“人格池”页选择的出战角色分别设置。顺序模式采用池成员保存顺序；在人格池页用上移／下移调整。
+          </p>
+          <div id="ruleControls"></div>
+          <button id="saveRules">保存演出编排</button>
+          <p class="muted">
+            原生核心读取规则后生效；旧版核心不会采用这些规则。模式变更会重置当前轮次。
+          </p>
+        </section>
+        <section id="forms" class="hidden">
+          <h2>现有形态资源</h2>
+          <div class="notice">
+            选择人格可覆盖其原生形态条件。阶段从0开始；实际形态数量以资源表为准。理智和血量仅在条件满足时采用目标阶段，否则基础阶段。
+          </div>
+          <div class="bar">
+            <select id="formIdentity"></select
+            ><select id="formMode">
+              <option value="native">沿用原生</option>
+              <option value="defense">守备推进</option>
+              <option value="sanity">理智阈值</option>
+              <option value="health">血量百分比</option>
+              <option value="fixed">固定阶段</option></select
+            ><select id="formCompare">
+              <option value="0">大于等于</option>
+              <option value="1">小于等于</option></select
+            ><label
+              >阈值／每几次守备<input
+                id="formThreshold"
+                type="number"
+                value="1" /></label
+            ><label
+              >目标阶段／推进上限<input
+                id="formStage"
+                type="number"
+                min="0"
+                max="31"
+                value="1" /></label
+            ><button id="saveForm">保存此人格规则</button>
+          </div>
+          <div id="formRows"></div>
+        </section>
+        <section id="schemes" class="hidden">
+          <div class="bar scheme-bar">
+            <input
+              id="schemeName"
+              maxlength="40"
+              placeholder="方案名称"
+            />
+            <div class="scheme-actions">
+              <button
+                id="saveScheme"
+                class="scheme-action"
+                title="保存当前方案"
+                aria-label="保存当前方案"
+              >
+                <svg class="icon" aria-hidden="true">
+                  <use href="#i-save"></use>
+                </svg>
+              </button>
+              <button
+                id="importScheme"
+                class="scheme-action"
+                title="导入方案文件"
+                aria-label="导入方案文件"
+              >
+                <svg class="icon" aria-hidden="true">
+                  <use href="#i-upload"></use>
+                </svg>
+              </button>
+              <input type="file" id="importFile" accept=".json" hidden />
+            </div>
+          </div>
+          <div id="schemeList" class="scheme-grid"></div>
+          <div id="schemeTip" class="scheme-tip hidden"></div>
+        </section>
+        <section id="prepare" class="hidden">
+          <div id="prepareData" aria-live="polite"></div>
+        </section>
+        <section id="discovered" class="hidden">
+          <h2>新单位与章节检测</h2>
+          <p>
+            插件会每周自动检测本地资源，首次进入工作台也会自动检测。扫描会读取本地章节资料、提取章节图片，并更新外观选择页的章节卡片；识别到的无攻击外观和动作缺失外观会加入可选目录。
+          </p>
+          <div class="bar"><span id="discoveredMeta" class="muted"></span></div>
+          <div id="scanProgress" hidden>
+            <label for="scanBar" id="scanLabel"></label>
+            <progress
+              id="scanBar"
+              style="width: min(24rem, 90%); vertical-align: middle"
+            ></progress>
+          </div>
+          <p id="scanError" role="status" class="muted"></p>
+          <div id="discoveredList"></div>
+        </section>
+      </article>
+    </main>
+    <div id="toasts" class="toasts" role="status" aria-live="polite" aria-atomic="false"></div>
+    <button
+      id="scanMini"
+      class="scan-mini hidden"
+      type="button"
+      title="查看扫描详情"
+    >
+      <div class="scan-mini-top">
+        <span id="scanMiniLabel">正在扫描</span>
+        <span id="scanMiniPercent">0%</span>
+      </div>
+      <div class="scan-mini-track">
+        <div id="scanMiniBar"></div>
+      </div>
+    </button>
+    <button
+      id="poolTop"
+      class="pool-top hidden"
+      type="button"
+      title="回到顶部"
+      aria-label="回到顶部"
+    >
+      <svg class="icon" aria-hidden="true">
+        <use href="#i-arrow-up"></use>
+      </svg>
+    </button>
+    <div
+      id="scanDetailModal"
+      class="modal-backdrop hidden"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="scanDetailTitle"
+    >
+      <div class="modal">
+        <div class="modal-title">
+          <h2 id="scanDetailTitle">扫描详情</h2>
+          <button
+            id="scanDetailClose"
+            class="icon-btn"
+            aria-label="关闭"
+            title="关闭"
+          >
+            <svg class="icon" aria-hidden="true">
+              <use href="#i-close"></use>
+            </svg>
+          </button>
+        </div>
+        <pre id="scanDetailText">正在读取扫描状态…</pre>
+      </div>
+    </div>
+    <div id="tutorialLayer" class="tutorial-layer hidden" role="dialog" aria-modal="true" aria-live="polite">
+      <div id="tutorialSpot" class="tutorial-spot hidden"></div>
+      <div id="tutorialTip" class="tutorial-tip">
+        <p id="tutorialKicker" class="tutorial-tip-kicker">使用教程</p>
+        <h3 id="tutorialTourTitle">人格池</h3>
+        <div id="tutorialTourBody" class="tutorial-tip-body"></div>
+        <div class="tutorial-tip-footer">
+          <span id="tutorialTourProgress" class="tutorial-progress"></span>
+          <div class="tutorial-tip-actions">
+            <button id="tutorialTourSkip" type="button">跳过教程</button>
+            <button id="tutorialTourPrev" type="button">上一步</button>
+            <button id="tutorialTourNext" class="primary" type="button">下一步</button>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div
+      id="tutorialModal"
+      class="modal-backdrop hidden"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="tutorialTitle"
+    >
+      <div class="modal tutorial-modal">
+        <div class="modal-title">
+          <h2 id="tutorialTitle">使用教程</h2>
+          <button
+            id="tutorialClose"
+            class="icon-btn"
+            aria-label="关闭教程"
+            title="关闭教程"
+          >
+            <svg class="icon" aria-hidden="true">
+              <use href="#i-close"></use>
+            </svg>
+          </button>
+        </div>
+        <div id="tutorialBody" class="tutorial-body"></div>
+        <div class="tutorial-footer">
+          <span id="tutorialProgress" class="tutorial-progress"></span>
+          <div class="modal-actions">
+            <button id="tutorialSkip" type="button">跳过教程</button>
+            <button id="tutorialPrev" type="button">上一步</button>
+            <button id="tutorialNext" class="primary" type="button">开始教程</button>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div
+      id="confirmModal"
+      class="modal-backdrop hidden"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="confirmTitle"
+    >
+      <div class="modal confirm-modal">
+        <div class="modal-title">
+          <h2 id="confirmTitle">确认</h2>
+          <button
+            id="confirmClose"
+            class="icon-btn"
+            aria-label="关闭"
+            title="关闭"
+          >
+            <svg class="icon" aria-hidden="true">
+              <use href="#i-close"></use>
+            </svg>
+          </button>
+        </div>
+        <p id="confirmText" class="confirm-text"></p>
+        <div class="modal-actions">
+          <button id="confirmCancel">取消</button>
+          <button id="confirmOk" class="primary">确定</button>
+        </div>
+      </div>
+    </div>
+    <div
+      id="portraitModal"
+      class="modal-backdrop hidden"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="portraitTitle"
+    >
+      <div class="modal">
+        <div class="modal-title">
+          <h2 id="portraitTitle">
+            <svg class="icon" aria-hidden="true">
+              <use href="#i-download"></use>
+            </svg>
+            下载资源
+          </h2>
+          <button
+            id="portraitClose"
+            class="icon-btn"
+            aria-label="关闭"
+            title="关闭"
+          >
+            <svg class="icon" aria-hidden="true">
+              <use href="#i-close"></use>
+            </svg>
+          </button>
+        </div>
+        <div id="portraitStageIcon" class="stage-icon">
+          <svg class="icon" aria-hidden="true">
+            <use id="portraitIconUse" href="#i-download"></use>
+          </svg>
+        </div>
+        <div class="progress-track">
+          <div id="portraitBar" class="progress-bar"></div>
+        </div>
+        <div class="progress-meta">
+          <span id="portraitStatus">准备检索</span
+          ><span id="portraitPercent">0%</span>
+        </div>
+        <div class="modal-actions">
+          <button
+            id="portraitHide"
+            class="icon-btn"
+            aria-label="隐藏到右下角"
+            title="隐藏"
+          >
+            <svg class="icon" aria-hidden="true">
+              <use href="#i-minimize"></use>
+            </svg>
+          </button>
+          <button
+            id="portraitRetry"
+            class="icon-btn hidden"
+            aria-label="重试"
+            title="重试"
+          >
+            <svg class="icon" aria-hidden="true">
+              <use href="#i-refresh"></use>
+            </svg>
+          </button>
+        </div>
+      </div>
+    </div>
+    <div
+      id="portraitMini"
+      class="mini-progress hidden"
+      role="status"
+      title="点击展开下载进度"
+    >
+      <div class="mini-top">
+        <span class="mini-label">
+          <svg class="icon" aria-hidden="true">
+            <use id="portraitMiniIconUse" href="#i-download"></use>
+          </svg>
+          <span id="portraitMiniLabel">下载资源</span>
+        </span>
+        <span>
+          <span id="portraitMiniPercent">0%</span>
+          <button
+            id="portraitMiniClose"
+            class="mini-close"
+            aria-label="关闭进度"
+            title="关闭"
+          >
+            <svg class="icon" aria-hidden="true">
+              <use href="#i-close"></use>
+            </svg>
+          </button>
+        </span>
+      </div>
+      <div class="progress-track">
+        <div id="portraitMiniBar" class="progress-bar"></div>
+      </div>
+    </div>
+    <div
+      id="identityModal"
+      class="modal-backdrop hidden"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="identityTitle"
+    >
+      <div class="modal identity-modal">
+        <div class="modal-title">
+          <h2 id="identityTitle">
+            <svg class="icon" aria-hidden="true">
+              <use href="#i-plus"></use>
+            </svg>
+            添加人格到 <span id="identityTargetName"></span>
+          </h2>
+          <button
+            id="identityClose"
+            class="icon-btn"
+            aria-label="关闭"
+            title="关闭"
+          >
+            <svg class="icon" aria-hidden="true">
+              <use href="#i-close"></use>
+            </svg>
+          </button>
+        </div>
+        <div class="bar identity-filters">
+          <button id="importLocalSkin" type="button">导入本地外观</button>
+          <input id="addSearch" placeholder="搜索名字、ID或来源" />
+          <select id="addSource">
+            <option value="">全部来源</option>
+            <option id="pairedSource" value="paired" hidden disabled>
+              当前人格的对应外观
+            </option>
+            <option value="boss">Boss</option>
+            <option value="personality">人格外观</option>
+            <option value="enemy">敌方单位外观</option>
+            <option value="abnormality">异想体外观</option>
+            <option value="no_attack">无攻击外观</option>
+            <option value="other">角色与剧情</option>
+          </select>
+          <select id="addRole">
+            <option value="">全部角色</option>
+          </select>
+          <select id="addChapter">
+            <option value="">全部章节</option>
+          </select>
+
+          <label class="add-toggle">
+            <input id="addStory" type="checkbox" checked />包含剧情/敌方外观
+          </label>
+        </div>
+        <div id="localImportResult" role="status" aria-live="polite" hidden></div>
+        <details class="chapter-browser" open>
+          <summary>按章节浏览</summary>
+          <div
+            id="chapterCards"
+            class="chapter-cards"
+            aria-label="章节分类"
+          ></div>
+        </details>
+        <div class="scroll identity-scroll">
+          <table>
+            <tbody id="identityRows"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+    <div
+      id="rulePickerModal"
+      class="modal-backdrop hidden"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="rulePickerTitle"
+    >
+      <div class="modal identity-modal">
+        <div class="modal-title">
+          <h2 id="rulePickerTitle">选择规则集</h2>
+          <button
+            id="rulePickerClose"
+            class="icon-btn"
+            aria-label="关闭"
+            title="关闭"
+          >
+            <svg class="icon" aria-hidden="true">
+              <use href="#i-close"></use>
+            </svg>
+          </button>
+        </div>
+        <div id="rulePickerList" class="ruleset-grid"></div>
+      </div>
+    </div>
+    <div
+      id="newRuleModal"
+      class="modal-backdrop hidden"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="newRuleTitle"
+    >
+      <div class="modal">
+        <div class="modal-title">
+          <h2 id="newRuleTitle">新建单人格规则集</h2>
+          <button
+            id="newRuleClose"
+            class="icon-btn"
+            aria-label="关闭"
+            title="关闭"
+          >
+            <svg class="icon" aria-hidden="true">
+              <use href="#i-close"></use>
+            </svg>
+          </button>
+        </div>
+        <div class="bar">
+          <select id="newRuleSinner"></select>
+        </div>
+        <div id="newRuleIdentity" class="new-rule-identities"></div>
+        <div class="modal-actions">
+          <button id="newRuleCreate" class="primary">创建并启用</button>
+        </div>
+      </div>
+    </div>
+    <div id="identityMenu" class="context-menu hidden" role="menu"></div>
+    <input
+      id="portraitFile"
+      type="file"
+      accept="image/png,image/jpeg,image/webp"
+      hidden
+    />
+    <script>
+      const $ = (s) => document.querySelector(s),
+        names = [
+          "李箱",
+          "浮士德",
+          "堂吉诃德",
+          "良秀",
+          "默尔索",
+          "鸿璐",
+          "希斯克利夫",
+          "以实玛利",
+          "罗佳",
+          "辛克莱",
+          "奥提斯",
+          "格里高尔",
+        ];
+      let data,
+        selected = new Map(),
+        events = [],
+        dirty = false,
+        activeTarget = "101",
+        pendingImport = null,
+        currentIdentity = null,
+        contextIdentity = null,
+        settingsDirty = false,
+        settingsBaseline = null,
+        saveTimer = null,
+        saving = false,
+        savePending = false;
+      const POOL_LIMIT = 256;
+      const token = location.pathname.split("/")[1];
+      const esc = (v) =>
+        String(v ?? "").replace(
+          /[&<>"']/g,
+          (c) =>
+            ({
+              "&": "&amp;",
+              "<": "&lt;",
+              ">": "&gt;",
+              '"': "&quot;",
+              "'": "&#39;",
+            })[c],
+        );
+      const who = (id) => names[Number(id) - 101] || id;
+      const status = (t) => {
+        if (!t) return;
+        const box = $("#toasts");
+        if (!box) return;
+        const el = document.createElement("div");
+        el.className = "toast";
+        el.textContent = t;
+        box.appendChild(el);
+        while (box.children.length > 3) box.firstElementChild.remove();
+        setTimeout(() => {
+          el.classList.add("leaving");
+          setTimeout(() => el.remove(), 220);
+        }, 2200);
+      };
+      const bgLayers = [$("#app-bg-image-a"), $("#app-bg-image-b")];
+      let bgLayerIndex = 0,
+        bgBaseUrl = "",
+        bgSeq = 0,
+        bgRotateTimer = null;
+      function setLauncherBackgroundImage(url) {
+        const seq = ++bgSeq;
+        const next = bgLayers[1 - bgLayerIndex],
+          old = bgLayers[bgLayerIndex];
+        if (!next) return;
+        const probe = new Image();
+        probe.onload = () => {
+          if (seq !== bgSeq) return;
+          next.style.backgroundImage = `url("${url}")`;
+          next.classList.add("on");
+          if (old && old !== next) old.classList.remove("on");
+          bgLayerIndex = 1 - bgLayerIndex;
+        };
+        probe.onerror = () => {};
+        probe.src = url;
+      }
+      function startLauncherBackgroundRotation(count) {
+        const total = Number(count);
+        if (!bgBaseUrl || !Number.isFinite(total) || total < 2)
+          return;
+        if (bgRotateTimer) return;
+        bgRotateTimer = setInterval(() => {
+          setLauncherBackgroundImage(
+            `api/launcher-background?next=1&t=${Date.now()}`,
+          );
+        }, 30000);
+      }
+      function showModal(selector) {
+        const el = $(selector);
+        if (!el) return;
+        clearTimeout(el._hideTimer);
+        el.classList.remove("hidden", "closing");
+      }
+      function hideModal(selector) {
+        const el = $(selector);
+        if (!el || el.classList.contains("hidden")) return;
+        clearTimeout(el._hideTimer);
+        el.classList.add("closing");
+        el._hideTimer = setTimeout(() => {
+          el.classList.add("hidden");
+          el.classList.remove("closing");
+        }, 180);
+      }
+      function askConfirm(message, okText = "确定") {
+        return new Promise((resolve) => {
+          let settled = false;
+          const finish = (value) => {
+            if (settled) return;
+            settled = true;
+            hideModal("#confirmModal");
+            $("#confirmOk").onclick = null;
+            $("#confirmCancel").onclick = null;
+            $("#confirmClose").onclick = null;
+            $("#confirmModal").onclick = null;
+            resolve(value);
+          };
+          $("#confirmText").textContent = message;
+          $("#confirmOk").textContent = okText;
+          $("#confirmOk").onclick = () => finish(true);
+          $("#confirmCancel").onclick = () => finish(false);
+          $("#confirmClose").onclick = () => finish(false);
+          $("#confirmModal").onclick = (event) => {
+            if (event.target.id === "confirmModal") finish(false);
+          };
+          showModal("#confirmModal");
+          $("#confirmCancel").focus();
+        });
+      }
+      const tutorialSteps = [
+        {
+          page: "pool",
+          selector: "nav",
+          title: "五个主面板",
+          html: `<p>这一排是工作台的五个面板，教程会逐个说明它们和页面上的图标。</p><ul><li><strong>人格池</strong>：选择每名罪人的候选外观和权重。</li><li><strong>规则集</strong>：启用/停用随机规则。</li><li><strong>方案管理</strong>：保存、读取整套配置。</li><li><strong>准备状态</strong>：确认游戏和原生模块是否连接。</li><li><strong>运行日志</strong>：查看原生抽选、热重载和异常记录。</li></ul>`,
+        },
+        {
+          selector: "#helpButton",
+          title: "问号：重新打开教程",
+          html: `<p>右上角问号随时打开本教程。它不会修改你的配置，只负责讲解。</p>`,
+        },
+        {
+          selector: 'header a[href="effect-editor"]',
+          title: "闪光：特效方案编辑器",
+          html: `<p>打开独立特效方案编辑器，读取本机游戏资源并制作技能特效方案。</p><ul><li>方案保存后回到工作台「准备状态」查看是否已应用。</li><li>编辑器中的轨道、脚本和素材替换都只影响特效方案。</li></ul>`,
+        },
+        {
+          page: "pool",
+          selector: "#scopeCard",
+          title: "当前规则集",
+          html: `<p>顶部卡片显示“当前编辑对象”。未选择规则集时，随机不会启用，右侧两个图标也不可用。</p><ul><li>卡片名称来自当前规则集。</li><li>纯随机默认池锁定后只能查看，不能改成员。</li></ul>`,
+        },
+        {
+          page: "pool",
+          selector: "#fillDefault",
+          title: "交叉箭头：填入默认全随机",
+          html: `<p>把当前罪人的默认人格池填入当前规则集，作为快速起点。</p><ul><li>会覆盖当前规则集已有的成员和权重。</li><li>纯随机默认池锁定时此按钮不可用。</li></ul>`,
+        },
+        {
+          page: "pool",
+          selector: "#scopeGo",
+          title: "九宫格：选择规则集",
+          html: `<p>打开规则集选择器，只切换“当前要查看和编辑的规则集”。</p><ul><li>它不会直接启用规则；启用仍在规则集页面或卡片开关完成。</li><li>选错对象时不会改动任何概率。</li></ul>`,
+        },
+        {
+          page: "pool",
+          selector: "#poolGrid .pool-add, #poolGrid .pool-card",
+          title: "人格卡片与加号",
+          html: `<p>“？？”加号卡片打开人格选择器；已有卡片代表当前规则集里的候选外观。</p><ul><li>加号：搜索、按角色/章节/来源筛选并添加外观。</li><li>卡片权重数字：调整被抽中的相对概率，输入后自动保存。</li><li>卡片右键/长按：打开编辑菜单，可改权重、替换为其他外观或移除。</li><li>卡片上的百分比显示当前权重占比。</li></ul>`,
+        },
+        {
+          page: "rulesets",
+          selector: "#rulesetList .ruleset-card[data-id], #rulesetList",
+          title: "规则集卡片：点击启用/停用",
+          html: `<p>卡片代表一条规则。点击卡片启用或停用；同一罪人同时只能启用一条规则。</p><ul><li>高亮边框表示已启用。</li><li>“全局”与其他规则互斥，最后选择者优先。</li><li>卡片圆形图标是规则集预览图或角色图标。</li></ul>`,
+        },
+        {
+          page: "rulesets",
+          selector: "#rulesetList .ruleset-add, #rulesetList",
+          title: "加号：新建单人格规则",
+          html: `<p>新建一条只针对某个人格的规则集，适合只为单个外观设置候选。</p><ul><li>先选罪人，再选具体人格。</li><li>创建后可以在人格池页面编辑它的成员。</li></ul>`,
+        },
+        {
+          page: "schemes",
+          selector: "#saveScheme",
+          title: "软盘：保存当前方案",
+          html: `<p>把当前人格池、规则集、演出编排和随机开关保存为一套方案。</p><ul><li>输入方案名称后点击软盘。</li><li>同名方案需要确认覆盖。</li></ul>`,
+        },
+        {
+          page: "schemes",
+          selector: "#importScheme",
+          title: "向上箭头：导入方案",
+          html: `<p>选择本地 JSON 方案文件导入。导入前会校验版本、角色和形态数据。</p><ul><li>导入不会自动应用，需再点方案卡片的“读取”。</li><li>读取前会自动备份当前配置。</li></ul>`,
+        },
+        {
+          page: "schemes",
+          selector: "#schemeList .scheme-card, #schemeList",
+          title: "方案卡片：读取、导出、删除",
+          html: `<p>已保存方案会显示在这里。</p><ul><li><strong>读取</strong>：应用整套配置，并先备份当前配置。</li><li><strong>导出</strong>：下载 JSON 文件。</li><li><strong>删除</strong>：二次确认后删除方案。</li><li>鼠标悬停卡片可预览方案包含的外观。</li></ul>`,
+        },
+        {
+          page: "prepare",
+          selector: "#prepareData",
+          title: "准备状态：连接与 revision",
+          html: `<p>这里显示游戏进程、原生模块、规则池 revision、已加载和已展示外观。</p><ul><li>规则修改后，等待原生显示已应用新 revision 再进战斗。</li><li>未连接或长期不应用时，查看运行日志和 native.log。</li></ul>`,
+        },
+        {
+          page: "events",
+          selector: "#exportEvents",
+          title: "下载图标：导出运行记录",
+          html: `<p>导出当前运行日志、配置、演出规则和准备状态，便于反馈问题。</p><ul><li>反馈时优先保留包含 revision、applied、segment actual 的行。</li></ul>`,
+        },
+        {
+          page: "events",
+          selector: "#eventLog",
+          title: "运行日志：实际发生了什么",
+          html: `<p>日志会记录 coin draw、原生加载、规则热重载、动画补全和异常。</p><ul><li>会持续轮询新日志，不需要手动刷新。</li><li>日志不包含你的本地路径。</li></ul>`,
+        },
+        {
+          page: "pool",
+          selector: "#poolGrid",
+          title: "扫描、回顶与下载进度",
+          html: `<p>页面滚动后右下角会出现<strong>向上箭头</strong>，点击回到人格池顶部。</p><ul><li>扫描进行时右下角显示<strong>扫描进度卡片</strong>，点击查看详情。</li><li>下载资源弹窗使用<strong>关闭</strong>、<strong>最小化到右下角</strong>和<strong>重试</strong>图标。</li><li>所有模态窗口右上角的<strong>×</strong>只关闭当前窗口，不会修改配置。</li></ul>`,
+        },
+        {
+          selector: ".header-actions",
+          title: "完成教程",
+          html: `<p>你可以在启动器设置中关闭「是否自动打开调整面板」，也可以从托盘「镜像幻化 → 人格、概率与演出设置」打开工作台。</p><p>教程完成后可在右上角问号重新查看。</p>`,
+        },
+      ];
+      let tutorialOpen = false, tutorialIndex = -1;
+      function tutorialIntro() {
+        $("#tutorialTitle").textContent = "欢迎使用镜像幻化";
+        $("#tutorialBody").innerHTML = `<p>这是首次使用引导。点击开始后，页面会变暗并聚焦到具体按钮，旁边用悬浮提示说明作用和效果；不会只弹一个说明窗口。</p><p>你可以现在开始，也可以跳过；跳过前会再确认一次。</p>`;
+        $("#tutorialProgress").textContent = "";
+        $("#tutorialPrev").classList.add("hidden");
+        $("#tutorialNext").textContent = "开始教程";
+        tutorialIndex = -1;
+      }
+      function tourStepTarget(step) {
+        if (!step?.selector) return null;
+        try {
+          return document.querySelector(step.selector);
+        } catch (e) {
+          return null;
+        }
+      }
+      function positionTour(step, target) {
+        const layer = $("#tutorialLayer");
+        const spot = $("#tutorialSpot");
+        const tip = $("#tutorialTip");
+        if (!layer || !spot || !tip) return;
+        layer.classList.remove("hidden");
+        tip.style.left = "0px";
+        tip.style.top = "0px";
+        if (!target) {
+          spot.classList.add("hidden");
+          const tw = tip.offsetWidth,
+            th = tip.offsetHeight;
+          tip.style.left = Math.max(12, (innerWidth - tw) / 2) + "px";
+          tip.style.top = Math.max(12, (innerHeight - th) / 2) + "px";
+          return;
+        }
+        const rect = target.getBoundingClientRect();
+        const pad = 8;
+        const width = Math.max(24, rect.width + pad * 2);
+        const height = Math.max(24, rect.height + pad * 2);
+        const spotLeft = Math.max(4, rect.left - pad);
+        const spotTop = Math.max(4, rect.top - pad);
+        spot.classList.remove("hidden");
+        spot.style.left = spotLeft + "px";
+        spot.style.top = spotTop + "px";
+        spot.style.width = width + "px";
+        spot.style.height = height + "px";
+        const gap = 16,
+          margin = 12;
+        const tw = tip.offsetWidth,
+          th = tip.offsetHeight;
+        let left = spotLeft + width + gap;
+        if (left + tw > innerWidth - margin) left = spotLeft - tw - gap;
+        if (left < margin) left = Math.max(margin, Math.min(innerWidth - tw - margin, spotLeft + width / 2 - tw / 2));
+        let top = spotTop;
+        if (top + th > innerHeight - margin) top = innerHeight - th - margin;
+        if (top < margin) top = margin;
+        tip.style.left = left + "px";
+        tip.style.top = top + "px";
+      }
+      function renderTourStep() {
+        if (!tutorialOpen || tutorialIndex < 0) return;
+        const step = tutorialSteps[tutorialIndex];
+        const layer = $("#tutorialLayer");
+        $("#tutorialKicker").textContent = "使用教程 · " + (tutorialIndex + 1);
+        $("#tutorialTourTitle").textContent = step.title;
+        $("#tutorialTourBody").innerHTML = step.html;
+        $("#tutorialTourProgress").textContent = `${tutorialIndex + 1} / ${tutorialSteps.length}`;
+        $("#tutorialTourPrev").classList.toggle("hidden", tutorialIndex === 0);
+        $("#tutorialTourNext").textContent =
+          tutorialIndex === tutorialSteps.length - 1 ? "完成教程" : "下一步";
+        layer.classList.remove("hidden");
+        if (step.page) selectPage(step.page);
+        const target = tourStepTarget(step);
+        if (target) {
+          try {
+            target.scrollIntoView({ block: "center", inline: "nearest", behavior: "smooth" });
+          } catch (e) {
+            target.scrollIntoView();
+          }
+        }
+        positionTour(step, target);
+        requestAnimationFrame(() => setTimeout(() => positionTour(step, tourStepTarget(step)), 260));
+      }
+      function beginTutorialTour() {
+        if (!tutorialOpen) tutorialOpen = true;
+        tutorialIndex = 0;
+        hideModal("#tutorialModal");
+        renderTourStep();
+      }
+      function openTutorial() {
+        if (tutorialOpen && !$("#tutorialModal").classList.contains("hidden")) return;
+        tutorialOpen = true;
+        tutorialIndex = -1;
+        $("#tutorialLayer").classList.add("hidden");
+        tutorialIntro();
+        showModal("#tutorialModal");
+      }
+      async function finishTutorial(skipped) {
+        tutorialOpen = false;
+        tutorialIndex = -1;
+        hideModal("#tutorialModal");
+        $("#tutorialLayer").classList.add("hidden");
+        $("#tutorialSpot").classList.add("hidden");
+        if (data) data.tutorial = false;
+        try {
+          await api("tutorial-complete", {});
+        } catch (e) {}
+        status(skipped ? "已跳过教程，可从右上角问号重新打开" : "教程已完成，可从右上角问号重新打开");
+      }
+      async function requestSkipTutorial() {
+        if (!tutorialOpen) return;
+        if (await askConfirm("确定要跳过教程吗？以后仍可以从右上角问号按钮重新打开。", "跳过教程")) {
+          await finishTutorial(true);
+        }
+      }
+      function tutorialPrev() {
+        if (tutorialIndex > 0) {
+          tutorialIndex--;
+          renderTourStep();
+        }
+      }
+      function tutorialNext() {
+        if (tutorialIndex < 0) {
+          beginTutorialTour();
+        } else if (tutorialIndex >= tutorialSteps.length - 1) {
+          finishTutorial(false);
+        } else {
+          tutorialIndex++;
+          renderTourStep();
+        }
+      }
+      $("#tutorialNext").onclick = tutorialNext;
+      $("#tutorialPrev").onclick = tutorialPrev;
+      $("#tutorialTourNext").onclick = tutorialNext;
+      $("#tutorialTourPrev").onclick = tutorialPrev;
+      $("#tutorialSkip").onclick = requestSkipTutorial;
+      $("#tutorialTourSkip").onclick = requestSkipTutorial;
+      $("#tutorialClose").onclick = requestSkipTutorial;
+      $("#tutorialModal").onclick = (event) => {
+        if (event.target.id === "tutorialModal") requestSkipTutorial();
+      };
+      $("#helpButton").onclick = openTutorial;
+      window.addEventListener("resize", () => {
+        if (tutorialOpen && tutorialIndex >= 0) {
+          const step = tutorialSteps[tutorialIndex];
+          positionTour(step, tourStepTarget(step));
+        }
+      });
+      const tutorialScroll = document.querySelector("article");
+      if (tutorialScroll) {
+        tutorialScroll.addEventListener(
+          "scroll",
+          () => {
+            if (tutorialOpen && tutorialIndex >= 0) {
+              const step = tutorialSteps[tutorialIndex];
+              positionTour(step, tourStepTarget(step));
+            }
+          },
+          { passive: true },
+        );
+      }
+
+      function applyLauncherBackground(bg) {
+        if (!bg || !bg.url) {
+          bgBaseUrl = "";
+          bgSeq++;
+          if (bgRotateTimer) clearInterval(bgRotateTimer);
+          bgRotateTimer = null;
+          bgLayers.forEach((layer) => layer?.classList.remove("on"));
+          return;
+        }
+        const blur = Number(bg.blur);
+        if (Number.isFinite(blur))
+          document.documentElement.style.setProperty(
+            "--launcher-bg-blur",
+            `${Math.max(0, Math.min(20, blur))}px`,
+          );
+        if (bg.url === bgBaseUrl) {
+          startLauncherBackgroundRotation(bg.count);
+          return;
+        }
+        bgBaseUrl = bg.url;
+        setLauncherBackgroundImage(bg.url);
+        startLauncherBackgroundRotation(bg.count);
+      }
+      async function api(route, body) {
+        const r = await fetch(
+          "api/" + route,
+          body
+            ? {
+                method: "POST",
+                headers: {
+                  "Content-Type": "application/json",
+                  "X-Workbench": token,
+                },
+                body: JSON.stringify(body),
+              }
+            : {},
+        );
+        const j = await r.json();
+        if (!r.ok) throw Error(j.error);
+        return j;
+      }
+      function currentSinner() {
+        return String(data?.activeRule?.sinner || "101");
+      }
+      function setSaveState(text, error = false) {
+        const el = $("#saveState");
+        el.textContent = text;
+        el.classList.toggle("error", error);
+      }
+      function poolTotal() {
+        return [...selected.values()].reduce(
+          (sum, value) =>
+            sum + (Number.isFinite(value) && value > 0 ? value : 0),
+          0,
+        );
+      }
+      function updatePoolSummary() {
+        const total = poolTotal();
+        document.querySelectorAll("#poolGrid .pool-card[data-id]").forEach((card) => {
+          const weight = selected.get(card.dataset.id) || 0;
+          const share = card.querySelector(".share");
+          if (share)
+            share.textContent =
+              (total > 0 ? ((100 * weight) / total).toFixed(2) : "0.00") + "%";
+        });
+      }
+      function renderScopeCard() {
+        const rule = data.activeRule;
+        if (!rule) {
+          $("#scopeName").textContent = "未选择规则集";
+          $("#fillDefault").disabled = true;
+          return;
+        }
+        $("#scopeName").textContent = rule.name;
+        $("#fillDefault").disabled = rule.kind === "global" && rule.locked;
+      }
+      function entrySource(entry) {
+        const code = entry.appearance_name || String(entry.identity_id);
+        const status = entry.translation_status === "暂译" ? "暂译 " : "";
+        let chapter = entry.chapter_label || [...catalogChapters(entry).values()][0] || "";
+        if (chapter === "待确认章节") chapter = "";
+        return [status + code, chapter].filter(Boolean).join(" · ");
+      }
+      function rulesetCard(item) {
+        const orb = item.icon
+          ? `<span class="ruleset-orb"><img src="api/portrait/${encodeURIComponent(item.icon)}" alt=""></span>`
+          : `<span class="ruleset-orb"><svg class="icon" aria-hidden="true"><use href="#${item.kind === "identity" ? "i-user" : "i-users"}"></use></svg></span>`;
+        return `<button class="ruleset-card${item.active ? " active" : ""}" data-id="${esc(item.id)}">${orb}<span class="ruleset-name">${esc(item.name)}</span></button>`;
+      }
+      function rulesetCreateCard(mode) {
+        return `<button type="button" class="ruleset-card ruleset-add" data-create="${mode}" aria-label="新建单人格规则集"><span class="ruleset-orb"><svg class="icon" aria-hidden="true"><use href="#i-plus"></use></svg></span><span class="ruleset-name">新建</span></button>`;
+      }
+      function bindRulesetCards(container, picker = false) {
+        container.querySelectorAll(".ruleset-card[data-id]").forEach((button) => {
+          button.onclick = async (event) => {
+            event.preventDefault();
+            event.stopPropagation();
+            const item = (data.rulesets || []).find(
+              (candidate) => candidate.id === button.dataset.id,
+            );
+            if (item) await (picker ? selectRule(item) : toggleRule(item));
+          };
+        });
+        container.querySelectorAll(".ruleset-card[data-create]").forEach((button) => {
+          button.onclick = () => {
+            if (button.dataset.create === "picker")
+              hideModal("#rulePickerModal");
+            openNewRule();
+          };
+        });
+      }
+      function renderRulesets() {
+        const cards = (data.rulesets || []).map(rulesetCard).join("");
+        const page = $("#rulesetList");
+        page.innerHTML = cards + rulesetCreateCard("page");
+        bindRulesetCards(page);
+        const picker = $("#rulePickerList");
+        if (picker) {
+          picker.innerHTML = cards + rulesetCreateCard("picker");
+          bindRulesetCards(picker, true);
+        }
+      }
+      async function toggleRule(item, only = false) {
+        try {
+          if (settingsDirty)
+            return status("请先保存设置，再切换规则集");
+          if (saving || savePending)
+            return status("请等待当前修改保存完成后再切换规则集");
+          if (dirty || saveTimer) {
+            await flushSave();
+            if (dirty || saving || savePending)
+              return status("当前修改尚未保存，暂时无法切换规则集");
+          }
+          if (only) {
+            await api("ruleset-only", { rule: item });
+          } else if (item.active) {
+            await api("ruleset-deactivate", { rule: item });
+          } else {
+            const rule = { ...item };
+            if (rule.kind === "global") rule.sinner = currentSinner();
+            await api("ruleset-activate", { rule });
+          }
+          await refresh();
+          hideModal("#rulePickerModal");
+          status(
+            (only ? "已仅启用 " : item.active ? "已停用 " : "已启用 ") +
+              item.name,
+          );
+        } catch (error) {
+          status(error.message);
+        }
+      }
+
+      async function selectRule(item) {
+        try {
+          if (settingsDirty) return status("请先保存设置，再选择规则集");
+          if (saving || savePending)
+            return status("请等待当前修改保存完成后再选择规则集");
+          if (dirty || saveTimer) {
+            await flushSave();
+            if (dirty || saving || savePending)
+              return status("当前修改尚未保存，暂时无法选择规则集");
+          }
+          const rule = { ...item };
+          if (rule.kind === "global") rule.sinner = currentSinner();
+          await api("ruleset-select", { rule });
+          await refresh();
+          hideModal("#rulePickerModal");
+          status("已选择 " + item.name);
+        } catch (error) {
+          status(error.message);
+        }
+      }
+
+      async function fillDefault() {
+        if (data.activeRule?.kind === "global" && data.activeRule.locked) {
+          status("当前为纯随机默认池，请先右键清空");
+          return;
+        }
+        try {
+          await api("ruleset-fill", { rule: data.activeRule });
+          await refresh();
+          status("已填入默认随机池");
+        } catch (error) {
+          status(error.message);
+        }
+      }
+
+      function loadTarget() {
+        currentIdentity = null;
+        contextIdentity = null;
+        activeTarget = currentSinner();
+        selected = new Map(
+          (data.ruleEntries || []).map((entry) => [
+            String(entry.identity_id),
+            Number(entry.weight ?? 1),
+          ]),
+        );
+        dirty = false;
+        setSaveState("");
+        renderScopeCard();
+        renderRulesets();
+        render();
+        if (data.director) renderDirector();
+      }
+
+      function render() {
+        const rule = data.activeRule;
+        const locked = rule?.kind === "global" && rule.locked;
+        const blocked = !rule || locked;
+        const cards = [...selected]
+          .map(([id, weight]) => {
+            const entry = data.catalog.find(
+              (item) => String(item.identity_id) === id,
+            );
+            if (!entry) return "";
+            const orb = entry.portrait_url
+              ? `<img src="${esc(entry.portrait_url)}" alt="${esc(entry.name)}的战斗头像" loading="lazy" decoding="async" onerror="this.remove()">`
+              : '<svg class="icon" aria-hidden="true"><use href="#i-user"></use></svg>';
+            const backdrop = entry.portrait_url
+              ? `<span class="pool-bg" style="background-image:url('${esc(entry.portrait_url)}')"></span>`
+              : "";
+            return `<div class="pool-card" data-id="${esc(id)}" tabindex="0">${backdrop}<span class="pool-orb">${orb}</span><strong class="pool-name">${esc(entry.name || entry.appearance_name || id)}</strong><span class="pool-source">${esc(entrySource(entry))}</span><span class="pool-meta"><input class="weight" type="number" min="0" max="1000000" step="0.1" value="${weight}"${locked ? " disabled" : ""}><span class="share"></span></span></div>`;
+          })
+          .join("");
+        const add = `<button type="button" class="pool-card pool-add${blocked ? " is-disabled" : ""}" data-action="add" aria-disabled="${blocked}"><span class="pool-orb"><svg class="icon" aria-hidden="true"><use href="#i-plus"></use></svg></span><strong class="pool-name">？？？</strong><span class="pool-source">？？？</span><span class="pool-meta pool-meta-ghost" aria-hidden="true"></span></button>`;
+        $("#poolGrid").innerHTML = add + cards;
+        updatePoolSummary();
+      }
+      let poolEditVersion = 0;
+      function autoSave() {
+        if (data.activeRule?.kind === "global" && data.activeRule.locked)
+          return;
+        poolEditVersion++;
+        dirty = true;
+        setSaveState("保存中…");
+        clearTimeout(saveTimer);
+        saveTimer = setTimeout(flushSave, 350);
+      }
+      async function flushSave() {
+        clearTimeout(saveTimer);
+        saveTimer = null;
+        if (!data.activeRule) {
+          setSaveState("未选择规则集", true);
+          return;
+        }
+        if (data.activeRule.kind === "global" && data.activeRule.locked) {
+          setSaveState("纯随机默认池不可编辑", true);
+          return;
+        }
+        if (saving) {
+          savePending = true;
+          return;
+        }
+        saving = true;
+        const submittedVersion = poolEditVersion;
+        try {
+          const entries = [...selected].map(([identity_id, weight]) => ({
+            identity_id,
+            weight: Number(weight),
+          }));
+          const result = await api("ruleset-save", {
+            rule: data.activeRule,
+            entries,
+            revision: data.ruleRevision,
+          });
+          data.activeRule = result.activeRule;
+          data.ruleEntries = result.entries;
+          data.ruleRevision = result.revision;
+          data.rulesets = result.rulesets;
+          data.rulesetState = result.state;
+          if (poolEditVersion !== submittedVersion) {
+            savePending = true;
+            return;
+          }
+          selected = new Map(
+            (result.entries || []).map((entry) => [
+              String(entry.identity_id),
+              Number(entry.weight),
+            ]),
+          );
+          dirty = false;
+          setSaveState("已自动保存");
+          renderScopeCard();
+          renderRulesets();
+          render();
+        } catch (error) {
+          setSaveState("保存失败", true);
+          status("自动保存失败：" + error.message);
+          try {
+            await refresh();
+          } catch (ignored) {}
+        } finally {
+          saving = false;
+          if (savePending) {
+            savePending = false;
+            flushSave();
+          }
+        }
+      }
+
+      $("#poolGrid").addEventListener("input", (event) => {
+        if (!event.target.classList.contains("weight")) return;
+        const card = event.target.closest(".pool-card[data-id]");
+        if (!card || event.target.value === "") return;
+        const weight = Number(event.target.value);
+        if (!Number.isFinite(weight) || weight < 0 || weight > 1000000) return;
+        selected.set(card.dataset.id, weight);
+        updatePoolSummary();
+        autoSave();
+      });
+      $("#poolGrid").addEventListener("change", (event) => {
+        if (!event.target.classList.contains("weight")) return;
+        const card = event.target.closest(".pool-card[data-id]");
+        if (!card) return;
+        if (event.target.value === "") {
+          render();
+          return;
+        }
+        const weight = Number(event.target.value);
+        if (!Number.isFinite(weight) || weight < 0 || weight > 1000000) {
+          status("权重必须在 0 到 1000000 之间");
+          render();
+          return;
+        }
+        if (selected.get(card.dataset.id) !== weight) {
+          selected.set(card.dataset.id, weight);
+          autoSave();
+        }
+        render();
+      });
+      $("#poolGrid").addEventListener("contextmenu", (event) => {
+        const card = event.target.closest(".pool-card[data-id]");
+        if (!card) return;
+        event.preventDefault();
+        openIdentityMenu(card.dataset.id, event.clientX, event.clientY);
+      });
+      async function handlePoolAdd() {
+        const rule = data.activeRule;
+        if (!rule) {
+          status("请先选择规则集");
+          return;
+        }
+        if (rule.kind === "global" && rule.locked) {
+          if (!(await askConfirm("清空纯随机池并取消随机接管？"))) return;
+          try {
+            await api("ruleset-clear", { rule });
+            await refresh();
+            openIdentityModal();
+            status("已恢复编辑");
+          } catch (error) {
+            status(error.message);
+          }
+          return;
+        }
+        openIdentityModal();
+      }
+      $("#poolGrid").addEventListener("click", (event) => {
+        if (event.target.closest(".pool-add")) handlePoolAdd();
+      });
+      function closeIdentityMenu() {
+        $("#identityMenu").classList.add("hidden");
+      }
+      function openIdentityMenu(id, x, y) {
+        contextIdentity = id;
+        currentIdentity = id;
+        const menu = $("#identityMenu");
+        const locked =
+          data.activeRule?.kind === "global" && data.activeRule.locked;
+        if (locked) {
+          menu.innerHTML =
+            '<div class="context-title">纯随机默认池 · 不可编辑</div><button data-action="clear" class="danger">清空当前池</button>';
+        } else {
+          const entry = data.catalog.find(
+            (item) => String(item.identity_id) === id,
+          );
+          const index = [...selected.keys()].indexOf(id);
+          menu.innerHTML = `<div class="context-title">${esc(entry?.name || entry?.appearance_name || id)}</div><button data-action="only">仅抽中此人格</button><button data-action="onlyRole">仅启用此角色</button><button data-action="equal">当前池恢复均等</button><div class="sep"></div><button data-action="up"${index <= 0 ? " disabled" : ""}>上移</button><button data-action="down"${index < 0 || index >= selected.size - 1 ? " disabled" : ""}>下移</button><div class="sep"></div><button data-action="upload">上传图片</button><button data-action="reset">恢复默认图片</button><div class="sep"></div><button data-action="remove" class="danger">移出池子</button><button data-action="clear" class="danger">清空当前池</button>`;
+        }
+        menu.classList.remove("hidden");
+        menu.style.left = "0px";
+        menu.style.top = "0px";
+        const rect = menu.getBoundingClientRect();
+        menu.style.left =
+          Math.max(8, Math.min(x, innerWidth - rect.width - 8)) + "px";
+        menu.style.top =
+          Math.max(8, Math.min(y, innerHeight - rect.height - 8)) + "px";
+        menu.querySelectorAll("button[data-action]").forEach((button) => {
+          button.onclick = () => runIdentityAction(button.dataset.action);
+        });
+      }
+      async function runIdentityAction(action) {
+        const id = contextIdentity;
+        closeIdentityMenu();
+        if (!id) return;
+        if (action === "only") {
+          selected = new Map([[id, 1]]);
+          render();
+          autoSave();
+          status("已设为仅抽中此人格");
+        } else if (action === "onlyRole") {
+          try {
+            await api("ruleset-only", { rule: data.activeRule });
+            await refresh();
+            status("已设为仅启用此角色");
+          } catch (error) {
+            status(error.message);
+          }
+        } else if (action === "equal") {
+          selected = new Map([...selected].map(([key]) => [key, 1]));
+          render();
+          autoSave();
+          status("当前池权重已恢复均等");
+        } else if (action === "up" || action === "down") {
+          const entries = [...selected];
+          const index = entries.findIndex(([key]) => key === id);
+          const target = index + (action === "up" ? -1 : 1);
+          if (index >= 0 && target >= 0 && target < entries.length) {
+            [entries[index], entries[target]] = [
+              entries[target],
+              entries[index],
+            ];
+            selected = new Map(entries);
+            render();
+            autoSave();
+          }
+        } else if (action === "upload") {
+          currentIdentity = id;
+          $("#portraitFile").click();
+        } else if (action === "reset") {
+          await resetPortrait(id);
+        } else if (action === "remove") {
+          selected.delete(id);
+          render();
+          autoSave();
+          status("已移出当前池");
+        } else if (action === "clear") {
+          if (
+            await askConfirm(
+              data.activeRule?.locked
+                ? "清空纯随机默认池并恢复编辑？"
+                : "清空当前人格池？",
+            )
+          ) {
+            try {
+              await api("ruleset-clear", { rule: data.activeRule });
+              await refresh();
+              status("当前池已清空");
+            } catch (error) {
+              status(error.message);
+            }
+          }
+        }
+      }
+      function catalogChapters(entry) {
+        const groups = new Map();
+        if (entry.chapter && entry.chapter !== "unassigned") {
+          groups.set(entry.chapter, entry.chapter_label || entry.chapter);
+        }
+        for (const group of entry.chapter_memberships || []) {
+          if (group.chapter && group.chapter !== "unassigned")
+            groups.set(group.chapter, group.label || group.chapter);
+        }
+        if (!groups.size && !personalityRole(entry))
+          groups.set("unassigned", "待确认章节");
+        return groups;
+      }
+      function fillAddFilters() {
+        $("#addRole").innerHTML =
+          '<option value="">全部角色</option>' +
+          names
+            .map(
+              (name, index) =>
+                `<option value="${101 + index}">${esc(name)}</option>`,
+            )
+            .join("");
+        const chapters = new Map();
+        const counts = new Map();
+        for (const entry of data.catalog) {
+          for (const [key, label] of catalogChapters(entry)) {
+            chapters.set(key, label);
+            counts.set(key, (counts.get(key) || 0) + 1);
+          }
+        }
+        for (const [id, info] of Object.entries(data.chapterArt || {})) {
+          if (!chapters.has(id)) {
+            const label =
+              info.label ||
+              [info.chapter, info.title].filter(Boolean).join(" · ") ||
+              id;
+            chapters.set(id, label);
+          }
+        }
+        $("#addChapter").innerHTML =
+          '<option value="">全部章节</option>' +
+          [...chapters]
+            .sort(
+              (a, b) =>
+                chapterRank(a[0]) - chapterRank(b[0]) ||
+                a[1].localeCompare(b[1], "zh-CN"),
+            )
+            .map(
+              ([id, label]) =>
+                `<option value="${esc(id)}">${esc(label)}</option>`,
+            )
+            .join("");
+        renderChapterCards(
+          [...chapters].sort(
+            (a, b) =>
+              chapterRank(a[0]) - chapterRank(b[0]) ||
+              a[1].localeCompare(b[1], "zh-CN"),
+          ),
+          counts,
+        );
+      }
+      function renderChapterCards(chapters, counts) {
+        const art = data.chapterArt || {};
+        const personalityCount = (data.catalog || []).filter((entry) =>
+          personalityRole(entry),
+        ).length;
+        const personalityArt = art.__personality__ || {};
+        const personalityImage = personalityArt.image_url
+          ? `<img src="${esc(personalityArt.image_url)}" alt="" loading="lazy">`
+          : "";
+        const personalityCard = `<button type="button" class="chapter-card" data-chapter="__personality__" title="全部人物的人格外观">${personalityImage}<span class="chapter-tag">人格</span><span class="chapter-name">人格外观 <small>· ${personalityCount}项</small></span></button>`;
+        const allCard = `<button type="button" class="chapter-card" data-chapter=""><span class="chapter-name">全部外观 <small>· ${data.catalog.length}项</small></span></button>`;
+        $("#chapterCards").innerHTML =
+          allCard +
+            personalityCard +
+            chapters
+              .map(([id, label]) => {
+                const item = art[id] || {};
+                const fallback = art[id.replace(/_part_\d+$/, "")] || {};
+                const count = counts.get(id) || 0;
+                const imageUrl = item.image_url || fallback.image_url;
+                const img = imageUrl
+                  ? `<img src="${esc(imageUrl)}" alt="" loading="lazy">`
+                  : "";
+                const tag = item.chapter
+                  ? `<span class="chapter-tag">${esc(item.chapter)}</span>`
+                  : "";
+                const timeline = item.timeline
+                  ? `<span class="chapter-time">${esc(item.timeline)}</span>`
+                  : "";
+                const note = String(item.art_note || "");
+                const badge = note.includes("共用")
+                  ? '<span class="chapter-art-note">共用图</span>'
+                  : "";
+                return `<button type="button" class="chapter-card" data-chapter="${esc(id)}" title="${esc(note ? label + " · " + note : label)}">${img}${tag}${timeline}${badge}<span class="chapter-name">${esc(item.title || label)} <small>· ${count}项</small></span></button>`;
+              })
+              .join("") || '<span class="muted">暂无章节分类</span>';
+      }
+      function selectChapterCard(id) {
+        if (id === "__personality__") {
+          $("#addChapter").value = "";
+          $("#addRole").value = "";
+          $("#addSource").value = "personality";
+          $("#addStory").checked = true;
+          $("#addSearch").value = "";
+          renderAddList();
+          return;
+        }
+        $("#addChapter").value = id;
+        $("#addRole").value = "";
+        $("#addSource").value = "";
+        $("#addSearch").value = "";
+        $("#addStory").checked = true;
+        renderAddList();
+      }
+      function personalityRole(entry) {
+        const name = String(entry.appearance_name || entry.identity_id || "")
+          .replace(/^story_/, "")
+          .replace(/^Fools_/, "");
+        if (
+          /^(?:30501_Meursault_KimSatGatAwaken|40501_Meursault_KimSatGatBefore)Appearance$/i.test(
+            name,
+          )
+        )
+          return "105";
+        const match = name.match(/^(10[1-9]|11[0-2])\d{2}(?:_|$)/i);
+        return match ? match[1] : "";
+      }
+      function addCandidates() {
+        const query = $("#addSearch").value.trim().toLowerCase().replace(/\.(zip|rar|7z|carra2|bank)$/i, "");
+        const source = $("#addSource").value;
+        const role = $("#addRole").value;
+        const chapter = $("#addChapter").value;
+        return data.catalog.filter((entry) => {
+          if (
+            !$("#addStory").checked &&
+            entry.story_metadata &&
+            !["no_attack", "personality", "paired"].includes(source)
+          )
+            return false;
+          if (
+            source === "paired" &&
+            !entry.paired_identities?.includes(
+              String(data.activeRule?.identity),
+            )
+          )
+            return false;
+          if (source === "no_attack" && !entry.no_attack) return false;
+          if (source === "personality" && !personalityRole(entry)) return false;
+          if (source === "enemy" && !entry.asset_key?.startsWith("SD_Enemy/"))
+            return false;
+          if (
+            source === "abnormality" &&
+            !entry.asset_key?.startsWith("SD_Abnormality/")
+          )
+            return false;
+          if (
+            (source === "boss" || source === "other") &&
+            (source === "boss") !== (entry.category === "humanoid_boss")
+          )
+            return false;
+          const owner =
+            personalityRole(entry) ||
+            (entry.category !== "humanoid_boss" ? String(entry.source) : "");
+          if (role && owner !== role) return false;
+          if (chapter && !catalogChapters(entry).has(chapter)) return false;
+          return `${entry.name} ${entry.import_source || ""} ${entry.identity_id} ${entry.appearance_name || ""} ${who(entry.source)} ${entry.chapter_label || ""} ${entry.no_attack ? "无攻击外观" : ""}`
+            .toLowerCase()
+            .includes(query);
+        });
+      }
+      function renderAddList() {
+        const candidates = addCandidates();
+        $("#identityRows").innerHTML =
+          candidates
+            .map((entry) => {
+              const id = String(entry.identity_id);
+              const added = selected.has(id);
+              const orb = entry.portrait_url
+                ? `<img src="${esc(entry.portrait_url)}" alt="${esc(entry.name)}的战斗头像" loading="lazy" decoding="async" onerror="this.remove()">`
+                : '<svg class="icon" aria-hidden="true"><use href="#i-user"></use></svg>';
+              const source = entrySource(entry);
+              const deletion = /^story_WBImp_[a-f0-9]{24}$/.test(id)
+                ? `<button type="button" class="identity-delete icon-btn" data-id="${esc(id)}" title="删除导入外观" aria-label="删除导入外观"><svg class="icon" aria-hidden="true"><use href="#i-close"></use></svg></button>`
+                : "";
+              return `<tr><td><div class="identity-cell"><span class="identity-orb">${orb}</span><div class="identity-copy"><strong>${esc(entry.name || entry.appearance_name || id)}</strong><small>${esc(source)}</small>${entry.no_attack ? '<small>缺少专属攻击动画</small>' : ""}</div></div></td><td class="identity-action">${deletion}<button class="identity-add${added ? " remove" : " primary"}" data-id="${esc(id)}" data-added="${added ? 1 : 0}" title="${added ? "移出池子" : "添加"}" aria-label="${added ? "移出池子" : "添加"}"><svg class="icon" aria-hidden="true"><use href="#${added ? "i-minus" : "i-plus"}"></use></svg></button></td></tr>`;
+            })
+            .join("") ||
+          '<tr><td colspan="2" class="empty-row">没有符合条件的人格</td></tr>';
+        document.querySelectorAll(".identity-add").forEach((button) => {
+          button.onclick = () =>
+            button.dataset.added === "1"
+              ? removeIdentity(button.dataset.id)
+              : addIdentity(button.dataset.id);
+        });
+        document.querySelectorAll(".identity-delete").forEach((button) => {
+          button.onclick = async () => {
+            const id = button.dataset.id;
+            const entry = data.catalog.find((item) => String(item.identity_id) === id);
+            if (!entry || !(await askConfirm(`删除导入外观“${entry.name || id}”？它会从规则中移除，再次使用时需要重新导入。`, "删除"))) return;
+            button.disabled = true;
+            try {
+              await api("local-skin-delete", { identity_id: id });
+              selected.delete(id);
+              const latest = await api("data");
+              data.catalog = latest.catalog;
+              data.chapterArt = latest.chapterArt || {};
+              data.ruleEntries = latest.ruleEntries;
+              data.ruleRevision = latest.ruleRevision;
+              fillAddFilters();
+              renderAddList();
+              render();
+              status("已删除导入外观");
+            } catch (error) {
+              status("删除失败：" + error.message);
+              button.disabled = false;
+            }
+          };
+        });
+      }
+      async function openIdentityModal() {
+        try {
+          const latest = await api("data");
+          data.catalog = latest.catalog;
+          data.chapterArt = latest.chapterArt || {};
+        } catch (error) {
+          status("更新外观列表失败：" + error.message);
+        }
+        $("#identityTargetName").textContent =
+          data.activeRule?.kind === "global" ? "所有角色" : who(activeTarget);
+        fillAddFilters();
+        const identity = String(data.activeRule?.identity);
+        const hasPairs =
+          data.activeRule?.kind === "identity" &&
+          data.catalog.some((entry) =>
+            entry.paired_identities?.includes(identity),
+          );
+        $("#pairedSource").hidden = !hasPairs;
+        $("#pairedSource").disabled = !hasPairs;
+        $("#addRole").value = "";
+        $("#addSource").value = "";
+        $("#addChapter").value = "";
+        $("#addSearch").value = "";
+        $("#addStory").checked = true;
+        renderAddList();
+        showModal("#identityModal");
+        $("#addSearch").focus();
+        loadDiscovered();
+      }
+      function closeIdentityModal() {
+        hideModal("#identityModal");
+      }
+      function addIdentity(id) {
+        if (data.activeRule?.kind === "global" && data.activeRule.locked) {
+          status("纯随机默认池不可编辑，请右键清空");
+          return;
+        }
+        if (selected.has(id)) return;
+        if (selected.size >= POOL_LIMIT) {
+          status(`每个池最多 ${POOL_LIMIT} 项，请先移出部分人格`);
+          return;
+        }
+        selected.set(id, 1);
+        render();
+        autoSave();
+        renderAddList();
+        status("已添加到当前池");
+      }
+      function removeIdentity(id) {
+        if (data.activeRule?.kind === "global" && data.activeRule.locked) {
+          status("纯随机默认池不可编辑，请右键清空");
+          return;
+        }
+        if (!selected.has(id)) return;
+        selected.delete(id);
+        render();
+        autoSave();
+        renderAddList();
+        status("已移出当前池");
+      }
+      $("#identityClose").onclick = () => closeIdentityModal();
+      $("#identityModal").onclick = (event) => {
+        if (event.target.id === "identityModal") closeIdentityModal();
+      };
+      $("#scopeGo").onclick = () => {
+        renderRulesets();
+        showModal("#rulePickerModal");
+      };
+      $("#rulePickerClose").onclick = () =>
+        hideModal("#rulePickerModal");
+      $("#rulePickerModal").onclick = (event) => {
+        if (event.target.id === "rulePickerModal")
+          hideModal("#rulePickerModal");
+      };
+      $("#fillDefault").onclick = () => fillDefault();
+      let newRuleIdentityId = "";
+      function openNewRule() {
+        $("#newRuleSinner").innerHTML = names
+          .map(
+            (name, index) =>
+              `<option value="${101 + index}">${esc(name)}</option>`,
+          )
+          .join("");
+        $("#newRuleSinner").value = currentSinner();
+        newRuleIdentityId = "";
+        fillNewRuleIdentities();
+        showModal("#newRuleModal");
+      }
+      function closeNewRule() {
+        hideModal("#newRuleModal");
+      }
+      function fillNewRuleIdentities() {
+        const sinner = $("#newRuleSinner").value;
+        const identities = (data.catalog || [])
+          .filter(
+            (entry) =>
+              String(entry.source) === sinner && !entry.story_metadata,
+          )
+          .sort((a, b) =>
+            String(a.name || a.appearance_name || "").localeCompare(
+              String(b.name || b.appearance_name || ""),
+              "zh-CN",
+            ),
+          );
+        if (
+          !identities.some(
+            (entry) => String(entry.identity_id) === newRuleIdentityId,
+          )
+        )
+          newRuleIdentityId = String(identities[0]?.identity_id || "");
+        const box = $("#newRuleIdentity");
+        box.innerHTML =
+          identities
+            .map((entry) => {
+              const id = String(entry.identity_id);
+              const active = id === newRuleIdentityId;
+              const orb = entry.portrait_url
+                ? `<img src="${esc(entry.portrait_url)}" alt="" loading="lazy" decoding="async">`
+                : '<svg class="icon" aria-hidden="true"><use href="#i-user"></use></svg>';
+              return `<button type="button" class="new-rule-identity${active ? " active" : ""}" data-id="${esc(id)}"><span class="new-rule-orb">${orb}</span><span>${esc(entry.name || entry.appearance_name || id)}</span></button>`;
+            })
+            .join("") || '<p class="muted">没有可创建的人格</p>';
+        box.querySelectorAll(".new-rule-identity").forEach((button) => {
+          button.onclick = () => {
+            newRuleIdentityId = button.dataset.id;
+            fillNewRuleIdentities();
+          };
+        });
+      }
+      async function createNewRule() {
+        const sinner = $("#newRuleSinner").value;
+        const identity = newRuleIdentityId;
+        if (!identity) {
+          status("没有可创建的人格");
+          return;
+        }
+        try {
+          await api("ruleset-create", { sinner, identity });
+          await api("ruleset-activate", {
+            rule: {
+              id: "identity:" + identity,
+              kind: "identity",
+              sinner,
+              identity,
+            },
+          });
+          closeNewRule();
+          await refresh();
+          status("已创建并启用单人格规则集");
+        } catch (error) {
+          status(error.message);
+        }
+      }
+      $("#newRuleClose").onclick = () => closeNewRule();
+      $("#newRuleSinner").onchange = () => fillNewRuleIdentities();
+      $("#newRuleCreate").onclick = () => createNewRule();
+      $("#newRuleModal").onclick = (event) => {
+        if (event.target.id === "newRuleModal") closeNewRule();
+      };
+      $("#addSearch").oninput = () => renderAddList();
+      async function importLocalSkin() {
+        const buttons = [$("#importLocalSkin"), $("#headerImportLocalSkin")];
+        const result = $("#localImportResult");
+        buttons.forEach((button) => { button.disabled = true; });
+        result.hidden = false;
+        result.textContent = "请选择外观或语音包，读取大型模型可能需要几分钟。";
+        status(result.textContent);
+        try {
+          const { rows, errors } = await api("local-skin-import", {});
+          if (rows.length) {
+            const latest = await api("data");
+            data.catalog = latest.catalog;
+            data.chapterArt = latest.chapterArt || {};
+            fillAddFilters();
+            selectChapterCard("imported_skins");
+          }
+          const messages = rows.map(row => {
+            const state = { added: "已加入", updated: "已更新", existing: "已在库中" }[row.status];
+            let voice = "";
+            if (row.kind === "voice")
+              voice = row.connected_to.length ? "，已接通 " + row.connected_to.join("、") : "，尚未绑定外观";
+            else if (row.voice_connected) voice = "，已接通语音";
+            return row.name + " " + state + voice + (row.voice_warning ? "，" + row.voice_warning : "");
+          });
+          result.textContent = [...messages, ...errors].join("；") || "已取消导入";
+          status(result.textContent);
+        } catch (error) {
+          result.textContent = "导入失败：" + error.message;
+          status(result.textContent);
+        } finally {
+          buttons.forEach((button) => { button.disabled = false; });
+        }
+      }
+      $("#importLocalSkin").onclick = importLocalSkin;
+      $("#headerImportLocalSkin").onclick = importLocalSkin;
+      $("#chapterCards").onclick = (event) => {
+        const button = event.target.closest("button[data-chapter]");
+        if (button) selectChapterCard(button.dataset.chapter);
+      };
+      $("#addSource").onchange = () => {
+        const source = $("#addSource").value;
+        if (
+          ["boss", "enemy", "abnormality", "no_attack", "paired"].includes(
+            source,
+          )
+        ) {
+          $("#addRole").value = "";
+          $("#addStory").checked = true;
+        }
+        if (source === "paired") {
+          $("#addChapter").value = "";
+          $("#addStory").checked = true;
+        }
+        renderAddList();
+      };
+      $("#addChapter").onchange = () => {
+        if ($("#addChapter").value) selectChapterCard($("#addChapter").value);
+        else renderAddList();
+      };
+      $("#addRole").onchange = renderAddList;
+      $("#addStory").onchange = () => renderAddList();
+      document.addEventListener("click", (event) => {
+        if (!event.target.closest("#identityMenu")) closeIdentityMenu();
+      });
+      window.addEventListener("resize", closeIdentityMenu);
+      document.addEventListener("scroll", closeIdentityMenu, true);
+      document.addEventListener("keydown", (event) => {
+        if (event.key === "Escape") {
+          if (!$("#confirmModal").classList.contains("hidden")) {
+            $("#confirmCancel").click();
+            return;
+          }
+          closeIdentityMenu();
+          closeIdentityModal();
+          closeNewRule();
+          hideModal("#rulePickerModal");
+          hideModal("#scanDetailModal");
+        }
+      });
+      $("#portraitFile").onchange = async (event) => {
+        let file = event.target.files[0],
+          id = currentIdentity;
+        event.target.value = "";
+        if (!file || !id) return;
+        try {
+          if (
+            !["image/png", "image/jpeg", "image/webp"].includes(file.type) ||
+            file.size > 20 * 1024 * 1024
+          )
+            throw Error("请选择 20 MiB 内的 PNG、JPEG 或 WebP 图片");
+          let img = await createImageBitmap(file);
+          try {
+            let scale = Math.min(1, 384 / img.width, 384 / img.height),
+              canvas = document.createElement("canvas");
+            canvas.width = Math.max(1, Math.round(img.width * scale));
+            canvas.height = Math.max(1, Math.round(img.height * scale));
+            canvas
+              .getContext("2d")
+              .drawImage(img, 0, 0, canvas.width, canvas.height);
+            let encoded = canvas.toDataURL("image/png").split(",")[1];
+            let result = await api("portrait-save", {
+              identity: id,
+              image: encoded,
+            });
+            let row = data.catalog.find((x) => String(x.identity_id) === id);
+            if (row) row.portrait_url = result.portrait_url;
+            render();
+            renderAddList();
+            status("图片已保存");
+          } finally {
+            img.close();
+          }
+        } catch (error) {
+          status("上传失败：" + error.message);
+        }
+      };
+      async function resetPortrait(id) {
+        try {
+          let result = await api("portrait-reset", { identity: id });
+          let row = data.catalog.find((x) => String(x.identity_id) === id);
+          if (row) row.portrait_url = result.portrait_url;
+          render();
+          renderAddList();
+          status(
+            result.portrait_url
+              ? "已恢复默认图片"
+              : "已移除自定义图片；当前没有默认头像",
+          );
+        } catch (error) {
+          status("恢复失败：" + error.message);
+        }
+      }
+      const portraitStageText = {
+        idle: "准备检索",
+        starting: "准备检索",
+        download: "正在检索本地资源",
+        verify: "正在校验",
+        install: "正在写入",
+        done: "资源检索完成",
+        error: "资源检索失败",
+      };
+      const portraitStageIcon = {
+        idle: "i-download",
+        starting: "i-download",
+        download: "i-download",
+        verify: "i-check",
+        install: "i-package",
+        done: "i-check",
+        error: "i-alert",
+      };
+      const portraitRunning = (stage) =>
+        ["starting", "download", "verify", "install"].includes(stage);
+      let portraitTimer = null,
+        portraitActive = false,
+        portraitDoneTimer = null;
+      function portraitDismiss() {
+        hideModal("#portraitModal");
+        $("#portraitMini").classList.add("hidden");
+      }
+      function portraitRender(p = {}) {
+        let stage = p.stage || "idle",
+          pct = Math.max(0, Math.min(100, Number(p.percent) || 0)),
+          msg = p.message || portraitStageText[stage] || "";
+        $("#portraitBar").style.width = pct + "%";
+        $("#portraitMiniBar").style.width = pct + "%";
+        $("#portraitPercent").textContent = pct.toFixed(pct % 1 ? 1 : 0) + "%";
+        $("#portraitMiniPercent").textContent =
+          pct.toFixed(pct % 1 ? 1 : 0) + "%";
+        $("#portraitStatus").textContent = msg;
+        $("#portraitMiniLabel").textContent =
+          portraitStageText[stage] || "下载资源";
+        const icon = portraitStageIcon[stage] || "i-download";
+        $("#portraitIconUse").setAttribute("href", "#" + icon);
+        $("#portraitMiniIconUse").setAttribute("href", "#" + icon);
+        $("#portraitStageIcon").classList.toggle("done", stage === "done");
+        $("#portraitStageIcon").classList.toggle("error", stage === "error");
+        $("#portraitRetry").classList.toggle("hidden", stage !== "error");
+        portraitActive = stage === "error" || portraitRunning(stage);
+      }
+      async function portraitPoll() {
+        try {
+          let p = await api("portrait-progress");
+          portraitRender(p);
+          if (portraitRunning(p.stage)) {
+            if (!portraitTimer) portraitTimer = setInterval(portraitPoll, 500);
+          } else if (portraitTimer) {
+            clearInterval(portraitTimer);
+            portraitTimer = null;
+          }
+          if (p.stage === "done") {
+            portraitActive = false;
+            clearTimeout(portraitDoneTimer);
+            try {
+              await refresh();
+            } catch (e) {}
+            // Keep the result visible so the user can read the number found and missing.
+          }
+          if (p.stage === "error") portraitActive = true;
+        } catch (e) {
+          portraitRender({ stage: "error", message: e.message, percent: 0 });
+        }
+      }
+      function portraitStartPolling() {
+        if (!portraitTimer) portraitTimer = setInterval(portraitPoll, 500);
+        portraitPoll();
+      }
+      async function portraitBegin() {
+        clearTimeout(portraitDoneTimer);
+        portraitRender({ stage: "starting", percent: 0, message: "准备检索" });
+        try {
+          let r = await api("portrait-download", {});
+          portraitRender(r.progress || {});
+          if (r.started || portraitRunning(r.progress?.stage)) {
+            portraitStartPolling();
+          } else if (r.progress?.stage === "done") {
+            await portraitPoll();
+          }
+        } catch (e) {
+          portraitRender({ stage: "error", message: e.message, percent: 0 });
+        }
+      }
+      async function portraitShow(autoStart = true) {
+        clearTimeout(portraitDoneTimer);
+        showModal("#portraitModal");
+        $("#portraitMini").classList.add("hidden");
+        try {
+          let p = await api("portrait-progress");
+          if (p.stage === "error") {
+            portraitRender(p);
+            return;
+          }
+          if (autoStart && (p.stage === "idle" || p.stage === "done")) {
+            await portraitBegin();
+            return;
+          }
+          portraitRender(p);
+          if (portraitRunning(p.stage)) portraitStartPolling();
+        } catch (e) {
+          portraitRender({ stage: "error", message: e.message, percent: 0 });
+        }
+      }
+      function portraitHide() {
+        hideModal("#portraitModal");
+        if (portraitActive) $("#portraitMini").classList.remove("hidden");
+      }
+      async function initPortraitState() {
+        try {
+          let p = await api("portrait-progress");
+          portraitRender(p);
+          if (portraitRunning(p.stage)) {
+            portraitStartPolling();
+            $("#portraitMini").classList.remove("hidden");
+          } else if (p.stage === "error") {
+            $("#portraitMini").classList.remove("hidden");
+          }
+        } catch (e) {}
+      }
+      $("#portraitClose").onclick = () => portraitDismiss();
+      $("#portraitHide").onclick = () => portraitHide();
+      $("#portraitRetry").onclick = () => portraitBegin();
+      $("#portraitMini").onclick = (e) => {
+        if (!e.target.closest("#portraitMiniClose")) portraitShow(false);
+      };
+      $("#portraitMiniClose").onclick = (e) => {
+        e.stopPropagation();
+        portraitActive = false;
+        if (portraitTimer) {
+          clearInterval(portraitTimer);
+          portraitTimer = null;
+        }
+        $("#portraitMini").classList.add("hidden");
+      };
+      function chapterRank(id) {
+        const part = String(id).match(/^(chapter_\d+)_part_(\d+)$/);
+        if (part) return chapterRank(part[1]) + Number(part[2]) / 10;
+        let entry = data.catalog.find((e) => e.chapter === id);
+        return data.chapterArt?.[id]?.rank ?? entry?.chapter_rank ?? 20000;
+      }
+      async function refresh() {
+        try {
+          data = await api("data");
+          settingsBaseline = structuredClone(data.settings.config);
+          settingsDirty = false;
+          applyLauncherBackground(data.launcherBackground);
+          $("#version").textContent = data.version;
+          loadTarget();
+          renderPrepare(data);
+          $("#formRows").innerHTML = Object.entries(data.formAnnotations || {})
+            .map(
+              ([id, p]) =>
+                `<h3>${esc(id)} · ${esc(p.forms)}</h3><p>${esc(p.method)}</p>`,
+            )
+            .join("");
+        } catch (e) {
+          status(e.message);
+        }
+      }
+      function renderEvents() {
+        const log = $("#eventLog");
+        log.textContent =
+          events.map((event) => event.raw).join("\n") || "暂无日志";
+        log.scrollTop = log.scrollHeight;
+      }
+      async function loadEvents() {
+        try {
+          events = await api("events");
+          renderEvents();
+        } catch (e) {
+          status(e.message);
+        }
+      }
+      function download(name, value) {
+        let a = document.createElement("a"),
+          u = URL.createObjectURL(
+            new Blob([JSON.stringify(value, null, 2)], {
+              type: "application/json",
+            }),
+          );
+        a.href = u;
+        a.download = name;
+        a.click();
+        setTimeout(() => URL.revokeObjectURL(u), 1000);
+      }
+      $("#exportEvents").onclick = () =>
+        download("演出反馈包.json", {
+          version: data.version,
+          generatedAt: new Date().toISOString(),
+          pools: data.config,
+          director: data.director.config,
+          warmup: data.warmup,
+          events,
+        });
+      function renderPrepare(value) {
+        const p = value.preparation || {},
+          runtime = value.runtime || {};
+        const active = !!p.connected,
+          ready = active && !!p.ready;
+        const message = !active
+          ? "等待游戏启动"
+          : p.evidence_missing
+            ? "正在确认连接状态"
+            : ready
+              ? "已连接，等待或正在进行战斗"
+              : "正在准备，尚未确认就绪";
+        const friendly = (text) =>
+          String(text || "等待读取")
+            .replace("核心已读取成员与权重", "已生效")
+            .replace("核心已读取", "已生效")
+            .replace("已发布，等待核心读取", "已保存，等待生效")
+            .replace("已保存，等待核心读取确认", "已保存，等待生效")
+            .replace("已保存，等待核心读取", "已保存，等待生效")
+            .replace("等待运行中的插件读取", "等待游戏连接");
+        const statusRow = (title, text, ok) =>
+          `<div class="prep-status"><span>${esc(title)}</span><strong class="${ok ? "prep-ok" : "prep-wait"}">${esc(text)}</strong></div>`;
+        const section = (title, items) =>
+          items.length
+            ? `<div class="prep-list"><h3>${esc(title)} <small>${items.length} 个</small></h3><ul>${items.map((x) => `<li>${esc(x.name)}</li>`).join("")}</ul></div>`
+            : "";
+        const loaded = p.loaded || [],
+          shown = p.shown || [];
+        $("#prepareData").innerHTML =
+          `<div class="prep-grid">${statusRow("游戏与插件", message, ready)}${statusRow("人格池", active ? friendly(runtime.pool) : "等待游戏启动", active && (runtime.pool || "").includes("核心已读取"))}${statusRow("抽取编排", active ? friendly(runtime.draw) : "等待游戏启动", active && (runtime.draw || "").includes("核心已读取"))}${statusRow("形态设置", active ? friendly(runtime.forms) : "等待游戏启动", active && (runtime.forms || "").includes("核心已读取"))}</div>${section("已准备的外观", loaded)}${section("本次游戏已显示的外观", shown)}`;
+      }
+      async function loadPrepare() {
+        try {
+          let r = await api("data");
+          renderPrepare(r);
+        } catch (e) {
+          status(e.message);
+        }
+      }
+      let scanPollAt = 0;
+      async function pollScanStatus() {
+        if (Date.now() - scanPollAt < 1500) return;
+        scanPollAt = Date.now();
+        try {
+          const d = await api("discovered");
+          lastScanReport = d;
+          showScan(d.scan || {});
+        } catch (e) {}
+      }
+      let pollBusy = false;
+      function activePage() {
+        const section = [...document.querySelectorAll("article section")].find(
+          (item) => !item.classList.contains("hidden"),
+        );
+        return section ? section.id : "";
+      }
+      async function pollActive() {
+        if (pollBusy) return;
+        pollBusy = true;
+        try {
+          const page = activePage();
+          if (page === "events") await loadEvents();
+          else if (page === "prepare") await loadPrepare();
+          else if (page === "discovered") await loadDiscovered();
+          else if (page === "schemes") await loadSchemes();
+          if (page !== "discovered" && watchingCatalog())
+            await loadDiscovered();
+          await pollScanStatus();
+          await pollResourceImages();
+        } catch (e) {
+        } finally {
+          pollBusy = false;
+        }
+      }
+      const navButtons = [...document.querySelectorAll("nav button")];
+      function selectPage(page) {
+        const button = navButtons.find((item) => item.dataset.page === page);
+        if (!button) return;
+        document
+          .querySelectorAll("article section")
+          .forEach((s) => s.classList.toggle("hidden", s.id !== page));
+        navButtons.forEach((item) =>
+          item.classList.toggle("active", item === button),
+        );
+        pollActive();
+      }
+      navButtons.forEach((b) => {
+        b.onclick = () => selectPage(b.dataset.page);
+      });
+      if (navButtons[0]) navButtons[0].classList.add("active");
+
+      $("#scanMini").onclick = () => {
+        $("#scanDetailText").textContent = scanDetailText();
+        showModal("#scanDetailModal");
+      };
+      $("#scanDetailClose").onclick = () => hideModal("#scanDetailModal");
+      $("#scanDetailModal").onclick = (event) => {
+        if (event.target.id === "scanDetailModal") hideModal("#scanDetailModal");
+      };
+      const pageScroll = document.querySelector("article");
+      let poolTopTimer = null;
+      function updatePoolTop() {
+        const show =
+          pageScroll && activePage() === "pool" && pageScroll.scrollTop > 400;
+        clearTimeout(poolTopTimer);
+        $("#poolTop").classList.toggle("hidden", !show);
+        if (show)
+          poolTopTimer = setTimeout(
+            () => $("#poolTop").classList.add("hidden"),
+            3000,
+          );
+      }
+      if (pageScroll)
+        pageScroll.addEventListener("scroll", updatePoolTop, { passive: true });
+      $("#poolTop").onclick = () => {
+        clearTimeout(poolTopTimer);
+        $("#poolTop").classList.add("hidden");
+        pageScroll?.scrollTo({ top: 0, behavior: "smooth" });
+      };
+      navButtons.forEach((button) =>
+        button.addEventListener("click", updatePoolTop),
+      );
+      updatePoolTop();
+
+      window.onbeforeunload = (e) => {
+        if (dirty || saveTimer) {
+          e.preventDefault();
+          e.returnValue = "";
+        }
+      };
+      const confLabel = {
+        catalog: "catalog 已确认",
+        combo: "已确认",
+        family: "按编号族",
+        guess: "推测（catalog 里查不到，需实测）",
+        unknown: "未知",
+      };
+      let lastCatalogScan,
+        scanRequest = 0;
+      function watchingCatalog() {
+        return !$("#identityModal").classList.contains("hidden");
+      }
+      async function refreshCatalogAfterScan(report, request) {
+        const stamp = report.available
+          ? report.generated + "/" + report.pool_entries
+          : "";
+        if (
+          stamp &&
+          stamp !== lastCatalogScan &&
+          watchingCatalog() &&
+          !report.scan?.running
+        ) {
+          const latest = await api("data");
+          if (request !== scanRequest || !watchingCatalog()) return;
+          const role = $("#addRole").value,
+            chapter = $("#addChapter").value;
+          data.catalog = latest.catalog;
+          data.chapterArt = latest.chapterArt || {};
+          fillAddFilters();
+          $("#addRole").value = role;
+          $("#addChapter").value = chapter;
+          const hasPairs =
+            data.activeRule?.kind === "identity" &&
+            data.catalog.some((entry) =>
+              entry.paired_identities?.includes(
+                String(data.activeRule.identity),
+              ),
+            );
+          $("#pairedSource").hidden = $("#pairedSource").disabled = !hasPairs;
+          renderAddList();
+        }
+        if (!report.scan?.running) lastCatalogScan = stamp;
+      }
+      const scanStages = {
+        prepare: "准备扫描",
+        bundles: "检查资源包",
+        units: "整理单位和动作",
+        chapters: "读取章节资料",
+        images: "处理章节图片",
+        portraits: "检查单位图片",
+        finish: "保存扫描结果",
+      };
+      let lastScanState = {},
+        lastScanReport = null;
+      function showScan(sc) {
+        lastScanState = sc || {};
+        const progress = sc.progress || {},
+          bar = $("#scanBar"),
+          label = $("#scanLabel");
+        if ($("#scanProgress")) $("#scanProgress").hidden = !sc.running;
+        if ($("#scanError")) $("#scanError").textContent = sc.error || "";
+        let description = scanStages[progress.phase] || scanStages.prepare;
+        if (progress.total > 0)
+          description +=
+            "　" +
+            progress.done +
+            " / " +
+            progress.total +
+            "（" +
+            Math.floor((100 * (progress.done || 0)) / progress.total) +
+            "%）";
+        if (bar) {
+          if (progress.total > 0) {
+            bar.max = progress.total;
+            bar.value = progress.done;
+          } else bar.removeAttribute("value");
+        }
+        if (label) label.textContent = description;
+        const mini = $("#scanMini");
+        if (mini) {
+          mini.classList.toggle("hidden", !sc.running);
+          if (sc.running) {
+            const pct =
+              progress.total > 0
+                ? Math.floor((100 * (progress.done || 0)) / progress.total)
+                : 0;
+            $("#scanMiniLabel").textContent = description.replace(
+              /（\d+%）$/,
+              "",
+            );
+            $("#scanMiniPercent").textContent = pct + "%";
+            $("#scanMiniBar").style.width = pct + "%";
+          }
+        }
+      }
+      function scanDetailText() {
+        const sc = lastScanState || {},
+          p = sc.progress || {},
+          report = lastScanReport || {};
+        const stage = scanStages[p.phase] || "准备扫描";
+        const lines = [
+          "状态：" + (sc.running ? "扫描中" : sc.error ? "失败" : "空闲"),
+          "阶段：" + stage,
+        ];
+        if (p.total) lines.push(`进度：${p.done || 0} / ${p.total}`);
+        if (sc.started) lines.push("开始：" + sc.started);
+        if (sc.error) lines.push("错误：" + sc.error);
+        if (report.generated) lines.push("上次完成：" + report.generated);
+        if (report.bundles_total != null)
+          lines.push("缓存包：" + report.bundles_total);
+        if (report.pool_entries != null)
+          lines.push("人格池：" + report.pool_entries);
+        if (report.new_prefabs != null)
+          lines.push("待处理新外观：" + report.new_prefabs);
+        return lines.join("\n");
+      }
+      async function loadDiscovered() {
+        const seq = ++scanRequest,
+          box = $("#discoveredList"),
+          meta = $("#discoveredMeta");
+        try {
+          const d = await api("discovered");
+          if (seq !== scanRequest) return;
+          const sc = d.scan || {};
+          lastScanReport = d;
+          showScan(sc);
+          await refreshCatalogAfterScan(d, seq);
+          if (seq !== scanRequest) return;
+          if (!d.available) {
+            box.innerHTML =
+              '<p class="muted">' + esc(d.reason || "尚未扫描") + "</p>";
+            if (!sc.running) meta.textContent = "";
+            return;
+          }
+          const groups = {};
+          for (const u of d.units) {
+            (groups[u.group_confidence || "unknown"] =
+              groups[u.group_confidence || "unknown"] || []).push(u);
+          }
+          meta.textContent =
+            "扫描于 " +
+            d.generated +
+            "　缓存包 " +
+            d.bundles_total +
+            " 个（重扫 " +
+            (d.bundles_rescanned || 0) +
+            "）　人格池 " +
+            d.pool_entries +
+            " 条　待处理 " +
+            d.new_prefabs +
+            " 个　新增无攻击外观 " +
+            (d.auto_added_no_attack || 0) +
+            " 个　新增攻击外观 " +
+            (d.auto_added_attack || 0) +
+            " 个" +
+            (d.catalog_hash
+              ? "　catalog " + String(d.catalog_hash).slice(0, 8)
+              : "") +
+            (d.catalog_changed ? "（本期已更新）" : "");
+          if (d.artwork) {
+            const a = d.artwork;
+            if (a.chapters_detected != null)
+              meta.textContent +=
+                "　检测到 " +
+                a.chapters_detected +
+                " 个章节（新增 " +
+                (a.new_chapters || []).length +
+                " 个）　" +
+                (a.disabled
+                  ? "图片抓取已关闭"
+                  : "本次抓取章节图 " +
+                    (a.chapter_extracted || []).length +
+                    " 张");
+            if (a.error || (a.errors || []).length)
+              meta.textContent += "　部分资源读取失败";
+            meta.textContent +=
+              "　新增小人 " +
+              (a.added || []).length +
+              " 张　待处理图片 " +
+              (a.unresolved || []).length +
+              " 项　待处理章节图 " +
+              (a.chapter_unresolved || []).length +
+              " 张";
+          }
+          if (d.translation)
+            meta.textContent +=
+              "　自动暂译 " + (d.translation.translated || 0) + " 条";
+          let html = "";
+          for (const k of ["catalog", "combo", "family", "guess", "unknown"]) {
+            const list = groups[k];
+            if (!list || !list.length) continue;
+            html +=
+              "<h3>" +
+              esc(confLabel[k] || k) +
+              "（" +
+              list.length +
+              "）</h3><table><thead><tr><th>外观</th><th>分组</th><th>依据</th><th>动作数</th></tr></thead><tbody>";
+            for (const u of list) {
+              html +=
+                "<tr><td>" +
+                esc(u.appearance_name) +
+                "</td><td><code>" +
+                esc(u.asset_key || "—") +
+                "</code></td><td>" +
+                esc(String(u.group_evidence ?? "")) +
+                "</td><td>" +
+                ((u.motions || []).length || "—") +
+                "</td></tr>";
+            }
+            html += "</tbody></table>";
+          }
+          box.innerHTML =
+            html || '<p class="muted">没有新增外观，人格池已是最新。</p>';
+        } catch (e) {
+          if (seq !== scanRequest) return;
+          showScan({ error: e.message });
+        }
+      }
+      async function ensureInitialScan() {
+        try {
+          const d = await api("discovered");
+          const sc = d.scan || {};
+          if (!sc.running) {
+            let stale = !d.available || !d.generated;
+            if (sc.weekly?.status === "failed") {
+              const failedAt = Date.parse(sc.weekly.finished || "");
+              const generatedAt = Date.parse(d.generated || "");
+              if (
+                !Number.isFinite(generatedAt) ||
+                (Number.isFinite(failedAt) && failedAt > generatedAt)
+              )
+                stale = true;
+            }
+            if (d.generated) {
+              const age = Date.now() - Date.parse(d.generated);
+              if (Number.isFinite(age) && age > 7 * 86400000) stale = true;
+            }
+            if (stale) await api("scan", {});
+          }
+          await loadDiscovered();
+          await ensureResourceImages();
+        } catch (e) {}
+      }
+      async function ensureResourceImages() {
+        try {
+          if (sessionStorage.getItem("sinnersResourceScan")) return;
+          const lastDone = Number(
+            localStorage.getItem("sinnersResourceScanDoneAt") || 0,
+          );
+          if (
+            Number.isFinite(lastDone) &&
+            Date.now() - lastDone < 6 * 60 * 60 * 1000
+          )
+            return;
+          const p = await api("portrait-progress");
+          if (["starting", "download", "verify", "install"].includes(p.stage))
+            return;
+          const catalog = data.catalog || [];
+          const portraitCount = catalog.filter((entry) => entry.portrait_url).length;
+          const missingPortrait =
+            catalog.length > 0 && portraitCount < catalog.length * 0.25;
+          const missingChapter =
+            !data.chapterArt || Object.keys(data.chapterArt).length === 0;
+          if (!missingPortrait && !missingChapter) return;
+          sessionStorage.setItem("sinnersResourceScan", "1");
+          await api("portrait-download", {});
+          status("正在从本地游戏资源恢复头像与章节图");
+        } catch (e) {}
+      }
+      async function pollResourceImages() {
+        if (sessionStorage.getItem("sinnersResourceScan") !== "1") return;
+        try {
+          const p = await api("portrait-progress");
+          if (p.stage === "done") {
+            sessionStorage.setItem("sinnersResourceScan", "done");
+            localStorage.setItem("sinnersResourceScanDoneAt", String(Date.now()));
+            await refresh();
+            status("头像与章节图已从本地资源恢复");
+          } else if (p.stage === "error") {
+            sessionStorage.setItem("sinnersResourceScan", "error");
+            status("资源图恢复失败：" + (p.message || "未知错误"));
+          }
+        } catch (e) {}
+      }
+
+      let schemes = [];
+      async function loadSchemes() {
+        try {
+          const data = await api("schemes");
+          schemes = data.schemes;
+          renderSchemes();
+        } catch (e) {
+          status(e.message);
+        }
+      }
+      function renderSchemes() {
+        const box = $("#schemeList");
+        if (!schemes.length) {
+          box.innerHTML = '<p class="muted scheme-empty">还没有保存的方案。</p>';
+          return;
+        }
+        box.innerHTML = schemes
+          .map(
+            (s, i) =>
+              '<div class="scheme-card" data-i="' +
+              i +
+              '"><div><strong>' +
+              esc(s.name) +
+              '</strong><span class="muted">' +
+              esc(s.saved_at || "") +
+              " · " +
+              s.count +
+              ' 个外观</span></div><div class="scheme-actions"><button data-act="load" class="primary">读取</button><button data-act="export">导出</button><button data-act="delete">删除</button></div></div>',
+          )
+          .join("");
+      }
+      function schemeTip(s) {
+        if (!s.groups.length)
+          return '<p class="muted">该方案没有启用任何外观</p>';
+        return s.groups
+          .map(
+            (g) =>
+              "<h4>" +
+              esc(g.label) +
+              (g.active ? "（启用）" : "") +
+              "</h4><p>" +
+              g.items.map(esc).join("、") +
+              "</p>",
+          )
+          .join("");
+      }
+      function moveTip(e) {
+        const tip = $("#schemeTip");
+        const x = Math.min(e.clientX + 16, innerWidth - tip.offsetWidth - 8);
+        const y = Math.min(e.clientY + 16, innerHeight - tip.offsetHeight - 8);
+        tip.style.left = Math.max(8, x) + "px";
+        tip.style.top = Math.max(8, y) + "px";
+      }
+      $("#schemeList").addEventListener("mouseover", (e) => {
+        const card = e.target.closest(".scheme-card");
+        if (!card) return;
+        const tip = $("#schemeTip");
+        tip.innerHTML = schemeTip(schemes[card.dataset.i]);
+        tip.classList.remove("hidden");
+        moveTip(e);
+      });
+      $("#schemeList").addEventListener("mousemove", (e) => {
+        if (e.target.closest(".scheme-card")) moveTip(e);
+      });
+      $("#schemeList").addEventListener("mouseout", (e) => {
+        const card = e.target.closest(".scheme-card");
+        if (card && !card.contains(e.relatedTarget))
+          $("#schemeTip").classList.add("hidden");
+      });
+      async function applyScheme(request, label) {
+        if (saveTimer || saving)
+          return status("请等待当前修改自动保存完成后再读取");
+        const tip =
+          "读取方案“" + label + "”？当前配置会先备份为“读取前自动备份”。";
+        if (!(await askConfirm(tip))) return;
+        const loaded = await api("scheme-load", request);
+        schemes = loaded.schemes;
+        await refresh();
+        renderRulesets();
+        renderSchemes();
+        status("已读取方案“" + label + "”。");
+      }
+      $("#schemeList").onclick = async (e) => {
+        const button = e.target.closest("button[data-act]");
+        if (!button) return;
+        const s = schemes[button.closest(".scheme-card").dataset.i];
+        try {
+          if (button.dataset.act === "load") {
+            await applyScheme({ name: s.name }, s.name);
+          } else if (button.dataset.act === "export") {
+            download(
+              s.name + ".json",
+              await api("scheme-get", { name: s.name }),
+            );
+          } else if (await askConfirm("删除方案“" + s.name + "”？")) {
+            schemes = (await api("scheme-delete", { name: s.name })).schemes;
+            renderSchemes();
+            $("#schemeTip").classList.add("hidden");
+            status("已删除方案“" + s.name + "”");
+          }
+        } catch (err) {
+          status(err.message);
+        }
+      };
+      $("#saveScheme").onclick = async () => {
+        const name = $("#schemeName").value.trim();
+        if (!name) return status("请先填写方案名称");
+        const overwrite = schemes.some((s) => s.name === name);
+        if (overwrite && !(await askConfirm("已存在方案“" + name + "”，覆盖它？"))) return;
+        try {
+          schemes = (await api("scheme-save", { name, overwrite })).schemes;
+          renderSchemes();
+          $("#schemeName").value = "";
+          status("已保存方案“" + name + "”");
+        } catch (e) {
+          status(e.message);
+        }
+      };
+      $("#importScheme").onclick = () => $("#importFile").click();
+      $("#importFile").onchange = async (e) => {
+        const file = e.target.files[0];
+        e.target.value = "";
+        if (!file) return;
+        try {
+          const scheme = JSON.parse(await file.text());
+          const name = String(
+            scheme.name || file.name.replace(/\.json$/i, ""),
+          ).slice(0, 40);
+          const overwrite = schemes.some((s) => s.name === name);
+          if (overwrite && !(await askConfirm("已存在方案“" + name + "”，覆盖它？")))
+            return;
+          schemes = (await api("scheme-import", { name, overwrite, scheme }))
+            .schemes;
+          renderSchemes();
+          status("已导入方案“" + name + "”，点“读取”即可应用");
+        } catch (err) {
+          status(err.message);
+        }
+      };
+      document
+        .querySelector('nav button[data-page="schemes"]')
+        .addEventListener("click", loadSchemes);
+      refresh().then(() => {
+        ensureInitialScan();
+        if (data?.tutorial) setTimeout(openTutorial, 650);
+      });
+      loadSchemes();
+      setInterval(pollActive, 500);
+
+      function renderDirector() {
+        $("#rulesTarget").textContent = who(activeTarget);
+        let config = data.director.config,
+          r = config.characters[activeTarget] || {};
+        $("#ruleControls").innerHTML = ["attack", "clash", "defense"]
+          .map(
+            (a, i) =>
+              `<label>${["攻击", "拼点", "守备"][i]} <select data-action="${a}"><option value="independent">独立加权随机</option><option value="round">加权轮抽不重复</option><option value="sequence">按当前池顺序</option></select></label>`,
+          )
+          .join(" ");
+        $("#ruleControls")
+          .querySelectorAll("select[data-action]")
+          .forEach(
+            (x) => (x.value = r[x.dataset.action]?.mode || "independent"),
+          );
+        let old = $("#formIdentity").value;
+        $("#formIdentity").innerHTML = data.catalog
+          .filter((e) => data.formAnnotations?.[String(e.identity_id)])
+          .map(
+            (e) =>
+              `<option value="${esc(e.identity_id)}">${esc(e.name || e.appearance_name || e.identity_id)}</option>`,
+          )
+          .join("");
+        if (old) $("#formIdentity").value = old;
+        loadForm();
+      }
+      function loadForm() {
+        let r = data.director.config.forms[$("#formIdentity").value] || {
+          mode: "native",
+          threshold: 1,
+          stage: 1,
+          compare: 0,
+        };
+        $("#formMode").value = r.mode;
+        $("#formThreshold").value = r.threshold;
+        $("#formStage").value = r.stage;
+        $("#formCompare").value = r.compare;
+      }
+      async function saveDirector(config) {
+        let r = await api("director", {
+          config,
+          revision: data.director.revision,
+        });
+        data.director = r;
+        status("演出编排已保存，等待原生核心读取；准备状态页会自动刷新确认。");
+        renderDirector();
+      }
+      $("#saveRules").onclick = async () => {
+        try {
+          let c = structuredClone(data.director.config);
+          c.characters[activeTarget] = {};
+          $("#ruleControls")
+            .querySelectorAll("select[data-action]")
+            .forEach(
+              (x) =>
+                (c.characters[activeTarget][x.dataset.action] = {
+                  mode: x.value,
+                }),
+            );
+          await saveDirector(c);
+        } catch (e) {
+          status(e.message);
+        }
+      };
+      $("#formIdentity").onchange = loadForm;
+      $("#saveForm").onclick = async () => {
+        try {
+          let c = structuredClone(data.director.config);
+          c.forms[$("#formIdentity").value] = {
+            mode: $("#formMode").value,
+            threshold: Number($("#formThreshold").value),
+            stage: Number($("#formStage").value),
+            compare: Number($("#formCompare").value),
+          };
+          await saveDirector(c);
+        } catch (e) {
+          status(e.message);
+        }
+      };
+    </script>
+  </body>
+</html>
