@@ -3,9 +3,9 @@
 适用于 [FaustLauncher](https://github.com/f0lkskill/FaustLauncher) 的《边狱巴士》(Limbus Company) 人格外观随机插件。
 通过 WarpHook 注入原生 DLL，在战斗中替换罪人外观、随机切换人格，并按原生触发条件播放 Boss 语音与气泡。
 
-当前源码版本 **1.1.7** · 协议 75 · 原生模块 `SinnersNative-v64.dll` · 适用启动器 `0.8.9-release.fix.4`
+当前源码版本 **1.1.8** · 协议 75 · 原生模块 `SinnersNative-v64.dll` · 适用启动器 `0.8.9-release.fix.4`
 
-1.1.7 的新单位检测会显示进度，并从本地游戏缓存读取章节与封面。“添加人格”默认显示整个目录，可按角色、敌方单位、异想体或章节筛选。覆盖外观缺少指定攻击槽时，优先播放该外观已有的攻击动作。缺少专属攻击时间线时，当前外观通过短促位移表现攻击。
+1.1.8 的新单位检测会显示进度，并从本地游戏缓存读取章节与封面。“添加人格”默认显示整个目录，可按角色、敌方单位、异想体或章节筛选。覆盖外观缺少指定攻击槽时，优先播放该外观已有的攻击动作。缺少专属攻击时间线时，当前外观通过短促位移表现攻击。
 
 ---
 
@@ -15,9 +15,9 @@
 
 | 文件 | 说明 |
 | --- | --- |
-| [启动器完整安装包（通用 ZIP）](https://github.com/Chrismick111/faust-random-identity/releases/download/v1.1.7/FaustRandomIdentity-Launcher-Deflate.zip) | 推荐全新安装，内含启动器识别用的中文插件目录 |
-| [启动器完整安装包（小体积）](https://github.com/Chrismick111/faust-random-identity/releases/download/v1.1.7/FaustRandomIdentity-Launcher.zip) | 相同内容，使用 LZMA 压缩 |
-| [工作台更新包](https://github.com/Chrismick111/faust-random-identity/releases/download/v1.1.7/FaustRandomIdentity-WarpHook.zip) | 工作台自动下载使用，文件位于压缩包根目录 |
+| [启动器完整安装包（通用 ZIP）](https://github.com/Chrismick111/faust-random-identity/releases/download/v1.1.8/FaustRandomIdentity-Launcher-Deflate.zip) | 推荐全新安装，内含启动器识别用的中文插件目录 |
+| [启动器完整安装包（小体积）](https://github.com/Chrismick111/faust-random-identity/releases/download/v1.1.8/FaustRandomIdentity-Launcher.zip) | 相同内容，使用 LZMA 压缩 |
+| [工作台更新包](https://github.com/Chrismick111/faust-random-identity/releases/download/v1.1.8/FaustRandomIdentity-WarpHook.zip) | 工作台自动下载使用，文件位于压缩包根目录 |
 | [默认图像包](https://github.com/Chrismick111/faust-random-identity/releases/download/v0.79.1/FaustRandomIdentity-Portraits.zip) | 可选，623 张图片，覆盖 693 个外观条目，工作台也可单独下载 |
 
 手动安装时，把启动器完整安装包解压到 `FaustLauncher/addons/`。确认目录结构如下。可选图像包解压到 `MirrorOfSkin/` 内。
@@ -32,7 +32,7 @@ FaustLauncher/addons/MirrorOfSkin/
     portraits/          <- 来自立绘包
 ```
 
-也可以只装核心包，之后在插件里点「下载默认头像」自动补齐。1.1.7 只通过 WarpHook 加载原生模块。若 WarpHook 返回错误 87，插件会在日志中保留原因并停止本次游戏的加载。
+也可以只装核心包，之后在插件里点「下载默认头像」自动补齐。1.1.8 只通过 WarpHook 加载原生模块。若 WarpHook 返回错误 87，插件会在日志中保留原因并停止本次游戏的加载。
 
 Workbench 的 Python 代码按功能拆分：
 
@@ -44,8 +44,25 @@ Workbench/
   fx/      特效方案、时间线、精灵与动作数据
   tools/   验收与发布工具
   tests/   工作台单元测试
+  ui/      网页、启动脚本与使用说明
+  data/    外观配对、章节、立绘源与工具数据
   workbench.py   工作台 HTTP 入口
-  index.html / effect-editor.html / open_workbench.*   界面入口
+```
+
+原生代码目录：
+
+```
+native/
+  core/    池、形态、策略与运行时基础
+  clash/   拼点、硬币与章节技能映射
+  voice/   语音表、语音路由与语音目录
+  fx/      特效计划与播放
+  story/   章节、连携、楔子与双人/三人演出
+  unity/   Unity 资源读取与纹理导出
+  tests/   当前原生测试，archive/ 为旧版本回归
+  tools/   原生数据生成与发布工具
+  data/    原生数据表
+  sinners_native.c / build.ps1
 ```
 
 模块目录由 `Workbench/_module_paths.py` 注入到 `sys.path`，原有扁平导入无需改动。
@@ -81,8 +98,8 @@ Workbench/
 
 ### 立绘
 
-- **默认立绘**：点「下载默认头像」，直接读取 `Workbench/portrait_source.json` 中锁定的独立直链与 SHA-256，不再查询 GitHub Release；头像包与核心版本相互独立
-- **直链覆盖**：复制为 `Workbench/portrait_source.local.json` 并填写 `url` / `sha256`（可选 `size`）即可换镜像或独立地址；该文件在核心更新时受保护
+- **默认立绘**：点「下载默认头像」，直接读取 `Workbench/data/portrait_source.json` 中锁定的独立直链与 SHA-256，不再查询 GitHub Release；头像包与核心版本相互独立
+- **直链覆盖**：复制为 `Workbench/data/portrait_source.local.json` 并填写 `url` / `sha256`（可选 `size`）即可换镜像或独立地址；该文件在核心更新时受保护
 - **自定义立绘**：每个人格都可单独上传或重置。浏览器端缩放到 ≤384×384 转 PNG，服务端还要校验 PNG 结构与 CRC、体积 ≤1 MiB，存到 `Workbench/user_portraits/`（按人格名 SHA-256 命名），更新时受保护
 
 ---
@@ -132,7 +149,7 @@ Workbench/
 2. zip 内文件集合 **精确等于** `package_files ∪ {compatibility.json, Assets/runtime/all_sinners_pools.json}`——多一个（运行时缓存、日志、备份）或少一个都会被更新器拒绝
 3. `addon_info.json` 与 `compatibility.json` 的 `version` **必须一致**，且与标签的 `主.次.修订` 匹配
 4. `scr.py` 的 `DLL_NAME` 必须等于 `compatibility.json` 的 `dll`
-5. `Workbench/portrait_source.json` 必须列入 `package_files`，其 `url` / `sha256` 与实际头像包一致
+5. `Workbench/data/portrait_source.json` 必须列入 `package_files`，其 `url` / `sha256` 与实际头像包一致
 6. 不得包含 `native_pools.bin`、`随机设置.json`、`自定义人格池.json`、`animation-times-*`、`*.log`、`*.bak*`
 
 ```powershell
