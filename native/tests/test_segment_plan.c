@@ -54,6 +54,20 @@ int main(void){
  assert(sr_segment_pick(&latch,1,1,1,donor,counts,ordinary,&bodies,3,&detail,&index));
  assert(detail==8&&index==1);
 
+ /* A coin overflow must also continue when the game's clip index is still in range. */
+ setup(counts,ordinary,donor);sr_segment_clear(&latch);
+ counts[7]=2;ordinary[7]=0x3;counts[8]=3;ordinary[8]=0x7;
+ for(int i=0;i<2;i++)donor[7][i]=1;for(int i=0;i<3;i++)donor[8][i]=1;
+ detail=7;index=0;
+ assert(sr_segment_pick(&latch,2,0,1,donor,counts,ordinary,&bodies,0,&detail,&index));
+ assert(detail==8&&index==0);
+
+ /* Missing timing data must not turn a coin overflow back into a repeat. */
+ setup(counts,ordinary,donor);sr_segment_clear(&latch);
+ counts[7]=2;ordinary[7]=0x3;counts[8]=3;ordinary[8]=0x7;
+ detail=7;index=0;
+ assert(sr_segment_pick(&latch,2,0,0,NULL,counts,ordinary,&bodies,0,&detail,&index));
+ assert(detail==8&&index==0);
  puts("PASS segment allocation: original request first, overflow continuation, attack-only candidates, cycle order");
  return 0;
 }
