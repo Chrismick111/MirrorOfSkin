@@ -77,6 +77,18 @@ int main(void){
  detail=7;index=0;
  assert(sr_segment_pick(&latch,2,0,0,NULL,counts,ordinary,&bodies,0,&detail,&index));
  assert(detail==8&&index==0);
+ /* After the fallback pool is exhausted, recycle the fallback pool instead
+    of locking onto one candidate group forever. */
+ setup(counts,ordinary,donor);sr_segment_clear(&latch);
+ counts[7]=1;ordinary[7]=0x1;counts[8]=1;ordinary[8]=0x1;counts[9]=1;ordinary[9]=0x1;
+ detail=7;index=0;
+ assert(sr_segment_pick(&latch,1,0,0,NULL,counts,ordinary,&bodies,0,&detail,&index));int p1=detail;
+ detail=7;index=0;
+ assert(sr_segment_pick(&latch,2,1,0,NULL,counts,ordinary,&bodies,0,&detail,&index));int p2=detail;
+ assert(p1!=p2);
+ detail=7;index=0;
+ assert(sr_segment_pick(&latch,3,2,0,NULL,counts,ordinary,&bodies,0,&detail,&index));int p3=detail;
+ assert(p3!=p2&&p3!=7);
  puts("PASS segment allocation: original request first, overflow continuation, attack-only candidates, cycle order");
  return 0;
 }

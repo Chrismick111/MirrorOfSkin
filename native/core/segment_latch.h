@@ -4,6 +4,7 @@
 #include <string.h>
 #include <limits.h>
 #define SR_VARIETY_COINS 128
+#define SR_SEGMENT_POOL_MAX 672
 typedef struct {unsigned classes[21][32];} SrOrdinaryBodies;
 static int sr_attack_group_slot(int detail){
  if(detail>=7&&detail<=16)return detail-7;
@@ -20,6 +21,8 @@ typedef struct {
  unsigned playedBody[SR_VARIETY_COINS];
  unsigned char uses[128],nextClip[128];
  uint32_t usedClips[128];
+ unsigned char poolDetail[SR_SEGMENT_POOL_MAX],poolClip[SR_SEGMENT_POOL_MAX];
+ int poolCount,poolCursor,poolRequested;
 } SrSegmentLatch;
 static void sr_segment_clear(SrSegmentLatch *s){memset(s,0,sizeof(*s));}
 static int sr_segment_scope(SrSegmentLatch *s,void *action,void *viewer,void *app,int stage){
@@ -42,6 +45,26 @@ static int sr_segment_target_valid(const int counts[128],const uint32_t ordinary
  int n=counts[detail];
  return n>=1&&n<=32&&index<n&&(ordinary[detail]&(UINT32_C(1)<<index))!=0;
 }
+static void sr_segment_build_pool(SrSegmentLatch *s,int requested,const int counts[128],const uint32_t ordinary[128]){
+ s->poolCount=0;s->poolCursor=0;s->poolRequested=requested;
+ for(unsigned i=0;i<21;i++){
+  int d=i<10?7+(int)i:14+(int)i;
+  if(d==requested)continue;
+  int n=counts[d];if(n<1||n>32||!ordinary[d])continue;
+  for(int k=0;k<n;k++)if(ordinary[d]&(UINT32_C(1)<<k))s->poolDetail[s->poolCount]=d,s->poolClip[s->poolCount++]=(unsigned char)k;
+ }
+}
+static int sr_segment_pool_advance(SrSegmentLatch *s,int detail,int clip){
+ for(int i=0;i<s->poolCount;i++)if(s->poolDetail[i]==detail&&s->poolClip[i]==clip){s->poolCursor=(i+1)%s->poolCount;return 1;}
+ return 0;
+}
+static int sr_segment_pool_all_used(const SrSegmentLatch *s){
+ for(int i=0;i<s->poolCount;i++){
+  int d=s->poolDetail[i],k=s->poolClip[i];
+  if(!(s->usedClips[d]&(UINT32_C(1)<<k)))return 0;
+ }
+ return s->poolCount>0;
+}
 static int sr_segment_pick(SrSegmentLatch *s,int coin,unsigned ordinal,double source,
                            const double donor[128][32],const int counts[128],
                            const uint32_t ordinary[128],const SrOrdinaryBodies *bodies,
@@ -62,6 +85,16 @@ static int sr_segment_pick(SrSegmentLatch *s,int coin,unsigned ordinal,double so
    *detail=requested;*index=requestedIndex;return 1;
   }
   if(!counts||!ordinary)return targetValid;
+  if(overflow&&(s->poolCount==0||s->poolRequested!=requested))sr_segment_build_pool(s,requested,counts,ordinary);
+  if(overflow&&sr_segment_pool_all_used(s)){
+   int idx=s->poolCursor%s->poolCount;
+   int d=s->poolDetail[idx],k=s->poolClip[idx];
+   s->poolCursor=(idx+1)%s->poolCount;
+   s->groups[coin]=(unsigned char)d;s->indices[coin]=(unsigned char)k;
+   s->uses[d]++;s->nextClip[d]=(unsigned char)((k+1)%counts[d]);
+   s->usedClips[d]|=UINT32_C(1)<<k;
+   *detail=d;*index=k;return 1;
+  }
   int winner=-1,clip=-1;
   int timed=source>0&&donor;
   if(timed){
@@ -126,6 +159,7 @@ static int sr_segment_pick(SrSegmentLatch *s,int coin,unsigned ordinal,double so
    s->playedBody[coin]=sr_cached_body(bodies,winner,clip);
    s->uses[winner]++;s->nextClip[winner]=(unsigned char)((clip+1)%counts[winner]);
    s->usedClips[winner]|=UINT32_C(1)<<clip;
+   if(overflow)sr_segment_pool_advance(s,winner,clip);
   }
  }
  if(!s->groups[coin])return 0;
