@@ -18,6 +18,7 @@ from functools import lru_cache
 import threading
 
 import resource_catalog
+import mos_data
 import resource_identity
 import timeline_store
 
@@ -82,7 +83,7 @@ def _candidate_bundles(appearance, roots, index):
             families.add(pathlib.PurePosixPath(relative.replace(chr(92), '/')).parts[0])
     if not families:
         try:
-            discovered=json.loads((HERE/'scan_state.json').read_bytes())
+            discovered=json.loads((mos_data.data_dir()/'Workbench/scan_state.json').read_bytes())
         except (OSError,ValueError):
             discovered={}
         for relative,row in discovered.items():

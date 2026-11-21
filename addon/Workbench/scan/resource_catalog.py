@@ -7,8 +7,11 @@ import json
 import os
 import pathlib
 import resource_tools
+import mos_data
 
 HERE = pathlib.Path(__file__).resolve().parents[1]
+DATA = mos_data.data_dir()
+TIMELINE = HERE / 'timeline_data'
 
 CONFIG_NAME = 'resource-paths.json'
 INDEX_NAME = 'resource-index.json'
@@ -34,7 +37,7 @@ def problems():
     return list(PROBLEMS)
 
 def _config_path(root=None):
-    return pathlib.Path(root or HERE) / CONFIG_NAME
+    return pathlib.Path(root or DATA) / CONFIG_NAME
 
 def read_config(root=None):
     """Config is optional; a missing or broken file must never stop a lookup."""
@@ -185,16 +188,16 @@ def resolve_roots(game_dir=None, resource_root=None, index_dir=None, base=None):
     resource = pick(resource_root, ENV_RESOURCE, 'resource_root',
                     lambda: find_resource_root(game), 'resource_root')
     index = pick(index_dir, ENV_INDEX, 'index_dir',
-                 lambda: HERE / 'resource-cache', 'index_dir')
-    for label, fallback in (('index_dir', HERE / 'resource-cache'), ('timeline_dir', HERE / 'timeline_data')):
+                 lambda: DATA / 'resource-cache', 'index_dir')
+    for label, fallback in (('index_dir', DATA / 'resource-cache'), ('timeline_dir', TIMELINE)):
         if out.get(label) is None:
             out[label] = fallback
             out[label + '_source'] = 'fallback:' + str(fallback.name)
     if index is None:
-        out['index_dir'] = HERE / 'resource-cache'
-    timeline = pick(None, ENV_TIMELINE, 'timeline_dir', lambda: HERE / 'timeline_data', 'timeline_dir')
+        out['index_dir'] = DATA / 'resource-cache'
+    timeline = pick(None, ENV_TIMELINE, 'timeline_dir', lambda: TIMELINE, 'timeline_dir')
     if timeline is None:
-        out['timeline_dir'] = HERE / 'timeline_data'
+        out['timeline_dir'] = TIMELINE
         out['timeline_dir_source'] = 'fallback:timeline_data'
     return out
 
@@ -362,7 +365,7 @@ def alias_map(index_dir=None, base=None):
     1079_Sancho_BerserkAppearance). It is data, not a code path: delete it and
     the resolver still works for names that map to themselves.
     """
-    root = pathlib.Path(index_dir) if index_dir else HERE / 'timeline_data'
+    root = pathlib.Path(index_dir) if index_dir else TIMELINE
     try:
         value = json.loads((root / 'identity-map.json').read_text(encoding='utf-8-sig'))
     except (OSError, ValueError):

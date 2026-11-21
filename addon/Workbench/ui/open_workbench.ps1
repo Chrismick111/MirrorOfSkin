@@ -174,7 +174,7 @@ for($i=0;$i -lt 100;$i++){
  }catch{}
 }
 if($url){
- if($ServerOnly){Write-Output $url}
+ if($ServerOnly){Write-Output $url;exit 0}
  elseif(Start-Pywebview $url){exit 0}
  else{Show-WorkbenchWindow $url}
 }

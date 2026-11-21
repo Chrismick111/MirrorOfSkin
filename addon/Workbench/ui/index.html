@@ -610,6 +610,135 @@
       .menu button:hover {
         background: #333842;
       }
+      .tutorial-layer {
+        position: fixed;
+        inset: 0;
+        z-index: 300;
+        pointer-events: none;
+      }
+      .tutorial-layer.hidden {
+        display: none;
+      }
+      .tutorial-spot {
+        position: absolute;
+        border: 2px solid #f0d79b;
+        border-radius: 14px;
+        box-shadow:
+          0 0 0 9999px rgba(3, 5, 8, 0.7),
+          0 0 0 4px rgba(240, 215, 155, 0.16),
+          0 0 28px rgba(240, 215, 155, 0.45);
+        transition:
+          left 0.22s ease,
+          top 0.22s ease,
+          width 0.22s ease,
+          height 0.22s ease;
+        animation: tutorialPulse 1.8s ease-in-out infinite;
+        pointer-events: none;
+      }
+      .tutorial-spot.hidden {
+        display: none;
+      }
+      @keyframes tutorialPulse {
+        0%,
+        100% {
+          box-shadow:
+            0 0 0 9999px rgba(3, 5, 8, 0.7),
+            0 0 0 4px rgba(240, 215, 155, 0.14),
+            0 0 24px rgba(240, 215, 155, 0.35);
+        }
+        50% {
+          box-shadow:
+            0 0 0 9999px rgba(3, 5, 8, 0.7),
+            0 0 0 7px rgba(240, 215, 155, 0.24),
+            0 0 34px rgba(240, 215, 155, 0.62);
+        }
+      }
+      .tutorial-tip {
+        position: absolute;
+        width: min(380px, calc(100vw - 32px));
+        max-height: min(70vh, 520px);
+        overflow: auto;
+        background: #202329;
+        border: 1px solid #6b6047;
+        border-radius: 12px;
+        box-shadow: 0 24px 70px #000d;
+        padding: 16px 18px;
+        pointer-events: auto;
+      }
+      .tutorial-tip-kicker {
+        margin: 0 0 4px;
+        color: #f0d79b;
+        font-size: 12px;
+        letter-spacing: 0.08em;
+      }
+      .tutorial-tip h3 {
+        margin: 0 0 8px;
+        font-size: 18px;
+      }
+      .tutorial-tip-body {
+        line-height: 1.65;
+        color: #d8dbe1;
+      }
+      .tutorial-tip-body ul {
+        margin: 8px 0;
+        padding-left: 1.25em;
+      }
+      .tutorial-tip-body li {
+        margin: 4px 0;
+      }
+      .tutorial-tip-footer {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 10px;
+        margin-top: 14px;
+      }
+      .tutorial-tip-actions {
+        display: flex;
+        gap: 8px;
+      }
+      .tutorial-tip-actions button {
+        min-width: 66px;
+      }
+      .tutorial-progress {
+        color: #b4b8c1;
+        font-size: 12px;
+      }
+      .tutorial-modal {
+        width: min(720px, 100%);
+      }
+      .tutorial-body {
+        line-height: 1.7;
+        color: #d8dbe1;
+      }
+      .tutorial-body h3 {
+        margin: 4px 0 8px;
+        color: #f0d79b;
+      }
+      .tutorial-body ul {
+        margin: 8px 0;
+        padding-left: 1.4em;
+      }
+      .tutorial-body li {
+        margin: 4px 0;
+      }
+      .tutorial-footer {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        margin-top: 18px;
+      }
+      .tutorial-footer .modal-actions {
+        margin-top: 0;
+      }
+      .tutorial-progress {
+        color: #b4b8c1;
+        font-size: 13px;
+      }
+      .tutorial-modal .modal-actions button {
+        min-width: 76px;
+      }
       .modal-backdrop {
         position: fixed;
         inset: 0;
@@ -1605,10 +1734,24 @@
           d="M12 3l1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8L12 3zM19 16l.8 2.2L22 19l-2.2.8L19 22l-.8-2.2L16 19l2.2-.8L19 16z"
         />
       </symbol>
+      <symbol id="i-help" viewBox="0 0 24 24">
+        <path d="M9.1 9a3 3 0 1 1 5.1 2.1c-.8.8-1.7 1.4-1.7 2.9M12 18h.01" />
+      </symbol>
     </svg>
     <header>
       <h1>镜像幻化</h1>
       <div class="header-actions">
+        <button
+          id="helpButton"
+          class="icon-btn"
+          type="button"
+          title="使用教程"
+          aria-label="使用教程"
+        >
+          <svg class="icon" aria-hidden="true">
+            <use href="#i-help"></use>
+          </svg>
+        </button>
         <a
           class="icon-btn"
           href="effect-editor"
@@ -1830,6 +1973,54 @@
           </button>
         </div>
         <pre id="scanDetailText">正在读取扫描状态…</pre>
+      </div>
+    </div>
+    <div id="tutorialLayer" class="tutorial-layer hidden" role="dialog" aria-modal="true" aria-live="polite">
+      <div id="tutorialSpot" class="tutorial-spot hidden"></div>
+      <div id="tutorialTip" class="tutorial-tip">
+        <p id="tutorialKicker" class="tutorial-tip-kicker">使用教程</p>
+        <h3 id="tutorialTourTitle">人格池</h3>
+        <div id="tutorialTourBody" class="tutorial-tip-body"></div>
+        <div class="tutorial-tip-footer">
+          <span id="tutorialTourProgress" class="tutorial-progress"></span>
+          <div class="tutorial-tip-actions">
+            <button id="tutorialTourSkip" type="button">跳过教程</button>
+            <button id="tutorialTourPrev" type="button">上一步</button>
+            <button id="tutorialTourNext" class="primary" type="button">下一步</button>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div
+      id="tutorialModal"
+      class="modal-backdrop hidden"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="tutorialTitle"
+    >
+      <div class="modal tutorial-modal">
+        <div class="modal-title">
+          <h2 id="tutorialTitle">使用教程</h2>
+          <button
+            id="tutorialClose"
+            class="icon-btn"
+            aria-label="关闭教程"
+            title="关闭教程"
+          >
+            <svg class="icon" aria-hidden="true">
+              <use href="#i-close"></use>
+            </svg>
+          </button>
+        </div>
+        <div id="tutorialBody" class="tutorial-body"></div>
+        <div class="tutorial-footer">
+          <span id="tutorialProgress" class="tutorial-progress"></span>
+          <div class="modal-actions">
+            <button id="tutorialSkip" type="button">跳过教程</button>
+            <button id="tutorialPrev" type="button">上一步</button>
+            <button id="tutorialNext" class="primary" type="button">开始教程</button>
+          </div>
+        </div>
       </div>
     </div>
     <div
@@ -2211,6 +2402,267 @@
           $("#confirmCancel").focus();
         });
       }
+      const tutorialSteps = [
+        {
+          page: "pool",
+          selector: "nav",
+          title: "五个主面板",
+          html: `<p>这一排是工作台的五个面板，教程会逐个说明它们和页面上的图标。</p><ul><li><strong>人格池</strong>：选择每名罪人的候选外观和权重。</li><li><strong>规则集</strong>：启用/停用随机规则。</li><li><strong>方案管理</strong>：保存、读取整套配置。</li><li><strong>准备状态</strong>：确认游戏和原生模块是否连接。</li><li><strong>运行日志</strong>：查看原生抽选、热重载和异常记录。</li></ul>`,
+        },
+        {
+          selector: "#helpButton",
+          title: "问号：重新打开教程",
+          html: `<p>右上角问号随时打开本教程。它不会修改你的配置，只负责讲解。</p>`,
+        },
+        {
+          selector: 'header a[href="effect-editor"]',
+          title: "闪光：特效方案编辑器",
+          html: `<p>打开独立特效方案编辑器，读取本机游戏资源并制作技能特效方案。</p><ul><li>方案保存后回到工作台「准备状态」查看是否已应用。</li><li>编辑器中的轨道、脚本和素材替换都只影响特效方案。</li></ul>`,
+        },
+        {
+          page: "pool",
+          selector: "#scopeCard",
+          title: "当前规则集",
+          html: `<p>顶部卡片显示“当前编辑对象”。未选择规则集时，随机不会启用，右侧两个图标也不可用。</p><ul><li>卡片名称来自当前规则集。</li><li>纯随机默认池锁定后只能查看，不能改成员。</li></ul>`,
+        },
+        {
+          page: "pool",
+          selector: "#fillDefault",
+          title: "交叉箭头：填入默认全随机",
+          html: `<p>把当前罪人的默认人格池填入当前规则集，作为快速起点。</p><ul><li>会覆盖当前规则集已有的成员和权重。</li><li>纯随机默认池锁定时此按钮不可用。</li></ul>`,
+        },
+        {
+          page: "pool",
+          selector: "#scopeGo",
+          title: "九宫格：选择规则集",
+          html: `<p>打开规则集选择器，只切换“当前要查看和编辑的规则集”。</p><ul><li>它不会直接启用规则；启用仍在规则集页面或卡片开关完成。</li><li>选错对象时不会改动任何概率。</li></ul>`,
+        },
+        {
+          page: "pool",
+          selector: "#poolGrid .pool-add, #poolGrid .pool-card",
+          title: "人格卡片与加号",
+          html: `<p>“？？”加号卡片打开人格选择器；已有卡片代表当前规则集里的候选外观。</p><ul><li>加号：搜索、按角色/章节/来源筛选并添加外观。</li><li>卡片权重数字：调整被抽中的相对概率，输入后自动保存。</li><li>卡片右键/长按：打开编辑菜单，可改权重、替换为其他外观或移除。</li><li>卡片上的百分比显示当前权重占比。</li></ul>`,
+        },
+        {
+          page: "rulesets",
+          selector: "#rulesetList .ruleset-card[data-id], #rulesetList",
+          title: "规则集卡片：点击启用/停用",
+          html: `<p>卡片代表一条规则。点击卡片启用或停用；同一罪人同时只能启用一条规则。</p><ul><li>高亮边框表示已启用。</li><li>“全局”与其他规则互斥，最后选择者优先。</li><li>卡片圆形图标是规则集预览图或角色图标。</li></ul>`,
+        },
+        {
+          page: "rulesets",
+          selector: "#rulesetList .ruleset-add, #rulesetList",
+          title: "加号：新建单人格规则",
+          html: `<p>新建一条只针对某个人格的规则集，适合只为单个外观设置候选。</p><ul><li>先选罪人，再选具体人格。</li><li>创建后可以在人格池页面编辑它的成员。</li></ul>`,
+        },
+        {
+          page: "schemes",
+          selector: "#saveScheme",
+          title: "软盘：保存当前方案",
+          html: `<p>把当前人格池、规则集、演出编排和随机开关保存为一套方案。</p><ul><li>输入方案名称后点击软盘。</li><li>同名方案需要确认覆盖。</li></ul>`,
+        },
+        {
+          page: "schemes",
+          selector: "#importScheme",
+          title: "向上箭头：导入方案",
+          html: `<p>选择本地 JSON 方案文件导入。导入前会校验版本、角色和形态数据。</p><ul><li>导入不会自动应用，需再点方案卡片的“读取”。</li><li>读取前会自动备份当前配置。</li></ul>`,
+        },
+        {
+          page: "schemes",
+          selector: "#schemeList .scheme-card, #schemeList",
+          title: "方案卡片：读取、导出、删除",
+          html: `<p>已保存方案会显示在这里。</p><ul><li><strong>读取</strong>：应用整套配置，并先备份当前配置。</li><li><strong>导出</strong>：下载 JSON 文件。</li><li><strong>删除</strong>：二次确认后删除方案。</li><li>鼠标悬停卡片可预览方案包含的外观。</li></ul>`,
+        },
+        {
+          page: "prepare",
+          selector: "#prepareData",
+          title: "准备状态：连接与 revision",
+          html: `<p>这里显示游戏进程、原生模块、规则池 revision、已加载和已展示外观。</p><ul><li>规则修改后，等待原生显示已应用新 revision 再进战斗。</li><li>未连接或长期不应用时，查看运行日志和 native.log。</li></ul>`,
+        },
+        {
+          page: "events",
+          selector: "#exportEvents",
+          title: "下载图标：导出运行记录",
+          html: `<p>导出当前运行日志、配置、演出规则和准备状态，便于反馈问题。</p><ul><li>反馈时优先保留包含 revision、applied、segment actual 的行。</li></ul>`,
+        },
+        {
+          page: "events",
+          selector: "#eventLog",
+          title: "运行日志：实际发生了什么",
+          html: `<p>日志会记录 coin draw、原生加载、规则热重载、动画补全和异常。</p><ul><li>会持续轮询新日志，不需要手动刷新。</li><li>日志不包含你的本地路径。</li></ul>`,
+        },
+        {
+          page: "pool",
+          selector: "#poolGrid",
+          title: "扫描、回顶与下载进度",
+          html: `<p>页面滚动后右下角会出现<strong>向上箭头</strong>，点击回到人格池顶部。</p><ul><li>扫描进行时右下角显示<strong>扫描进度卡片</strong>，点击查看详情。</li><li>下载资源弹窗使用<strong>关闭</strong>、<strong>最小化到右下角</strong>和<strong>重试</strong>图标。</li><li>所有模态窗口右上角的<strong>×</strong>只关闭当前窗口，不会修改配置。</li></ul>`,
+        },
+        {
+          selector: ".header-actions",
+          title: "完成教程",
+          html: `<p>你可以在启动器设置中关闭「是否自动打开调整面板」，也可以从托盘「镜像幻化 → 人格、概率与演出设置」打开工作台。</p><p>教程完成后可在右上角问号重新查看。</p>`,
+        },
+      ];
+      let tutorialOpen = false, tutorialIndex = -1;
+      function tutorialIntro() {
+        $("#tutorialTitle").textContent = "欢迎使用镜像幻化";
+        $("#tutorialBody").innerHTML = `<p>这是首次使用引导。点击开始后，页面会变暗并聚焦到具体按钮，旁边用悬浮提示说明作用和效果；不会只弹一个说明窗口。</p><p>你可以现在开始，也可以跳过；跳过前会再确认一次。</p>`;
+        $("#tutorialProgress").textContent = "";
+        $("#tutorialPrev").classList.add("hidden");
+        $("#tutorialNext").textContent = "开始教程";
+        tutorialIndex = -1;
+      }
+      function tourStepTarget(step) {
+        if (!step?.selector) return null;
+        try {
+          return document.querySelector(step.selector);
+        } catch (e) {
+          return null;
+        }
+      }
+      function positionTour(step, target) {
+        const layer = $("#tutorialLayer");
+        const spot = $("#tutorialSpot");
+        const tip = $("#tutorialTip");
+        if (!layer || !spot || !tip) return;
+        layer.classList.remove("hidden");
+        tip.style.left = "0px";
+        tip.style.top = "0px";
+        if (!target) {
+          spot.classList.add("hidden");
+          const tw = tip.offsetWidth,
+            th = tip.offsetHeight;
+          tip.style.left = Math.max(12, (innerWidth - tw) / 2) + "px";
+          tip.style.top = Math.max(12, (innerHeight - th) / 2) + "px";
+          return;
+        }
+        const rect = target.getBoundingClientRect();
+        const pad = 8;
+        const width = Math.max(24, rect.width + pad * 2);
+        const height = Math.max(24, rect.height + pad * 2);
+        const spotLeft = Math.max(4, rect.left - pad);
+        const spotTop = Math.max(4, rect.top - pad);
+        spot.classList.remove("hidden");
+        spot.style.left = spotLeft + "px";
+        spot.style.top = spotTop + "px";
+        spot.style.width = width + "px";
+        spot.style.height = height + "px";
+        const gap = 16,
+          margin = 12;
+        const tw = tip.offsetWidth,
+          th = tip.offsetHeight;
+        let left = spotLeft + width + gap;
+        if (left + tw > innerWidth - margin) left = spotLeft - tw - gap;
+        if (left < margin) left = Math.max(margin, Math.min(innerWidth - tw - margin, spotLeft + width / 2 - tw / 2));
+        let top = spotTop;
+        if (top + th > innerHeight - margin) top = innerHeight - th - margin;
+        if (top < margin) top = margin;
+        tip.style.left = left + "px";
+        tip.style.top = top + "px";
+      }
+      function renderTourStep() {
+        if (!tutorialOpen || tutorialIndex < 0) return;
+        const step = tutorialSteps[tutorialIndex];
+        const layer = $("#tutorialLayer");
+        $("#tutorialKicker").textContent = "使用教程 · " + (tutorialIndex + 1);
+        $("#tutorialTourTitle").textContent = step.title;
+        $("#tutorialTourBody").innerHTML = step.html;
+        $("#tutorialTourProgress").textContent = `${tutorialIndex + 1} / ${tutorialSteps.length}`;
+        $("#tutorialTourPrev").classList.toggle("hidden", tutorialIndex === 0);
+        $("#tutorialTourNext").textContent =
+          tutorialIndex === tutorialSteps.length - 1 ? "完成教程" : "下一步";
+        layer.classList.remove("hidden");
+        if (step.page) selectPage(step.page);
+        const target = tourStepTarget(step);
+        if (target) {
+          try {
+            target.scrollIntoView({ block: "center", inline: "nearest", behavior: "smooth" });
+          } catch (e) {
+            target.scrollIntoView();
+          }
+        }
+        positionTour(step, target);
+        requestAnimationFrame(() => setTimeout(() => positionTour(step, tourStepTarget(step)), 260));
+      }
+      function beginTutorialTour() {
+        if (!tutorialOpen) tutorialOpen = true;
+        tutorialIndex = 0;
+        hideModal("#tutorialModal");
+        renderTourStep();
+      }
+      function openTutorial() {
+        if (tutorialOpen && !$("#tutorialModal").classList.contains("hidden")) return;
+        tutorialOpen = true;
+        tutorialIndex = -1;
+        $("#tutorialLayer").classList.add("hidden");
+        tutorialIntro();
+        showModal("#tutorialModal");
+      }
+      async function finishTutorial(skipped) {
+        tutorialOpen = false;
+        tutorialIndex = -1;
+        hideModal("#tutorialModal");
+        $("#tutorialLayer").classList.add("hidden");
+        $("#tutorialSpot").classList.add("hidden");
+        if (data) data.tutorial = false;
+        try {
+          await api("tutorial-complete", {});
+        } catch (e) {}
+        status(skipped ? "已跳过教程，可从右上角问号重新打开" : "教程已完成，可从右上角问号重新打开");
+      }
+      async function requestSkipTutorial() {
+        if (!tutorialOpen) return;
+        if (await askConfirm("确定要跳过教程吗？以后仍可以从右上角问号按钮重新打开。", "跳过教程")) {
+          await finishTutorial(true);
+        }
+      }
+      function tutorialPrev() {
+        if (tutorialIndex > 0) {
+          tutorialIndex--;
+          renderTourStep();
+        }
+      }
+      function tutorialNext() {
+        if (tutorialIndex < 0) {
+          beginTutorialTour();
+        } else if (tutorialIndex >= tutorialSteps.length - 1) {
+          finishTutorial(false);
+        } else {
+          tutorialIndex++;
+          renderTourStep();
+        }
+      }
+      $("#tutorialNext").onclick = tutorialNext;
+      $("#tutorialPrev").onclick = tutorialPrev;
+      $("#tutorialTourNext").onclick = tutorialNext;
+      $("#tutorialTourPrev").onclick = tutorialPrev;
+      $("#tutorialSkip").onclick = requestSkipTutorial;
+      $("#tutorialTourSkip").onclick = requestSkipTutorial;
+      $("#tutorialClose").onclick = requestSkipTutorial;
+      $("#tutorialModal").onclick = (event) => {
+        if (event.target.id === "tutorialModal") requestSkipTutorial();
+      };
+      $("#helpButton").onclick = openTutorial;
+      window.addEventListener("resize", () => {
+        if (tutorialOpen && tutorialIndex >= 0) {
+          const step = tutorialSteps[tutorialIndex];
+          positionTour(step, tourStepTarget(step));
+        }
+      });
+      const tutorialScroll = document.querySelector("article");
+      if (tutorialScroll) {
+        tutorialScroll.addEventListener(
+          "scroll",
+          () => {
+            if (tutorialOpen && tutorialIndex >= 0) {
+              const step = tutorialSteps[tutorialIndex];
+              positionTour(step, tourStepTarget(step));
+            }
+          },
+          { passive: true },
+        );
+      }
+
       function applyLauncherBackground(bg) {
         if (!bg || !bg.url) {
           bgBaseUrl = "";
@@ -3390,18 +3842,19 @@
         }
       }
       const navButtons = [...document.querySelectorAll("nav button")];
+      function selectPage(page) {
+        const button = navButtons.find((item) => item.dataset.page === page);
+        if (!button) return;
+        document
+          .querySelectorAll("article section")
+          .forEach((s) => s.classList.toggle("hidden", s.id !== page));
+        navButtons.forEach((item) =>
+          item.classList.toggle("active", item === button),
+        );
+        pollActive();
+      }
       navButtons.forEach((b) => {
-        b.onclick = () => {
-          document
-            .querySelectorAll("article section")
-            .forEach((s) =>
-              s.classList.toggle("hidden", s.id !== b.dataset.page),
-            );
-          navButtons.forEach((item) =>
-            item.classList.toggle("active", item === b),
-          );
-          pollActive();
-        };
+        b.onclick = () => selectPage(b.dataset.page);
       });
       if (navButtons[0]) navButtons[0].classList.add("active");
 
@@ -3871,7 +4324,10 @@
       document
         .querySelector('nav button[data-page="schemes"]')
         .addEventListener("click", loadSchemes);
-      refresh().then(ensureInitialScan);
+      refresh().then(() => {
+        ensureInitialScan();
+        if (data?.tutorial) setTimeout(openTutorial, 650);
+      });
       loadSchemes();
       setInterval(pollActive, 500);
 

@@ -1,7 +1,15 @@
 """Weekly automatic discovery, separate from manual workbench scans."""
 import datetime, importlib.util, json, os, pathlib, subprocess, sys, tempfile
+import importlib.util as _ilu
 
 ZONE = datetime.timezone(datetime.timedelta(hours=8))
+
+def _data_module():
+    path=pathlib.Path(__file__).resolve().parent/'Workbench'/'core'/'mos_data.py'
+    spec=_ilu.spec_from_file_location('_weekly_mos_data',path);module=_ilu.module_from_spec(spec);spec.loader.exec_module(module);return module
+
+_DATA=_data_module()
+_DATA_ROOT=_DATA.prepare(pathlib.Path(__file__).resolve().parent)
 
 def weekly_slot(now):
     if now.tzinfo is None: raise ValueError('timezone-aware datetime required')
@@ -17,14 +25,14 @@ def _lock(root, filename='weekly_scan.lock'):
     if not lock_path.is_file():lock_path=next((p for p in base.rglob('file_lock.py') if p.is_file()),base/'file_lock.py')
     spec=importlib.util.spec_from_file_location('_weekly_file_lock',lock_path)
     module=importlib.util.module_from_spec(spec);spec.loader.exec_module(module)
-    return module.FileLock(root/'Workbench'/filename)
+    return module.FileLock(_DATA_ROOT/'Workbench'/filename)
 
 def _write(path, data):
     tmp=path.with_name(path.name+'.tmp')
     tmp.write_text(json.dumps(data,ensure_ascii=False,indent=2),encoding='utf8');os.replace(tmp,path)
 
 def claim(root, now):
-    root=pathlib.Path(root);path=root/'Workbench'/'weekly_scan_status.json';slot=weekly_slot(now)
+    root=pathlib.Path(root);path=_DATA_ROOT/'Workbench'/'weekly_scan_status.json';slot=weekly_slot(now)
     with _lock(root):
         try: previous=json.loads(path.read_text(encoding='utf8'))
         except (OSError,ValueError): previous={}
@@ -46,7 +54,7 @@ def claim(root, now):
     return slot
 
 def finish(root, slot, code, detail):
-    root=pathlib.Path(root);path=root/'Workbench'/'weekly_scan_status.json'
+    root=pathlib.Path(root);path=_DATA_ROOT/'Workbench'/'weekly_scan_status.json'
     with _lock(root):
         try: state=json.loads(path.read_text(encoding='utf8'))
         except (OSError,ValueError): return
@@ -75,7 +83,7 @@ def _run_owned(root,stop,log):
         with tempfile.TemporaryFile() as out:
             base=root/'Workbench';scan_script=base/'scan'/'scan_units.py'
             if not scan_script.is_file():scan_script=next((p for p in base.rglob('scan_units.py') if p.is_file()),base/'scan_units.py')
-            proc=subprocess.Popen([str(python),str(scan_script),'--addon',str(root),'--weekly'],cwd=str(root),stdout=out,stderr=subprocess.STDOUT,creationflags=flags,env=env)
+            proc=subprocess.Popen([str(python),str(scan_script),'--addon',str(_DATA_ROOT),'--weekly'],cwd=str(root),stdout=out,stderr=subprocess.STDOUT,creationflags=flags,env=env)
             while proc.poll() is None:
                 if stop.wait(1):
                     proc.terminate();proc.wait(timeout=10);break

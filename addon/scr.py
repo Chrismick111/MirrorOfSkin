@@ -96,14 +96,34 @@ def snapshot(flag, pid, typ, prefix, tries=3):
 _snapshot = snapshot
 
 
+def _load_data_module():
+    import importlib.util
+    path = ROOT / 'Workbench' / 'core' / 'mos_data.py'
+    spec = importlib.util.spec_from_file_location('_sinners_mos_data', path)
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
+
+
+_DATA_MODULE = _load_data_module()
+DATA_ROOT = pathlib.Path(_DATA_MODULE.prepare(ROOT))
+
+
 def log(message):
     try:
         import warphook
         warphook.log(str(message), prefix='[' + str(NAME) + ']')
     except Exception:
         pass
-    with (ROOT / 'native.log').open('a', encoding='utf8') as f:
+    with (DATA_ROOT / 'native.log').open('a', encoding='utf8') as f:
         f.write(time.strftime('%Y-%m-%d %H:%M:%S ') + str(message) + '\n')
+
+
+def addon_settings():
+    try:
+        return (MANAGER.get_addon_info(NAME) or {}).get('settings') or {}
+    except Exception:
+        return {}
 
 
 def modules(pid):
@@ -141,8 +161,8 @@ def report(session, previous):
 ROW4 = struct.Struct('<IIII d 64s 128s 64s 64s')
 ROW = struct.Struct('<IIII d 64s 128s 64s 64s I 64s')
 ROW3 = struct.Struct('<IIII d 64s 128s 64s')
-RULESET_DIR = ROOT / '规则集'
-RULESET_STATE = ROOT / '规则集状态.json'
+RULESET_DIR = DATA_ROOT / '规则集'
+RULESET_STATE = DATA_ROOT / '规则集状态.json'
 
 DEFAULT_SETTINGS = {'max_cached_skins': 3, 'prewarm_full_pool': False, 'disable_special_clash': True, 'enabled': True, 'characters': {str(i): False for i in range(101, 113)}}
 DEFAULT_CUSTOM_POOLS = {'schema': 1, 'characters': {}}
@@ -157,7 +177,7 @@ def ensure_user_config():
         pass
     defaults = {'随机设置.json': DEFAULT_SETTINGS, '自定义人格池.json': DEFAULT_CUSTOM_POOLS, '演出编排.json': DEFAULT_DIRECTOR, '规则集状态.json': DEFAULT_RULESET_STATE}
     for name, data in defaults.items():
-        path = ROOT / name
+        path = DATA_ROOT / name
         if path.exists():
             continue
         temp = path.with_name(path.name + '.default.tmp')
@@ -172,7 +192,7 @@ def ensure_user_config():
 
 
 def load_user_json(name, default):
-    path = ROOT / name
+    path = DATA_ROOT / name
     try:
         data = json.loads(path.read_text(encoding='utf-8-sig'))
         if not isinstance(data, dict):
@@ -190,10 +210,10 @@ ensure_user_config()
 
 def stopped_by_flag():
     try:
-        saved = json.loads((ROOT / '随机设置.json').read_text(encoding='utf-8-sig'))
+        saved = json.loads((DATA_ROOT / '随机设置.json').read_text(encoding='utf-8-sig'))
         return not bool(saved.get('enabled', True))
     except (OSError, ValueError):
-        return (ROOT / '停止随机运行.flag').exists()
+        return (DATA_ROOT / '停止随机运行.flag').exists()
 
 
 def prewarm_settings():
@@ -280,15 +300,15 @@ def _pool_row_key(sinner, row):
 
 
 def _rule_paths():
-    return _pool_evidence.config_paths(ROOT)
+    return _pool_evidence.config_paths(DATA_ROOT)
 
 
 def _config_digest():
-    return _pool_evidence.config_digest(ROOT)
+    return _pool_evidence.config_digest(DATA_ROOT)
 
 
 def _old_pool_rows():
-    path = ROOT / 'native_pools.bin'
+    path = DATA_ROOT / 'native_pools.bin'
     try:
         raw = path.read_bytes()
     except OSError:
@@ -345,12 +365,12 @@ _pool_evidence = _pool_workbench_module('prepare_view')
 def prepare_native_pools():
     lock = getattr(prepare_native_pools, 'lock', None)
     if lock is None:
-        lock = _pool_workbench_module('file_lock').FileLock(ROOT / 'workbench-save.lock')
+        lock = _pool_workbench_module('file_lock').FileLock(DATA_ROOT / 'workbench-save.lock')
         prepare_native_pools.stage_files = _pool_workbench_module('stage_files')
         prepare_native_pools.lock = lock
     with lock:
         if not getattr(prepare_native_pools, 'story_ready', False):
-            _pool_workbench_module('chapter_nine').migrate(ROOT, prepare_native_pools.stage_files)
+            _pool_workbench_module('chapter_nine').migrate(DATA_ROOT, prepare_native_pools.stage_files)
             _pool_workbench_module('story_defaults').restore(ROOT)
             prepare_native_pools.story_ready = True
         source_stamp = probability_stamp()
@@ -412,7 +432,7 @@ def _prepare_native_pools_unlocked():
             add_profile(sinner, data, identity)
 
     # Stage transitions may request a different prefab owned by another catalog pool.
-    for group in prepare_native_pools.stage_files.automatic_groups(ROOT):
+    for group in prepare_native_pools.stage_files.automatic_groups(DATA_ROOT):
         sinner = group['id'][4:7]
         for stage in group['stages']:
             source = catalog.get(stage['identity_id'])
@@ -508,7 +528,7 @@ def _prepare_native_pools_unlocked():
 
     candidate = next((row for row in active_rows.values() if not row.get('story_metadata') and not row.get('no_attack')), None)
     if candidate:
-        (ROOT / 'probe_asset.txt').write_text(str(candidate['asset_key']), encoding='utf8')
+        (DATA_ROOT / 'probe_asset.txt').write_text(str(candidate['asset_key']), encoding='utf8')
 
     form_data = {'version': 1, 'policy': 'donor follows current unit sanity/state', 'identities': {}}
     for sinner, pool in pools.items():
@@ -521,12 +541,12 @@ def _prepare_native_pools_unlocked():
                     'base': entry['appearance_name'],
                     'forms': forms,
                 }
-    form_path = ROOT / 'native_forms.json'
+    form_path = DATA_ROOT / 'native_forms.json'
     form_temp = form_path.with_suffix('.tmp')
     form_temp.write_text(json.dumps(form_data, ensure_ascii=False, indent=2), encoding='utf8')
     form_temp.replace(form_path)
 
-    dest = ROOT / 'native_pools.bin'
+    dest = DATA_ROOT / 'native_pools.bin'
     temp = dest.with_suffix('.tmp')
     temp.write_bytes(struct.pack('<4sIII', b'SRP5', 5, len(packed), ROW.size) + b''.join(packed))
     temp.replace(dest)
@@ -560,7 +580,7 @@ def _confirmed_pid(found, current, misses):
 
 def prepare_fx_for_injection(root, game_dir, logger, cancelled=None):
     import importlib.util
-    active = pathlib.Path(root) / 'fx-active.bin'
+    active = DATA_ROOT / 'fx-active.bin'
     active.unlink(missing_ok=True)
     try:
         base = pathlib.Path(root) / 'Workbench'
@@ -729,7 +749,7 @@ def worker():
                 struct.pack_into('<I', session, OFF_TUNABLE + 16, nonce)
                 spec = importlib.util.spec_from_file_location('_sinners_auto_discovery', ROOT / 'auto_discovery.py')
                 auto_module = importlib.util.module_from_spec(spec); spec.loader.exec_module(auto_module)
-                discovery = auto_module.Discovery(ROOT, pathlib.Path(mods['gameassembly.dll'].path).parent, pid, nonce, log, VERSION)
+                discovery = auto_module.Discovery(DATA_ROOT, pathlib.Path(mods['gameassembly.dll'].path).parent, pid, nonce, log, VERSION)
                 for index, name in enumerate(API_NAMES):
                     alias = result['mapping'].get('il2cpp_' + name, 'il2cpp_' + name).encode('ascii')
                     if len(alias) >= 64:
@@ -784,9 +804,75 @@ def _release_workbench():
         req=urllib.request.Request(url+'api/instance-release',json.dumps({'host_pid':os.getpid()}).encode('utf8'),{'Content-Type':'application/json','X-Workbench':token})
         with urllib.request.urlopen(req,timeout=1):pass
     except Exception:pass
-def on_unload(): STOP.set();_release_workbench()
-def disabled(*unused): STOP.set();_release_workbench()
-def deleted(*unused): STOP.set();_release_workbench()
+def _stop_workbench():
+    """Close the workbench server and its WebView/scan children before uninstall."""
+    import os, re, subprocess, time, urllib.request
+    pids = set()
+    try:
+        state = json.loads((ROOT / 'workbench-instance.json').read_text(encoding='utf8'))
+        url = state.get('url')
+        pid = state.get('pid')
+        if isinstance(pid, int): pids.add(pid)
+        if isinstance(url, str) and re.fullmatch(r'http://127\.0\.0\.1:\d{1,5}/[A-Za-z0-9_-]+/', url):
+            token = url.rstrip('/').rsplit('/', 1)[-1]
+            req = urllib.request.Request(url + 'api/instance-shutdown',
+                json.dumps({'host_pid': os.getpid()}).encode('utf8'),
+                {'Content-Type': 'application/json', 'X-Workbench': token})
+            try:
+                with urllib.request.urlopen(req, timeout=1):
+                    pass
+            except Exception:
+                pass
+    except Exception:
+        pass
+    for path in (ROOT / 'Workbench/server_build.json', ROOT / 'Workbench/webview-window.json'):
+        try:
+            pid = json.loads(path.read_text(encoding='utf8')).get('pid')
+            if isinstance(pid, int): pids.add(pid)
+        except Exception:
+            pass
+    pids.discard(os.getpid())
+    for pid in pids:
+        try:
+            subprocess.run(['taskkill', '/PID', str(pid), '/T', '/F'], timeout=3,
+                           stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
+                           creationflags=getattr(subprocess, 'CREATE_NO_WINDOW', 0))
+        except Exception:
+            pass
+    # The scan child can outlive a crashed server. Match only this add-on path.
+    try:
+        escaped = str(ROOT).replace("'", "''")
+        script = ("Get-CimInstance Win32_Process | Where-Object { $_.ProcessId -ne $PID -and "
+                  "$_.CommandLine -like '*" + escaped + "*' -and "
+                  "$_.CommandLine -match 'workbench.py|launch_webview.py|scan_units.py|resource_scan.py' } | "
+                  "ForEach-Object { Stop-Process -Id $_.ProcessId -Force -ErrorAction SilentlyContinue }")
+        subprocess.run(['powershell.exe', '-NoProfile', '-WindowStyle', 'Hidden', '-Command', script],
+                       timeout=5, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
+                       creationflags=getattr(subprocess, 'CREATE_NO_WINDOW', 0))
+    except Exception:
+        pass
+    try:
+        DATA_ROOT.joinpath('Workbench', 'webview-window.json').unlink(missing_ok=True)
+    except OSError:
+        pass
+    time.sleep(0.4)
+
+
+def _cleanup_links():
+    try:
+        _DATA_MODULE.remove_legacy_links(ROOT)
+    except Exception:
+        pass
+
+
+def on_unload(): STOP.set();_stop_workbench();_release_workbench();_cleanup_links()
+def disabled(*unused): STOP.set();_stop_workbench();_release_workbench();_cleanup_links()
+def deleted(*unused): STOP.set();_stop_workbench();_release_workbench();_cleanup_links()
+try:
+    MANAGER.del_funcs.append({'name': NAME, 'func': deleted})
+    MANAGER.disabled_funcs.append({'name': NAME, 'func': disabled})
+except Exception:
+    pass
 _WORKBENCH_URL = None
 _WORKBENCH_WINDOW = None
 _WEBVIEW_HOOKED = False
@@ -800,13 +886,28 @@ def _start_workbench_server():
             ['powershell.exe', '-NoProfile', '-STA', '-WindowStyle', 'Hidden',
              '-ExecutionPolicy', 'Bypass', '-File', script,
              '-ServerOnly', '-HostProcessId', str(os.getpid())],
-            cwd=str(ROOT), capture_output=True, text=True, timeout=25,
+            cwd=str(ROOT), capture_output=True, text=True, timeout=45,
             creationflags=subprocess.CREATE_NO_WINDOW,
         )
         match = re.search(r'http://127\.0\.0\.1:\d{1,5}/[A-Za-z0-9_-]+/', result.stdout or '')
         if match:
             return match.group(0)
         log('workbench server start produced no URL: ' + ((result.stdout or '') + (result.stderr or ''))[:300])
+    except subprocess.TimeoutExpired:
+        # The PowerShell wrapper can outlive the detached server on slow disks.
+        # The server writes its URL before the wrapper exits, so use that state.
+        try:
+            import urllib.request
+            state = json.loads((ROOT / 'workbench-instance.json').read_text(encoding='utf8'))
+            url = state.get('url')
+            if isinstance(url, str) and re.fullmatch(r'http://127\.0\.0\.1:\d{1,5}/[A-Za-z0-9_-]+/', url):
+                with urllib.request.urlopen(url + 'api/instance-ping', timeout=2):
+                    pass
+                log('workbench server start wrapper timed out; using running server')
+                return url
+        except Exception:
+            pass
+        log('workbench server start wrapper timed out before a URL was ready')
     except Exception:
         log('workbench server start failed: ' + traceback.format_exc())
     return None
@@ -955,8 +1056,10 @@ def _fallback_open_workbench():
 def open_workbench(*unused):
     global _WORKBENCH_URL
     _WORKBENCH_URL = _start_workbench_server()
-    if _WORKBENCH_URL:
-        log('workbench server: ' + _WORKBENCH_URL)
+    if not _WORKBENCH_URL:
+        log('workbench server unavailable; not opening a browser window')
+        return
+    log('workbench server: ' + _WORKBENCH_URL)
     if _install_workbench_webview():
         log('workbench pywebview hook installed')
         try:
@@ -972,6 +1075,14 @@ def open_workbench(*unused):
 try:
     import pystray
     def open_settings(*unused):
+        global _WORKBENCH_URL
+        if not _WORKBENCH_URL:
+            _WORKBENCH_URL = _start_workbench_server()
+            if not _WORKBENCH_URL:
+                log('workbench server unavailable; retry after restarting the launcher')
+                return
+            log('workbench server: ' + _WORKBENCH_URL)
+            _install_workbench_webview()
         if _show_workbench_window():
             return
         _fallback_open_workbench()
@@ -990,14 +1101,17 @@ try:
     import importlib.util as _diag_import
     _spec = _diag_import.spec_from_file_location('_sinners_diagnostic', ROOT / 'diagnostic_log.py')
     _diag = _diag_import.module_from_spec(_spec); _spec.loader.exec_module(_diag)
-    _diagnostic_logger = _diag.start(ROOT, STOP)
+    _diagnostic_logger = _diag.start(DATA_ROOT, STOP)
 except Exception:
     log('diagnostic logger failed: '+traceback.format_exc())
 log('Sinners Native host loaded; protocol '+str(VERSION))
 
 try:
-    open_workbench()
-    log('workbench opened')
+    if addon_settings().get('是否自动打开调整面板', True):
+        threading.Thread(target=open_workbench, name='SinnersWorkbenchOpen', daemon=True).start()
+        log('workbench opening in background')
+    else:
+        log('自动打开调整面板已关闭；可从启动器托盘打开调整菜单')
 except Exception:
     log('workbench open failed: '+traceback.format_exc())
 _registry = getattr(MANAGER, '_sinners_warp_workers', None)

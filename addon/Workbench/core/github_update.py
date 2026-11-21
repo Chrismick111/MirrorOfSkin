@@ -137,6 +137,20 @@ def _install_locked(root):
   parsed=ast.parse(files['scr.py'].decode('utf8'))
   dll_names=[n.value.value for n in parsed.body if isinstance(n,ast.Assign) and any(isinstance(t,ast.Name) and t.id=='DLL_NAME' for t in n.targets) and isinstance(n.value,ast.Constant) and isinstance(n.value.value,str)]
   if dll_names!=[dll]:raise UpdateError('安装包脚本与 DLL 清单不一致')
+  # Keep launcher-owned switches (auto-open/tutorial) across an update.
+  try:
+   previous=json.loads((root/'addon_info.json').read_text(encoding='utf-8-sig'))
+  except (OSError,ValueError):
+   previous={}
+  previous_settings=previous.get('settings') if isinstance(previous.get('settings'),dict) else {}
+  if previous_settings:
+   merged_addon=dict(addon)
+   merged_addon['settings']={**dict(merged_addon.get('settings') or {}),**previous_settings}
+   merged_bytes=(json.dumps(merged_addon,ensure_ascii=False,indent=2)+'\n').encode('utf8')
+   files['addon_info.json']=merged_bytes
+   expected['addon_info.json']=hashlib.sha256(merged_bytes).hexdigest()
+   manifest['package_files']['addon_info.json']=expected['addon_info.json']
+   files['compatibility.json']=(json.dumps(manifest,ensure_ascii=False,indent=1)+'\n').encode('utf8')
  except UpdateError:raise
  except (KeyError,TypeError,ValueError,UnicodeError,SyntaxError) as exc:raise UpdateError('安装包清单无效') from exc
  if _running():raise UpdateError('请完全退出游戏与启动器后再更新')

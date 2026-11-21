@@ -5,6 +5,7 @@ _HERE = Path(__file__).resolve().parent
 sys.path.insert(0, str(_HERE))
 import _module_paths
 import prepare_view
+import mos_data
 import chapter_nine
 import chapter_cards
 import chapter_categories
@@ -55,8 +56,8 @@ def _spawn_child(*args,**kwargs):
 def _forget_child(proc):
  with _CHILD_LOCK:_CHILDREN.discard(proc)
 
-def _workbench_script(root,name):
- base=pathlib.Path(root)/'Workbench'
+def _workbench_script(name):
+ base=_HERE
  for folder in ('scan','fx','pool','core','tools'):
   path=base/folder/name
   if path.is_file():return path
@@ -85,7 +86,7 @@ def _portrait_update(stage,done=0,total=0,message=''):
 
 def _portrait_run(root):
  try:
-  script=_workbench_script(root,'resource_scan.py')
+  script=_workbench_script('resource_scan.py')
   flags=getattr(subprocess,'CREATE_NO_WINDOW',0)|getattr(subprocess,'BELOW_NORMAL_PRIORITY_CLASS',0)
   env=dict(os.environ,PYTHONIOENCODING='utf-8',PYTHONUTF8='1')
   proc=_spawn_child([sys.executable,str(script),'--addon',str(root)],cwd=str(root),stdout=subprocess.PIPE,stderr=subprocess.STDOUT,text=True,encoding='utf8',errors='replace',creationflags=flags,env=env)
@@ -150,15 +151,17 @@ def add_boss_members(profile,catalog,chapter=None):
 
 class Store:
  def __init__(self,root):
-  self.evidence=prepare_view.SessionEvidence(pathlib.Path(root)/'native_runtime.log')
-  self.root=pathlib.Path(root);self.lock=FileLock(self.root/'workbench-save.lock');self.portraits=read(self.root/'Workbench/portrait_manifest.json',{});self.local_portraits=local_portraits.load(self.root)
+  self.addon_root=pathlib.Path(root).resolve()
+  self.root=mos_data.prepare(self.addon_root)
+  self.evidence=prepare_view.SessionEvidence(self.root/'native_runtime.log')
+  self.lock=FileLock(self.root/'workbench-save.lock');self.portraits=read(self.root/'Workbench/portrait_manifest.json',{});self.local_portraits=local_portraits.load(self.root)
   with self.lock:
    chapter_nine.migrate(self.root,stage_files)
  def _launcher_background_init(self):
   if hasattr(self,'_launcher_bg_files'):return
   self._launcher_bg_files=[];self._launcher_bg_blur=7.5;self._launcher_bg_path=None
   try:
-   launcher=self.root.parent.parent
+   launcher=self.addon_root.parent.parent
    settings=read(launcher/'config/settings.json',{})
    if not isinstance(settings,dict):settings={}
    blur_row=settings.get('bg_gaussian_blur_factor')
@@ -365,7 +368,9 @@ class Store:
   pool_status=read(self.root/'pool_update_status.json',{});pid=pool_status.get('pid');alive=prepare_view.process_alive(pid)
   evidence=self.evidence.read(pid) if alive else ''
   preparation=prepare_view.summarize(evidence,pid,alive,list(catalog.values()))
-  return dict(self.snapshot(),preparation=preparation,rulesetState=rule_state,rulesets=rule_items,activeRule=active_rule,ruleEntries=rule_entries,ruleRevision=rule_revision,settings=self.settings_snapshot(),runtime=self.runtime_status(pool_status,evidence),director=self.director_snapshot(),formAnnotations=self.form_annotations(),catalog=list(catalog.values()),chapterArt=chapter_cards.load(self.root),pools=pools,forms=native_forms,warmup=read(self.root/'warmup_status.json',{}),version=read(self.root/'addon_info.json',{}).get('version','未知'),launcherBackground=self.launcher_background())
+  addon_info=read(self.addon_root/'addon_info.json',{})
+  tutorial=bool((addon_info.get('settings') or {}).get('是否展示教程',True))
+  return dict(self.snapshot(),preparation=preparation,rulesetState=rule_state,rulesets=rule_items,activeRule=active_rule,ruleEntries=rule_entries,ruleRevision=rule_revision,settings=self.settings_snapshot(),runtime=self.runtime_status(pool_status,evidence),director=self.director_snapshot(),formAnnotations=self.form_annotations(),catalog=list(catalog.values()),chapterArt=chapter_cards.load(self.root),pools=pools,forms=native_forms,warmup=read(self.root/'warmup_status.json',{}),version=addon_info.get('version','未知'),tutorial=tutorial,launcherBackground=self.launcher_background())
  def known_appearances(self):
   """pool 里的外观名集合，按文件 mtime 缓存：扫描期间页面每 5 秒轮询，1.5 MB 的池文件不该重复解析。"""
   path=self.root/'Assets/runtime/all_sinners_pools.json'
@@ -450,7 +455,7 @@ def start_scan(root):
   SCAN.update(running=True,started=time.time(),finished=None,error=None,log=None)
  def work():
   try:
-   script=_workbench_script(root,'scan_units.py')
+   script=_workbench_script('scan_units.py')
    flags=getattr(subprocess,'CREATE_NO_WINDOW',0)
    env=dict(os.environ,PYTHONIOENCODING='utf-8',PYTHONUTF8='1')
    env['FAUST_SCAN_RUN']=str(SCAN['started'])
@@ -565,13 +570,21 @@ def main():
    except Exception as e:return self.send({'error':str(e)},500)
   def do_POST(self):
    route=self.route()
-   if route not in ('save','import','director','bundle','boss-preview','update-check','update-install','portrait-save','portrait-reset','portrait-download','images-delete','ruleset-activate','ruleset-select','ruleset-save','ruleset-create','ruleset-only','ruleset-deactivate','ruleset-fill','ruleset-clear','scan','scheme-save','scheme-load','scheme-delete','scheme-import','scheme-get','effect-scheme-save','effect-scheme-get','effect-scheme-delete','effect-timelines','effect-live-start','effect-live-status','effect-plan-preview','effect-selection','effect-sprites','effect-sprites-start','effect-sprites-status','effect-sprites-cancel','effect-sprite-export','instance-shutdown','instance-attach','instance-release'):return self.send({'error':'未找到'},404)
+   if route not in ('save','import','director','bundle','boss-preview','update-check','update-install','portrait-save','portrait-reset','portrait-download','images-delete','ruleset-activate','ruleset-select','ruleset-save','ruleset-create','ruleset-only','ruleset-deactivate','ruleset-fill','ruleset-clear','scan','scheme-save','scheme-load','scheme-delete','scheme-import','scheme-get','effect-scheme-save','effect-scheme-get','effect-scheme-delete','effect-timelines','effect-live-start','effect-live-status','effect-plan-preview','effect-selection','effect-sprites','effect-sprites-start','effect-sprites-status','effect-sprites-cancel','effect-sprite-export','tutorial-complete','instance-shutdown','instance-attach','instance-release'):return self.send({'error':'未找到'},404)
    if self.headers.get('X-Workbench')!=token:return self.send({'error':'请求无效'},403)
    try:
     n=int(self.headers.get('Content-Length',0))
     limit=2*1024*1024 if route=='portrait-save' else 1024*1024
     if not 0<n<=limit:raise ValueError('请求过大或为空')
     body=json.loads(self.rfile.read(n))
+    if route=='tutorial-complete':
+     path=store.addon_root/'addon_info.json'
+     info=read(path,{})
+     info.setdefault('settings',{})['是否展示教程']=False
+     temp=path.with_name(path.name+'.tutorial.tmp');temp.write_text(json.dumps(info,ensure_ascii=False,indent=2)+'\n',encoding='utf8');os.replace(temp,path)
+     try:(store.root/'addon_info.json').write_bytes(path.read_bytes())
+     except OSError:pass
+     return self.send({'saved':True,'tutorial':False})
     if route=='instance-attach':
      lifetime.register(body.get('host_pid'));return self.send({'attached':True})
     if route=='instance-release':lifetime.release(body.get('host_pid'));return self.send({'released':True})
@@ -607,7 +620,7 @@ def main():
     if route=='scan':return self.send(start_scan(store.root))
     if route in ('update-check','update-install'):
      import github_update
-     return self.send(github_update.check(store.root) if route=='update-check' else github_update.install(store.root))
+     return self.send(github_update.check(store.addon_root) if route=='update-check' else github_update.install(store.addon_root))
     if route=='boss-preview':return self.send(add_boss_members(body['profile'],store.data()['catalog'],body.get('chapter')))
     if route.startswith('ruleset-') and (body.get('rule') or body).get('kind')=='chapter':
      raise ValueError('父辈与子辈演出已改为按人格和覆盖外观自动匹配')

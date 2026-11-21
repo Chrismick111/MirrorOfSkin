@@ -1,5 +1,6 @@
 """Prepare fresh effect snapshot in a separate interpreter before injection."""
 import json,os,pathlib,subprocess,time
+import mos_data
 
 def launcher_python(root):
     base=pathlib.Path(root).parent.parent/'resources/mod_loader/_internal/venv'
@@ -9,20 +10,20 @@ def launcher_python(root):
     raise RuntimeError('找不到启动器 Python，请检查启动器安装')
 
 def prepare(root,game_dir,log,python_exe=None,timeout=600,cancelled=None):
-    root=pathlib.Path(root);active=root/'fx-active.bin'
+    addon=pathlib.Path(root);data=mos_data.data_dir();active=mos_data.path(addon,'fx-active.bin')
     try:active.unlink(missing_ok=True)
     except OSError as exc:raise RuntimeError('无法清除旧特效快照，停止加载原生插件') from exc
-    runner=root/'Workbench/fx_prepare_runner.py'
+    runner=addon/'Workbench/fx_prepare_runner.py'
     try:
-        state_file=root/'特效启用状态.json'
+        state_file=mos_data.path(addon,'特效启用状态.json')
         if not state_file.is_file():log('特效方案未启用');return False
         state=json.loads(state_file.read_text(encoding='utf-8-sig'))
         if not isinstance(state,dict) or type(state.get('enabled')) is not bool or not isinstance(state.get('name'),str):raise ValueError('特效启用状态无效')
         if not state['enabled']:log('特效方案未启用');return False
         if cancelled and cancelled():raise RuntimeError('特效准备已取消')
-        exe=pathlib.Path(python_exe) if python_exe else launcher_python(root)
+        exe=pathlib.Path(python_exe) if python_exe else launcher_python(addon)
         log('正在读取游戏资源并准备特效方案，首次建立索引可能需要几分钟')
-        process=subprocess.Popen([str(exe),'-B',str(runner),str(root),str(game_dir)],cwd=str(root),
+        process=subprocess.Popen([str(exe),'-B',str(runner),str(data),str(game_dir)],cwd=str(addon),
             stdout=subprocess.PIPE,stderr=subprocess.PIPE,text=True,encoding='utf-8',errors='replace',
             creationflags=getattr(subprocess,'CREATE_NO_WINDOW',0),env=dict(os.environ,PYTHONIOENCODING='utf-8',PYTHONUTF8='1'))
         deadline=time.monotonic()+timeout
