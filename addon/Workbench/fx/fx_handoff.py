@@ -1,6 +1,12 @@
 """Prepare fresh effect snapshot in a separate interpreter before injection."""
-import json,os,pathlib,subprocess,time
-import mos_data
+import json,os,pathlib,subprocess,time,importlib.util
+
+def _mos_data():
+    path=pathlib.Path(__file__).resolve().parents[1]/"core"/"mos_data.py"
+    spec=importlib.util.spec_from_file_location("_fx_mos_data",path)
+    module=importlib.util.module_from_spec(spec);spec.loader.exec_module(module);return module
+
+mos_data=_mos_data()
 
 def launcher_python(root):
     base=pathlib.Path(root).parent.parent/'resources/mod_loader/_internal/venv'

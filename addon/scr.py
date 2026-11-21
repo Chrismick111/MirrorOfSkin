@@ -715,7 +715,7 @@ def worker():
                 compat = importlib.util.module_from_spec(spec); spec.loader.exec_module(compat)
                 try:
                     load_guard = compat.claim_process(pid)
-                    compat.validate(ROOT, pathlib.Path(mods['gameassembly.dll'].path).parent, mods, DLL_NAME)
+                    compat.validate(ROOT, pathlib.Path(mods['gameassembly.dll'].path).parent, mods, DLL_NAME, allow_existing=any(name.lower().startswith('sinnersnative') and name.lower().endswith('.dll') for name in mods))
                 except compat.CompatibilityError as exc:
                     if load_guard:
                         compat.release_process(load_guard); load_guard = None
@@ -735,6 +735,44 @@ def worker():
                         compat.release_process(load_guard); load_guard = None
                     attempted = pid
                     log('安全停止：' + str(exc))
+                    continue
+                existing = any(name.lower().startswith('sinnersnative') and name.lower().endswith('.dll') for name in mods)
+                if existing:
+                    # Plugin reloads while a game is already running must adopt
+                    # the existing native session instead of injecting a second
+                    # module. The old Python host is gone, but the DLL still
+                    # owns this named section.
+                    try:
+                        session = mmap.mmap(-1, SIZE, tagname=SESSION_NAME % pid, access=mmap.ACCESS_WRITE)
+                        magic, version, size = struct.unpack_from('<III', session, 0)
+                        if magic != MAGIC or version != VERSION or size != SIZE:
+                            raise RuntimeError('existing native section has a different protocol')
+                    except Exception as exc:
+                        if session is not None:
+                            try: session.close()
+                            except Exception: pass
+                        session = None; attempted = pid
+                        log('游戏内已有随机人格Native模块，但无法接管共享内存；请完整退出游戏后重启')
+                        continue
+                    nonce = struct.unpack_from('<I', session, OFF_TUNABLE + 16)[0] or 1
+                    mode, skins, clash = prewarm_settings()
+                    struct.pack_into('<II', session, OFF_TUNABLE, mode, skins)
+                    struct.pack_into('<I', session, OFF_TUNABLE + 20, clash)
+                    C.c_uint32.from_buffer(session, 16).value = K.GetTickCount()
+                    C.c_uint32.from_buffer(session, 12).value = 0 if stopped_by_flag() else 1
+                    spec = importlib.util.spec_from_file_location('_sinners_auto_discovery', ROOT / 'auto_discovery.py')
+                    auto_module = importlib.util.module_from_spec(spec); spec.loader.exec_module(auto_module)
+                    discovery = auto_module.Discovery(DATA_ROOT, pathlib.Path(mods['gameassembly.dll'].path).parent, pid, nonce, log, VERSION)
+                    log('Native pool snapshot rows='+str(prepare_native_pools()))
+                    pool_stamp = prepare_native_pools.source_stamp
+                    published_config = prepare_native_pools.config_revision
+                    previous_revision = struct.unpack_from('<I', session, OFF_TUNABLE + 8)[0]
+                    revision = (previous_revision + 1) & 0xffffffff or 1
+                    struct.pack_into('<I', session, OFF_TUNABLE + 8, revision)
+                    published_at = time.monotonic(); publish_retries = 0; applied_warned = False
+                    attempted = pid
+                    log('Attached existing native session in %d; republished revision=%d' % (pid, revision))
+                    previous = report(session, None)
                     continue
                 session = mmap.mmap(-1, SIZE,
                                     tagname=SESSION_NAME % pid,
@@ -865,9 +903,19 @@ def _cleanup_links():
         pass
 
 
-def on_unload(): STOP.set();_stop_workbench();_release_workbench();_cleanup_links()
-def disabled(*unused): STOP.set();_stop_workbench();_release_workbench();_cleanup_links()
-def deleted(*unused): STOP.set();_stop_workbench();_release_workbench();_cleanup_links()
+def _join_worker():
+    try:
+        item = getattr(MANAGER, '_sinners_warp_workers', {}).get(NAME)
+        if item and threading.current_thread() is not item[1]:
+            item[0].set()
+            item[1].join(timeout=2)
+    except Exception:
+        pass
+
+
+def on_unload(): STOP.set();_join_worker();_stop_workbench();_release_workbench();_cleanup_links()
+def disabled(*unused): STOP.set();_join_worker();_stop_workbench();_release_workbench();_cleanup_links()
+def deleted(*unused): STOP.set();_join_worker();_stop_workbench();_release_workbench();_cleanup_links()
 try:
     MANAGER.del_funcs.append({'name': NAME, 'func': deleted})
     MANAGER.disabled_funcs.append({'name': NAME, 'func': disabled})

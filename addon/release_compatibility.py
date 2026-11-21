@@ -64,7 +64,7 @@ def pe_machine(path):
         return struct.unpack('<H', f.read(2))[0]
 
 
-def validate(root, game_dir, modules, dll_name, pointer_size=None):
+def validate(root, game_dir, modules, dll_name, pointer_size=None, allow_existing=False):
     if (struct.calcsize('P') if pointer_size is None else pointer_size) != 8:
         raise CompatibilityError('需要64位FaustLauncher，已停止加载')
     root = pathlib.Path(root)
@@ -72,7 +72,7 @@ def validate(root, game_dir, modules, dll_name, pointer_size=None):
         manifest = json.loads((root / 'compatibility.json').read_text(encoding='utf-8'))
         if manifest['schema'] != 1 or manifest['dll'] != dll_name:
             raise CompatibilityError('兼容性清单与插件版本不一致')
-        if any(name.lower().startswith('sinnersnative') and name.lower().endswith('.dll') for name in modules):
+        if any(name.lower().startswith('sinnersnative') and name.lower().endswith('.dll') for name in modules) and not allow_existing:
             raise CompatibilityError('游戏内已有随机人格Native模块，请退出游戏后重新启动，禁止叠加加载')
         addon = json.loads((root / 'addon_info.json').read_text(encoding='utf-8-sig'))
         if addon.get('version') != manifest['version']:
