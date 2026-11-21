@@ -29,6 +29,9 @@ ERRORS = {0: 'ok', 1: 'il2cpp-export-missing', 2: 'assembly-or-class-missing',
           6: 'no-frame-hook'}
 SESSION_NAME = 'Local\\FaustNativeSinners_v75_%d'
 DLL_NAME = 'SinnersNative-v64.dll'
+PID_MISS_LIMIT = 4
+POOL_APPLY_TIMEOUT = 1.5
+POOL_RETRY_LIMIT = 3
 API_NAMES = ['domain_get', 'domain_get_assemblies', 'assembly_get_image', 'image_get_name',
              'class_from_name', 'class_get_method_from_name', 'class_get_field_from_name',
              'field_get_offset', 'object_get_class', 'class_get_parent', 'runtime_invoke',
@@ -418,7 +421,10 @@ def _prepare_native_pools_unlocked():
 
     for row in _old_pool_rows():
         sinner = str(row.get('sinner', ''))
-        if sinner in pools and row.get('entry_kind') == 'appearance':
+        if sinner in pools:
+            # Keep previous appearance and group rows. Native hot reload indexes
+            # old rows synchronously, so dropping any of them makes it reject
+            # the whole snapshot and leave the last weights active.
             add(sinner, row)
 
     active_rows = {}
@@ -542,6 +548,15 @@ def probability_stamp():
 def _delay_ready(detected_at, now):
     return detected_at is not None and now - detected_at >= 30.0
 
+def _confirmed_pid(found, current, misses):
+    """Require several consecutive misses before declaring the game gone."""
+    if not found and current is not None:
+        misses += 1
+        if misses < PID_MISS_LIMIT:
+            return current, misses
+        return None, misses
+    return found, 0
+
 
 def prepare_fx_for_injection(root, game_dir, logger, cancelled=None):
     import importlib.util
@@ -575,11 +590,15 @@ def worker():
     pool_stamp = None
     revision = 0
     published_config = None
+    published_at = None
+    publish_retries = 0
+    applied_warned = False
+    pid_misses = 0
     try:
         while not STOP.wait(.5):
             try:
                 import warphook
-                pid = warphook.find_game_pid()
+                pid, pid_misses = _confirmed_pid(warphook.find_game_pid(), current, pid_misses)
                 if pid != current:
                     if session:
                         log('game process ended, closing shared section')
@@ -594,17 +613,30 @@ def worker():
                         log("未检测到游戏进程，等待游戏启动")
                 if not pid:
                     continue
+                if session is not None and getattr(session, 'closed', False):
+                    log('shared section closed; rebuilding injection link')
+                    session = None; attempted = None; pid_misses = 0
+                    continue
                 if session:
                     if attempted != pid:
                         raise RuntimeError("Incomplete injection session")
+                    desired = int(not stopped_by_flag())
                     # Publish the two aligned DWORDs independently. Repacking the
                     # live header can briefly clear enabled during a linked coin.
-                    C.c_uint32.from_buffer(session, 16).value = K.GetTickCount()
-                    desired = int(not stopped_by_flag())
-                    flag = C.c_uint32.from_buffer(session, 12)
-                    if flag.value != desired:
-                        flag.value = desired
-                    del flag
+                    try:
+                        C.c_uint32.from_buffer(session, 16).value = K.GetTickCount()
+                        flag = C.c_uint32.from_buffer(session, 12)
+                        if flag.value != desired:
+                            flag.value = desired
+                        del flag
+                    except (ValueError, OSError):
+                        log('shared section lost; rebuilding injection link')
+                        try:
+                            session.close()
+                        except (ValueError, OSError):
+                            pass
+                        session = None; attempted = None; pid_misses = 0
+                        continue
                     if discovery:
                         discovery.poll()
                     stamp = probability_stamp()
@@ -619,9 +651,32 @@ def worker():
                         struct.pack_into('<I', session, OFF_TUNABLE + 20, clash)
                         struct.pack_into('<I', session, OFF_TUNABLE + 8, revision)
                         pool_stamp = prepare_native_pools.source_stamp
+                        published_at = time.monotonic()
+                        publish_retries = 0
+                        applied_warned = False
                         log('Probability update published revision=%d rows=%d' % (revision, rows))
-                    import hashlib
-                    pool_status = {'pid':pid,'published':revision,'applied':struct.unpack_from('<I',session,OFF_TUNABLE+12)[0], 'config_revision':published_config}
+                    applied = struct.unpack_from('<I', session, OFF_TUNABLE + 12)[0]
+                    now = time.monotonic()
+                    if revision and applied != revision:
+                        if published_at is None:
+                            published_at = now
+                        if now - published_at >= POOL_APPLY_TIMEOUT and publish_retries < POOL_RETRY_LIMIT:
+                            previous_revision = revision
+                            revision = (revision + 1) & 0xffffffff or 1
+                            struct.pack_into('<I', session, OFF_TUNABLE + 8, revision)
+                            publish_retries += 1
+                            published_at = now
+                            log('Native did not confirm revision=%d; republishing revision=%d'
+                                % (previous_revision, revision))
+                        elif now - published_at >= 5 and not applied_warned:
+                            log('Native still reports applied=%d for revision=%d; keeping last valid pool'
+                                % (applied, revision))
+                            applied_warned = True
+                    else:
+                        published_at = None
+                        publish_retries = 0
+                        applied_warned = False
+                    pool_status = {'pid':pid,'published':revision,'applied':applied, 'config_revision':published_config}
                     if pool_status != getattr(worker,'pool_status',None):
                         tmp=ROOT/'pool_update_status.tmp';tmp.write_text(json.dumps(pool_status),encoding='utf8');tmp.replace(ROOT/'pool_update_status.json');worker.pool_status=pool_status
                     previous = report(session, previous)
@@ -685,6 +740,9 @@ def worker():
                 pool_stamp = prepare_native_pools.source_stamp
                 published_config = prepare_native_pools.config_revision
                 revision = 0
+                published_at = None
+                publish_retries = 0
+                applied_warned = False
                 inject_if_running(STOP, inject, pid, mods)
                 attempted = pid
                 log(f'Native DLL loaded in {pid}')
