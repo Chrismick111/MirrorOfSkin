@@ -1,0 +1,59 @@
+#ifdef NDEBUG
+#undef NDEBUG
+#endif
+#include <assert.h>
+#include <stdio.h>
+#include "segment_latch.h"
+
+static void setup(int counts[128],uint32_t ordinary[128],double donor[128][32]){
+ memset(counts,0,sizeof(int)*128);memset(ordinary,0,sizeof(uint32_t)*128);
+ for(int d=0;d<128;d++)for(int i=0;i<32;i++)donor[d][i]=0;
+}
+
+int main(void){
+ int counts[128];uint32_t ordinary[128];double donor[128][32];SrOrdinaryBodies bodies={0};
+
+ /* A valid native request must win even when another group has fewer uses. */
+ setup(counts,ordinary,donor);
+ counts[7]=3;ordinary[7]=0x7;counts[8]=2;ordinary[8]=0x3;
+ for(int i=0;i<3;i++)donor[7][i]=1;for(int i=0;i<2;i++)donor[8][i]=1;
+ SrSegmentLatch latch={0};int detail=7,index=1;
+ assert(sr_segment_pick(&latch,0,0,1,donor,counts,ordinary,&bodies,1,&detail,&index));
+ assert(detail==7&&index==1);
+
+ /* When the source clip index exceeds the requested group, continue in a
+    different attack group instead of wrapping in the same group. */
+ setup(counts,ordinary,donor);sr_segment_clear(&latch);detail=7;index=1;
+ counts[7]=2;ordinary[7]=0x3;counts[8]=3;ordinary[8]=0x7;
+ for(int i=0;i<2;i++)donor[7][i]=1;for(int i=0;i<3;i++)donor[8][i]=1;
+ assert(sr_segment_pick(&latch,0,0,1,donor,counts,ordinary,&bodies,2,&detail,&index));
+ assert(detail==8&&index==0);
+
+ /* Linked timelines and non-attack details are never fallback candidates. */
+ setup(counts,ordinary,donor);sr_segment_clear(&latch);detail=7;index=0;
+ counts[7]=2;ordinary[7]=0x3;counts[8]=2;ordinary[8]=0x3;
+ counts[9]=2;ordinary[9]=0x3;counts[17]=2;ordinary[17]=0x3;
+ for(int i=0;i<2;i++){donor[7][i]=1;donor[8][i]=1;donor[9][i]=1;donor[17][i]=1;}
+ assert(sr_segment_pick(&latch,0,0,1,donor,counts,ordinary,&bodies,2,&detail,&index));
+ assert(detail==8&&index==0);
+
+ /* Without duration data, keep the valid original request instead of guessing. */
+ setup(counts,ordinary,donor);sr_segment_clear(&latch);detail=7;index=1;
+ counts[7]=3;ordinary[7]=0x7;counts[8]=3;ordinary[8]=0x7;
+ assert(sr_segment_pick(&latch,0,0,0,donor,counts,ordinary,&bodies,0,&detail,&index));
+ assert(detail==7&&index==1);
+
+ /* Repeated overflow continues in cycle order within the fallback group. */
+ setup(counts,ordinary,donor);sr_segment_clear(&latch);
+ counts[7]=2;ordinary[7]=0x3;counts[8]=3;ordinary[8]=0x7;
+ for(int i=0;i<2;i++)donor[7][i]=1;for(int i=0;i<3;i++)donor[8][i]=1;
+ detail=7;index=0;
+ assert(sr_segment_pick(&latch,0,0,1,donor,counts,ordinary,&bodies,2,&detail,&index));
+ assert(detail==8&&index==0);
+ detail=7;index=1;
+ assert(sr_segment_pick(&latch,1,1,1,donor,counts,ordinary,&bodies,3,&detail,&index));
+ assert(detail==8&&index==1);
+
+ puts("PASS segment allocation: original request first, overflow continuation, attack-only candidates, cycle order");
+ return 0;
+}
