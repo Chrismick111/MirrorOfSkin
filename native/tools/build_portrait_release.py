@@ -50,7 +50,7 @@ def build(core, workbench, fallback, original_pack, output):
             for path in sorted(files):
                 archive.writestr(zipfile.ZipInfo(path),files[path])
             archive.writestr(zipfile.ZipInfo('portrait-hashes.json'),encode(hashes),compress_type=zipfile.ZIP_DEFLATED)
-        source = dict(schema=1,url='https://github.com/Chrismick111/faust-random-identity/releases/download/v0.79.1/'+pack.name,
+        source = dict(schema=1,url='https://github.com/Chrismick111/MirrorOfSkin/releases/download/v0.79.1/'+pack.name,
                       size=pack.stat().st_size,sha256=digest(pack.read_bytes()))
         info = json.loads(old.read('addon_info.json'))
         info['version'] = manifest['version'] = '0.79.1'
