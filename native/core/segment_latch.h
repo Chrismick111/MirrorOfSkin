@@ -26,7 +26,9 @@ typedef struct {
 } SrSegmentLatch;
 static void sr_segment_clear(SrSegmentLatch *s){memset(s,0,sizeof(*s));}
 static int sr_segment_scope(SrSegmentLatch *s,void *action,void *viewer,void *app,int stage){
- if(s->action==action&&s->viewer==viewer&&s->app==app&&s->stage==stage)return 0;
+ /* A skill can replace its viewer between coins. Keep the same action/app
+    plan in that case; only a new action, appearance or stage starts over. */
+ if(s->action==action&&s->app==app&&s->stage==stage){s->viewer=viewer;return 0;}
  sr_segment_clear(s);s->action=action;s->viewer=viewer;s->app=app;s->stage=stage;return 1;
 }
 static int sr_ordinary_timeline(const char *name){

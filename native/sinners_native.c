@@ -712,12 +712,11 @@ static void coin_info(Unit *u,Coin *coin){
   if(!u||!u->view||!m_getViewer)return;
   int ok=1;void *viewer=call_obj(m_getViewer,u->view,NULL,&ok);
   if(!ok||!viewer||viewer_finished(viewer)){
-    sr_segment_clear(&u->segmentLatch);
     if(u->observedViewerRoot)ui_unroot(u->observedViewerRoot);
     u->observedViewer=NULL;u->observedViewerRoot=0;u->observedCoinField=0;u->attackDrawValid=0;return;
   }
   void *actor=rfield(viewer,"_actor");
-  if(!actor||actor!=u->view){u->attackDrawValid=0;sr_segment_clear(&u->segmentLatch);return;}
+  if(!actor||actor!=u->view){u->attackDrawValid=0;return;}
   u->viewerActive=1;
   if(viewer!=u->observedViewer){
     if(u->attackDrawViewer!=viewer)u->attackDrawValid=0;
