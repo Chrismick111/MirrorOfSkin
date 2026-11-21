@@ -3,7 +3,7 @@ import ast, hashlib, io, json, os, pathlib, re, shutil, subprocess, tempfile, ur
 from urllib.parse import urlparse
 from file_lock import FileLock
 
-REPO='Chrismick111/faust-random-identity'
+REPO='Chrismick111/MirrorOfSkin'
 API='https://api.github.com/repos/'+REPO+'/releases/latest'
 ASSET='FaustRandomIdentity-WarpHook.zip'
 CATALOG='Assets/runtime/all_sinners_pools.json'
