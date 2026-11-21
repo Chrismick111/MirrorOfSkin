@@ -12,6 +12,7 @@
 #include <math.h>
 #include <stdarg.h>
 #include "MinHook.h"
+#include "data_paths.h"
 #include "special_policy.h"
 #include "form_catalog.h"
 #include "form_state.h"
@@ -148,11 +149,8 @@ static void *ui_new(void *k){return k?((void *(*)(void *))api[API_OBJECT_NEW])(k
 static INIT_ONCE logOnce=INIT_ONCE_STATIC_INIT;
 static HANDLE logHandle=INVALID_HANDLE_VALUE;
 static BOOL CALLBACK open_runtime_log(PINIT_ONCE once,PVOID param,PVOID *context){
-  wchar_t path[32768];DWORD used=GetModuleFileNameW(g_self,path,32768);
-  if(!used||used>=32768)return FALSE;
-  wchar_t *p=wcsrchr(path,L'\\');const wchar_t name[]=L"native_runtime.log";
-  if(!p||(size_t)(p+1-path)+sizeof(name)/sizeof(*name)>32768)return FALSE;
-  memcpy(p+1,name,sizeof(name));
+  wchar_t path[32768];sr_data_path(g_self,path,32768,L"native_runtime.log");
+  if(!path[0])return FALSE;
   logHandle=CreateFileW(path,FILE_APPEND_DATA,FILE_SHARE_READ|FILE_SHARE_WRITE|FILE_SHARE_DELETE,NULL,OPEN_ALWAYS,0,NULL);
   return logHandle!=INVALID_HANDLE_VALUE;
 }
@@ -281,7 +279,7 @@ static int pool_read(HANDLE f,PoolRow *rows,uint32_t *count){
  *count=h[2];return 1;
 }
 static int pool_load(void){
- wchar_t path[32768];GetModuleFileNameW(g_self,path,32768);wchar_t *p=wcsrchr(path,L'\\');if(!p)return 0;lstrcpyW(p+1,L"native_pools.bin");
+ wchar_t path[32768];sr_data_path(g_self,path,32768,L"native_pools.bin");if(!path[0])return 0;
  HANDLE f=CreateFileW(path,GENERIC_READ,FILE_SHARE_READ,NULL,OPEN_EXISTING,0,NULL);
  if(f==INVALID_HANDLE_VALUE){bootlog("pool snapshot missing");return 0;}
  int ok=pool_read(f,g_rows,&g_rowCount);CloseHandle(f);
@@ -304,7 +302,7 @@ static int random_double(double *out){
 #include "ordinary_body_index.h"
 typedef struct {
   int used,row;
-  int formWarned,form;
+  int formWarned,form,specialClashWarned;
   int internalStage,internalFailed,chapterApplied,chapterDefault;
   DWORD chapterRetry;
   int motionCounts[SR_MOTION_CACHE];
@@ -581,7 +579,7 @@ static uint32_t drawModes[12][3];
 static void draw_rules_tick(void){
  static DWORD checked;static FILETIME stamp;DWORD now=GetTickCount();
  if((DWORD)(now-checked)<1000)return;checked=now;
- wchar_t path[32768];GetModuleFileNameW(g_self,path,32768);wchar_t *slash=wcsrchr(path,L'\\');if(!slash)return;lstrcpyW(slash+1,L"workbench_rules.bin");
+ wchar_t path[32768];sr_data_path(g_self,path,32768,L"workbench_rules.bin");if(!path[0])return;
  WIN32_FILE_ATTRIBUTE_DATA attr;
  if(!GetFileAttributesExW(path,GetFileExInfoStandard,&attr))return;
  if(!CompareFileTime(&stamp,&attr.ftLastWriteTime))return;
@@ -2052,7 +2050,7 @@ static void change_motion_hook(void *self,int detail,uint8_t a1,int index,uint8_
    if(u&&!u->switching&&!u->dead&&!u->preserveSpecial&&introUnit!=u&&
       (clash_raw(self,detail)||role)){
     void *app=clash_visible(u,self);Skin *skin=skin_for_app(u,app);
-    if(clash_raw(self,detail)||skin){
+    if((clash_raw(self,detail)||skin)&&special_clash_available(skin,"change_motion")){
      int mapped=detail,sourceIndex=index;
      if(!clash_raw(self,detail)&&skin){
       if(is_parry_detail(detail)&&!g_visualEventDepth&&!g_clashBoundary&&!g_clashOwner&&!InterlockedCompareExchange(&g_busy,1,0)){
@@ -2295,6 +2293,10 @@ static void parry_playback_hook(void *self,int detail,void *mi){
  }
  void *app=enabled_now()?clash_visible(u,self):self;
  Skin *skin=u?skin_for_app(u,app):NULL;
+ if(enabled_now()&&!special_clash_available(skin,"parry_playback")){
+  ((void (*)(void *,int,void *))orig_parryPlayback)(self,detail,mi);
+  return;
+ }
  int role=skin&&enabled_now()?clash_request(u,detail):0,mapped=detail;
  if(skin&&enabled_now()&&!role&&clash_native_response(detail))role=7;
  if(role&&!u->switching&&!u->dead&&!u->preserveSpecial&&!cleanup_pending&&introUnit!=u){
@@ -2390,7 +2392,7 @@ static void *get_motion_hook(void *self,int detail,uint8_t flag,void *mi){
   if(enabled_now()&&!cleanup_pending&&!g_creating&&!g_motionDepth){
    Unit *u=unit_for_app(self);Skin *skin=u?skin_for_app(u,self):NULL;
    int role=skin?clash_request(u,detail):0;
-   if(role){
+   if(role&&special_clash_available(skin,"get_motion")){
     int mapped=sr_clash_slot(skin->look,skin->chapterRole,detail,role);
     return ((void *(*)(void *,int,uint8_t,void *))orig_getMotion)(self,mapped>=0?mapped:detail,flag,mi);
    }
@@ -3047,9 +3049,7 @@ static int hot_pool_compatible(const PoolRow *rows,uint32_t count){
 static void reload_probabilities(void){
  if(!g_cfg)return;
  uint32_t revision=g_cfg->reserved[0];if(!revision||revision==reload_seen)return;
- wchar_t path[32768];GetModuleFileNameW(g_self,path,32768);
- wchar_t *tail=wcsrchr(path,L'\\');if(!tail)return;
- lstrcpyW(tail+1,L"native_pools.bin");
+ wchar_t path[32768];sr_data_path(g_self,path,32768,L"native_pools.bin");if(!path[0])return;
  HANDLE f=CreateFileW(path,GENERIC_READ,FILE_SHARE_READ|FILE_SHARE_DELETE,NULL,OPEN_EXISTING,0,NULL);
  if(f==INVALID_HANDLE_VALUE)return;
  uint32_t newCount=0;
@@ -3741,8 +3741,8 @@ static DWORD WINAPI run(void *unused){
   if(!pool_load()){fatal("pool snapshot invalid",3);detach(thread);return 0;}
   auto_forms_load();
   if(!resolve_all()){fatal("class/method resolution incomplete",6);detach(thread);return 0;}
-  {wchar_t path[32768];DWORD len=GetModuleFileNameW(g_self,path,32768);wchar_t *slash=len&&len<32768?wcsrchr(path,L'\\'):NULL;
-   if(slash){lstrcpyW(slash+1,L"fx-active.bin");HANDLE f=CreateFileW(path,GENERIC_READ,FILE_SHARE_READ,NULL,OPEN_EXISTING,FILE_ATTRIBUTE_NORMAL,NULL);
+  {wchar_t path[32768];sr_data_path(g_self,path,32768,L"fx-active.bin");
+   if(path[0]){HANDLE f=CreateFileW(path,GENERIC_READ,FILE_SHARE_READ,NULL,OPEN_EXISTING,FILE_ATTRIBUTE_NORMAL,NULL);
     if(f!=INVALID_HANDLE_VALUE){DWORD size=GetFileSize(f,NULL),got=0;unsigned char *buf=(size>0&&size<=FX_PLAN_MAX_BYTES)?(unsigned char *)HeapAlloc(GetProcessHeap(),0,size):NULL;
      if(buf&&ReadFile(f,buf,size,&got,NULL)&&got==size&&fx_plan_parse(buf,size,g_fxRows,FX_PLAN_MAX_ROWS,&g_fxRowCount)&&g_fxRowCount){
       for(size_t i=0;i<n;i++){void *im=image_of(all[i]);const char *name=im?image_name(im):NULL;if(name&&!strcmp(name,"Unity.Timeline.dll")){void *k=((void *(*)(void *,const char *,const char *))api[API_CLASS])(im,"UnityEngine.Timeline","RuntimeClip");void *field=k?((void *(*)(void *,const char *))api[API_FIELD])(k,"m_Clip"):NULL;if(field)g_fxRuntimeClipOffset=((size_t (*)(void *))api[API_FIELD_OFFSET])(field);if(k&&g_fxRuntimeClipOffset==24){m_fxStart=find_method(k,"get_start",0);m_fxEvaluate=find_method(k,"EvaluateAt",2);}break;}}

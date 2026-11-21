@@ -44,7 +44,7 @@ static int sr_wf_stage(const SrWfConfig *cfg,uint32_t id,int native,int stages,u
 static SrWfConfig g_workbenchForms;
 static void sr_wf_poll(HMODULE module){
  static DWORD at;static FILETIME stamp;static DWORD previousSize=0;DWORD now=GetTickCount();if((DWORD)(now-at)<500)return;at=now;
- wchar_t path[32768];if(!GetModuleFileNameW(module,path,32768))return;wchar_t *slash=wcsrchr(path,L'\\');if(!slash)return;lstrcpyW(slash+1,L"workbench_forms.bin");
+ wchar_t path[32768];sr_data_path(module,path,32768,L"workbench_forms.bin");if(!path[0])return;
  HANDLE f=CreateFileW(path,GENERIC_READ,FILE_SHARE_READ|FILE_SHARE_WRITE|FILE_SHARE_DELETE,NULL,OPEN_EXISTING,0,NULL);if(f==INVALID_HANDLE_VALUE)return;
  DWORD size=GetFileSize(f,NULL),got=0;FILETIME writeTime;unsigned char bytes[16+SR_WF_MAX*32];
  if(!GetFileTime(f,NULL,NULL,&writeTime)){CloseHandle(f);return;}

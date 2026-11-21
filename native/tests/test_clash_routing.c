@@ -5,7 +5,7 @@
 #include "clash_motion.h"
 #define SR_MOTION_CACHE 128
 typedef struct {const char *base;} SrChapterActor;
-typedef struct {void *app;const char *look;const SrChapterActor *chapterActor;signed char chapterRole[128];short clashCount[128];void *clashSparse[128];} Skin;
+typedef struct {void *app;const char *look;const SrChapterActor *chapterActor;int specialClashWarned;signed char chapterRole[128];short clashCount[128];void *clashSparse[128];} Skin;
 typedef struct {void *baseApp,*view;const char *baseName;int switching,preserveSpecial,dead;} Unit;
 static int cleanup_pending,g_creating,g_presentationGate,camera,busy,switches;
 static void *g_duelCameraBoundary,*introUnit,*g_clashOwner,*visible;
@@ -57,5 +57,9 @@ int main(void){
  busy=0;assert(clash_fallback(&u,&skin,&receiver,32,2)==0&&receiver==visible&&visible==&donor&&switches==0);
  SrChapterActor actor={"10115_YiSang_Index_FatherAppearance"};visible=&donor;skin.chapterActor=&actor;
  assert(clash_request(&u,32)==2&&clash_request(&u,33)==2);
+ skin.look="10110_Yisang_DeadButterflyAppearance";skin.clashCount[37]=1;
+ assert(skin_has_special_clash(&skin));
+ skin.look="Unknown_NoClashAppearance";skin.chapterActor=NULL;assert(!skin_has_special_clash(&skin));
+ skin.chapterActor=(const SrChapterActor *)1;assert(skin_has_special_clash(&skin));
  puts("Clash routing, authored and sparse poses, native camera and visible fallback passed.");
 }

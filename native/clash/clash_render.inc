@@ -1,3 +1,23 @@
+/* A donor without any authored clash timeline should keep the game's native
+   clash, not be forced through the special-clash pose path. */
+static int skin_has_special_clash(Skin *skin){
+ if(!skin)return 0;
+ if(skin->chapterActor)return 1;
+ for(unsigned i=0;i<sizeof(sr_named_clashes)/sizeof(*sr_named_clashes);i++){
+  const int d=sr_named_clashes[i].detail;
+  if(sr_named_clashes[i].look&&!strcmp(sr_named_clashes[i].look,skin->look)&&
+     d>=0&&d<SR_MOTION_CACHE&&(skin->clashCount[d]>0||skin->clashSparse[d]))return 1;
+ }
+ return 0;
+}
+static int special_clash_available(Skin *skin,const char *where){
+ if(skin_has_special_clash(skin))return 1;
+ if(skin&&!skin->specialClashWarned){
+  skin->specialClashWarned=1;
+  char line[192];snprintf(line,sizeof(line),"special clash assets unavailable; native clash retained look=%.63s where=%s",skin->look,where?where:"unknown");bootlog(line);
+ }
+ return 0;
+}
 static void *clash_visible(Unit *u,void *self){
  if(!u||u->switching||u->preserveSpecial||u->dead||cleanup_pending||g_creating||introUnit==u)return self;
  void *current=rfield(u->view,"_curAppearance");

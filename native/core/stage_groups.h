@@ -97,7 +97,7 @@ static SrSgConfig g_stageGroups;
 static int g_stageNeedsHp;
 static void sr_sg_poll(HMODULE module){
  static DWORD at;static FILETIME stamp;static DWORD previousSize;DWORD now=GetTickCount();if((DWORD)(now-at)<500)return;at=now;
- wchar_t path[32768];if(!GetModuleFileNameW(module,path,32768))return;wchar_t *slash=wcsrchr(path,L'\\');if(!slash)return;lstrcpyW(slash+1,L"native_stage_groups.bin");
+ wchar_t path[32768];sr_data_path(module,path,32768,L"native_stage_groups.bin");if(!path[0])return;
  HANDLE f=CreateFileW(path,GENERIC_READ,FILE_SHARE_READ|FILE_SHARE_WRITE|FILE_SHARE_DELETE,NULL,OPEN_EXISTING,0,NULL);if(f==INVALID_HANDLE_VALUE)return;
  DWORD size=GetFileSize(f,NULL),got=0;FILETIME modified;static unsigned char bytes[16+SR_SG_MAX*(64+sizeof(SrSgGroup))];
  if(GetFileTime(f,NULL,NULL,&modified)&&!(size==previousSize&&CompareFileTime(&modified,&stamp)==0)&&size<=sizeof(bytes)&&ReadFile(f,bytes,size,&got,NULL)&&got==size&&sr_sg_parse(&g_stageGroups,bytes,size)){

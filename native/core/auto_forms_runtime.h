@@ -5,7 +5,7 @@ static unsigned autoCount;
 static int autoByRow[SR_ROW_MAX];
 static SrAutoForm autoRead[SR_AUTO_MAX];
 static void auto_path(wchar_t *path,const wchar_t *file){
- GetModuleFileNameW(g_self,path,32768);wchar_t *p=wcsrchr(path,L'\\');if(p)lstrcpyW(p+1,file);else path[0]=0;
+ sr_data_path(g_self,path,32768,file);
 }
 static int auto_existing_row(const SrAutoForm *p){
  for(uint32_t i=0;i<g_rowCount;i++){
