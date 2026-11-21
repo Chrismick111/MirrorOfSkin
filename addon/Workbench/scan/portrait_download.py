@@ -11,8 +11,8 @@ from urllib.parse import urlparse
 from file_lock import FileLock
 from github_update import UpdateError
 
-SOURCE = 'Workbench/portrait_source.json'
-LOCAL_SOURCE = 'Workbench/portrait_source.local.json'
+SOURCE = 'Workbench/data/portrait_source.json'
+LOCAL_SOURCE = 'Workbench/data/portrait_source.local.json'
 PORTRAIT_PATH = re.compile(r'Workbench/portraits/[0-9a-f]{24}\.png')
 MAX_ZIP = 200 * 1024 * 1024
 MAX_TOTAL = 300 * 1024 * 1024

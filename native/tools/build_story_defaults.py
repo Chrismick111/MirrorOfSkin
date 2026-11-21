@@ -81,7 +81,7 @@ def main():
         parser.add_argument(arg,type=Path)
     parser.add_argument('--queen-bundle',type=Path,required=True)
     args=parser.parse_args()
-    sys.path[:0]=[str(args.addon/'Workbench'),str(args.addon/'Workbench/timeline_vendor')]
+    sys.path[:0]=[str(args.addon/'Workbench'),str(args.addon/'Workbench/pool'),str(args.addon/'Workbench/timeline_vendor')]
     from boss_importer import build_entry
     with zipfile.ZipFile(args.baseline) as release:
         catalog=json.loads(release.read(CATALOG))

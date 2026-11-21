@@ -736,7 +736,7 @@ _WEBVIEW_HOOKED = False
 
 def _start_workbench_server():
     import os, re, subprocess
-    script = str(ROOT / 'Workbench' / 'open_workbench.ps1')
+    script = str(ROOT / 'Workbench' / 'ui' / 'open_workbench.ps1')
     try:
         result = subprocess.run(
             ['powershell.exe', '-NoProfile', '-STA', '-WindowStyle', 'Hidden',
@@ -891,7 +891,7 @@ def _install_workbench_webview():
 
 def _fallback_open_workbench():
     import os, subprocess
-    subprocess.Popen(['powershell.exe','-NoProfile','-STA','-WindowStyle','Hidden','-ExecutionPolicy','Bypass','-File',str(ROOT/'Workbench'/'open_workbench.ps1'),'-HostProcessId',str(os.getpid())],cwd=str(ROOT),creationflags=subprocess.CREATE_NO_WINDOW)
+    subprocess.Popen(['powershell.exe','-NoProfile','-STA','-WindowStyle','Hidden','-ExecutionPolicy','Bypass','-File',str(ROOT/'Workbench'/'ui'/'open_workbench.ps1'),'-HostProcessId',str(os.getpid())],cwd=str(ROOT),creationflags=subprocess.CREATE_NO_WINDOW)
 
 
 def open_workbench(*unused):

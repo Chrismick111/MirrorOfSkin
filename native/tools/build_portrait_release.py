@@ -37,7 +37,7 @@ def build(core, workbench, fallback, original_pack, output):
             blob = image.read_bytes()
             assert blob.startswith(b'\x89PNG\r\n\x1a\n') and (path not in files or files[path] == blob)
             files[path] = blob
-        pinned = json.loads(old.read(wb+'portrait_source.json'))
+        pinned = json.loads(old.read('Workbench/data/portrait_source.json'))
         assert digest(original_pack.read_bytes()) == pinned['sha256']
         with zipfile.ZipFile(original_pack) as previous:
             for path in original:
@@ -54,7 +54,7 @@ def build(core, workbench, fallback, original_pack, output):
                       size=pack.stat().st_size,sha256=digest(pack.read_bytes()))
         info = json.loads(old.read('addon_info.json'))
         info['version'] = manifest['version'] = '0.79.1'
-        changes = {wb+'portrait_manifest.json':encode(names),wb+'portrait_source.json':encode(source),
+        changes = {wb+'portrait_manifest.json':encode(names),'Workbench/data/portrait_source.json':encode(source),
                    wb+'portrait_hashes.json':encode(hashes),'addon_info.json':encode(info)}
         manifest['package_files'].update({k:digest(v) for k,v in changes.items()})
         changes['compatibility.json'] = encode(manifest)

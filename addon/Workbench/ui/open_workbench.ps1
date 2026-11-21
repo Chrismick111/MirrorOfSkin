@@ -2,7 +2,7 @@
 $HostProcessId=0
 $ServerOnly=$args -contains '-ServerOnly'
 for($i=0;$i -lt $args.Count-1;$i++){if($args[$i] -eq '-HostProcessId'){$HostProcessId=[int]$args[$i+1]}}
-$addon=Split-Path $PSScriptRoot -Parent
+$addon=Split-Path (Split-Path $PSScriptRoot -Parent) -Parent
 $launcherRoot=Split-Path (Split-Path $addon -Parent) -Parent
 $embedded=Join-Path $launcherRoot 'resources\mod_loader\_internal\venv\Bins\python.exe'
 if(Test-Path -LiteralPath $embedded){$python=$embedded}
@@ -154,7 +154,7 @@ if(Test-Path -LiteralPath $state){
   }
  }catch{}
 }
-$script=Join-Path $PSScriptRoot 'workbench.py'
+$script=Join-Path (Split-Path $PSScriptRoot -Parent) 'workbench.py'
 $logId=(Get-Date -Format 'yyyyMMdd-HHmmss-fff')+'-'+[Guid]::NewGuid().ToString('N').Substring(0,8)
 $logDir=Join-Path ([IO.Path]::GetTempPath()) 'FaustRandomIdentity-Workbench'
 New-Item -ItemType Directory -Force -Path $logDir | Out-Null

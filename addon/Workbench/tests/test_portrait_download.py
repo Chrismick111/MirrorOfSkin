@@ -24,14 +24,14 @@ def write_source(root, blob, name='portrait_source.json', size=None, digest=None
     }
     if size is not None:
         source['size'] = size
-    (root / 'Workbench' / name).write_text(json.dumps(source), encoding='utf8')
+    (root / 'Workbench/data' / name).write_text(json.dumps(source), encoding='utf8')
 
 
 class Tests(unittest.TestCase):
     def setUp(self):
         self.tmp = tempfile.TemporaryDirectory(dir=pathlib.Path(__file__).parent)
         self.root = pathlib.Path(self.tmp.name) / 'addon'
-        (self.root / 'Workbench').mkdir(parents=True)
+        (self.root / 'Workbench/data').mkdir(parents=True)
         (self.root / 'addon_info.json').write_text('{"version":"0.63.2"}', encoding='utf8')
         self.original = p._fetch_direct
 

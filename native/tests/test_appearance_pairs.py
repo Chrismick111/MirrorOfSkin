@@ -8,7 +8,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 from build_appearance_pairs import ROOT, build, expected_contracts
 
 
-DATA = json.loads((ROOT.parent / 'addon/Workbench/appearance_pairs.json').read_bytes())
+DATA = json.loads((ROOT.parent / 'addon/Workbench/data/appearance_pairs.json').read_bytes())
 PAIRS = {(r['identity'], r['appearance']): r for r in DATA['pairs']}
 
 

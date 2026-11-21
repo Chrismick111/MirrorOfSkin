@@ -358,7 +358,7 @@ class Store:
     e.update(chapter=group.get('chapter','unassigned'),chapter_label=group.get('label','未归档'),chapter_memberships=chapter_categories.memberships(group))
     e.update(chapter_rank=group.get('rank',20000),chapter_sources=group.get('appearances_in',[]),source_note='；'.join(x.get('note','') for x in group.get('special_evidence',[])),source_evidence_level=group.get('confidence',''),source_battles=sorted({str(x['battle_id']) for x in group.get('battle_evidence',[]) if x.get('battle_id') is not None}))
   walpurgis_catalog.apply(catalog,walpurgis_catalog.load(self.root))
-  for pair in read(self.root/'Workbench/appearance_pairs.json',{}).get('pairs',[]):
+  for pair in read(self.root/'Workbench/data/appearance_pairs.json',{}).get('pairs',[]):
    entry=catalog.get(pair.get('pool_id') or pair['appearance'])
    if entry is not None:entry.setdefault('paired_identities',[]).append(str(pair['identity']))
   native_forms=read(self.root/'native_forms.json',{})
@@ -514,7 +514,7 @@ def main():
  gateway=_load_gateway(args.addon)
  token=gateway['token'] if gateway else secrets.token_urlsafe(24)
  gateway_port=gateway['port'] if gateway else DEFAULT_GATEWAY_PORT
- html=(pathlib.Path(__file__).parent/'index.html').read_bytes()
+ html=(pathlib.Path(__file__).parent/'ui/index.html').read_bytes()
  class Handler(BaseHTTPRequestHandler):
   # Browsers can preconnect without sending a request. Bound the socket wait
   # so server_close can join those handlers when the launcher exits.
@@ -532,7 +532,7 @@ def main():
    route=self.route()
    try:
     if route=='index':return self.send(html,ctype='text/html; charset=utf-8')
-    if route=='effect-editor':return self.send((pathlib.Path(__file__).parent/'effect-editor.html').read_bytes(),ctype='text/html; charset=utf-8')
+    if route=='effect-editor':return self.send((pathlib.Path(__file__).parent/'ui/effect-editor.html').read_bytes(),ctype='text/html; charset=utf-8')
     if route=='instance-ping':return self.send({'workbench':True,'version':_STARTUP_VERSION})
     if route and (route=='launcher-background' or route.startswith('launcher-background?')):
      if 'next=1' in route:store.launcher_background_next()

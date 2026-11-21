@@ -5,7 +5,7 @@ import name_translations
 
 def load(root):
     try:
-        data=json.loads((pathlib.Path(root)/'Workbench/walpurgis_data.json').read_text(encoding='utf-8-sig'))
+        data=json.loads((pathlib.Path(root)/'Workbench/data/walpurgis_data.json').read_text(encoding='utf-8-sig'))
         return data if isinstance(data,dict) else {}
     except (OSError,ValueError):
         return {}

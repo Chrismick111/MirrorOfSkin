@@ -26,7 +26,7 @@ def binary(config):
  return struct.pack('<4I', 0x3247534e, 2, zlib.crc32(payload) & 0xffffffff, len(groups)) + payload
 
 def automatic_groups(root):
- path=root/'Workbench/chapter_nine_profiles.json'
+ path=root/'Workbench/data/chapter_nine_profiles.json'
  profiles=json.loads(path.read_bytes()) if path.exists() else []
  groups=[]
  for row in profiles:
@@ -39,7 +39,7 @@ def automatic_groups(root):
   if alternate:
    stages=[dict(stage,identity_id=identity) for stage,identity in zip(group['stages'],alternate)]
    groups.append(dict(group,id=key+'_alt',stages=stages))
- pair_path = root / 'Workbench/appearance_pairs.json'
+ pair_path = root / 'Workbench/data/appearance_pairs.json'
  if pair_path.exists():
   groups.extend(_paired_form_groups(json.loads(pair_path.read_bytes())))
  return groups

@@ -217,7 +217,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('addon', type=Path)
     parser.add_argument('archive_data', type=Path)
-    parser.add_argument('--output', type=Path, default=ROOT.parent / 'addon/Workbench/appearance_pairs.json')
+    parser.add_argument('--output', type=Path, default=ROOT.parent / 'addon/Workbench/data/appearance_pairs.json')
     args = parser.parse_args()
     data = build(args.addon, args.archive_data)
     args.output.write_text(json.dumps(data, indent=2, ensure_ascii=False) + '\n', encoding='utf-8')

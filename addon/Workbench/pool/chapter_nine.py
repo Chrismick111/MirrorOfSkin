@@ -38,7 +38,7 @@ def _definitions(config):
 
 
 def defaults(root):
-    path = Path(root) / 'Workbench/chapter_nine_profiles.json'
+    path = Path(root) / 'Workbench/data/chapter_nine_profiles.json'
     return {'ch9_' + row['identity']: row['stages'][0]['identity_id']
             for row in (_read(path) or [])}
 

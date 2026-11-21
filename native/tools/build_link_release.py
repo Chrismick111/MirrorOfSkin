@@ -13,10 +13,10 @@ VERSION = '0.79.0'
 FLAGS = ('wedge-borrow-native.enable', 'wedge-component-borrow.enable')
 ADDON_SOURCE = Path(__file__).resolve().parent.parent / 'addon'
 CATALOG = 'Assets/runtime/all_sinners_pools.json'
-WORKBENCH_UPDATES = ('Workbench/index.html', 'Workbench/merged_appearances.py',
-                     'Workbench/schemes.py', 'Workbench/stage_director.py', 'Workbench/workbench.py',
-                     'Workbench/stage_files.py', 'Workbench/chapter_nine.py',
-                     'Workbench/chapter_nine_profiles.json', 'Workbench/story_defaults.py',
+WORKBENCH_UPDATES = ('Workbench/ui/index.html', 'Workbench/pool/merged_appearances.py',
+                     'Workbench/pool/schemes.py', 'Workbench/pool/stage_director.py', 'Workbench/workbench.py',
+                     'Workbench/pool/stage_files.py', 'Workbench/pool/chapter_nine.py',
+                     'Workbench/data/chapter_nine_profiles.json', 'Workbench/pool/story_defaults.py',
                      'Assets/runtime/story_defaults.zip')
 STORY_TIMINGS = {
     'Assets/runtime/story_native/story_' + look + '.bin' for look in (
