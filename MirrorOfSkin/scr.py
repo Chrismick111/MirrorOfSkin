@@ -526,7 +526,8 @@ def _prepare_native_pools_unlocked():
             mask |= 0x80000000
         if row.get('no_attack'):
             mask |= 0x40000000
-        story = 1 if row.get('_story') or row.get('story_metadata') or row.get('no_attack') else 0
+        imported = identity.startswith('story_WBImp_') or identity == 'story_BRolandBaseAppearance'
+        story = 0 if imported else (1 if row.get('_story') or row.get('story_metadata') or row.get('no_attack') else 0)
         enabled = 1 if weight > 0 and settings.get('enabled', True) else 0
         packed.append(ROW.pack(sinner, enabled, mask, story, weight, raw, asset, look, base, int(kind == 'group'), gid))
 
