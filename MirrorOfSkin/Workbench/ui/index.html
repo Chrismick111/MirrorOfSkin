@@ -1047,6 +1047,7 @@
         }
       }
       .ruleset-card {
+        position: relative;
         display: flex;
         flex-direction: column;
         align-items: center;
@@ -1061,8 +1062,23 @@
         background: transparent;
       }
       .ruleset-card:hover .ruleset-orb {
-        border-color: #deb970;
-        box-shadow: 0 0 0 3px #deb97024;
+        border-color: #8d96a6;
+        background: #252a31;
+        box-shadow: 0 0 0 2px #8d96a622;
+        transform: translateY(-2px);
+      }
+      .ruleset-card.active::after {
+        content: "✓ 已启用";
+        position: absolute;
+        top: 4px;
+        right: 4px;
+        padding: 2px 7px;
+        border-radius: 999px;
+        background: #deb970;
+        color: #17191d;
+        font-size: 11px;
+        font-weight: 700;
+        box-shadow: 0 2px 8px #0008;
       }
       .ruleset-orb {
         width: 112px;
@@ -1079,7 +1095,9 @@
         font-weight: 700;
         transition:
           border-color 0.15s,
-          box-shadow 0.15s;
+          box-shadow 0.15s,
+          background 0.15s,
+          transform 0.15s;
       }
       .ruleset-orb img {
         width: 100%;
@@ -1101,8 +1119,13 @@
         box-shadow: 0 0 0 3px #deb97022;
       }
       .ruleset-card.active .ruleset-orb {
-        border-color: #deb970;
-        box-shadow: 0 0 0 3px #deb97033;
+        border-color: #f0d79b;
+        border-width: 3px;
+        background: #2a251b;
+        box-shadow:
+          0 0 0 4px #deb97044,
+          0 0 24px #deb97066;
+        transform: none;
       }
       .ruleset-name {
         font-size: 13px;
@@ -1118,6 +1141,7 @@
       }
       .ruleset-card.active .ruleset-name {
         color: #f0d79b;
+        font-weight: 700;
       }
 
       .mini-label .icon {
@@ -2210,7 +2234,6 @@
             <input id="addStory" type="checkbox" checked />包含剧情/敌方外观
           </label>
         </div>
-        <div id="localImportResult" role="status" aria-live="polite" hidden></div>
         <details class="chapter-browser" open>
           <summary>按章节浏览</summary>
           <div
@@ -3515,11 +3538,8 @@
       $("#addSearch").oninput = () => renderAddList();
       async function importLocalSkin() {
         const buttons = [$("#importLocalSkin"), $("#headerImportLocalSkin")];
-        const result = $("#localImportResult");
         buttons.forEach((button) => { button.disabled = true; });
-        result.hidden = false;
-        result.textContent = "请选择外观或语音包，读取大型模型可能需要几分钟。";
-        status(result.textContent);
+        status("请选择外观或语音包，读取大型模型可能需要几分钟");
         try {
           const { rows, errors } = await api("local-skin-import", {});
           if (rows.length) {
@@ -3537,11 +3557,9 @@
             else if (row.voice_connected) voice = "，已接通语音";
             return row.name + " " + state + voice + (row.voice_warning ? "，" + row.voice_warning : "");
           });
-          result.textContent = [...messages, ...errors].join("；") || "已取消导入";
-          status(result.textContent);
+          status([...messages, ...errors].join("；") || "已取消导入");
         } catch (error) {
-          result.textContent = "导入失败：" + error.message;
-          status(result.textContent);
+          status("导入失败：" + error.message);
         } finally {
           buttons.forEach((button) => { button.disabled = false; });
         }
