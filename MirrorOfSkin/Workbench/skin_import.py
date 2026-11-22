@@ -3,7 +3,7 @@ import argparse
 import hashlib
 import json
 import os
-from pathlib import Path
+from pathlib import Path, PurePosixPath
 import re
 import shutil
 import sys
@@ -121,6 +121,36 @@ def import_skin(archive, addon, *, name=None, unity=None):
         return rows
 
 
+def install_roland_bundles(archive, root):
+    """Install the unified Roland model from the selected Roland archive.
+
+    The three large bundles are user-provided game assets, not package data.
+    Keeping them out of the release avoids shipping a 500 MB archive while the
+    importer can still materialize the exact built-in model on demand.
+    """
+    from skin_assets import ROLAND_MEMBERS
+    from zipfile import ZipFile
+    dest = Path(root) / 'Assets' / 'Roland'
+    dest.mkdir(parents=True, exist_ok=True)
+    found = set()
+    with ZipFile(archive) as z:
+        for info in z.infolist():
+            name = PurePosixPath(info.filename.replace('\\','/')).name
+            expected = ROLAND_MEMBERS.get(name.lower())
+            if not expected:
+                continue
+            blob = z.read(info)
+            if hashlib.sha256(blob).hexdigest() != expected:
+                raise ValueError('罗兰模型校验失败：' + name)
+            target = dest / name
+            temp = target.with_name(target.name + '.import-tmp')
+            temp.write_bytes(blob)
+            os.replace(temp, target)
+            found.add(name.lower())
+    if found != set(ROLAND_MEMBERS):
+        raise ValueError('压缩包缺少完整的统一罗兰模型')
+
+
 def _import_normalized(archive, addon, *, name=None, unity=None):
     from skin_assets import build_assets
     root, archive = Path(addon).resolve(), Path(archive).resolve()
@@ -164,6 +194,7 @@ def _import_normalized(archive, addon, *, name=None, unity=None):
             by_id = {r['identity_id']: r for group in catalog.values() for r in group['entries']}
             for rec in records:
                 if rec.get('builtin') == 'roland':
+                    install_roland_bundles(archive, root)
                     if BUILTIN not in by_id or not (root/'Assets/Roland/BRoland.bundle').is_file():
                         raise ValueError('该工作台缺少配套的统一罗兰模型')
                     actions = json.loads((root/'Assets/Roland/import-actions.json').read_bytes())
