@@ -73,7 +73,10 @@ def main():
         from resource_tools import unity
         cache=scan_units.cache_root(args.game or scan_units.find_game_dir(),args.cache)
         if cache is None:raise RuntimeError('未找到本地游戏资源，请先启动一次游戏')
-        with FileLock(root/'Workbench/image_resources.lock'):
+        # The startup scan can hold this lock for minutes; a 15 s default timeout
+        # used to fail the whole restore before it wrote a single portrait.
+        emit('verify',0,0,'等待资源扫描结束')
+        with FileLock(root/'Workbench/image_resources.lock',timeout=1800):
             (root/'Workbench/images_disabled.flag').unlink(missing_ok=True)
             UnityPy=unity()
             UnityPy.config.FALLBACK_UNITY_VERSION='6000.3.0f1'

@@ -17,6 +17,8 @@ if (-not $Archives) {
     $picker.Title='选择要加入本地工作台的外观模组'
     $picker.Filter='模组文件 (*.zip;*.7z;*.rar;*.carra2;*.bank)|*.zip;*.7z;*.rar;*.carra2;*.bank|所有文件 (*.*)|*.*'
     $picker.Multiselect=$true
+    $picker.InitialDirectory=$addon
+    $picker.RestoreDirectory=$true
     $owner=New-Object System.Windows.Forms.Form
     $owner.StartPosition='Manual'
     $owner.Location=New-Object System.Drawing.Point(-32000,-32000)
