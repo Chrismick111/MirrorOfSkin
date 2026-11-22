@@ -9,7 +9,6 @@
   "package_files": {
     "addon_info.json": "354e6d899b32aedf330da5b4af303f1a8e6c20bd0956d70c67cd0b39cfd5fdbf",
     "Assets/Roland/appearance.json": "601769881b787a8359cc8cdf0c309503143b6935fe33db065188b280ffb5d6f5",
-    "Assets/Roland/BRoland.bundle": "674597129a6736b25bb3537f4cf537c552babbaae19564bdbf6f7f9efd66ef7b",
     "Assets/Roland/import-actions.json": "43a108b536451a31c79578f011400689b7567a31ab262817c5f74b5a113c63ab",
     "Assets/Roland/出处.txt": "9cedb01cf521f5bd051f1f57608f130331b8bb04f53bf9c1683b2b671923396a",
     "Assets/Roland/原作者声明.txt": "c6db59fbd9018f2034cd9450803064f152f1b6c8381cb95df9b798e56d80c9c8",
@@ -114,7 +113,7 @@
     "Workbench/scan/scan_units.py": "fd7df543723ebaed8e06fde72112e5ae140a3b04621b2f5d9a019cbd434414a9",
     "Workbench/scan/walpurgis_catalog.py": "7ce4709947032dbfe6ca4b64949a89b8516e0d772598318e7f2a30024ef280ad",
     "Workbench/skin_assets.py": "58602f5f2ad09591904b48b5f6eed139af8218c5e2afe5d0a44c0bd7f0af64b4",
-    "Workbench/skin_import.py": "4e44f97c8012ef1340b1803caf8ce6799b7cc33eea8a1c461866855ea3388bc8",
+    "Workbench/skin_import.py": "ea6bef3909709e7d6cfc80c44aa63aa790133fc490884f1f6dbbc7bb3bcf4ce6",
     "Workbench/skin_motions.py": "29ade76088b96b1cd1d9ce0f5aa1be3e75bc4a8f9d434a8fae6ce4a6f608ab3b",
     "Workbench/timeline_data/identity-map.json": "ad9e67c23804d62919aec499be6f2b22be3f5de6562998748fdd269655a3d1cd",
     "Workbench/tools/run_acceptance.py": "1b68c0ae5dae96bc217e3ec5a9fb9f71b120fdfc9d4ee2fb67afb07d7de819cf",
@@ -128,7 +127,8 @@
     "Workbench/voice_binding.py": "f1fb0fc841c533b6da8c4f3584410fbbc6eebae248bb05d5debf022b214d0aa5",
     "Workbench/workbench.py": "411022c7ecbdb080e91ac97629337b6e04b235878764c38da5b91885ed85c032",
     "导入外观.cmd": "60bc30b0d2e3d9502d62895e4dcc4495daeab553db29e5a20eef091b0e0c99e0",
-    "查看本地人格池.cmd": "f38e1ee03641cf6d39501a6d2d6ff9611dfded3cb0b08b54ab00eeb2bd0e7f9c"
+    "查看本地人格池.cmd": "f38e1ee03641cf6d39501a6d2d6ff9611dfded3cb0b08b54ab00eeb2bd0e7f9c",
+    "Workbench/roland_merge.py": "ccacfd723fde61878808588c238f646afa31c429d27766e1849dc3b2fc8bea0e"
   },
   "game_files": {
     "GameAssembly.dll": "baadb8e242cf4408bf9ab6c82eb2b0fbec40c6116e8cb7ed7dcfc52d22ac8ddc",

@@ -215,6 +215,17 @@ static void test_roland_clash(Unit *u,Skin *skin){
  api[API_FIELD]=fake_field;api[API_METHOD]=fake_method;api[API_INVOKE]=fake_invoke;
  puts("PASS Roland clash entries: native Animator reactions, Parrying and Duel_Win tracks, then first attack on same donor");
 }
+static void test_imported_metadata_routing(void){
+ Skin fixture={0}; ImportedConfig imported={0}; fixture.row=0;
+ g_rows[0].story=0; strcpy(fixture.look,"BRolandBaseAppearance");
+ assert(skin_uses_private_metadata(&fixture));
+ strcpy(fixture.look,"WBImp_0123456789abcdef01234567");fixture.imported=&imported;
+ assert(skin_uses_private_metadata(&fixture));
+ fixture.imported=NULL;strcpy(fixture.look,"ordinary");
+ assert(!skin_uses_private_metadata(&fixture));
+ g_rows[0].story=1;assert(skin_uses_private_metadata(&fixture));g_rows[0].story=0;
+ puts("PASS imported appearances use private metadata independently of native story flag");
+}
 static void test_roland_build(void){
  api[API_INVOKE]=art_invoke;api[API_FIELD]=art_field;api[API_METHOD]=art_method;api[API_STRING_NEW]=art_string;
  rolandOpen=(void*)Open;rolandAsset=(void*)Asset;rolandUnload=(void*)Unload;rolandGoType=&stock;
@@ -404,6 +415,7 @@ int main(void){
  test_roland_clash(u,skin);
  test_imported_clash(u,skin);
  test_imported_attacks(u,skin);
+ test_imported_metadata_routing();
  test_roland_build();
  test_imported_art();
  close_test_profile();

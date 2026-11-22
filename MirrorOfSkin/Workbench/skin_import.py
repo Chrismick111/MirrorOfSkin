@@ -84,7 +84,7 @@ def config(record, checksum):
 
 
 def mirror_import_assets(data_root, addon_root):
-    """Mirror runtime import assets into the add-on tree expected by the game."""
+    """Publish runtime resources atomically, including same-sized updates."""
     for rel in ('Assets/Roland', 'Assets/ImportedSkins', 'Assets/ImportedVoices'):
         src, dst = Path(data_root) / rel, Path(addon_root) / rel
         if not src.is_dir():
@@ -93,12 +93,12 @@ def mirror_import_assets(data_root, addon_root):
             if not path.is_file():
                 continue
             target = dst / path.relative_to(src)
-            target.parent.mkdir(parents=True, exist_ok=True)
+            if target.resolve() == path.resolve():
+                continue
             try:
-                if not target.is_file() or target.stat().st_size != path.stat().st_size:
-                    shutil.copy2(path, target)
-            except OSError:
-                pass
+                write_bundle(target, path, digest(path))
+            except OSError as exc:
+                raise OSError('无法同步导入资源：' + str(target)) from exc
 
 
 def import_skin(archive, addon, *, name=None, unity=None):
@@ -142,33 +142,14 @@ def import_skin(archive, addon, *, name=None, unity=None):
 
 
 def install_roland_bundles(archive, root):
-    """Install the unified Roland model from the selected Roland archive.
-
-    The three large bundles are user-provided game assets, not package data.
-    Keeping them out of the release avoids shipping a 500 MB archive while the
-    importer can still materialize the exact built-in model on demand.
-    """
-    from skin_assets import ROLAND_MEMBERS
-    from zipfile import ZipFile
-    dest = Path(root) / 'Assets' / 'Roland'
-    dest.mkdir(parents=True, exist_ok=True)
-    found = set()
-    with ZipFile(archive) as z:
-        for info in z.infolist():
-            name = PurePosixPath(info.filename.replace('\\','/')).name
-            expected = ROLAND_MEMBERS.get(name.lower())
-            if not expected:
-                continue
-            blob = z.read(info)
-            if hashlib.sha256(blob).hexdigest() != expected:
-                raise ValueError('罗兰模型校验失败：' + name)
-            target = dest / name
-            temp = target.with_name(target.name + '.import-tmp')
-            temp.write_bytes(blob)
-            os.replace(temp, target)
-            found.add(name.lower())
-    if found != set(ROLAND_MEMBERS):
-        raise ValueError('压缩包缺少完整的统一罗兰模型')
+    """Build the unified model from the user's original three-bundle archive."""
+    from roland_merge import build_roland_bundle
+    root = Path(root)
+    bundle, metadata = build_roland_bundle(archive)
+    expected = root / 'Assets/runtime/story_native/story_BRolandBaseAppearance.bin'
+    if not expected.is_file() or expected.read_bytes() != metadata:
+        raise ValueError('生成的罗兰动作数据与工作台不匹配，未替换现有模型')
+    write_atomic(root / 'Assets/Roland/BRoland.bundle', bundle)
 
 
 def _import_normalized(archive, addon, *, name=None, unity=None):

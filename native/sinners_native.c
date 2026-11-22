@@ -984,6 +984,11 @@ static void play_imported_defense_state(Skin *skin,int detail){
   ui_unroot(root);
  }
 }
+/* Locally imported appearances own private timing metadata even when their
+   pool row is intentionally not marked as native story content. */
+static int skin_uses_private_metadata(const Skin *s){
+ return s&&(g_rows[s->row].story||s->imported||!strcmp(s->look,"BRolandBaseAppearance"));
+}
 static void *skin_metadata(Unit *u,Skin *s){
   const SrChapterActor *actor=u&&g_rows[s->row].story&&!strcmp(s->look,g_rows[s->row].appearance_name)?
    sr_chapter_actor(u->baseName,s->look):NULL;
@@ -1010,7 +1015,7 @@ static void *skin_metadata(Unit *u,Skin *s){
    if(!ok||!source){char line[160];wsprintfA(line,"metadata: source missing base=%.40s",u->baseName);bootlog(line);return NULL;}
   }
   void *target=NULL;
-  if(g_rows[s->row].story){target=private_story_metadata(s);ok=target!=NULL;}
+  if(skin_uses_private_metadata(s)){target=private_story_metadata(s);ok=target!=NULL;}
   else{
    void *targetName=make_string(s->look);uintptr_t targetRoot=ui_root(targetName);
    void *targs[]={targetName};target=call_obj(getter,g_metadataDB,targs,&ok);ui_unroot(targetRoot);
