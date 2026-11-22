@@ -83,13 +83,32 @@ def config(record, checksum):
                        ''.join(roles), ''.join(animator)))+'\n').encode('ascii')
 
 
+def mirror_import_assets(data_root, addon_root):
+    """Mirror runtime import assets into the add-on tree expected by the game."""
+    for rel in ('Assets/Roland', 'Assets/ImportedSkins', 'Assets/ImportedVoices'):
+        src, dst = Path(data_root) / rel, Path(addon_root) / rel
+        if not src.is_dir():
+            continue
+        for path in src.rglob('*'):
+            if not path.is_file():
+                continue
+            target = dst / path.relative_to(src)
+            target.parent.mkdir(parents=True, exist_ok=True)
+            try:
+                if not target.is_file() or target.stat().st_size != path.stat().st_size:
+                    shutil.copy2(path, target)
+            except OSError:
+                pass
+
+
 def import_skin(archive, addon, *, name=None, unity=None):
     from mod_archive import normalized
     from carra_import import expanded
     from zipfile import ZipFile,BadZipFile
     from bank_mod import import_banks
     from skin_assets import _members
-    root=Path(addon).resolve()
+    addon_root=Path(addon).resolve()
+    root=addon_root
     if json.loads((root/'compatibility.json').read_bytes()).get('local_skin_import')!=1:
         raise ValueError('请选择支持本地外观导入的工作台。')
     root=mos_data.prepare(root)
@@ -113,6 +132,7 @@ def import_skin(archive, addon, *, name=None, unity=None):
             except (OSError,ValueError,RuntimeError,BadZipFile) as error:
                 for row in rows:row['voice_warning']=str(error)
         mapped=reconcile(root)
+        mirror_import_assets(root, addon_root)
         for row in rows:
             if row.get('kind')=='voice':
                 row['connected_to']=[label for rev,label in mapped.values() if rev==row['revision']]
