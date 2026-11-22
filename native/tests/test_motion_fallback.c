@@ -6,16 +6,17 @@
 static int calls,seenDetail,seenIndex,seenFlag;
 static void *seenSelf,*seenCallback,*seenMethod;
 static uint8_t seenA1,seenA3,seenA5;
-/* This fixture exercises slot routing without a Unity scene or renderers. */
-static void *no_scene_class(void *object){(void)object;return NULL;}
 static void *fake_get(void *self,int detail,uint8_t flag,void *mi){
  calls++;seenSelf=self;seenDetail=detail;seenFlag=flag;seenMethod=mi;return (void *)(uintptr_t)(1000+detail);
 }
 static void fake_change(void *self,int detail,uint8_t a1,int index,uint8_t a3,void *cb,uint8_t a5,void *mi){
  calls++;seenSelf=self;seenDetail=detail;seenIndex=index;seenA1=a1;seenA3=a3;seenA5=a5;seenCallback=cb;seenMethod=mi;
 }
+static void *no_object_class(void *object){return NULL;}
 int main(void){
- api[API_OBJECT_CLASS]=no_scene_class;
+ static void *mockApi[API_OBJECT_CLASS+1];
+ mockApi[API_OBJECT_CLASS]=no_object_class;api=mockApi;
+
  Config cfg={0};g_cfg=&cfg;cfg.enabled=1;cfg.heartbeat=GetTickCount();
  Unit *u=&g_units[0];u->used=1;u->baseApp=(void *)2;u->last=-1;
  Skin *s=&u->skins[0];s->used=1;s->app=(void *)1;s->motionCounts[8]=3;

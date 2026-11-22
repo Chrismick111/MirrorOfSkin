@@ -5,13 +5,15 @@
 #include "clash_motion.h"
 #define SR_MOTION_CACHE 128
 typedef struct {const char *base;} SrChapterActor;
-typedef struct {void *app;const char *look;const SrChapterActor *chapterActor;int specialClashWarned;signed char chapterRole[128];short clashCount[128];void *clashSparse[128];} Skin;
-typedef struct {void *baseApp,*view;const char *baseName;int switching,preserveSpecial,dead;} Unit;
+typedef struct {char layout[256];unsigned char roles[128];} TestImport;
+typedef struct {const TestImport *imported;void *app;const char *look;const SrChapterActor *chapterActor;int specialClashWarned;signed char chapterRole[128];short clashCount[128];void *clashSparse[128];} Skin;
+typedef struct {void *baseApp,*view;const char *baseName;int switching,preserveSpecial,dead,coinKnown,coinMotion,staticHidden;} Unit;
 static int cleanup_pending,g_creating,g_presentationGate,camera,busy,switches;
 static void *g_duelCameraBoundary,*introUnit,*g_clashOwner,*visible;
 static int g_clashRole;
 static unsigned char defenseMotions[128];
 static Skin skin;
+static Skin *held_appearance(Unit *u){return &skin;}
 static void *rfield(void *view,const char *name){assert(!strcmp(name,"_curAppearance"));return visible;}
 static Skin *skin_for_app(Unit *u,void *app){return app&&app==skin.app?&skin:NULL;}
 static int presentation_busy(void *app){return busy;}

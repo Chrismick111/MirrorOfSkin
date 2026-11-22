@@ -105,12 +105,16 @@ static void motion_dispatch(Unit *u,int original_only){
   visible_attack_begin(u,playing,m.detail,m.coin);
   target=u->baseApp;detail=m.detail;index=m.index;playing=NULL;
  }
- if(playing&&!playing->chapterActor){
+ if(playing&&playing->imported&&!playing->chapterActor){
+  detail=imported_attack_detail(u,playing,m.detail,m.tier);
+  index=imported_attack_part(u,playing,m.action,m.coin,m.detail,detail,m.index,m.last);
+ }else if(playing&&!playing->chapterActor){
   detail=sr_resolve_attack(playing->motionCounts,detail,1,m.tier,m.detail,0,0);
   if(strcmp(playing->look,u->baseName))detail=sr_donor_tier_detail(playing->motionCounts,detail,m.tier);
   detail=sr_native_motion_detail(playing->motionCounts,playing->nativeMotionDetail,detail,detail);
   int paired=sr_verified_paired_attack(playing->motionCounts,paired_source(u,playing),motion_identity(playing),m.detail,-1);
   if(paired>=0)detail=paired;
+
   if(detail>=0&&detail<SR_MOTION_CACHE){
    if(paired>=0)index=counterpart_part(u,playing,m.action,m.coin,m.detail,playing->motionCounts[paired],m.index,m.last);
    else if(!native_order_index(u,m.action,m.coin,playing->motionCounts[detail],&index)){
@@ -125,7 +129,10 @@ static void motion_dispatch(Unit *u,int original_only){
   /* Apply only while the captured event still matches live skill context. */
   if(playing&&playing->chapterActor&&enabled_now()&&!cleanup_pending)
    target=chapter_forward(u,playing,m.detail,m.index,m.chapterSkill,m.action,m.coin,m.last,m.a1,m.a3,m.callback,m.a5,m.method);
-  else forward_projected_motion(target,detail,m.a1,index,m.a3,m.callback,m.a5,m.method,m.detail,m.index,m.coin,sr_queue_scope(m.action,m.viewer,m.coin,m.tier,u->observedAction,u->observedViewer,current_attack_coin(u),u->coinTier));
+  else{
+   MotionDelivery sent=forward_projected_motion(target,detail,m.a1,index,m.a3,m.callback,m.a5,m.method,m.detail,m.index,m.coin,sr_queue_scope(m.action,m.viewer,m.coin,m.tier,u->observedAction,u->observedViewer,current_attack_coin(u),u->coinTier),m.action,m.coin);
+   target=sent.app;detail=sent.detail;index=sent.index;playing=skin_for_app(u,target);
+  }
   --g_motionDispatchDepth;
   /* The native metadata container already projects donor motion onto the
      source motion. Do not override SetAnimSpeed after native playback starts:
