@@ -310,6 +310,33 @@ static void test_imported_attacks(Unit *u,Skin *skin){
  skin->imported=NULL;g_rows[0].story=0;visible_watch_clear(u);orig_changeMotion=change;
  puts("PASS imported 10109 cross-layout S2 coin, same-layout direct/queued exact clip, repeat and competing duration");
 }
+/* A repeated authored index on a new coin must advance on the donor, while
+   duplicate callbacks for the same coin stay latched to the same clip. */
+static void test_local_repeated_coin(Unit *u,Skin *skin){
+ ImportedConfig config={0};strcpy(config.layout,"fixture_unpaired");
+ strcpy(u->baseName,"10101_YiSang_BaseAppearance");strcpy(skin->look,"WBImp_0123456789abcdef01234567");
+ skin->imported=&config;skin->chapterActor=NULL;u->preserveSpecial=0;u->coinDefense=0;u->coinKnown=1;
+ u->observedAction=&view;u->observedViewer=&stock;u->viewerActive=1;u->ordinarySourceClips[9]=(1u<<1);
+ memset(skin->motionCounts,0,sizeof(skin->motionCounts));memset(skin->ordinaryClips,0,sizeof(skin->ordinaryClips));
+ skin->motionCounts[9]=3;skin->ordinaryClips[9]=7;g_rows[skin->row].excluded=0;
+ sr_segment_clear(&u->segmentLatch);orig_changeMotion=change;
+ forward_projected_motion(&donor,9,0,1,0,NULL,0,NULL,9,1,0,1,&view,0);
+ assert(lastDetail==9&&lastPart==1);
+ forward_projected_motion(&donor,9,0,1,0,NULL,0,NULL,9,1,1,1,&view,1);
+ assert(lastDetail==9&&lastPart==2);
+ forward_projected_motion(&donor,9,0,1,0,NULL,0,NULL,9,1,1,1,&view,1);
+ assert(lastDetail==9&&lastPart==2);
+ skin->imported=NULL;strcpy(skin->look,"BRolandBaseAppearance");
+ strcpy(u->baseName,"10115_YiSang_Index_FatherAppearance");sr_segment_clear(&u->segmentLatch);
+ forward_projected_motion(&donor,9,0,1,0,NULL,0,NULL,9,1,0,1,&view,0);
+ assert(lastDetail==9&&lastPart==1);
+ forward_projected_motion(&donor,9,0,1,0,NULL,0,NULL,9,1,1,1,&view,1);
+ assert(lastDetail==9&&lastPart==2);
+ forward_projected_motion(&donor,9,0,1,0,NULL,0,NULL,9,1,1,1,&view,1);
+ assert(lastDetail==9&&lastPart==2);
+ u->observedAction=NULL;u->observedViewer=NULL;u->viewerActive=0;
+ puts("PASS imported and Roland repeated coin clips advance and remain latched");
+}
 int main(void){
  open_test_profile();
  static void *table[40];api=table;table[API_OBJECT_CLASS]=fake_class;table[API_PARENT]=fake_parent;
@@ -415,6 +442,7 @@ int main(void){
  test_roland_clash(u,skin);
  test_imported_clash(u,skin);
  test_imported_attacks(u,skin);
+ test_local_repeated_coin(u,skin);
  test_imported_metadata_routing();
  test_roland_build();
  test_imported_art();

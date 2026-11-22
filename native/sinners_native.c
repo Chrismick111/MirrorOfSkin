@@ -2037,8 +2037,11 @@ static MotionDelivery forward_projected_motion(void *app,int detail,uint8_t a1,i
   }
  }
  else if(skin&&importedAttack)chosen=detail;
- else if(enabled_now()&&!cleanup_pending&&!g_motionDepth&&skin&&introApp!=app&&validAction&&
+ /* Local skins still use the common per-coin planner after their authored
+    weapon/group selection; otherwise a repeated source index replays a clip. */
+ if(enabled_now()&&!cleanup_pending&&!g_motionDepth&&skin&&introApp!=app&&validAction&&
     !u->preserveSpecial&&!u->coinDefense&&u->coinKnown&&is_skill_detail(sourceDetail)&&
+    ((!roland_armory(skin)&&!skin->imported)||(detail>=0&&detail<SR_MOTION_CACHE&&skin->ordinaryClips[detail]))&&
     sourceIndex>=0&&sourceIndex<TC_COINS&&(u->ordinarySourceClips[sourceDetail]&(UINT32_C(1)<<sourceIndex))&&
     !(g_rows[skin->row].excluded&(SR_STATIC_APPEARANCE_FLAG|2))&&
     coin>=0&&coin<SR_VARIETY_COINS&&u->observedAction&&u->observedViewer&&u->viewerActive&&
