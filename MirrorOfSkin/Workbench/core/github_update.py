@@ -12,8 +12,9 @@ MAX_TOTAL=512*1024*1024
 PROTECTED={'随机设置.json','自定义人格池.json','演出编排.json','native_pools.bin','停止随机运行.flag','workbench_rules.bin','workbench_forms.bin','Assets/runtime/all_sinners_pools.json','auto_forms.bin','auto_internal_forms.jsonl','auto_form_annotations.json','auto_registry.json','identity_catalog.json','Workbench/data/portrait_source.local.json','Workbench/portrait_source.local.json'}
 PROTECTED.update({'Workbench/weekly_scan_status.json','Workbench/weekly_scan.lock','Workbench/auto_translation_cache.json','Workbench/chapter_art/chapters.discovered.json','Workbench/chapter_art/discovered-assets.json'})
 PROTECTED.add('workbench-instance.json')
+PROTECTED.add('Assets/Roland/BRoland.bundle')
 PROTECTED.update({'规则集状态.json','stage_director.json','特效启用状态.json','fx-active.bin'})
-PROTECTED_PREFIXES=('animation-times-', '方案/', '规则集/', '特效方案/', 'plugin-backups/', 'backup/', 'backups/', 'workbench/user_portraits/', 'workbench/local_portraits/')
+PROTECTED_PREFIXES=('animation-times-', '方案/', '规则集/', '特效方案/', 'plugin-backups/', 'backup/', 'backups/', 'workbench/user_portraits/', 'workbench/local_portraits/', 'assets/importedskins/', 'assets/importedvoices/', 'assets/carrabases/')
 
 class UpdateError(ValueError):pass
 
