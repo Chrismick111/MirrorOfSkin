@@ -58,7 +58,7 @@ static TimeRecord *time_record(void *app,const char *look){
 }
 static double cached_time_ratio(Unit *u,Skin *skin,int detail,int mapped,int source,int donor){
  if(!u||!skin||detail<0||detail>=128||mapped<0||mapped>=128||source<0||source>=TC_COINS||donor<0||donor>=TC_COINS)return 0;
- TimeRecord *a=time_record(u->baseApp,u->baseName),*b=time_record(skin->app,skin->look);
+ TimeRecord *a=time_record(u->baseApp,u->baseName),*b=time_record(skin->app,skin_timing_key(skin));
  double src=a?a->seconds[detail][source]:0,dst=b?b->seconds[mapped][donor]:0;
  return src>0&&dst>0?dst/src:0;
 }

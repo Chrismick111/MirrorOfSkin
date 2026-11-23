@@ -13,16 +13,24 @@ static void save_fixture(const char *name,double duration){
 int main(void){
  g_self=GetModuleHandleW(NULL);api=NULL;
  save_fixture("test-source",1);save_fixture("test-donor",2);
- TimeRecord *a=time_record((void *)1,"test-source");assert(a&&a->seconds[9][0]==1);
- assert(time_record((void *)1,"test-source")==a&&g_timeCount==1);
- TimeRecord *b=time_record((void *)1,"test-donor");assert(b&&g_timeCount==2);
- Unit u={0};Skin skin={0};u.baseApp=(void *)1;skin.app=(void *)1;strcpy(u.baseName,"test-source");strcpy(skin.look,"test-donor");
+ TimeRecord *a=time_record(NULL,"test-source");assert(a&&a->seconds[9][0]==1);
+ assert(time_record(NULL,"test-source")==a&&g_timeCount==1);
+ TimeRecord *b=time_record(NULL,"test-donor");assert(b&&g_timeCount==2);
+ static Unit u;static Skin skin;strcpy(u.baseName,"test-source");strcpy(skin.look,"test-donor");
  assert(cached_time_ratio(&u,&skin,9,9,0,0)==2);
  a->seconds[9][0]=4;assert(cached_time_ratio(&u,&skin,9,9,0,0)==0.5);
  assert(cached_time_ratio(&u,&skin,9,9,32,0)==0);
  assert(time_record(NULL,NULL)==NULL);
  HeapFree(GetProcessHeap(),0,a);HeapFree(GetProcessHeap(),0,b);g_timeCount=0;
- a=time_record((void *)1,"test-source");assert(a&&a->seconds[9][0]==1);
+ a=time_record(NULL,"test-source");assert(a&&a->seconds[9][0]==1);
+ ImportedConfig oldConfig={0},newConfig={0};
+ strcpy(oldConfig.timingKey,"WBImp_same_look-old");
+ strcpy(newConfig.timingKey,"WBImp_same_look-new");
+ save_fixture(oldConfig.timingKey,3);save_fixture(newConfig.timingKey,5);
+ skin.imported=&oldConfig;assert(cached_time_ratio(&u,&skin,9,9,0,0)==3);
+ skin.imported=&newConfig;assert(cached_time_ratio(&u,&skin,9,9,0,0)==5);
+ skin.imported=&oldConfig;assert(cached_time_ratio(&u,&skin,9,9,0,0)==3);
+ puts("PASS same imported look retains per-bundle cached timing across revisions");
  puts("PASS persisted cache read without any IL2CPP API, memory reuse, fresh-session reuse, acceleration, deceleration and index bounds");return 0;
 }
 

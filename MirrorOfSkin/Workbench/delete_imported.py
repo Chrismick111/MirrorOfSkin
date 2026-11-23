@@ -141,7 +141,7 @@ def delete(root, identity, *, lock_factory, replace=os.replace):
             updates[binding] = b''.join(line for line in lines
                                         if line.split(b'\t', 1)[0] != item['appearance'].encode('ascii'))
         for metadata in (root / 'Assets/ImportedVoices').glob('*/voice.json'):
-            if not metadata.resolve().is_relative_to(root) or metadata.is_symlink():
+            if not metadata.resolve().is_relative_to((root / 'Assets/ImportedVoices').resolve()) or metadata.is_symlink():
                 raise ValueError('语音资源路径无效')
             record = json.loads(metadata.read_bytes())
             looks = record.get('included_looks', [])
@@ -164,19 +164,29 @@ def delete(root, identity, *, lock_factory, replace=os.replace):
                 backup.name: {'path': str(path.relative_to(root)), 'existed': originals[path] is not None}
                 for path, backup in recovery.items()
             }, ensure_ascii=False), encoding='utf8')
-            (temp / 'assets.json').write_text(json.dumps({
-                'asset-' + str(index): str(source.relative_to(root))
-                for index, source in enumerate(item['files'])
-            }, ensure_ascii=False), encoding='utf8')
+            asset_map = {}
             for index, source in enumerate(item['files']):
                 if source.exists():
-                    target = temp / ('asset-' + str(index))
+                    fd, name = tempfile.mkstemp(prefix='.mos-delete-', dir=source.parent)
+                    os.close(fd)
+                    os.unlink(name)
+                    asset_map[str(source.relative_to(root))] = name
+            (temp / 'assets.json').write_text(json.dumps(asset_map, ensure_ascii=False), encoding='utf8')
+            for source in item['files']:
+                name = asset_map.get(str(source.relative_to(root)))
+                if name:
+                    target = Path(name)
                     replace(source, target)
                     moved.append((source, target))
             for index, (path, data) in enumerate(updates.items()):
-                staged = temp / ('json-' + str(index))
-                staged.write_bytes(data)
-                replace(staged, path)
+                fd, name = tempfile.mkstemp(prefix='.mos-write-', dir=path.parent)
+                staged = Path(name)
+                try:
+                    with os.fdopen(fd, 'wb') as stream:
+                        stream.write(data)
+                    replace(staged, path)
+                finally:
+                    staged.unlink(missing_ok=True)
                 written.append(path)
         except BaseException:
             try:
@@ -184,9 +194,14 @@ def delete(root, identity, *, lock_factory, replace=os.replace):
                     if originals[path] is None:
                         path.unlink(missing_ok=True)
                     else:
-                        staged = temp / ('restore-' + str(index))
-                        staged.write_bytes(recovery[path].read_bytes())
-                        os.replace(staged, path)
+                        fd, name = tempfile.mkstemp(prefix='.mos-restore-', dir=path.parent)
+                        staged = Path(name)
+                        try:
+                            with os.fdopen(fd, 'wb') as stream:
+                                stream.write(recovery[path].read_bytes())
+                            os.replace(staged, path)
+                        finally:
+                            staged.unlink(missing_ok=True)
                 for source, target in reversed(moved):
                     os.replace(target, source)
             except BaseException as recovery_error:
@@ -195,6 +210,8 @@ def delete(root, identity, *, lock_factory, replace=os.replace):
                 path.unlink()
             temp.rmdir()
             raise
+        for source, target in moved:
+            target.unlink(missing_ok=True)
         for path in temp.iterdir():
             path.unlink()
         temp.rmdir()

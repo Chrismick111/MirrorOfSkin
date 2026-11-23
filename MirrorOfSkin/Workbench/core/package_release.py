@@ -30,6 +30,8 @@ def package(root, output, *, launcher=False):
     if not isinstance(entry,dict) or not isinstance(entry.get('identity_id'),str):raise ValueError('invalid identity')
     if 'weight' in entry:entry['weight']=1
     entry.pop('enabled',None)
+   # Locally imported IDs refer to private, non-shipped bundles.
+   p['entries']=[entry for entry in p['entries'] if not entry['identity_id'].startswith('story_WBImp_')]
   items[CATALOG]=(json.dumps(pools,ensure_ascii=False,indent=2)+'\n').encode('utf8')
  except (ValueError,TypeError,UnicodeError) as exc:raise UpdateError('人格目录格式无效') from exc
  items['compatibility.json']=manifest_path.read_bytes()

@@ -1,0 +1,47 @@
+"""Ensure personal imported assets and identities do not enter release archives."""
+import hashlib
+import json
+from pathlib import Path
+import sys
+import tempfile
+import unittest
+import zipfile
+
+WORKBENCH = Path(__file__).resolve().parents[1] / 'MirrorOfSkin' / 'Workbench'
+sys.path.insert(0, str(WORKBENCH))
+import _module_paths
+import package_release
+import github_update
+
+
+class ReleasePrivacyTest(unittest.TestCase):
+    def test_personal_assets_are_protected(self):
+        for name in ('Assets/ImportedSkins/x.cfg', 'Assets/ImportedVoices/x/voice.json',
+                     'Assets/CarraBases/x/data', 'Assets/Roland/BRoland.bundle'):
+            self.assertTrue(github_update._protected(name), name)
+        self.assertFalse(github_update._protected('Assets/Roland/appearance.json'))
+
+    def test_release_excludes_imported_identities_without_modifying_input(self):
+        with tempfile.TemporaryDirectory() as folder:
+            root = Path(folder) / 'addon'; root.mkdir()
+            info = b'{"version":"1.3.1"}'
+            (root / 'addon_info.json').write_bytes(info)
+            (root / 'compatibility.json').write_text(json.dumps({'schema': 1, 'package_files': {
+                'addon_info.json': hashlib.sha256(info).hexdigest()}}), encoding='utf8')
+            catalog = {str(i): {'entries': []} for i in range(101, 113)}
+            catalog['101']['entries'] = [
+                {'identity_id':'story_WBImp_'+'a'*24, 'weight':3},
+                {'identity_id':'story_BRolandBaseAppearance','weight':2}]
+            path = root / github_update.CATALOG; path.parent.mkdir(parents=True)
+            original = json.dumps(catalog).encode(); path.write_bytes(original)
+            output = Path(folder) / 'candidate.zip'
+            package_release.package(root, output)
+            self.assertEqual(path.read_bytes(), original)
+            with zipfile.ZipFile(output) as archive:
+                entries = json.loads(archive.read(github_update.CATALOG))['101']['entries']
+            self.assertEqual([x['identity_id'] for x in entries], ['story_BRolandBaseAppearance'])
+            self.assertEqual(entries[0]['weight'], 1)
+
+
+if __name__ == '__main__':
+    unittest.main()

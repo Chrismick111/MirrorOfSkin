@@ -105,10 +105,15 @@ def _portrait_run(root):
   if code:raise RuntimeError((details[-1] if details else '本地资源检索失败，请确认游戏已安装并运行过')[:400])
   with _PORTRAIT_LOCK:_PORTRAIT_JOB['result']=result
   _portrait_update('done',1,1,result.get('message','本地资源检索完成'))
+  try:pathlib.Path(root,'Workbench/portrait_last_error.txt').unlink(missing_ok=True)
+  except OSError:pass
  except Exception as exc:
   with _PORTRAIT_LOCK:
    _PORTRAIT_JOB.update(stage='error',message=str(exc),updated=time.time())
    _PORTRAIT_JOB.pop('result',None)
+  # The job state lives in memory only, so a failed first run left no trace at all.
+  try:pathlib.Path(root,'Workbench/portrait_last_error.txt').write_text(str(exc)+'\n',encoding='utf8')
+  except OSError:pass
 
 def _delete_images(root):
  root=pathlib.Path(root);wb=root/'Workbench';count=0;size=0
@@ -121,6 +126,11 @@ def _delete_images(root):
     if file.is_symlink() or not file.is_file() or file.suffix.lower() not in ('.png','.jpg','.jpeg','.webp'):continue
     size+=file.stat().st_size;file.unlink();count+=1
  return {'count':count,'bytes':size}
+
+def _portraits_missing(root):
+ folder=pathlib.Path(root)/'Workbench/portraits'
+ try:return not any(p.suffix.lower()=='.png' for p in folder.iterdir())
+ except OSError:return True
 
 def _portrait_start(root):
  global _PORTRAIT_THREAD
@@ -481,6 +491,12 @@ def start_scan(root):
   finally:
    with SCAN_LOCK:
     SCAN['finished']=time.time();SCAN['running']=False
+  # scan_units only extracts portraits on the weekly pass, so a plain scan can
+  # finish with portraits/ still empty. Hand off to the restore pass once it has
+  # released image_resources.lock, otherwise the first run ends with no art.
+  try:
+   if not SCAN['error'] and _portraits_missing(root):_portrait_start(root)
+  except Exception:pass
  threading.Thread(target=work,daemon=True).start()
  return {'running':True,'started':SCAN['started']}
 
@@ -612,7 +628,7 @@ def main():
      from delete_imported import delete
      identity=body.get('identity_id')
      if not isinstance(identity,str):raise ValueError('请选择要删除的导入外观')
-     with store.lock:return self.send(delete(store.root,identity,lock_factory=FileLock))
+     return self.send(delete(store.root,identity,lock_factory=lambda _path:store.lock))
     if route=='local-skin-import':
      from skin_import import import_skin
      paths=body.get('paths')

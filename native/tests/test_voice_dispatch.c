@@ -20,6 +20,8 @@ static void *field_named(void *k,const char *name){
 }
 static int field_offset(void *field){return (int)(uintptr_t)field;}
 static int bubblesEnabled=1,textLookups,centerShown,languageMissing,allowCenter=1;
+static const char *captionObserved;
+static const char *expectedCaption="custom caption";
 static int lastTextOwner;static float lastLength;static uint8_t lastCustom;
 static int uiToken,lineToken;
 static void *field_value(void *f,void *o){(void)f;(void)o;return &uiToken;}
@@ -33,6 +35,7 @@ static void *mock_method(void *k,const char *name,int count){
  return NULL;
 }
 static void *new_strobj(const char *text){
+ if(!strcmp(text,expectedCaption))captionObserved=expectedCaption;
  static TestString strings[8];static unsigned cursor;
  TestString *str=&strings[cursor++%8];
  *str=test_string(strlen(text)<180?text:"localized-text");return str;
@@ -111,6 +114,31 @@ int main(void){
  bubblesEnabled=1;
  strcpy(skin->look,"UnmappedTransformedResource");assert(!voice_worn_owner(u));
  voice_index_hook(&event,10101,1,&key,&out,NULL);assert(lastId==0);
+ ImportedConfig imported={0};skin->imported=&imported;
+ strcpy(imported.layout,"10109_Yisang_RingFingerAppearance");voiceManifestRead=1;
+ voice_index_hook(&event,10101,1,&key,&out,NULL);assert(lastId==10109);
+ strcpy(imported.layout,"UnknownLayout");
+ voice_index_hook(&event,10101,1,&key,&out,NULL);assert(lastId==10101);
+ VoiceLibrary lib={.captionsRead=1};
+ VoiceCaption *cap=calloc(1,sizeof(*cap)+strlen(expectedCaption)+1);assert(cap);
+ strcpy(cap->key,"battle_select_10109_1");strcpy(cap->text,expectedCaption);cap->owner=10109;lib.captions=cap;
+ VoiceBinding binding={.owner=10109,.library=&lib};strcpy(binding.look,skin->look);voiceBindings=&binding;
+ /* Native subtitle before or after the FMOD fallback, including equal source
+    and donor ids. Each real event should print just once on its own view. */
+ strcpy(u->baseName,"10109_Yisang_RingFingerAppearance");
+ PrivateVoiceEvent *e=&privateVoiceEvents[0];
+ *e=(PrivateVoiceEvent){.u=u,.view=&view,.app=&app,.binding=&binding};strcpy(e->key,cap->key);
+ TestString selection=test_string(cap->key);
+ int priorShown=centerShown;languageMissing=0;
+ print_bubble_hook(10109,&selection,3.5f,1,NULL);private_playing_caption(e);
+ assert(e->captionHandled&&captionObserved&&centerShown==priorShown+1);
+ e->captionHandled=0;private_playing_caption(e);print_bubble_hook(10109,&selection,3.5f,1,NULL);
+ assert(e->captionHandled&&centerShown==priorShown+2);
+ e->captionHandled=0;e->captionBlocked=1;private_playing_caption(e);
+ assert(!e->captionHandled&&centerShown==priorShown+2);
+ VoiceBinding other=binding;other.owner=10102;
+ assert(!private_caption(&other,cap->key)&&!private_caption(&binding,"battle_kill_10109_1"));
+ memset(e,0,sizeof(*e));voiceBindings=NULL;skin->imported=NULL;free(cap);
  view.appearance=NULL;voice_index_hook(&event,10101,1,&key,&out,NULL);assert(lastId==10101);
  assert(sr_voice_request(&view,8378,"OnDie_View")&&roots==1);
  assert(!sr_voice_request(&view,8378,"OnDie_View"));

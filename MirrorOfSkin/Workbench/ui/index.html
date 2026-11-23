@@ -2234,6 +2234,7 @@
             <input id="addStory" type="checkbox" checked />包含剧情/敌方外观
           </label>
         </div>
+        <div id="localImportResult" role="status" aria-live="polite" hidden></div>
         <details class="chapter-browser" open>
           <summary>按章节浏览</summary>
           <div
@@ -3538,8 +3539,11 @@
       $("#addSearch").oninput = () => renderAddList();
       async function importLocalSkin() {
         const buttons = [$("#importLocalSkin"), $("#headerImportLocalSkin")];
+        const result = $("#localImportResult");
         buttons.forEach((button) => { button.disabled = true; });
-        status("请选择外观或语音包，读取大型模型可能需要几分钟");
+        result.hidden = false;
+        result.textContent = "请选择外观或语音包，读取大型模型可能需要几分钟。";
+        status(result.textContent);
         try {
           const { rows, errors } = await api("local-skin-import", {});
           if (rows.length) {
@@ -3557,9 +3561,11 @@
             else if (row.voice_connected) voice = "，已接通语音";
             return row.name + " " + state + voice + (row.voice_warning ? "，" + row.voice_warning : "");
           });
-          status([...messages, ...errors].join("；") || "已取消导入");
+          result.textContent = [...messages, ...errors].join("；") || "已取消导入";
+          status(result.textContent);
         } catch (error) {
-          status("导入失败：" + error.message);
+          result.textContent = "导入失败：" + error.message;
+          status(result.textContent);
         } finally {
           buttons.forEach((button) => { button.disabled = false; });
         }
@@ -4233,8 +4239,14 @@
             if (stale) await api("scan", {});
           }
           await loadDiscovered();
+        } catch (e) {
+          console.warn("initial scan failed", e);
+        }
+        try {
           await ensureResourceImages();
-        } catch (e) {}
+        } catch (e) {
+          status("资源图恢复未启动：" + (e.message || e));
+        }
       }
       async function ensureResourceImages() {
         try {
