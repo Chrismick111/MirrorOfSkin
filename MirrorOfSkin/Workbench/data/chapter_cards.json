@@ -1,0 +1,219 @@
+{
+  "prologue": {
+    "image": "chapter0.png",
+    "chapter": "序章",
+    "title": "幽暗的森林",
+    "timeline": "984-01",
+    "rank": 0
+  },
+  "chapter_1": {
+    "image": "chapter1.png",
+    "chapter": "章节I",
+    "title": "无归属者",
+    "timeline": "984-01",
+    "rank": 100
+  },
+  "chapter_2": {
+    "image": "chapter2.png",
+    "chapter": "章节II",
+    "title": "无法去爱",
+    "timeline": "984-01",
+    "rank": 200
+  },
+  "chapter_3": {
+    "image": "chapter3.png",
+    "chapter": "章节III",
+    "title": "未曾面对",
+    "timeline": "984-02",
+    "rank": 300
+  },
+  "chapter_4": {
+    "image": "chapter4.png",
+    "chapter": "章节IV",
+    "title": "无改变者",
+    "timeline": "984-05",
+    "rank": 400
+  },
+  "chapter_5": {
+    "image": "chapter5.png",
+    "chapter": "章节V",
+    "title": "定义为恶",
+    "timeline": "984-07",
+    "rank": 500
+  },
+  "chapter_6": {
+    "image": "chapter6.png",
+    "chapter": "章节VI",
+    "title": "心意相悖",
+    "timeline": "984-11",
+    "rank": 600
+  },
+  "chapter_7": {
+    "image": "chapter7.png",
+    "chapter": "章节VII",
+    "title": "梦之终焉",
+    "timeline": "984-12",
+    "rank": 700
+  },
+  "chapter_8": {
+    "image": "chapter8.png",
+    "chapter": "章节VIII",
+    "title": "不思观望",
+    "timeline": "985-01",
+    "rank": 800
+  },
+  "chapter_9": {
+    "image": "chapter9.png",
+    "chapter": "章节IX",
+    "title": "无割舍者",
+    "timeline": "985-02",
+    "rank": 900
+  },
+  "chapter_10": {
+    "image": "chapter10.png",
+    "chapter": "章节X",
+    "title": "凝视之下",
+    "timeline": "985-03",
+    "rank": 1000
+  },
+  "interlude_3_5": {
+    "image": "hells-chicken.png",
+    "chapter": "间章I",
+    "title": "地狱鸡",
+    "timeline": "984-03",
+    "rank": 350
+  },
+  "interlude_4_5": {
+    "image": "chapter-umida.png",
+    "chapter": "间章II",
+    "title": "去·海·边",
+    "timeline": "984-05",
+    "rank": 450
+  },
+  "interlude_5_5_wonder": {
+    "image": "chapter5.5_miracle.png",
+    "chapter": "间章III",
+    "title": "20区的奇迹",
+    "timeline": "984-08",
+    "rank": 510
+  },
+  "interlude_5_5_ycgd": {
+    "image": "chapter5.5_ycgd.png",
+    "chapter": "间章III",
+    "title": "肉斩骨断",
+    "timeline": "984-10",
+    "rank": 530
+  },
+  "interlude_6_5_tkt": {
+    "image": "chapter6.5_tkt.png",
+    "chapter": "间章IV",
+    "title": "时间杀人时间",
+    "timeline": "984-12",
+    "rank": 620
+  },
+  "interlude_6_5_mowe": {
+    "image": "chapter6.5_mowe.png",
+    "chapter": "间章IV",
+    "title": "WARP快车谋杀案",
+    "timeline": "984-12",
+    "rank": 630
+  },
+  "interlude_7_5_checkup": {
+    "image": "chapter7.5_LCBCheckUp.png",
+    "chapter": "间章V",
+    "title": "LCB定期体检",
+    "timeline": "984-12",
+    "rank": 750
+  },
+  "interlude_7_5_cleanup": {
+    "image": "chapter7.5_NightSweep.png",
+    "chapter": "间章V",
+    "title": "深夜清扫",
+    "timeline": "985-01",
+    "rank": 760
+  },
+  "interlude_8_5_cultivation": {
+    "image": "chapter8.5_Cultivation.png",
+    "chapter": "间章VI",
+    "title": "切磋琢春",
+    "timeline": "985-01",
+    "rank": 820
+  },
+  "interlude_8_5_pilgrimage": {
+    "image": "Canto_Pilgrimage.png",
+    "chapter": "8.5-EX",
+    "title": "善意的巡礼",
+    "timeline": "985-01",
+    "rank": 830
+  },
+  "interlude_9_5_twth": {
+    "image": "chapter9.5_TwiningThreads.png",
+    "chapter": "间章VII",
+    "title": "绞丝结线",
+    "timeline": "985-02",
+    "rank": 920
+  },
+  "interlude_9_5_exme": {
+    "image": "chapter9.5_RecordMemory.png",
+    "chapter": "间章VII",
+    "title": "经验记忆",
+    "timeline": "985-03",
+    "rank": 930
+  },
+  "walpurgis_2": {
+    "image": "stage-node-id_910603.png",
+    "chapter": "第2次",
+    "title": "瓦尔普吉斯之夜",
+    "timeline": "",
+    "rank": 520,
+    "art_note": "共用游戏第2次瓦夜章节底图"
+  },
+  "walpurgis_3": {
+    "image": "stage-node-id_910603.png",
+    "chapter": "第3次",
+    "title": "瓦尔普吉斯之夜",
+    "timeline": "",
+    "rank": 610,
+    "art_note": "共用游戏第2次瓦夜章节底图"
+  },
+  "walpurgis_4": {
+    "image": "stage-node-id_910603.png",
+    "chapter": "第4次",
+    "title": "瓦尔普吉斯之夜",
+    "timeline": "",
+    "rank": 640,
+    "art_note": "共用游戏第2次瓦夜章节底图"
+  },
+  "walpurgis_5": {
+    "image": "stage-node-id_910603.png",
+    "chapter": "第5次",
+    "title": "瓦尔普吉斯之夜",
+    "timeline": "",
+    "rank": 710,
+    "art_note": "共用游戏第2次瓦夜章节底图"
+  },
+  "walpurgis_6": {
+    "image": "stage-node-id_910603.png",
+    "chapter": "第6次",
+    "title": "瓦尔普吉斯之夜",
+    "timeline": "",
+    "rank": 810,
+    "art_note": "共用游戏第2次瓦夜章节底图"
+  },
+  "walpurgis_8": {
+    "image": "stage-node-id_910603.png",
+    "chapter": "第8次",
+    "title": "瓦尔普吉斯之夜",
+    "timeline": "",
+    "rank": 910,
+    "art_note": "共用游戏第2次瓦夜章节底图"
+  },
+  "walpurgis_10": {
+    "image": "walpurgis10.png",
+    "chapter": "第10次",
+    "title": "瓦尔普吉斯之夜",
+    "timeline": "",
+    "rank": 1050,
+    "art_note": "游戏本次活动 banner_Dawn_en.png"
+  }
+}

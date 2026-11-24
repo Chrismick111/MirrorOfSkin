@@ -20,6 +20,14 @@ INTERLUDES = {
     '9125': ('interlude_9_5_twth', 'chapter9.5_TwiningThreads.png'),
     '9127': ('interlude_9_5_exme', 'chapter9.5_RecordMemory.png'),
 }
+INTERLUDE_TITLES = {
+    'interlude_3_5':'地狱鸡', 'interlude_4_5':'去·海·边',
+    'interlude_5_5_wonder':'20区的奇迹', 'interlude_5_5_ycgd':'肉斩骨断',
+    'interlude_6_5_tkt':'时间杀人时间', 'interlude_6_5_mowe':'WARP快车谋杀案',
+    'interlude_7_5_checkup':'LCB定期体检', 'interlude_7_5_cleanup':'深夜清扫',
+    'interlude_8_5_cultivation':'切磋琢春', 'interlude_8_5_pilgrimage':'善意的巡礼',
+    'interlude_9_5_twth':'绞丝结线', 'interlude_9_5_exme':'经验记忆',
+}
 
 
 def read(path):
@@ -55,7 +63,7 @@ def detect(game, image_names, errors):
     images = {name.casefold(): name for name in image_names}
     for key, asset in INTERLUDES.values():
         if asset.casefold() in images:
-            label = pathlib.PurePosixPath(asset).stem
+            label = INTERLUDE_TITLES[key]
             cards[key] = dict(chapter='间章', title=label, rank=20000, asset=asset)
     if 'banner_dawn_en.png' in images:
         cards['walpurgis_10'] = dict(chapter='第10次', title='瓦尔普吉斯之夜', rank=1050,

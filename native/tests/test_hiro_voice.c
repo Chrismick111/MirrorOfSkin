@@ -22,11 +22,13 @@
 typedef struct {void *imported;char look[64];void *app;} Skin;
 typedef struct {int used;void *view;Skin *worn;} Unit;
 static Skin *voice_worn_skin(Unit *u){return u->worn;}
+static unsigned voice_source_id(const Unit *u){(void)u;return 10115;}
 static void bootlog(const char *s){puts(s);}
-static wchar_t manifest[MAX_PATH], captions[MAX_PATH], imported[2048], noah[2048], stock[2048];
+static wchar_t manifest[MAX_PATH], captions[MAX_PATH], generation[MAX_PATH], imported[2048], noah[2048], stock[2048];
 static int addon_file_path(wchar_t *dst,size_t cap,const wchar_t *r){
  const wchar_t *path=NULL;
  if(!wcscmp(r,L"Assets\\ImportedVoices\\bindings.tsv"))path=manifest;
+ else if(!wcscmp(r,L"Assets\\ImportedVoices\\runtime-revision"))path=generation;
  else if(!wcsncmp(r,L"Assets\\ImportedVoices\\",22)){
   const wchar_t *name=wcsrchr(r,L'\\')+1;
   if(!wcscmp(name,L"bubbles.tsv")&&(r[22]=='a'||r[22]=='d'))path=captions;
@@ -86,8 +88,9 @@ int main(void){
  swprintf(stock,2048,L"%ls\\LimbusCompany_Data\\StreamingAssets\\Assets\\Sound\\FMODBuilds\\Desktop\\",game);
  assert(GetTempPathW(MAX_PATH,temp)&&GetTempFileNameW(temp,L"vb",0,manifest));
  assert(GetTempFileNameW(temp,L"vc",0,captions));
+ assert(GetTempFileNameW(temp,L"vg",0,generation));
  FILE *cfile=_wfopen(captions,L"wb");assert(cfile);
- fputs("10109\tbattle_select_10109_1\t欸嘿嘿。\n10109\tbattle_kill_10109_1\t……你看吧？。\n10916\tbattle_select_10916_1\tbound wearer\n",cfile);
+ fputs("10109\tbattle_select_10109_1\t欸嘿嘿。\n10109\tbattle_kill_10109_1\t……你看吧？。\n10916\tbattle_s3_10916_1_1\tbound wearer\n",cfile);
  assert(!fclose(cfile));
  FILE *f=_wfopen(manifest,L"wb");assert(f);
  fputs(LOOK_A "\t10916\t" REV_A "\tVoice_Default_S7_4.assets.bank\n"
@@ -108,15 +111,20 @@ int main(void){
  Unit ua={1,(void*)10,&a},ub={1,(void*)11,&b},uc={1,(void*)12,&regular};
  VoiceBinding *ba=voice_binding(&a),*bb=voice_binding(&b),*bc=voice_binding(&c);
  assert(ba&&bb&&bc&&!voice_binding(&regular)&&voice_binding(&alias)->library==ba->library);
- assert(!strcmp(private_caption(ba,"battle_select_10916_1"),"bound wearer"));
- assert(!private_caption(ba,"battle_select_10109_1")&&!private_caption(bb,"battle_select_10916_1"));
+ assert(!strcmp(private_caption(ba,"battle_s3_10916_1_1"),"bound wearer"));
+ assert(!private_caption(ba,"battle_select_10109_1")&&!private_caption(bb,"battle_s3_10916_1_1"));
  assert(voice_open(ba->library,exe,1)&&voice_open(bb->library,exe,1)&&voice_open(bc->library,exe,1));
  void *original=bc->library->system;
  assert(private_voice_owner(&a)==10916&&private_voice_owner(&b)==10916&&!private_voice_owner(&regular));
  int (*lookup)(void*,const char*,void**)=(void*)GetProcAddress(lib,"FMOD_Studio_System_GetEvent");
  void *desc=NULL,*ia=NULL,*ib=NULL,*ic=NULL;
- assert(!lookup(original,"event:/Voice/battle_select_10916_1",&desc));
+ assert(!lookup(original,"event:/Voice/battle_s3_10916_1_1",&desc));
  assert(!hStudio_EventDescription_CreateInstance(desc,&ia)&&!hStudio_EventDescription_CreateInstance(desc,&ib)&&!hStudio_EventDescription_CreateInstance(desc,&ic));
+ int parameterCount=0;VoiceParameterDescription parameter={0};
+ assert(!hStudio_EventDescription_GetParameterDescriptionCount(desc,&parameterCount)&&parameterCount>0);
+ assert(!hStudio_EventDescription_GetParameterDescriptionByIndex(desc,0,&parameter));
+ assert(!strcmp(parameter.name,"volume_Multi")&&parameter.type==0);
+ assert(!hStudio_EventInstance_SetParameterByID(ia,parameter.id,0.75f,1));
  uc.worn=&wrongOwner;private_voice_track(&uc,&wrongOwner,ic);
  assert(!privateVoiceEvents[0].original);
  uc.worn=&regular;
@@ -126,6 +134,13 @@ int main(void){
  assert(!hStudio_EventInstance_Start(ia)&&!hStudio_EventInstance_Start(ib)&&!hStudio_EventInstance_Start(ic));
  for(int i=0;i<100&&(!privateVoiceEvents[0].muted||!privateVoiceEvents[1].muted);i++){private_voice_tick(1);Sleep(5);}
  assert(privateVoiceEvents[0].muted&&privateVoiceEvents[1].muted);
+ float copied=-1;
+ assert(!hStudio_EventInstance_GetParameterByID(privateVoiceEvents[0].replacement,parameter.id,&copied,NULL));
+ assert(copied>0.74f&&copied<0.76f);
+ assert(!hStudio_EventInstance_SetParameterByID(ia,parameter.id,0.35f,1));
+ private_voice_tick(1);
+ assert(!hStudio_EventInstance_GetParameterByID(privateVoiceEvents[0].replacement,parameter.id,&copied,NULL));
+ assert(copied>0.34f&&copied<0.36f);
  void *ga=NULL,*gb=NULL,*gc=NULL;int m=-1;
  assert(!hStudio_EventInstance_GetChannelGroup(ia,&ga)&&!hStudio_EventInstance_GetChannelGroup(ib,&gb)&&!hStudio_EventInstance_GetChannelGroup(ic,&gc));
  assert(!hChannelGroup_GetMute(ga,&m)&&m&&!hChannelGroup_GetMute(gb,&m)&&m&&!hChannelGroup_GetMute(gc,&m)&&!m);
@@ -140,6 +155,21 @@ int main(void){
  assert(privateVoiceEvents[1].original&&!hChannelGroup_GetMute(gb,&m)&&m);
  private_voice_tick(0);assert(!hChannelGroup_GetMute(gb,&m)&&!m);
  hStudio_EventInstance_Release(ia);hStudio_EventInstance_Release(ib);hStudio_EventInstance_Release(ic);
+ /* A delayed stock voice can still refer to the wearer's identity. Resolve
+    the matching donor event instead of letting the original voice leak. */
+ wchar_t sourceBank[2300],sourceAssets[2300];
+ swprintf(sourceBank,2300,L"%lsVoice_Default_S7_3.bank",stock);
+ swprintf(sourceAssets,2300,L"%lsVoice_Default_S7_3.assets.bank",stock);
+ assert(voice_load_bank(original,sourceBank)&&voice_load_bank(original,sourceAssets));
+ void *sourceDesc=NULL,*sourceEvent=NULL;
+ assert(!lookup(original,"event:/Voice/battle_endcommand_10115_1",&sourceDesc));
+ assert(!hStudio_EventDescription_CreateInstance(sourceDesc,&sourceEvent));
+ ua.worn=&a;PrivateVoiceEvent *mapped=private_voice_track(&ua,&a,sourceEvent);
+ assert(mapped&&!strcmp(mapped->key,"battle_endcommand_10916_1"));
+ assert(!hStudio_EventInstance_Start(sourceEvent));
+ for(int i=0;i<100&&!mapped->muted;i++){private_voice_tick(1);Sleep(5);}
+ assert(mapped->muted);private_voice_tick(0);
+ hStudio_EventInstance_Stop(sourceEvent,1);hStudio_EventInstance_Release(sourceEvent);
  if(noah[0]){
   Skin nskin={(void*)1,LOOK_NOAH,(void*)20},stockSkin={(void*)1,LOOK_STOCK,(void*)21};
   Unit wearer={1,(void*)22,&nskin};VoiceBinding *n=voice_binding(&nskin),*s=voice_binding(&stockSkin);
@@ -158,6 +188,34 @@ int main(void){
    hStudio_EventInstance_Stop(event,1);hStudio_EventInstance_Release(event);
   }
  }
- private_voice_close();DeleteFileW(manifest);DeleteFileW(captions);
+ /* A new binding is picked up without restarting the game, and unchanged
+    files do not disrupt an already-loaded library. */
+ VoiceFile stockFile={0};strcpy(stockFile.name,"Voice_Default_S7_4.bank");
+ VoiceLibrary separate={0};strcpy(separate.revision,REV_B);separate.files=&stockFile;
+ assert(voice_open(&separate,exe,1));
+ void *activeDesc=NULL,*activeOriginal=NULL,*activeGroup=NULL;
+ assert(!lookup(separate.system,"event:/Voice/battle_select_10916_1",&activeDesc));
+ assert(!hStudio_EventDescription_CreateInstance(activeDesc,&activeOriginal));
+ ua.worn=&a;PrivateVoiceEvent *active=private_voice_track(&ua,&a,activeOriginal);assert(active);
+ assert(!hStudio_EventInstance_Start(activeOriginal));
+ for(int i=0;i<100&&!active->muted;i++){hStudio_System_Update(separate.system);private_voice_tick(1);Sleep(5);}
+ assert(active->muted&&!hStudio_EventInstance_GetChannelGroup(activeOriginal,&activeGroup));
+ int activeMute=0;assert(!hChannelGroup_GetMute(activeGroup,&activeMute)&&activeMute);
+ FILE *update=_wfopen(generation,L"wb");assert(update);fputs("revision1",update);assert(!fclose(update));
+ WIN32_FILE_ATTRIBUTE_DATA generationAttr;assert(GetFileAttributesExW(generation,GetFileExInfoStandard,&generationAttr));
+ voice_refresh_poll_at(1000);
+ assert(voiceManifestRead&&voiceLibraries);
+ voice_refresh_poll_at(1600);assert(voiceManifestRead&&voiceLibraries);
+ update=_wfopen(generation,L"wb");assert(update);fputs("revision2",update);assert(!fclose(update));
+ HANDLE g=CreateFileW(generation,FILE_WRITE_ATTRIBUTES,FILE_SHARE_READ|FILE_SHARE_WRITE|FILE_SHARE_DELETE,NULL,OPEN_EXISTING,0,NULL);
+ assert(g!=INVALID_HANDLE_VALUE&&SetFileTime(g,NULL,NULL,&generationAttr.ftLastWriteTime));CloseHandle(g);
+ voice_refresh_poll_at(2200);assert(!voiceManifestRead&&!voiceLibraries);
+ assert(!hChannelGroup_GetMute(activeGroup,&activeMute)&&!activeMute);
+ hStudio_EventInstance_Stop(activeOriginal,1);hStudio_EventInstance_Release(activeOriginal);
+ hStudio_System_Release(separate.system);
+ assert(voice_binding(&a)&&voiceManifestRead&&voiceLibraries);
+ update=_wfopen(manifest,L"ab");assert(update);fputs("\n",update);assert(!fclose(update));
+ voice_refresh_poll_at(2800);assert(!voiceManifestRead&&!voiceLibraries);
+ private_voice_close();DeleteFileW(manifest);DeleteFileW(captions);DeleteFileW(generation);
  puts("PASS real FMOD three simultaneous units, two private revisions, shared bank, event-only, assets-only, paired banks and stock voice restoration");
 }

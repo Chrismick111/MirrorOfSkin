@@ -167,7 +167,7 @@ def delete(root, identity, *, lock_factory, replace=os.replace):
             asset_map = {}
             for index, source in enumerate(item['files']):
                 if source.exists():
-                    fd, name = tempfile.mkstemp(prefix='.mos-delete-', dir=source.parent)
+                    fd, name = tempfile.mkstemp(prefix='.mos-delete-', dir=source.parent.resolve())
                     os.close(fd)
                     os.unlink(name)
                     asset_map[str(source.relative_to(root))] = name
@@ -176,15 +176,16 @@ def delete(root, identity, *, lock_factory, replace=os.replace):
                 name = asset_map.get(str(source.relative_to(root)))
                 if name:
                     target = Path(name)
-                    replace(source, target)
-                    moved.append((source, target))
+                    physical_source=source.parent.resolve()/source.name
+                    replace(physical_source, target)
+                    moved.append((physical_source, target))
             for index, (path, data) in enumerate(updates.items()):
-                fd, name = tempfile.mkstemp(prefix='.mos-write-', dir=path.parent)
+                fd, name = tempfile.mkstemp(prefix='.mos-write-', dir=path.parent.resolve())
                 staged = Path(name)
                 try:
                     with os.fdopen(fd, 'wb') as stream:
                         stream.write(data)
-                    replace(staged, path)
+                    replace(staged, path.parent.resolve()/path.name)
                 finally:
                     staged.unlink(missing_ok=True)
                 written.append(path)
@@ -194,12 +195,12 @@ def delete(root, identity, *, lock_factory, replace=os.replace):
                     if originals[path] is None:
                         path.unlink(missing_ok=True)
                     else:
-                        fd, name = tempfile.mkstemp(prefix='.mos-restore-', dir=path.parent)
+                        fd, name = tempfile.mkstemp(prefix='.mos-restore-', dir=path.parent.resolve())
                         staged = Path(name)
                         try:
                             with os.fdopen(fd, 'wb') as stream:
                                 stream.write(recovery[path].read_bytes())
-                            os.replace(staged, path)
+                            os.replace(staged, path.parent.resolve()/path.name)
                         finally:
                             staged.unlink(missing_ok=True)
                 for source, target in reversed(moved):

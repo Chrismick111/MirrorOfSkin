@@ -1,13 +1,21 @@
 /* Each imported revision owns a private Studio mixer. Multiple wearers can
    share its bank data, while each voice has an independent event instance. */
 typedef struct {int samples;float peak[32],rms[32];short channels;} VoiceMeter;
+typedef struct {unsigned data1,data2;} VoiceParameterId;
+typedef struct {
+ const char *name;VoiceParameterId id;float minimum,maximum,initial;
+ int type;unsigned flags;GUID guid;
+} VoiceParameterDescription;
+typedef struct {VoiceParameterId source,target;} VoiceParameterPair;
 #define VOICE_STUDIO_API(X) \
  X(Studio_System_GetCoreSystem,(void*,void**)) \
  X(Studio_System_Create,(void**,unsigned)) X(Studio_System_Initialize,(void*,int,unsigned,unsigned,void*)) \
  X(Studio_System_LoadBankFile,(void*,const char*,unsigned,void**)) X(Studio_System_Update,(void*)) \
- X(Studio_System_GetEventByID,(void*,const GUID*,void**)) X(Studio_System_Release,(void*)) \
+ X(Studio_System_GetEventByID,(void*,const GUID*,void**)) X(Studio_System_GetEvent,(void*,const char*,void**)) X(Studio_System_Release,(void*)) \
  X(Studio_EventDescription_GetID,(void*,GUID*)) X(Studio_EventDescription_GetPath,(void*,char*,int,int*)) \
+ X(Studio_EventDescription_GetParameterDescriptionCount,(void*,int*)) X(Studio_EventDescription_GetParameterDescriptionByIndex,(void*,int,VoiceParameterDescription*)) \
  X(Studio_EventDescription_CreateInstance,(void*,void**)) X(Studio_EventInstance_GetDescription,(void*,void**)) \
+ X(Studio_EventInstance_GetParameterByID,(void*,VoiceParameterId,float*,float*)) X(Studio_EventInstance_SetParameterByID,(void*,VoiceParameterId,float,int)) \
  X(Studio_EventInstance_GetPlaybackState,(void*,int*)) X(Studio_EventInstance_GetTimelinePosition,(void*,int*)) \
  X(Studio_EventInstance_SetTimelinePosition,(void*,int)) X(Studio_EventInstance_GetChannelGroup,(void*,void**)) \
  X(Studio_EventInstance_SetVolume,(void*,float)) X(Studio_EventInstance_SetPaused,(void*,int)) \
@@ -212,6 +220,7 @@ typedef struct {
  Unit *u;void *view,*app,*original,*replacement,*group;
  VoiceBinding *binding;DWORD queued;int muted,started,captionHandled,captionBlocked;
  char key[192];void *meter;int peakLogged;
+ VoiceParameterPair parameters[32];unsigned parameterCount;
 } PrivateVoiceEvent;
 static PrivateVoiceEvent privateVoiceEvents[32];
 static void private_playing_caption(PrivateVoiceEvent *e);
@@ -249,13 +258,21 @@ static void private_voice_end(PrivateVoiceEvent *e){
 static PrivateVoiceEvent *private_voice_track(Unit *u,Skin *skin,void *original){
  VoiceBinding *b=voice_binding(skin);
  if(!u||!b||!original||!voice_ready(b->library))return NULL;
- void *desc=NULL,*local=NULL;GUID guid;char path[256],token[24];int used=0;
+ void *desc=NULL,*local=NULL;GUID guid;char path[256],mappedPath[256],token[24];int used=0;
  snprintf(token,sizeof(token),"_%u",b->owner);
  if(hStudio_EventInstance_GetDescription(original,&desc)||hStudio_EventDescription_GetPath(desc,path,sizeof(path),&used)||
     strncmp(path,"event:/Voice/",13))return NULL;
- const char *match=strstr(path+13,token);
- if(!(match&&(match[strlen(token)]=='_'||!match[strlen(token)]))&&sr_voice_member_index(b->owner,path+13)<0)return NULL;
- if(hStudio_EventDescription_GetID(desc,&guid)||hStudio_System_GetEventByID(b->library->system,&guid,&local))return NULL;
+ const char *key=path+13,*match=strstr(key,token);
+ if((match&&(match[strlen(token)]=='_'||!match[strlen(token)]))||sr_voice_member_index(b->owner,key)>=0){
+  if(hStudio_EventDescription_GetID(desc,&guid)||hStudio_System_GetEventByID(b->library->system,&guid,&local))return NULL;
+ }else{
+  unsigned source=voice_source_id(u);
+  const char *mapped=source?sr_voice_catalog_event_key(source,b->owner,key):NULL;
+  if(!mapped||!sr_voice_catalog_audio(b->owner,mapped)||
+     snprintf(mappedPath,sizeof(mappedPath),"event:/Voice/%s",mapped)>=(int)sizeof(mappedPath)||
+     hStudio_System_GetEvent(b->library->system,mappedPath,&local))return NULL;
+  key=mapped;
+ }
  PrivateVoiceEvent *slot=NULL;
  for(unsigned i=0;i<32;i++){
   PrivateVoiceEvent *e=&privateVoiceEvents[i];
@@ -264,7 +281,21 @@ static PrivateVoiceEvent *private_voice_track(Unit *u,Skin *skin,void *original)
  }
  void *instance=NULL;if(!slot||hStudio_EventDescription_CreateInstance(local,&instance))return NULL;
  *slot=(PrivateVoiceEvent){.u=u,.view=u->view,.app=skin->app,.original=original,.replacement=instance,.binding=b,.queued=GetTickCount()};
- const char *key=strrchr(path,'/')+1;
+ int parameterCount=0,targetCount=0;
+ if(!hStudio_EventDescription_GetParameterDescriptionCount(desc,&parameterCount)&&
+    !hStudio_EventDescription_GetParameterDescriptionCount(local,&targetCount))
+  for(int i=0;i<parameterCount&&i<128&&slot->parameterCount<32;i++){
+   VoiceParameterDescription parameter={0};
+   if(!hStudio_EventDescription_GetParameterDescriptionByIndex(desc,i,&parameter)&&
+      parameter.type==0&&!(parameter.flags&5)&&parameter.name)
+    for(int j=0;j<targetCount&&j<128;j++){
+     VoiceParameterDescription target={0};
+     if(!hStudio_EventDescription_GetParameterDescriptionByIndex(local,j,&target)&&target.name&&
+        target.type==0&&!(target.flags&5)&&!strcmp(parameter.name,target.name)){
+      slot->parameters[slot->parameterCount++]=(VoiceParameterPair){parameter.id,target.id};break;
+     }
+    }
+  }
  if(strlen(key)<sizeof(slot->key))strcpy(slot->key,key);
  return slot;
 }
@@ -279,6 +310,11 @@ static void private_voice_step(PrivateVoiceEvent *e){
   return;
  }
  if(hStudio_EventInstance_GetChannelGroup(e->original,&group)||!group)return;
+ for(unsigned i=0;i<e->parameterCount;i++){
+  float value=0;
+  if(!hStudio_EventInstance_GetParameterByID(e->original,e->parameters[i].source,&value,NULL))
+   hStudio_EventInstance_SetParameterByID(e->replacement,e->parameters[i].target,value,1);
+ }
  int pause=0,ownMute=0;float gain=1,pitch=1;
  hStudio_EventInstance_GetPaused(e->original,&pause);
  if(hChannelGroup_GetMute(group,&ownMute))return;
@@ -343,4 +379,38 @@ static void private_voice_tick(int active){
 }
 static void private_voice_close(void){
  private_voice_tick(0);voice_free_manifest();voiceManifestRead=0;
+}
+typedef struct {DWORD exists,sizeHigh,sizeLow,timeHigh,timeLow,contentHash;} VoiceFileStamp;
+static VoiceFileStamp voiceRefreshStamps[2];
+static DWORD voiceRefreshAt;
+static int voiceRefreshReady;
+static VoiceFileStamp voice_file_stamp(const wchar_t *relative){
+ VoiceFileStamp stamp={0};wchar_t path[2048];WIN32_FILE_ATTRIBUTE_DATA attr;
+ if(addon_file_path(path,2048,relative)&&GetFileAttributesExW(path,GetFileExInfoStandard,&attr)){
+  stamp.exists=1;stamp.sizeHigh=attr.nFileSizeHigh;stamp.sizeLow=attr.nFileSizeLow;
+  stamp.timeHigh=attr.ftLastWriteTime.dwHighDateTime;stamp.timeLow=attr.ftLastWriteTime.dwLowDateTime;
+  if(wcsstr(relative,L"runtime-revision")){
+   HANDLE f=CreateFileW(path,GENERIC_READ,FILE_SHARE_READ|FILE_SHARE_WRITE|FILE_SHARE_DELETE,NULL,OPEN_EXISTING,0,NULL);
+   if(f!=INVALID_HANDLE_VALUE){
+    unsigned char bytes[64];DWORD n=0;
+    if(ReadFile(f,bytes,sizeof(bytes),&n,NULL)){
+     DWORD hash=2166136261u;for(DWORD i=0;i<n;i++)hash=(hash^bytes[i])*16777619u;
+     stamp.contentHash=hash;
+    }
+    CloseHandle(f);
+   }
+  }
+ }
+ return stamp;
+}
+static void voice_refresh_poll_at(DWORD now){
+ if(voiceRefreshReady&&(DWORD)(now-voiceRefreshAt)<500)return;
+ voiceRefreshAt=now;
+ VoiceFileStamp next[2]={voice_file_stamp(L"Assets\\ImportedVoices\\bindings.tsv"),
+                         voice_file_stamp(L"Assets\\ImportedVoices\\runtime-revision")};
+ int changed=voiceRefreshReady&&memcmp(next,voiceRefreshStamps,sizeof(next))!=0;
+ memcpy(voiceRefreshStamps,next,sizeof(next));voiceRefreshReady=1;
+ if(changed&&(voiceManifestRead||voiceLibraries)){
+  private_voice_close();bootlog("Imported voice: runtime bindings refreshed");
+ }
 }

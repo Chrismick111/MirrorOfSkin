@@ -1722,6 +1722,9 @@
       <symbol id="i-refresh" viewBox="0 0 24 24">
         <path d="M20 5v7h-7M20 12a8 8 0 11-2.34-5.66" />
       </symbol>
+      <symbol id="i-resource-refresh" viewBox="0 0 24 24">
+        <path d="M19.5 13a8 8 0 1 0-2.4 5.7M12 5.5v9m-4-4 4 4 4-4" />
+      </symbol>
       <symbol id="i-package" viewBox="0 0 24 24">
         <path d="M4 7l8-4 8 4-8 4-8-4zM4 7v10l8 4 8-4V7M12 11v10" />
       </symbol>
@@ -1768,6 +1771,9 @@
     <header>
       <h1>镜像幻化</h1>
       <div class="header-actions">
+        <button id="headerRefreshResources" class="icon-btn" type="button" title="重新获取资源" aria-label="重新获取资源">
+          <svg class="icon" aria-hidden="true"><use href="#i-resource-refresh"></use></svg>
+        </button>
         <button
           id="headerImportLocalSkin"
           class="icon-btn"
@@ -3795,6 +3801,7 @@
         } catch (e) {}
       }
       $("#portraitClose").onclick = () => portraitDismiss();
+      $("#headerRefreshResources").onclick = () => portraitShow(true);
       $("#portraitHide").onclick = () => portraitHide();
       $("#portraitRetry").onclick = () => portraitBegin();
       $("#portraitMini").onclick = (e) => {

@@ -26,6 +26,7 @@ def encode(value):
 
 def write_atomic(path, data):
     path.parent.mkdir(parents=True, exist_ok=True)
+    path=path.parent.resolve()/path.name
     fd, candidate = tempfile.mkstemp(dir=path.parent)
     try:
         with os.fdopen(fd, 'wb') as stream:
@@ -47,6 +48,7 @@ def write_bundle(path, src, checksum):
     if path.is_file() and digest(path) == checksum:
         return
     path.parent.mkdir(parents=True, exist_ok=True)
+    path=path.parent.resolve()/path.name
     fd, name = tempfile.mkstemp(dir=path.parent)
     try:
         with os.fdopen(fd, 'wb') as dest, src.open('rb') as source:
@@ -120,7 +122,7 @@ def import_skin(archive, addon, *, name=None, unity=None):
         included=[r['identity_id'][6:] for r in rows if r['identity_id'].startswith('story_WBImp_')]
         if has_banks:
             rows.append(import_banks(path,root,name,source=Path(archive).stem,included=included))
-        from voice_binding import companion_archive,reconcile
+        from voice_binding import companion_archive,reconcile,signal_runtime
         if included and not has_banks:
             try:
                 companion=companion_archive(Path(archive).resolve())
@@ -133,6 +135,7 @@ def import_skin(archive, addon, *, name=None, unity=None):
                 for row in rows:row['voice_warning']=str(error)
         mapped=reconcile(root)
         mirror_import_assets(root, addon_root)
+        signal_runtime(root)
         for row in rows:
             if row.get('kind')=='voice':
                 row['connected_to']=[label for rev,label in mapped.values() if rev==row['revision']]

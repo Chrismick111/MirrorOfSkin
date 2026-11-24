@@ -32,7 +32,7 @@ REPORT_NAME = 'discovered_units.json'
 LOCK_NAME = 'scan.lock'
 # 缓存是「包没变就不用重开」的捷径，但这假设解析逻辑本身没变。改了正则或
 # 扫描方式就把它 +1，旧缓存自动作废，否则新认出的名字永远不会出现。
-SCAN_VERSION = 6
+SCAN_VERSION = 7
 # 单个 bundle 上限：正常包几百 KB，超过这个量级基本是坏包或解压炸弹。
 MAX_BUNDLE_BYTES = 512 * 1024 * 1024
 MAX_OBJECTS = 200000
@@ -754,7 +754,7 @@ def main(argv=None):
                 report['attack_import_errors'] = attack_errors
             import auto_artwork
             progress('chapters')
-            with FileLock(addon/'Workbench/image_resources.lock'):
+            with FileLock(addon/'Workbench/image_resources.lock',timeout=1800):
                 report['artwork'] = auto_artwork.extract(
                     addon, root, UnityPy, game=game, index=seen, progress=progress,
                     portraits=args.weekly, images=not (addon/'Workbench/images_disabled.flag').exists())

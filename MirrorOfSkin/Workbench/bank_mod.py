@@ -17,7 +17,7 @@ def import_banks(archive, root, name=None, *,source=None,included=()):
         banks = [(i,p) for i,p in items if p.suffix.lower()=='.bank']
         if not banks:
             return None
-        library = root/'Assets/ImportedVoices'
+        library = (root/'Assets/ImportedVoices').resolve()
         library.mkdir(parents=True,exist_ok=True)
         with TemporaryDirectory(dir=library) as tmp:
             folder = Path(tmp)/'data'
@@ -56,15 +56,28 @@ def import_banks(archive, root, name=None, *,source=None,included=()):
             (folder/'voice.json').write_text(json.dumps(meta,ensure_ascii=False,indent=2),encoding='utf8')
             with FileLock(root/'workbench-save.lock'):
                 existing=(library/key).is_dir()
+                repaired=False
                 if not existing:os.rename(folder,library/key)
                 else:
-                    from skin_import import write_atomic,encode
+                    from skin_import import write_atomic,write_bundle,digest,encode
                     path=library/key/'voice.json'
-                    old=json.loads(path.read_bytes())
-                    meta['imported_at']=old.get('imported_at',path.stat().st_mtime_ns)
-                    meta['name']=name or old['name']
+                    try:old=json.loads(path.read_bytes())
+                    except (OSError,ValueError):old={}
+                    if not isinstance(old,dict):old={}
+                    # A launcher reinstall can remove individual banks while
+                    # leaving the revision directory and metadata behind.
+                    # Restore the exact archived bytes, including subtitles.
+                    for source_file in folder.iterdir():
+                        expected=files.get(source_file.name.casefold())
+                        if not expected:continue
+                        target=library/key/source_file.name
+                        if not target.is_file() or digest(target)!=expected:
+                            write_bundle(target,source_file,expected)
+                            repaired=True
+                    meta['imported_at']=old.get('imported_at',path.stat().st_mtime_ns if path.exists() else time.time_ns())
+                    meta['name']=name or old.get('name',meta['name'])
                     meta['source']=old.get('source',meta['source'])
                     meta['included_looks']=sorted(set(old.get('included_looks',[]))|set(included))
-                    meta['targets']=sorted(set(old['targets'])|targets)
+                    meta['targets']=sorted(set(old.get('targets',[]))|targets)
                     if meta!=old:write_atomic(path,encode(meta))
-            return dict(meta,status='existing' if existing else 'added')
+            return dict(meta,status=('updated' if repaired else 'existing') if existing else 'added')

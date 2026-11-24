@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 from collections import defaultdict
+import hashlib
 import json
 import mmap
 import os
@@ -13,7 +14,7 @@ import sys
 
 _DESKTOP = Path('StreamingAssets/Assets/Sound/FMODBuilds/Desktop')
 _BANK = re.compile(r'(?!master(?:\.|$))[\w-]+(?:\.assets)?\.bank\Z', re.ASCII | re.I)
-_OWNER = re.compile(rb'^[a-z][a-z0-9_-]*?_(1(?:0[1-9]|1[0-2])[0-9]{2})_[0-9][a-z0-9_-]*$', re.I)
+_OWNER = re.compile(rb'^[a-z][a-z0-9_-]*?_([1-9][0-9]{2,7})_[0-9][a-z0-9_-]*$', re.I)
 _RATES = (4000, 8000, 11000, 11025, 16000, 22050, 24000, 32000, 44100, 48000, 96000)
 _ERRORS = (OSError, ValueError, struct.error, OverflowError)
 
@@ -75,7 +76,7 @@ def _chunks(data, start, end):
         yield tag, body, size
 
 
-def _sample_times(data, fsb, end):
+def _sample_times(data, fsb, end, fingerprints=False):
     version, count, headers, names, audio = struct.unpack_from('<5I', data, fsb + 4)
     base = fsb + 60 + headers
     if (version != 1 or count > 65536 or headers < 8 * count or names < count * 4
@@ -83,6 +84,7 @@ def _sample_times(data, fsb, end):
         raise ValueError('unsupported FSB5 sample directory')
     pos = fsb + 60
     result = {}
+    offsets = []
     for i in range(count):
         nameoff = struct.unpack_from('<I', data, base + 4 * i)[0]
         if not count * 4 <= nameoff < names or pos + 8 > base:
@@ -94,6 +96,7 @@ def _sample_times(data, fsb, end):
         name = data[namepos:term]
         bits = struct.unpack_from('<Q', data, pos)[0]
         pos += 8
+        offsets.append((name, ((bits >> 7) & 0x7ffffff) * 32))
         more = bits & 1
         rate_id = (bits >> 1) & 15
         rate = _RATES[rate_id] if rate_id < len(_RATES) else 0
@@ -114,10 +117,20 @@ def _sample_times(data, fsb, end):
         if not rate or not name or name in result:
             raise ValueError('ambiguous sample')
         result[name] = (bits >> 34) / rate
+    if fingerprints:
+        data_start=base+names
+        for i,(name,offset) in enumerate(offsets):
+            next_offset=offsets[i+1][1] if i+1<len(offsets) else audio
+            if offset>next_offset or next_offset>audio:
+                raise ValueError('invalid sample audio offsets')
+            view=memoryview(data)[data_start+offset:data_start+next_offset]
+            try:sample_hash=hashlib.sha256(view).digest()
+            finally:view.release()
+            result[name]=(result[name],sample_hash)
     return result
 
 
-def _read_bank(path, times=False):
+def _read_bank(path, times=False, fingerprints=False):
     with path.open('rb') as stream:
         if not 12 <= os.fstat(stream.fileno()).st_size <= 1024**3:
             raise ValueError('unsupported bank size')
@@ -139,7 +152,7 @@ def _read_bank(path, times=False):
                         raise ValueError('unsupported sound chunk')
                     audio = True
                     if times:
-                        clips = _sample_times(data, fsb, pos+size)
+                        clips = _sample_times(data, fsb, pos+size, fingerprints=fingerprints)
                         if samples.keys() & clips.keys():
                             raise ValueError('ambiguous sample bank')
                         samples.update(clips)
@@ -178,6 +191,22 @@ def playable_banks(folder: Path, banks: list[str]) -> list[str]:
     return sorted(result, key=str.casefold)
 
 
+def target_probe_key(folder: Path, banks: list[str]) -> str:
+    """Recheck unresolved voice owners only when their evidence changes."""
+    game=game_bank_dir(folder)
+    def stamp(path):
+        try:
+            st=path.stat()
+            return (st.st_size,st.st_mtime_ns)
+        except OSError:return None
+    rows=[]
+    for name in sorted(banks,key=str.casefold):
+        if _BANK.fullmatch(name):
+            rows.append((name,stamp(folder/name),stamp(game/name) if game else None))
+    data=json.dumps([2,str(game) if game else None,rows],ensure_ascii=True,separators=(',',':'))
+    return hashlib.sha256(data.encode('ascii')).hexdigest()
+
+
 def probe_targets(folder: Path, banks: list[str]) -> set[str]:
     """Compare shared banks against stock, or identify an entirely single-owner new bank."""
     game = game_bank_dir(folder)
@@ -186,7 +215,7 @@ def probe_targets(folder: Path, banks: list[str]) -> set[str]:
         if not _BANK.fullmatch(name):
             continue
         try:
-            changed = _read_bank(folder / name, times=True)[2]
+            changed = _read_bank(folder / name, times=True, fingerprints=True)[2]
             if not game or not (game / name).is_file():
                 identities = set()
                 for key in changed:
@@ -198,13 +227,26 @@ def probe_targets(folder: Path, banks: list[str]) -> set[str]:
                     if len(identities) == 1:
                         owners.update(identities)
                 continue
-            stock = _read_bank(game / name, times=True)[2]
+            stock = _read_bank(game / name, times=True, fingerprints=True)[2]
         except _ERRORS:
             continue
         if stock.keys() != changed.keys():
             continue
-        for key, duration in changed.items():
-            # Re-encoding can change a rounded length. Count only material differences.
-            if abs(stock[key] - duration) > 0.05 and (match := _OWNER.fullmatch(key)):
-                owners.add(match[1].decode('ascii'))
+        duration_owners=set()
+        fingerprint_owners=set()
+        changed_samples=0
+        for key, (duration,sample_hash) in changed.items():
+            old_duration,old_hash=stock[key]
+            match=_OWNER.fullmatch(key)
+            if sample_hash!=old_hash:
+                changed_samples+=1
+                if match:fingerprint_owners.add(match[1].decode('ascii'))
+            if abs(old_duration-duration)>0.05 and match:
+                duration_owners.add(match[1].decode('ascii'))
+        owners.update(duration_owners)
+        # Some tools re-encode every sample in a shared season bank.  Treat
+        # broad byte changes as ambiguous, rather than assigning every voice
+        # in that bank to the mod.  Sparse or single-owner changes remain useful.
+        if len(fingerprint_owners)==1 or changed_samples<=max(1,len(changed)//4):
+            owners.update(fingerprint_owners)
     return owners

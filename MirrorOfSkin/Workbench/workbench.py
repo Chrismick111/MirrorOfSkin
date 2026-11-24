@@ -105,6 +105,8 @@ def _portrait_run(root):
   if code:raise RuntimeError((details[-1] if details else '本地资源检索失败，请确认游戏已安装并运行过')[:400])
   with _PORTRAIT_LOCK:_PORTRAIT_JOB['result']=result
   _portrait_update('done',1,1,result.get('message','本地资源检索完成'))
+  try:pathlib.Path(root,'Workbench/first_image_scan.done').write_text('1',encoding='ascii')
+  except OSError:pass
   try:pathlib.Path(root,'Workbench/portrait_last_error.txt').unlink(missing_ok=True)
   except OSError:pass
  except Exception as exc:
@@ -141,6 +143,14 @@ def _portrait_start(root):
   _PORTRAIT_THREAD=threading.Thread(target=_portrait_run,args=(root,),name='PortraitDownload',daemon=True)
   _PORTRAIT_THREAD.start()
  return True
+
+def _first_portrait_start(root):
+ wb=pathlib.Path(root)/'Workbench'
+ if (wb/'images_disabled.flag').exists() or (wb/'first_image_scan.done').exists():return False
+ for folder in ('portraits','local_portraits','user_portraits'):
+  path=wb/folder
+  if path.is_dir() and any(p.is_file() and p.suffix.lower()=='.png' for p in path.iterdir()):return False
+ return _portrait_start(root)
 
 def _ruleset_payload(store):
  state, items, selected, entries, revision = store.ruleset_snapshot()
@@ -783,6 +793,7 @@ def main():
  if not args.no_browser:webbrowser.open(url)
  host_lifetime.contain_descendants()
  resource_catalog.resource_tools.prepare_in_background()
+ _first_portrait_start(data_root)
  try:server.serve_forever(poll_interval=.1)
  except KeyboardInterrupt:pass
  finally:

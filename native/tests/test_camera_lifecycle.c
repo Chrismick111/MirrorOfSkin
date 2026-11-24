@@ -102,7 +102,7 @@ int main(void){
     different cached donors, while a real camera or timeline still blocks. */
  for(int viewer=0;viewer<2;viewer++)for(int camera=0;camera<2;camera++)for(int timeline=0;timeline<2;timeline++)
   assert(sr_coin_switch_ready(viewer,camera,timeline)==(!camera&&!timeline));
- table[API_STRING_NEW]=fake_string;table[API_ROOT]=fake_root;table[API_UNROOT]=fake_unroot;
+ table[API_STRING_NEW]=fake_string;table[API_ROOT]=fake_root;table[API_UNROOT]=fake_unroot;table[API_WBARRIER]=fake_wb;
  reset();memset(&foreign,0,sizeof(foreign));memset(&owner,0,sizeof(owner));
  memset(g_units,0,sizeof(g_units));memset(g_rows,0,sizeof(g_rows));memset(g_switchGate,0,sizeof(g_switchGate));
  u=&g_units[0];u->used=1;u->sinner=101;u->view=&view;u->baseApp=&app;u->last=-1;
@@ -118,8 +118,9 @@ int main(void){
  decide_and_apply(&target,&detail,&index);assert(u->wanted==0); /* Same coin reuses its draw. */
  enemyPivot.field[15]=1;
  decide_and_apply(&target,&detail,&index);assert(u->wanted==1&&u->attackDrawIndex==1);
- u->skins[0].used=1;u->skins[0].row=0;u->skins[0].app=&foreign;foreign.field[0]=1;
- u->skins[1].used=1;u->skins[1].row=1;u->skins[1].app=&owner;owner.field[0]=1;
+ u->skins[0].used=1;u->skins[0].row=0;u->skins[0].app=&foreign;u->skins[0].meta=&manager;foreign.field[0]=1;
+ u->skins[1].used=1;u->skins[1].row=1;u->skins[1].app=&owner;u->skins[1].meta=&manager;owner.field[0]=1;
+ u->staticHidden=1; /* Pretend the fixture's source renderers were already masked. */
  cfg.max_skins=2;cfg.heartbeat=GetTickCount();g_anyViewerActive=1;g_presentationGate=0;g_ready=1;g_frame=100;
  view.field[13]=(uintptr_t)&app;u->wanted=0;desiredAppearance=&foreign;m_changeAppearance=(void *)106;
  app.field[1]=0;app.field[15]=1;
@@ -143,10 +144,10 @@ int main(void){
  u->skins[3].used=0;q_head=q_tail=0;u->warmCursor=0;
  warm_enqueue(u);warm_enqueue(u);Unit *job=NULL;int row=-1;
  assert(queue_pop(&job,&row)&&job==u&&row==1&&q_poppedForm==1);q_poppedForm=-1;
- u->unavailableForms=1u<<sr_form_index("11016");warm_totals(&ready,&total,&units,&failed);assert(ready==3&&total==3&&failed==1);
+ u->failedFormMask[1]=1u<<1;warm_totals(&ready,&total,&units,&failed);assert(ready==3&&total==3&&failed==1);
  /* Real deferred hook path, rooted callbacks, two coins under one viewer. */
  memset(u,0,sizeof(*u));memset(g_rows,0,sizeof(g_rows));reset();memset(&foreign,0,sizeof(foreign));memset(&owner,0,sizeof(owner));
- u->used=1;u->view=&view;u->baseApp=&app;u->sinner=101;u->last=-1;u->ncand=2;u->cand[0]=0;u->cand[1]=1;
+ u->used=1;u->view=&view;u->baseApp=&app;u->sinner=101;u->last=-1;u->ncand=2;u->cand[0]=0;u->cand[1]=1;u->staticHidden=1;
  u->coinKnown=1;u->coinTier=1;u->observedViewer=&enemyPivot;u->observedAction=&foreignCamera;
  u->observedCoinField=1;u->observedCoinOffset=15*sizeof(uintptr_t);
  view.field[14]=(uintptr_t)&foreignCamera;view.field[13]=(uintptr_t)&app;app.field[1]=0;

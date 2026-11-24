@@ -177,6 +177,7 @@ def remove_legacy_links(addon_root):
 def _atomic_copy(source, dest):
     from tempfile import NamedTemporaryFile
     dest.parent.mkdir(parents=True, exist_ok=True)
+    dest = dest.parent.resolve() / dest.name
     with NamedTemporaryFile(dir=dest.parent, delete=False) as stream:
         temp = pathlib.Path(stream.name)
     try:

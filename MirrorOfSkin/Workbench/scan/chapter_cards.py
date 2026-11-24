@@ -12,14 +12,24 @@ def _entries(root):
         except (OSError, ValueError):
             return {}
     data = read_cards('chapters.discovered.json')
-    for key, curated in read_cards('chapters.json').items():
+    discovered_assets={str(name).casefold():row for name,row in read_cards('discovered-assets.json').items() if isinstance(row,dict)}
+    try:
+        bundled=json.loads((pathlib.Path(root)/'Workbench/data/chapter_cards.json').read_text(encoding='utf-8-sig'))
+        if not isinstance(bundled,dict):bundled={}
+    except (OSError,ValueError):bundled={}
+    bundled.update(read_cards('chapters.json'))
+    for key, curated in bundled.items():
         if not isinstance(curated, dict):
             continue
         merged = dict(data.get(key) or {})
         filename = curated.get('image')
         merged.update(curated)
         if not filename or not isinstance(filename, str) or not re.fullmatch(r'[\w.-]+\.png', filename) or not (folder/filename).is_file():
-            merged['image'] = (data.get(key) or {}).get('image')
+            found=discovered_assets.get(str(filename or '').casefold(),{}).get('file')
+            if not isinstance(found,str) or not re.fullmatch(r'[a-zA-Z0-9_.-]+\.png',found) or '..' in found or not (folder/found).is_file():found=None
+            previous=(data.get(key) or {}).get('image')
+            if not isinstance(previous,str) or not re.fullmatch(r'[a-zA-Z0-9_.-]+\.png',previous) or '..' in previous or not (folder/previous).is_file():previous=None
+            merged['image'] = previous or found
         data[key] = merged
     result = {}
     for key, value in data.items():

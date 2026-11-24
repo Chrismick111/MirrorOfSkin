@@ -5,6 +5,8 @@ import re
 import unicodedata
 
 import os
+import tempfile
+import time
 
 
 def family(text):
@@ -23,6 +25,18 @@ def companion_archive(skin):
              and re.search(r'语音|音频|\b(?:voices?|audio)\b',p.stem.replace('_',' '),re.I)
              and family(p.stem)==key]
     return matches[0] if len(matches)==1 else None
+
+
+def signal_runtime(root):
+    """Notify a running game after all imported voice resources are ready."""
+    library=(Path(root)/'Assets/ImportedVoices').resolve()
+    if not library.is_dir():return
+    fd,name=tempfile.mkstemp(prefix='.voice-revision-',dir=library)
+    try:
+        with os.fdopen(fd,'wb') as f:f.write(str(time.time_ns()).encode('ascii'))
+        os.replace(name,library/'runtime-revision')
+    finally:
+        Path(name).unlink(missing_ok=True)
 
 
 def model_info(root,entry):
@@ -96,14 +110,19 @@ def reconcile_locked(root,evidence=None):
         except (OSError,ValueError):continue
         rev=path.parent.name
         if not re.fullmatch('[a-f0-9]{64}',rev) or meta.get('revision')!=rev:continue
-        if not meta.get('playable_banks'):
+        if not meta.get('playable_banks') or not meta['targets']:
             if evidence is None:
                 import bank_evidence as evidence
-            playable=evidence.playable_banks(path.parent,meta['banks'])
-            targets=meta['targets'] or sorted(evidence.probe_targets(path.parent,playable))
-            if playable!=meta.get('playable_banks') or targets!=meta['targets']:
+            playable=meta.get('playable_banks') or evidence.playable_banks(path.parent,meta['banks'])
+            targets=meta['targets']
+            probe_key=evidence.target_probe_key(path.parent,playable) if not targets and playable else None
+            if probe_key and probe_key!=meta.get('target_probe_key'):
+                targets=sorted(evidence.probe_targets(path.parent,playable))
+            if (playable!=meta.get('playable_banks') or targets!=meta['targets'] or
+                    (probe_key and probe_key!=meta.get('target_probe_key'))):
                 meta.setdefault('imported_at',path.stat().st_mtime_ns)
                 meta.update(playable_banks=playable,targets=targets)
+                if probe_key:meta['target_probe_key']=probe_key
                 staging=path.with_suffix('.tmp')
                 staging.write_text(json.dumps(meta,ensure_ascii=False,indent=2),encoding='utf8')
                 os.replace(staging,path)
@@ -121,11 +140,21 @@ def reconcile_locked(root,evidence=None):
         targets=set(meta['targets'])
         names={family(meta.get(k,'')) for k in ('name','source')}-{''}
         together=set(meta.get('included_looks',[]))
+        included_has_match=any(look in together and bool(owners&targets)
+                               for look,owners,_,_ in models.values())
+        included_layouts={frozenset(owners) for look,owners,_,_ in models.values()
+                          if look in together and owners}
         scores={}
         for look,owners,aliases,label in models.values():
             overlap=owners&targets
             related=bool(aliases&names)
-            if targets and owners and not overlap:continue
+            if targets and owners and not overlap:
+                # A single-target voice included with otherwise unmatched
+                # artwork is explicit evidence even when its prefab layout
+                # uses another identity. Do not steal a voice from a matching
+                # companion when the package contains unrelated artwork.
+                if (look not in together or len(targets)!=1 or included_has_match or
+                        len(included_layouts)>1):continue
             possible=overlap or targets or owners
             if len(possible)!=1:continue
             score=3 if look in together else 2 if related else 1 if overlap else 0
@@ -134,7 +163,7 @@ def reconcile_locked(root,evidence=None):
         for owner in {value[1] for value in scores.values()}:
             best=max(score for score,o in scores.values() if o==owner)
             winners=[k for k,v in scores.items() if v==(best,owner)]
-            if len(winners)>1:continue
+            if len(winners)>1 and not all(k in together for k in winners):continue
             for k in winners:choices[k].append((best,owner,meta['revision'],banks))
     mapped={}
     lines=[]

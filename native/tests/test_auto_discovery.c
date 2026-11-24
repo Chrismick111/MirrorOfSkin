@@ -26,7 +26,7 @@ int main(void){
  assert(auto_form_valid(&p)&&auto_assign(0,&p));
  Unit u={0};assert(auto_desired(&u,0)==0);sr_form_evade(&u.formState);assert(auto_desired(&u,0)==1);
  sr_form_evade(&u.formState);sr_form_evade(&u.formState);assert(auto_desired(&u,0)==2);
- disable_failed_form(&u,0);assert(auto_desired(&u,0)==0);
+ disable_failed_form(&u,0,2);assert(desired_row_form(&u,0)==0);
  SrAutoForm internal={0};strcpy(internal.identity,"10119");internal.kind=2;internal.count=2;strcpy(internal.names[0],"off");strcpy(internal.names[1],"on");
  assert(auto_form_valid(&internal)&&auto_assign(1,&internal));assert(auto_internal(1)->count==2);
  strcpy(internal.names[1],"arbitrary");assert(!auto_form_valid(&internal));

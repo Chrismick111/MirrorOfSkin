@@ -2,7 +2,7 @@
    method callbacks. No running game or mod installation is required. */
 #include "sinners_native.c"
 #include <assert.h>
-typedef struct {void *klass,*cached,*appearance;} TestView;
+typedef struct {void *klass,*cached,*appearance,*manager;} TestView;
 typedef struct {void *klass,*monitor;int n;uint16_t chars[192];} TestString;
 static TestString test_string(const char *text){
  TestString s={0};s.n=(int)strlen(text);
@@ -16,15 +16,21 @@ static void *field_named(void *k,const char *name){
  if(!strcmp(name,"m_CachedPtr"))return (void *)offsetof(TestView,cached);
  if(!strcmp(name,"_voiceTable"))return (void*)1;
  if(!strcmp(name,"_curAppearance"))return (void *)offsetof(TestView,appearance);
+ if(!strcmp(name,"_uiManager"))return (void *)offsetof(TestView,manager);
  return NULL;
 }
 static int field_offset(void *field){return (int)(uintptr_t)field;}
-static int bubblesEnabled=1,textLookups,centerShown,languageMissing,allowCenter=1;
+static int bubblesEnabled=1,textLookups,centerShown,languageMissing,allowCenter=1,dialogShown,dialogSuccess=1,managerDialogEnabled;
 static const char *captionObserved;
 static const char *expectedCaption="custom caption";
 static int lastTextOwner;static float lastLength;static uint8_t lastCustom;
-static int uiToken,lineToken;
-static void *field_value(void *f,void *o){(void)f;(void)o;return &uiToken;}
+static int uiToken,lineToken,dialogToken,fieldToken,typeToken,voiceTableMissing;
+static unsigned char reflectedFields[40];
+static void *field_value(void *f,void *o){(void)o;return f==(void*)2?&dialogToken:(voiceTableMissing?NULL:&uiToken);}
+static void *dialog_fields(void *klass,void **iterator){(void)klass;if(*iterator)return NULL;*iterator=(void*)1;return (void*)2;}
+static unsigned dialog_field_flags(void *field){(void)field;return 0;}
+static void *dialog_field_type(void *field){return field;}
+static char *dialog_type_name(void *type){(void)type;char *p=malloc(32);strcpy(p,"BattleUI.Dialog.BattleDialog");return p;}
 static void *mock_class(void *image,const char *ns,const char *name){(void)image;(void)ns;(void)name;return &uiToken;}
 static void *mock_method(void *k,const char *name,int count){
  (void)k;(void)count;
@@ -32,6 +38,12 @@ static void *mock_method(void *k,const char *name,int count){
  if(!strcmp(name,"GetVoiceTextData_SpeachBubble"))return (void*)2;
  if(!strcmp(name,".ctor"))return (void*)3;
  if(!strcmp(name,"TryPrintCenterSubtitle"))return (void*)4;
+ if(!strcmp(name,"ShowDialog")&&k==&dialogToken&&count==4)return (void*)5;
+ if(!strcmp(name,"ShowDialog")&&k==&uiToken&&count==3&&managerDialogEnabled)return (void*)10;
+ if(!strcmp(name,"GetFields"))return (void*)6;
+ if(!strcmp(name,"get_FieldType"))return (void*)7;
+ if(!strcmp(name,"get_FullName"))return (void*)8;
+ if(!strcmp(name,"GetValue"))return (void*)9;
  return NULL;
 }
 static void *new_strobj(const char *text){
@@ -48,10 +60,17 @@ static void *mock_invoke(void *method,void *o,void **args,void **exc){
  case 2:++textLookups;lastTextOwner=*(int*)args[0];return languageMissing?NULL:new_strobj("native-localized");
  case 3:return NULL;
  case 4:++centerShown;lastLength=*(float*)args[2];lastCustom=*(uint8_t*)args[3];return &allowCenter;
+ case 5:++dialogShown;lastLength=*(float*)args[1];lastCustom=*(uint8_t*)args[2];assert(!args[3]);return &dialogSuccess;
+ case 6:assert(*(int*)args[0]==52);return reflectedFields;
+ case 7:return &typeToken;
+ case 8:return new_strobj("BattleUI.Dialog.BattleDialog");
+ case 9:assert(args[0]==&uiToken);return &dialogToken;
+ case 10:++dialogShown;lastLength=*(float*)args[1];lastCustom=*(uint8_t*)args[2];return NULL;
  default:return NULL;
  }
 }
 static unsigned roots;
+static void *identity_type(void *p){(void)p;return &typeToken;}
 static uintptr_t root_stub(void *o,int pinned){(void)pinned;++roots;return (uintptr_t)o;}
 static void unroot_stub(uintptr_t h){assert(h&&roots);--roots;}
 static int lastId,lastIndex,lastBlock,lastType,lookups;
@@ -60,6 +79,10 @@ static int lookup_stub(void *path,int id,int index,void **key,void **out,void *m
  (void)mi;*key=path;*out=stock_lookup_path;lastId=id;lastIndex=index;++lookups;return 0;
 }
 static int stock_event;
+static int stockBubbles,lastBubbleId;
+static void stock_bubble(int id,void *key,float length,uint8_t custom,void *mi){
+ (void)key;(void)length;(void)custom;(void)mi;stockBubbles++;lastBubbleId=id;
+}
 static void *add_stub(uintptr_t instance,int id,int type,float volume,uint8_t custom,float length,
                        void *alternate,uint8_t blocked,void *subtitle,uint8_t duck,uint8_t interrupt,void *mi){
  assert(instance==42&&volume==0.75f&&custom==1&&length==3.5f&&duck==0&&interrupt==1&&mi==NULL);
@@ -74,15 +97,28 @@ int main(void){
  functions[API_PARENT]=no_parent;functions[API_FIELD]=field_named;functions[API_FIELD_OFFSET]=field_offset;
  c_voiceGenerator=&uiToken;functions[API_CLASS]=mock_class;functions[API_METHOD]=mock_method;
  functions[API_FIELD_VALUE]=field_value;functions[API_INVOKE]=mock_invoke;functions[API_UNBOX]=object_class;
+ functions[API_FIELD_TYPE]=dialog_field_type;functions[API_TYPE_NAME]=dialog_type_name;functions[API_FREE]=free;
+ functions[API_CLASS_TYPE]=identity_type;functions[API_TYPE_OBJECT]=identity_type;
  functions[API_STRING_NEW]=new_strobj;functions[API_OBJECT_NEW]=new_dialog;
  functions[API_ROOT]=root_stub;functions[API_UNROOT]=unroot_stub;
+ assert(voice_scan_dialog(&uiToken,dialog_fields,dialog_field_flags)==&dialogToken);
+ *(uintptr_t*)(reflectedFields+24)=1;*(void**)(reflectedFields+32)=&fieldToken;
+ assert(voice_reflect_dialog(&uiToken)==&dialogToken&&roots==0);
  Config config={0};config.enabled=1;config.heartbeat=GetTickCount();g_cfg=&config;
- int app;TestView view={0,&app,&app};Unit *u=&g_units[0];
+ int app;TestView view={0,&app,&app,&uiToken};Unit *u=&g_units[0];
  u->used=1;u->view=&view;strcpy(u->baseName,"10101_YiSang_BaseAppearance");
  Skin *skin=&u->skins[0];skin->used=1;skin->app=&app;skin->row=0;strcpy(skin->look,"10102_YiSang_7Appearance");
  g_rowCount=1;strcpy(g_rows[0].identity,"10103");strcpy(g_rows[0].appearance_name,"10103_Yisang_SwordGroupAppearance");
  assert(voice_worn_owner(u)==10102);
- orig_checkVoiceIndex=lookup_stub;orig_multiVoice=multi_stub;orig_addMultiVoice=add_stub;
+ orig_checkVoiceIndex=lookup_stub;orig_multiVoice=multi_stub;orig_addMultiVoice=add_stub;orig_printBubble=stock_bubble;
+ /* Unrelated lines, ambiguous wearers and disabled replacement preserve the native bubble. */
+ TestString stageLine=test_string("unrelated_stage_line");
+ print_bubble_hook(10101,&stageLine,2.0f,0,NULL);assert(stockBubbles==1&&lastBubbleId==10101);
+ g_units[1].used=1;g_units[1].view=&app;strcpy(g_units[1].baseName,u->baseName);
+ print_bubble_hook(10101,&stageLine,2.0f,0,NULL);assert(stockBubbles==2);
+ g_units[1].used=0;config.enabled=0;
+ print_bubble_hook(10101,&stageLine,2.0f,0,NULL);assert(stockBubbles==3);
+ config.enabled=1;
  TestString event=test_string("battle_select");void *key,*out;stock_lookup_path=&app;
  assert(voice_index_hook(&event,10101,2,&key,&out,NULL)==0);
  assert(lookups==1&&lastId==10102&&lastIndex==2&&key==&event&&out==&app);
@@ -109,9 +145,23 @@ int main(void){
  int hasFallback=sr_voice_catalog_text(10102,"battle_select_10102_1")!=NULL;
  assert(voice_show_key(u,10102,"battle_select_10102_1",4.25f,0)==hasFallback);
  if(hasFallback)assert(lastLength==4.25f&&!lastCustom);
+ allowCenter=0;
+ managerDialogEnabled=1;
+ assert(voice_show_key(u,10102,"battle_select_10102_1",4.25f,0)==hasFallback);
+ if(hasFallback)assert(dialogShown==1&&lastLength==4.25f&&!lastCustom);
+ managerDialogEnabled=0;
+ allowCenter=1;
  bubblesEnabled=0;int prior=textLookups;
  assert(!voice_show_key(u,10102,"battle_select_10102_1",4.25f,0)&&textLookups==prior&&!roots);
  bubblesEnabled=1;
+ /* The former priest-only caption path now uses this common localized path. */
+ languageMissing=0;int beforePriest=centerShown;
+ assert(voice_show_key(u,8378,"7SV-100",2.0f,0));
+ assert(lastTextOwner==8378&&centerShown==beforePriest+1&&!roots);
+ languageMissing=1;assert(!voice_show_key(u,8378,"7SV-100",2.0f,0));
+ voiceTableMissing=1;assert(!voice_show_key(u,8378,"7SV-100",2.0f,0));voiceTableMissing=0;
+ assert(!voice_show(NULL,8378,&donorKey,"7SV-100",2.0f,0,0));
+ c_voiceGenerator=NULL;assert(!voice_show_key(u,8378,"7SV-100",2.0f,0));c_voiceGenerator=&uiToken;
  strcpy(skin->look,"UnmappedTransformedResource");assert(!voice_worn_owner(u));
  voice_index_hook(&event,10101,1,&key,&out,NULL);assert(lastId==0);
  ImportedConfig imported={0};skin->imported=&imported;
@@ -123,6 +173,15 @@ int main(void){
  VoiceCaption *cap=calloc(1,sizeof(*cap)+strlen(expectedCaption)+1);assert(cap);
  strcpy(cap->key,"battle_select_10109_1");strcpy(cap->text,expectedCaption);cap->owner=10109;lib.captions=cap;
  VoiceBinding binding={.owner=10109,.library=&lib};strcpy(binding.look,skin->look);voiceBindings=&binding;
+ /* Late AddMultiVoice callbacks still find the unique source or imported
+    owner; an ambiguous shared donor must not bind to either unit. */
+ assert(voice_unit_for_async_id(10101)==u);
+ assert(voice_unit_for_async_id(10109)==u);
+ TestView secondView={0,&app,&app};
+ Unit *second=&g_units[1];*second=*u;second->view=&secondView;
+ strcpy(second->baseName,"10102_YiSang_BaseAppearance");
+ assert(!voice_unit_for_async_id(10109));
+ memset(second,0,sizeof(*second));
  /* Native subtitle before or after the FMOD fallback, including equal source
     and donor ids. Each real event should print just once on its own view. */
  strcpy(u->baseName,"10109_Yisang_RingFingerAppearance");

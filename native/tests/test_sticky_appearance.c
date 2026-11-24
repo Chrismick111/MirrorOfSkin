@@ -17,7 +17,7 @@ int main(void){
  assert(counts[0]==2500 && counts[1]==7500);
  strcpy(g_rows[0].identity,"10101");strcpy(g_rows[1].identity,"10102");
  g_rows[0].excluded=1;assert(unit_draw(u,1,0)==1);
- assert(sizeof(Config)==2688 && sizeof(PoolRow)==280);
+ assert(sizeof(Config)==2688 && sizeof(PoolRow)==416);
  g_rowCount=2;m_loadGO=(void *)1;
  q_head=q_tail=0;g_loadActive=1;g_loadUnit=u;g_loadRow=0;
  queue_push(u,0);assert(q_head==q_tail);
@@ -30,26 +30,26 @@ int main(void){
  g_rowCount=3;strcpy(g_rows[2].identity,"11009");
  memset(u->skins,0,sizeof(u->skins));u->skins[0].used=u->skins[1].used=1;
  u->skins[0].row=u->skins[1].row=2;u->skins[0].form=0;u->skins[1].form=1;
- u->sanityValid=1;u->sanity=45;u->unavailableForms=0;assert(skin_index(u,2)==1);
+ u->sanityValid=1;u->sanity=45;memset(u->failedFormMask,0,sizeof(u->failedFormMask));assert(skin_index(u,2)==1);
  u->sanity=44;assert(skin_index(u,2)==0);
- u->sanity=45;u->unavailableForms=1u<<sr_form_index("11009");assert(skin_index(u,2)==0);
- u->unavailableForms=0;u->sanityValid=0;assert(skin_index(u,2)==0);
+ u->sanity=45;u->failedFormMask[2]=1u<<1;assert(skin_index(u,2)==0);
+ memset(u->failedFormMask,0,sizeof(u->failedFormMask));u->sanityValid=0;assert(skin_index(u,2)==0);
  for(unsigned i=0;i<sizeof(sr_forms)/sizeof(sr_forms[0]);i++){
  assert(sr_form_index(sr_forms[i].identity)==(int)i);
  assert(strlen(sr_forms[i].look)<64);
  assert(strstr(sr_forms[i].asset,sr_forms[i].look));
 }
 assert(sr_form_index("unknown")==-1);
-u->sanityValid=1;u->sanity=45;u->unavailableForms=1u<<sr_form_index("10215");
+u->sanityValid=1;u->sanity=45;u->failedFormMask[3]=1u<<1;
 assert(skin_index(u,2)==1); /* A Faust resource failure must not disable Dawn. */
 g_rowCount=9;
 const char *evadeIds[]={"10215","10314","10710","10915"};
 for(int i=0;i<4;i++){
  strcpy(g_rows[3+i].identity,evadeIds[i]);
  u->evaded=0;u->formState.index_awake=0;assert(desired_row_form(u,3+i)==0);
- u->evaded=1;u->formState.index_awake=1;u->unavailableForms=0;assert(desired_row_form(u,3+i)==1);
- disable_failed_form(u,3+i);assert(desired_row_form(u,3+i)==0);
- u->unavailableForms=0;
+ u->evaded=1;u->formState.index_awake=1;memset(u->failedFormMask,0,sizeof(u->failedFormMask));assert(desired_row_form(u,3+i)==1);
+ disable_failed_form(u,3+i,1);assert(desired_row_form(u,3+i)==0);
+ memset(u->failedFormMask,0,sizeof(u->failedFormMask));
 }
 const char *alternates[]={"10401","10701"};
 for(int i=0;i<2;i++){

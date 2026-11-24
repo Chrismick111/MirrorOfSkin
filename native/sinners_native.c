@@ -3311,6 +3311,7 @@ static void tick(void){
    if(visibleWatches[k].app)visible_watch_tick(&g_units[k],GetTickCount());
    if(visibleAttacks[k].root)visible_attack_tick(&g_units[k],GetTickCount());
   }
+  voice_refresh_poll_at(GetTickCount());
   if(enabled_now()&&!cleanup_pending)voice_pump();else sr_voice_clear();
   private_voice_tick(enabled_now()&&!cleanup_pending);
   draw_rules_tick();
@@ -3437,8 +3438,12 @@ static void cleanup_all(void){
   bootlog("cleanup complete");
 }
 static _Thread_local int ur_in_canvas;
+static volatile LONG g_hooksReady;
 static void canvas_tick(void *mi){
   orig_canvas(mi);
+  /* Canvas is enabled before the remaining hooks; do not initialize the
+     workbench against a partially installed hook set. */
+  if(!g_hooksReady)return;
   if(InterlockedCompareExchange(&g_busy,1,0))return;
 
   if(g_cfg&&enabled_now()==0&&g_cfg->enabled==0)cleanup_pending=1;
@@ -3992,6 +3997,7 @@ static DWORD WINAPI run(void *unused){
   if(!install_hooks()){fatal("hook installation failed",4);detach(thread);return 0;}
   say("Sinners native: hooks installed; waiting for battle");
   bootlog("hooks installed");
+  InterlockedExchange(&g_hooksReady,1);
   detach(thread);
   return 0;
 }

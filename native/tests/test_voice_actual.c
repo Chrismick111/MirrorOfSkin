@@ -10,6 +10,6 @@ int main(void){
  desiredAppearance=&app;change_appearance_hook(&view,NULL,0,NULL);assert(u->voiceBoss==0);
  desiredAppearance=&foreign;change_appearance_hook(&view,NULL,0,NULL);assert(u->voiceBoss==8378);
  desiredAppearance=&foreign;change_appearance_hook(&view,NULL,0,NULL);assert(u->voiceBoss==8378);
- strcpy(g_rows[0].identity,"10201");change_appearance_hook(&view,NULL,0,NULL);assert(u->voiceBoss==0);
- puts("PASS voice follows committed boss, base, failed switch and nonboss");return 0;
+ strcpy(g_rows[0].identity,"10201");change_appearance_hook(&view,NULL,0,NULL);assert(u->voiceBoss==10201);
+ puts("PASS voice follows committed boss, base, repeated switch and nonboss owner");return 0;
 }

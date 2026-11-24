@@ -38,7 +38,7 @@ int main(void){
  static Config cfg;cfg.enabled=1;cfg.heartbeat=GetTickCount();g_cfg=&cfg;
  api[API_FIELD]=event_field;api[API_INVOKE]=event_invoke;
  memset(g_units,0,sizeof(g_units));reset();
- Unit *u=&g_units[0];u->used=1;u->sinner=101;u->view=&view;u->baseApp=&app;u->last=-1;
+ Unit *u=&g_units[0];u->used=1;u->sinner=101;u->view=&view;u->baseApp=&app;u->last=-1;u->staticHidden=1;
  viewerObject.field[22]=(uintptr_t)&view;m_getViewer=(void *)107;
  Coin coin;coin_info(u,&coin);assert(u->viewerActive&&u->observedViewer);
  viewerObject.field[20]=1;coin_info(u,&coin);assert(!u->viewerActive&&!u->observedViewer&&!u->observedViewerRoot);
@@ -78,8 +78,9 @@ int main(void){
  manager.field[4]=(uintptr_t)&foreignCamera;g_rows[0].weight=0;g_rows[1].weight=1;desiredAppearance=&owner;
  after_cointoss_hook(&duel,NULL);assert(u->last==0&&duels==2&&manager.field[4]==(uintptr_t)&foreignCamera);
  /* Source timing survives donor detail/index mapping, and context is restored. */
+ u->skins[0].motionCounts[7]=2; /* This donor has verified attack clips. */
  orig_changeMotion=fake_projected;orig_motionAnimItem=fake_anim_item;
- forward_projected_motion(&foreign,7,1,1,0,&manager,0,NULL,15,4);
+ forward_projected_motion(&foreign,7,1,1,0,&manager,0,NULL,15,4,-1,0,NULL,-1);
  assert(projectionCalls==1&&!g_projection.app);
  cfg.mode=1;u->wanted=-1;u->pending=-1;orig_skillStart=fake_skill_start;g_busy=0;
  skill_start_hook(&foreign,NULL);assert(skillStarts==1&&u->wanted==-1&&u->pending==-1);

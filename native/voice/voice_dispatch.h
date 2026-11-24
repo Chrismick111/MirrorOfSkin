@@ -29,10 +29,115 @@ static Unit *voice_unit(int id,void *view){
  }
  return found;
 }
+/* Some game voice requests are delivered after the original view callback has
+   returned. Resolve the character only when the id identifies one wearer. */
+static Unit *voice_unit_for_async_id(int id){
+ if(id<=0||!enabled_now()||cleanup_pending||g_quitting)return NULL;
+ Unit *found=NULL;
+ for(int i=0;i<SR_UNIT_MAX;i++){
+  Unit *u=&g_units[i];
+  if(!u->used||!u->view||voice_source_id(u)!=(unsigned)id)continue;
+  if(found)return NULL;
+  found=u;
+ }
+ if(found)return found;
+ for(int i=0;i<SR_UNIT_MAX;i++){
+  Unit *u=&g_units[i];
+  Skin *skin=u->used?voice_worn_skin(u):NULL;
+  if(!skin||!skin->imported||voice_worn_owner(u)!=(unsigned)id)continue;
+  if(found)return NULL;
+  found=u;
+ }
+ return found;
+}
+static void *voice_dialog_method(void *object,int argc){
+ return object?find_method(ui_class(object),"ShowDialog",argc):NULL;
+}
+/* Different game builds keep the per-unit dialog in differently named
+   fields. Inspect only instance fields whose declared type names a dialog or
+   bubble, then require the same ShowDialog method before using the object. */
+static void *voice_scan_dialog(void *manager,void *(*fields)(void*,void**),unsigned (*flags)(void*)){
+ if(!fields||!flags||!api[API_FIELD_TYPE]||!api[API_TYPE_NAME]||!api[API_FIELD_VALUE]||!api[API_FREE])return NULL;
+ for(void *klass=ui_class(manager);klass;klass=ui_parent(klass)){
+  void *iter=NULL,*field=NULL;unsigned scanned=0;
+  while((field=fields(klass,&iter))&&scanned++<256){
+   if(flags(field)&0x10)continue;
+   void *type=((void *(*)(void*))api[API_FIELD_TYPE])(field);
+   char *name=type?((char *(*)(void*))api[API_TYPE_NAME])(type):NULL;
+   int candidate=name&&(strstr(name,"Dialog")||strstr(name,"Bubble"));
+   if(name)((void (*)(void*))api[API_FREE])(name);
+   if(!candidate)continue;
+   void *value=((void *(*)(void*,void*))api[API_FIELD_VALUE])(field,manager);
+   if(value&&(voice_dialog_method(value,4)||voice_dialog_method(value,3)))return value;
+  }
+ }
+ return NULL;
+}
+/* WarpHook resolves obfuscated exports, so named il2cpp exports may not exist.
+   Managed reflection uses the APIs already negotiated with the host. */
+static void *voice_reflect_dialog(void *manager){
+ if(!manager||!api[API_CLASS_TYPE]||!api[API_TYPE_OBJECT])return NULL;
+ void *klass=ui_class(manager);
+ void *raw=klass?((void *(*)(void*))api[API_CLASS_TYPE])(klass):NULL;
+ void *type=raw?((void *(*)(void*))api[API_TYPE_OBJECT])(raw):NULL;
+ uintptr_t tr=ui_root(type);if(!tr)return NULL;
+ int bindingFlags=4|16|32,ok=0;void *args[]={&bindingFlags};
+ void *get=find_method(ui_class(type),"GetFields",1);
+ void *array=get?call_obj(get,type,args,&ok):NULL;uintptr_t ar=ui_root(array);
+ void *result=NULL;
+ if(ar&&ok){
+  uintptr_t n=*(uintptr_t*)((char*)array+24);
+  if(n<=256)for(uintptr_t i=0;i<n&&!result;i++){
+   void *field=((void**)((char*)array+32))[i];if(!field)continue;
+   void *getType=find_method(ui_class(field),"get_FieldType",0);
+   void *fieldType=getType?call_obj(getType,field,NULL,&ok):NULL;
+   uintptr_t fr=ui_root(fieldType);if(!fr)continue;
+   void *getName=find_method(ui_class(fieldType),"get_FullName",0);
+   void *name=getName?call_obj(getName,fieldType,NULL,&ok):NULL;
+   char text[256];int candidate=ok&&name&&string_ascii(name,text,sizeof(text))&&
+     (strstr(text,"Dialog")||strstr(text,"Bubble"));
+   if(candidate){
+    void *getValue=find_method(ui_class(field),"GetValue",1);void *va[]={manager};
+    void *value=getValue?call_obj(getValue,field,va,&ok):NULL;
+    if(ok&&value&&(voice_dialog_method(value,4)||voice_dialog_method(value,3)))result=value;
+   }
+   ui_unroot(fr);
+  }
+ }
+ ui_unroot(ar);ui_unroot(tr);return result;
+}
+static void *voice_find_dialog(void *manager){
+ if(!manager)return NULL;
+ /* BattleUnitUIManager itself exposes the three-argument display method. */
+ if(voice_dialog_method(manager,3))return manager;
+ void *direct=rfield(manager,"_dialogUI");
+ if(direct&&(voice_dialog_method(direct,4)||voice_dialog_method(direct,3)))return direct;
+ HMODULE game=GetModuleHandleW(L"GameAssembly.dll");
+ void *(*fields)(void*,void**)=(void*)GetProcAddress(game,"il2cpp_class_get_fields");
+ unsigned (*flags)(void*)=(void*)GetProcAddress(game,"il2cpp_field_get_flags");
+ void *dialog=voice_scan_dialog(manager,fields,flags);
+ return dialog?dialog:voice_reflect_dialog(manager);
+}
+static void *voice_dialog_component(void *object){
+ if(!object||!api[API_CLASS_TYPE]||!api[API_TYPE_OBJECT])return NULL;
+ void *klass=((void *(*)(void*,const char*,const char*))api[API_CLASS])(g_game,"BattleUI.BattleUnit","BattleDialogUI");
+ void *raw=klass?((void *(*)(void*))api[API_CLASS_TYPE])(klass):NULL;
+ void *type=raw?((void *(*)(void*))api[API_TYPE_OBJECT])(raw):NULL;
+ uintptr_t root=ui_root(type);if(!root)return NULL;
+ void *get=find_method(ui_class(object),"GetComponentInChildren",2);int ok=0;
+ uint8_t inactive=0;void *args[]={type,&inactive};
+ void *component=get?call_obj(get,object,args,&ok):NULL;
+ ui_unroot(root);
+ return ok&&component&&voice_dialog_method(component,4)?component:NULL;
+}
 static int voice_show(void *view,int id,void *key,const char *literal,float length,uint8_t custom,int nativeCue){
  if(!view||!key||!c_voiceGenerator)return 0;
  void *enabled=find_method(c_voiceGenerator,"CheckSpeechBubbleSystemEnabled",0);
- if(!enabled||call_bool(enabled,NULL,NULL)!=1)return 0;
+ int enabledResult=enabled?call_bool(enabled,NULL,NULL):-2;
+ if(enabledResult!=1){
+  static unsigned logged;if(logged++<4){char m[128];snprintf(m,sizeof(m),"Imported bubble diagnostic: setting=%d",enabledResult);bootlog(m);}
+  return 0;
+ }
  Unit *wearer=voice_unit(0,view);
  VoiceBinding *binding=voice_binding(voice_worn_skin(wearer));
  const char *caption=binding&&binding->owner==(unsigned)id?private_caption(binding,literal):NULL;
@@ -56,19 +161,30 @@ static int voice_show(void *view,int id,void *key,const char *literal,float leng
  void *ctor=k?find_method(k,".ctor",2):NULL;
  void *line=ctor?ui_new(k):NULL;uintptr_t lr=ui_root(line);
  void *effect=make_string("");uintptr_t er=ui_root(effect);
- int result=0;
+ int result=0,ctorOk=0,centerFound=0,managerFound=0,dialogFound=0,showFound=0;
  if(lr&&er){
   void *args[]={text,effect};
-  if(call_exc(ctor,line,args)){
+  if((ctorOk=call_exc(ctor,line,args))){
    void *ca[]={view,line,&length,&custom};
    void *center=find_method(c_voiceGenerator,"TryPrintCenterSubtitle",4);
+   centerFound=center!=NULL;
    result=center&&call_bool(center,NULL,ca)==1;
    if(!result){
-    void *manager=rfield(view,"_uiManager"),*dialog=manager?rfield(manager,"_dialogUI"):NULL;
-    void *show=dialog?find_method(ui_class(dialog),"ShowDialog",3):NULL;
-    void *da[]={line,&length,&custom};result=show&&call_exc(show,dialog,da);
+    void *manager=rfield(view,"_uiManager"),*dialog=voice_find_dialog(manager);
+    if(!dialog)dialog=voice_dialog_component(manager);
+    if(!dialog)dialog=voice_dialog_component(view);
+    void *show=voice_dialog_method(dialog,4);
+    managerFound=manager!=NULL;dialogFound=dialog!=NULL;showFound=show!=NULL;
+    if(show){void *da[]={line,&length,&custom,NULL};result=call_bool(show,dialog,da)==1;}
+    else{
+     show=voice_dialog_method(dialog,3);showFound=show!=NULL;
+     void *da[]={line,&length,&custom};result=show&&call_exc(show,dialog,da);
+    }
    }
   }
+ }
+ if(!result){
+  static unsigned logged;if(logged++<8){char m[200];snprintf(m,sizeof(m),"Imported bubble diagnostic: class=%d ctor=%d roots=%d/%d ctorOk=%d center=%d manager=%d dialog=%d show=%d",k!=NULL,ctor!=NULL,lr!=0,er!=0,ctorOk,centerFound,managerFound,dialogFound,showFound);bootlog(m);}
  }
  ui_unroot(er);ui_unroot(lr);ui_unroot(tr);return result;
 }
@@ -212,6 +328,7 @@ static void *voice_add_hook(uintptr_t instance,int id,int type,float volume,uint
  }
  Unit *requester=voiceSegment.instance==instance?(voiceSegment.skin?voiceSegment.unit:NULL):
                  (multiHasView?multiRequestView:voiceView);
+ if(!requester&&!multiHasView&&!voiceSegment.unit)requester=voice_unit_for_async_id(id);
  PrivateVoiceEvent *previousEvent=registeringVoice;
  registeringVoice=requester?private_voice_track(requester,voice_worn_skin(requester),(void*)instance):NULL;
  if(registeringVoice)registeringVoice->captionBlocked=blocked;
