@@ -22,10 +22,26 @@ def display_name(current, archive_stem):
     return (title or archive_stem) + (cache[1] or '')
 
 
-def apply(catalog):
+def apply(catalog, root=None):
+    from dialogue_status import apply_binding, runtime_bindings
+    bindings = runtime_bindings(root) if root is not None else {}
+    if root is not None:
+        from import_packages import read_index
+        try:
+            packages = read_index(root)['packages']
+        except (OSError, ValueError):
+            packages = []  # Synchronization reports an unreadable library separately.
+        for package in packages:
+            for identity in package.get('missing_identities', []):
+                if identity in catalog:
+                    catalog[identity]['missing_package_source'] = package['source']
     for identity, entry in catalog.items():
         if not (re.fullmatch(r'story_WBImp_[a-f0-9]{24}', identity) or identity == 'story_BRolandBaseAppearance'):
             continue
+        if 'dialogue_detection' not in entry and ('import_source' in entry or identity.startswith('story_WBImp_')):
+            entry['dialogue_detection'] = {'voice': 'unknown', 'bubble': 'unknown'}
+            entry['dialogue_needs_import'] = True
+        apply_binding(entry, bindings)
         entry['name'] = display_name(entry.get('name'), entry.get('import_source'))
         memberships = list(entry.get('chapter_memberships') or [])
         old = entry.get('chapter')

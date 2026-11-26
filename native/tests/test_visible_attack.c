@@ -15,7 +15,9 @@ static void *fake_parent(void *o){return NULL;}
 static void *fake_field(void *c,const char *n){
  if(!strcmp(n,"_curAppearance"))return (void *)1;
  if(!strcmp(n,"_playableDirector"))return (void *)3;
+ if(!strcmp(n,"_currentActionLog"))return (void *)3;
  if(!strcmp(n,"sprenderer_charactermotion"))return (void *)4;
+ if(!strcmp(n,"_skillViewBase"))return (void *)5;
  if(!strcmp(n,"m_CachedPtr"))return (void *)2;
  return NULL;
 }
@@ -98,9 +100,16 @@ static int build_art(int unit,const char *look){
  Unit *u=&g_units[unit];u->used=1;u->view=&view;u->sinner=101+unit;
  g_loadBox=&dependency[unit];g_loadRoot=ui_root(g_loadBox);
  lstrcpynA(g_loadLook,look,sizeof(g_loadLook));
+ local_art_form(look); /* The real loader resolves policy before build, including a missing import. */
  int built=build_skin(u,0);
  if(built==1){g_loadBox=NULL;g_loadRoot=0;}
  return built;
+}
+static void set_roland_policy(Skin *skin){
+ const char *look="BRolandBaseAppearance";
+ LocalArtForm *form=local_art_form(look);
+ assert(form&&form->bundled);
+ strcpy(skin->look,look);skin->bundledPolicy=&form->config;
 }
 /* Missing authored outcomes and the default disabled switch must pass the
    original receiver and detail through the upstream playback entry. */
@@ -176,7 +185,7 @@ static void clash_test_change(void *app,int detail,uint8_t a1,int part,uint8_t a
  change(app,detail,a1,part,a3,cb,a5,mi);
 }
 static void test_roland_clash(Unit *u,Skin *skin){
- strcpy(skin->look,"BRolandBaseAppearance");strcpy(u->baseName,"10901");
+ set_roland_policy(skin);strcpy(u->baseName,"10901");
  api[API_FIELD]=clash_test_field;api[API_METHOD]=clash_test_method;api[API_INVOKE]=clash_test_invoke;
  m_getMotion=(void*)101;
  donor.fields[4]=(uintptr_t)&stock;clashMotion.fields[4]=(uintptr_t)&clashList;
@@ -212,13 +221,17 @@ static void test_roland_clash(Unit *u,Skin *skin){
  assert(calls==before+1&&lastReceiver==&donor&&lastDetail==7&&lastCallback==(void*)90);
  visible_watch_clear(u);assert(view.fields[0]==(uintptr_t)&donor&&roots==0);
  m_getMotion=NULL;donor.fields[4]=0;
+ skin->bundledPolicy=NULL;
  api[API_FIELD]=fake_field;api[API_METHOD]=fake_method;api[API_INVOKE]=fake_invoke;
  puts("PASS Roland clash entries: native Animator reactions, Parrying and Duel_Win tracks, then first attack on same donor");
 }
 static void test_imported_metadata_routing(void){
  Skin fixture={0}; ImportedConfig imported={0}; fixture.row=0;
  g_rows[0].story=0; strcpy(fixture.look,"BRolandBaseAppearance");
+ assert(!skin_uses_private_metadata(&fixture));
+ set_roland_policy(&fixture);
  assert(skin_uses_private_metadata(&fixture));
+ fixture.bundledPolicy=NULL;
  strcpy(fixture.look,"WBImp_0123456789abcdef01234567");fixture.imported=&imported;
  assert(skin_uses_private_metadata(&fixture));
  fixture.imported=NULL;strcpy(fixture.look,"ordinary");
@@ -228,18 +241,21 @@ static void test_imported_metadata_routing(void){
 }
 static void test_roland_build(void){
  api[API_INVOKE]=art_invoke;api[API_FIELD]=art_field;api[API_METHOD]=art_method;api[API_STRING_NEW]=art_string;
- rolandOpen=(void*)Open;rolandAsset=(void*)Asset;rolandUnload=(void*)Unload;rolandGoType=&stock;
+ localBundleOpen=(void*)Open;localBundleAsset=(void*)Asset;localBundleUnload=(void*)Unload;localBundleGoType=&stock;
  m_instantiate=(void*)Instantiate;m_getSkinPivot=(void*)Pivot;m_getTransform=(void*)Transform;
  m_setParent=(void*)Parent;m_getComponent=(void*)Component;m_init=(void*)Init;
  g_cfg=NULL;g_rows[0].excluded=2;view.fields[3]=(uintptr_t)&stock;
  memset(g_units,0,sizeof(g_units));
- for(size_t i=0;i<sizeof(rolandForms)/sizeof(*rolandForms);i++){
-  const char *look=rolandForms[i].look;
+ {
+  const char *look="BRolandBaseAppearance";
+  LocalArtForm *form=local_art_form(look);
+  assert(form&&form->bundled);
   assert(build_art(0,look)==1);                         /* father */
+  assert(g_units[0].skins[0].bundledPolicy==&form->config&&!g_units[0].skins[0].imported);
   int first=generation;
   assert(build_art(1,look)==1&&generation==first);     /* two simultaneous users */
   unit_release(&g_units[1]);
-  assert(rolandForms[i].prefab==&prefabs[first]);
+  assert(form->prefab==&prefabs[first]);
   prefabs[first].fields[1]=0;                          /* managed shell survived */
   assert(build_art(3,look)==1);                         /* Ryoshu, same process */
   assert(generation==first+1&&g_units[3].skins[0].app==&appearances[cloneCount]);
@@ -256,17 +272,49 @@ static void test_roland_build(void){
   ui_unroot(g_loadRoot);g_loadBox=NULL;g_loadRoot=0;
   for(int k=0;k<SR_UNIT_MAX;k++)if(g_units[k].used)unit_release(&g_units[k]);
   g_frame+=3;collect_retire();
-  assert(!rolandForms[i].bundle&&!rolandForms[i].prefab&&roots==0);
+  assert(!form->bundle&&!form->prefab&&roots==0);
   assert(build_art(3,look)==1);                         /* fresh battle, Ryoshu first */
   int lastUnloads=unloads;
   unit_release(&g_units[3]);g_frame+=3;collect_retire();
-  assert(unloads==lastUnloads+1&&!rolandForms[i].bundle&&roots==0);
+  assert(unloads==lastUnloads+1&&!form->bundle&&roots==0);
  }
  puts("PASS unified Roland prefab: father to Ryoshu and another identity, stale prefab/bundle, clone retry, parent and dependency ownership");
 }
+static void test_bundled_generic_build(void){
+ const char *look="OtherModelAppearance";
+ assert(build_art(4,look)==1);
+ Unit *unit=&g_units[4];
+ Skin *skin=unit->skins;
+ assert(skin->bundledPolicy&&!skin->imported&&!strcmp(skin->look,look));
+ assert(!strcmp(skin->bundledPolicy->asset,"Assets/Prefab/OtherModel.prefab"));
+ skin->motionCounts[8]=skin->motionCounts[25]=1;
+ strcpy(unit->baseName,"12345");
+ assert(group_source_passthrough(unit,skin));
+ assert(group_for_coin(unit,skin,&view,0,25,8)==25);
+ strcpy(unit->baseName,"01234_IndependentAppearance");
+ assert(!group_source_passthrough(unit,skin));
+ assert(draw_coin_group(skin,0,0.1)==8&&draw_coin_group(skin,1,0.9)==25);
+ skin->chapterRole[29]=1;
+ assert(clash_donor_slot(skin,37,2)==29);
+ assert(clash_timing(skin,skin->app,29)==ClashNativeTiming);
+ unit_release(unit);g_frame+=3;collect_retire();
+ assert(roots==0);
+ puts("PASS a differently named bundled skin uses its own prefab, coin groups, source and clash slot");
+}
 #include "test_imported_art.inc"
+static int routedItems,routedPart,routedSlot;
+static void *imported_test_timing(void *ret,void *app,int sourceDetail,int detail,int part,int sourcePart,uint8_t last,void *mi){
+ assert(app==&donor&&sourceDetail==8&&sourcePart==0);
+ assert(detail==routedSlot&&part==routedPart);
+ routedItems++;return ret;
+}
 static void imported_test_change(void *app,int detail,uint8_t a1,int part,uint8_t a3,void *cb,uint8_t a5,void *mi){
  assert(get_motion_hook(app,detail,0,NULL)==app&&lastDetail==detail);
+ if(cb==(void*)65||cb==(void*)66){
+  assert(g_projection.app==app&&g_projection.segmentDetail==detail);
+  routedSlot=detail;routedPart=part;
+  assert(motion_anim_item_hook(&stock,app,detail,detail,part,part,0,NULL)==&stock);
+ }
  change(app,detail,a1,part,a3,cb,a5,mi);
 }
 static void test_imported_attacks(Unit *u,Skin *skin){
@@ -306,9 +354,41 @@ static void test_imported_attacks(Unit *u,Skin *skin){
  u->viewerActive=1;u->ordinarySourceClips[8]=1;skin->ordinaryClips[9]=1;
  forward_projected_motion(&donor,8,0,0,0,(void*)64,0,NULL,8,0,0,1,&view,0);
  assert(lastDetail==8&&lastPart==0);
+ config.groupCount=3;config.groups[0]=8;config.groups[1]=10;config.groups[2]=24;
+ config.routeCount=3;
+ void *savedTiming=orig_motionAnimItem;
+ orig_motionAnimItem=imported_test_timing;routedItems=0;
+ config.routes[0]=(ImportedAttackRoute){1234501,2,3,8,0};
+ config.routes[1]=(ImportedAttackRoute){1234502,2,2,10,0};
+ config.routes[2]=(ImportedAttackRoute){1234503,2,128,24,0};
+ skin->motionCounts[10]=2;skin->motionCounts[24]=128;skin->ordinaryClips[24]=1;
+ u->coinTier=2;u->coinIndex=1;
+ /* A preview without source count selects the stable default. */
+ change_motion_hook(&source,8,0,0,0,(void*)65,0,NULL);
+ assert(lastReceiver==&donor&&lastDetail==8&&lastPart==1);
+ view.fields[2]=(uintptr_t)&view;stock.fields[4]=(uintptr_t)&pivot;
+ native_order_observations[0]=(NativeOrderObservation){
+  .self=&pivot,.action=&view,.viewer=&stock,.allCoin=2,.serial=1
+ };
+ assert(get_motion_hook(&source,8,0,NULL)==&donor&&lastDetail==10);
+ change_motion_hook(&source,8,0,0,0,(void*)65,0,NULL);
+ assert(lastReceiver==&donor&&lastDetail==10&&lastPart==1);
+ native_order_observations[0].allCoin=3;
+ assert(get_motion_hook(&source,8,0,NULL)==&donor&&lastDetail==8);
+ memset(&native_order_observations[0],0,sizeof(native_order_observations[0]));
+ view.fields[2]=0;stock.fields[4]=0;
+ /* The deferred path retains the source recipe even after the viewer moves on. */
+ for(int i=0;i<3;i++){
+  int coin=i==2?127:i,skill=i==2?1234503:1234502,count=i==2?128:3,slot=i==2?24:10;
+  u->motions[0]=(PendingMotion){.source=&donor,.detail=8,.index=0,.row=0,.coin=coin,.tier=2,
+    .importedSkill=skill,.importedCoins=count,.callback=(void*)66};
+  u->motionCount=1;motion_dispatch(u,0);
+  assert(lastReceiver==&donor&&lastDetail==slot&&lastPart==coin&&lastCallback==(void*)66);
+ }
+ assert(routedItems==5);orig_motionAnimItem=savedTiming;
  g_timeCount=0;u->observedAction=NULL;u->observedViewer=NULL;u->viewerActive=0;
  skin->imported=NULL;g_rows[0].story=0;visible_watch_clear(u);orig_changeMotion=change;
- puts("PASS imported 10109 cross-layout S2 coin, same-layout direct/queued exact clip, repeat and competing duration");
+ puts("PASS imported 10109 routing and composite direct/queued authored coins through index 127");
 }
 /* A repeated authored index on a new coin must advance on the donor, while
    duplicate callbacks for the same coin stay latched to the same clip. */
@@ -326,7 +406,7 @@ static void test_local_repeated_coin(Unit *u,Skin *skin){
  assert(lastDetail==9&&lastPart==2);
  forward_projected_motion(&donor,9,0,1,0,NULL,0,NULL,9,1,1,1,&view,1);
  assert(lastDetail==9&&lastPart==2);
- skin->imported=NULL;strcpy(skin->look,"BRolandBaseAppearance");
+ skin->imported=NULL;set_roland_policy(skin);
  strcpy(u->baseName,"10115_YiSang_Index_FatherAppearance");sr_segment_clear(&u->segmentLatch);
  forward_projected_motion(&donor,9,0,1,0,NULL,0,NULL,9,1,0,1,&view,0);
  assert(lastDetail==9&&lastPart==1);
@@ -335,6 +415,7 @@ static void test_local_repeated_coin(Unit *u,Skin *skin){
  forward_projected_motion(&donor,9,0,1,0,NULL,0,NULL,9,1,1,1,&view,1);
  assert(lastDetail==9&&lastPart==2);
  u->observedAction=NULL;u->observedViewer=NULL;u->viewerActive=0;
+ skin->bundledPolicy=NULL;
  puts("PASS imported and Roland repeated coin clips advance and remain latched");
 }
 int main(void){
@@ -408,7 +489,7 @@ int main(void){
  visible_watch_clear(u);assert(roots==0&&view.fields[0]==(uintptr_t)&donor);
  puts("PASS chapter 9 sword/paired coin delivery and clash-end overlap");
  puts("PASS direct/queued attack: donor-only movement, visible cross-type clip, original callback once, shutdown restores position");
- strcpy(skin->look,"BRolandBaseAppearance");
+ set_roland_policy(skin);
  strcpy(u->baseName,"10115_YiSang_Index_FatherAppearance");
  for(int d=7;d<=16;d++)skin->motionCounts[d]=(d==16?1:3);
  for(int d=7;d<=16;d++)for(int part=0;part<skin->motionCounts[d];part++){
@@ -423,7 +504,7 @@ int main(void){
  for(int slot=0;slot<11;slot++){
   int detail=slot<9?7+slot:24+slot-9;
   for(int part=0;part<skin->motionCounts[detail];part++){
-   assert(roland_draw(skin,0,(slot+(part+0.5)/skin->motionCounts[detail])/11.0)==detail);
+   assert(draw_coin_group(skin,0,(slot+(part+0.5)/skin->motionCounts[detail])/11.0)==detail);
    for(int repeat=0;repeat<2;repeat++){
     forward_projected_motion(&donor,7,0,repeat,0,(void*)75,0,NULL,7,repeat,0,1,(void*)3,0);
     assert(lastDetail==detail&&lastPart==part&&lastReceiver==&donor);
@@ -431,13 +512,26 @@ int main(void){
   }
  }
  for(int coin=0;coin<128;coin++){
-  int d=roland_weapon(u,skin,(void *)3,coin,7,7);assert((d>=7&&d<=15)||d==24||d==25);
+  int d=group_for_coin(u,skin,(void *)3,coin,7,7);assert((d>=7&&d<=15)||d==24||d==25);
   groups|=1u<<d;
   forward_projected_motion(&donor,7,0,0,0,(void *)75,0,NULL,7,0,coin,1,(void*)3,coin);
   assert(lastDetail==d&&lastReceiver==&donor);
-  assert(roland_weapon(u,skin,(void *)3,coin,9,9)==d);
+  assert(group_for_coin(u,skin,(void *)3,coin,9,9)==d);
  }
  assert((groups&(groups-1))!=0);
+ /* The same group selection works for a differently named imported skin,
+    with choices supplied solely by that skin's configuration. */
+ ImportedConfig generic={0};generic.groupCount=2;generic.groups[0]=7;generic.groups[1]=24;
+ generic.groupPassthrough=1;strcpy(generic.layout,"12345_ExampleAppearance");
+ skin->bundledPolicy=NULL;skin->imported=&generic;strcpy(skin->look,"WBImp_0123456789abcdef01234567");
+ strcpy(u->baseName,"12345_ExampleAppearance");
+ assert(group_for_coin(u,skin,(void*)8,0,24,7)==24);
+ strcpy(u->baseName,"10101_OtherAppearance");
+ skin->weaponAction=(void*)9;skin->weaponViewer=u->observedViewer;
+ assert(draw_coin_group(skin,0,0.25)==7);assert(draw_coin_group(skin,1,0.75)==24);
+ assert(group_for_coin(u,skin,(void*)9,0,7,8)==7);
+ assert(group_for_coin(u,skin,(void*)9,1,7,8)==24);
+ skin->imported=NULL;set_roland_policy(skin);
  puts("PASS Index Father S1-S10 and all 28 authored parts; other identities reach every gun and greatsword segment and keep their draw per coin");
  test_roland_clash(u,skin);
  test_imported_clash(u,skin);
@@ -445,6 +539,7 @@ int main(void){
  test_local_repeated_coin(u,skin);
  test_imported_metadata_routing();
  test_roland_build();
+ test_bundled_generic_build();
  test_imported_art();
  close_test_profile();
  return 0;

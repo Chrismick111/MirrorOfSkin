@@ -25,8 +25,11 @@ class RolandImportTest(unittest.TestCase):
         self.target.write_bytes(b'old-bundle')
 
     def build(self, model, metadata):
+        def build_fixture(archive, *, with_voice=False):
+            return (model, metadata, {'state': 'found', 'count': 3}) if with_voice else (model, metadata)
+
         return patch.dict(sys.modules, {'roland_merge': types.SimpleNamespace(
-            build_roland_bundle=lambda archive: (model, metadata))})
+            build_roland_bundle=build_fixture)})
 
     def test_mismatch_preserves_existing_model(self):
         with self.build(b'new-bundle', b'bad-metadata'):
@@ -36,7 +39,8 @@ class RolandImportTest(unittest.TestCase):
 
     def test_matching_model_replaces_only_after_validation(self):
         with self.build(b'new-bundle', b'valid-metadata'):
-            skin_import.install_roland_bundles('unused', self.root)
+            evidence = skin_import.install_roland_bundles('unused', self.root)
+        self.assertEqual(evidence, {'state': 'found', 'count': 3})
         self.assertEqual(self.target.read_bytes(), b'new-bundle')
 
     def test_mirror_same_size_and_identical_root(self):

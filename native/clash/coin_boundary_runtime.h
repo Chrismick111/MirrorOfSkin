@@ -48,6 +48,15 @@ static int motion_capture(void *self,int detail,uint8_t a1,int index,uint8_t a3,
  m.row=u->wanted;m.coin=u->wantedSourceCoin;m.tier=u->coinTier;m.last=u->coinLast;m.action=rfield(u->view,"_currentActionLog");
  m.viewer=u->observedViewer;
  if(u->skins[k].chapterActor)m.chapterSkill=chapter_skill_id(u,m.action);
+ Skin *sourceSkin=skin_for_app(u,self);
+ if(!sourceSkin&&self==u->baseApp&&u->staticHidden)sourceSkin=held_appearance(u);
+ Skin *wanted=&u->skins[k];
+ if(m.action&&m.action==u->observedAction&&
+    ((wanted->imported&&wanted->imported->routeCount)||
+     (sourceSkin&&sourceSkin->imported&&sourceSkin->imported->routeCount))){
+  m.importedSkill=observed_skill_id(u,m.action,0);
+  m.importedCoins=native_order_coin_count(u);
+ }
  if((m.tier<1||m.tier>3)&&detail>=7&&detail<=9)m.tier=detail-6;
  /* The live viewer's coin index has already been used by decide_and_apply.
     Query final-coin semantics against that same rooted viewer, not last frame. */
@@ -106,7 +115,7 @@ static void motion_dispatch(Unit *u,int original_only){
   target=u->baseApp;detail=m.detail;index=m.index;playing=NULL;
  }
  if(playing&&playing->imported&&!playing->chapterActor){
-  detail=imported_attack_detail(u,playing,m.detail,m.tier);
+  detail=imported_attack_detail_with_source(u,playing,m.detail,m.tier,m.importedSkill,m.importedCoins);
   index=imported_attack_part(u,playing,m.action,m.coin,m.detail,detail,m.index,m.last);
  }else if(playing&&!playing->chapterActor){
   detail=sr_resolve_attack(playing->motionCounts,detail,1,m.tier,m.detail,0,0);

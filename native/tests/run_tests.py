@@ -6,6 +6,7 @@ separately; this runner never reads or changes the user's plugin data.
 import argparse
 import os
 from pathlib import Path
+import shutil
 import subprocess
 import sys
 import tempfile
@@ -28,7 +29,19 @@ def main():
     skipped = {'test_hiro_voice.c', 'test_chapter_auto.c'}
     with tempfile.TemporaryDirectory(prefix='mos-native-tests-') as tmp:
         output = Path(tmp)
-        env = dict(os.environ, FAUST_MOS_DATA_ROOT=str(output / 'data'))
+        policies = native.parent / 'MirrorOfSkin' / 'Assets' / 'SkinPolicies'
+        test_policies = output / 'Assets' / 'SkinPolicies'
+        shutil.copytree(policies, test_policies)
+        generic = (test_policies / 'BRolandBaseAppearance.cfg').read_text(encoding='ascii').splitlines()
+        generic[2] = 'Assets/Prefab/OtherModel.prefab'
+        generic[4:6] = ['OtherModelAppearance', '12345_ExampleAppearance']
+        generic[6:9] = ['0' * 29 + '2' + '0' * 98, '0' * 128, '0' * 29 + '1' + '0' * 98]
+        generic[9] = 'R|8,25'
+        (test_policies / 'OtherModelAppearance.cfg').write_bytes(('\n'.join(generic) + '\n').encode('ascii'))
+        profile = output / 'profile'
+        data = profile / 'FaustLauncher' / 'MOS_data'
+        data.mkdir(parents=True)
+        env = dict(os.environ, APPDATA=str(profile), FAUST_MOS_DATA_ROOT=str(data))
         for test in sorted(tests.glob('test_*.c')):
             if test.name in skipped:
                 continue

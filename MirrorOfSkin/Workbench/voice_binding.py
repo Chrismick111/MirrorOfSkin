@@ -39,6 +39,18 @@ def signal_runtime(root):
         Path(name).unlink(missing_ok=True)
 
 
+def validate_voice_policy(policy):
+    if not isinstance(policy, dict) or set(policy) != {'owner', 'bank'}:
+        raise ValueError('外观语音配置需要 owner 和 bank')
+    owner, bank = policy['owner'], policy['bank']
+    if not isinstance(owner, str) or not re.fullmatch(r'[1-9][0-9]{2,7}', owner):
+        raise ValueError('外观语音 owner 应为游戏语音事件的角色编号')
+    if (not isinstance(bank, str) or len(bank) >= 246 or bank.lower().startswith('master.')
+            or not re.fullmatch(r'[A-Za-z0-9_-]+(?:\.assets)?\.bank', bank, re.ASCII | re.I)):
+        raise ValueError('外观语音 bank 应为可播放的 FMOD 文件名')
+    return policy
+
+
 def model_info(root,entry):
     look=entry.get('appearance_name','')
     if not re.fullmatch(r'WBImp_[0-9a-f]{24}',look):
@@ -46,9 +58,10 @@ def model_info(root,entry):
     path=root/'Assets/ImportedSkins'/(look+'.cfg')
     if not path.is_file():return None
     lines=path.read_text(encoding='ascii').splitlines()
-    if len(lines)!=7 or lines[0]!='WBMOD1':return None
+    from core.mos_data import imported_config_shape
+    if not imported_config_shape(lines):return None
     owners=set()
-    for key in lines[1:3]+[lines[4]]:
+    for key in ([] if lines[0] == 'WBMOD3' else lines[1:3]+[lines[4]]):
         match=re.match(r'(\d{4,8})_',key.rsplit('/',1)[-1])
         if match:owners.add(match[1])
     names={family(entry.get(k,'')) for k in ('name','import_source')}
@@ -57,28 +70,27 @@ def model_info(root,entry):
 
 def sync_bubble_text(folder, owners):
     """Publish only dialogue supplied by this bank for its bound wearers."""
+    from appearance_dialogue import battle_dialogue, subtitle_file
+
     by_key={}
-    sources=[(folder/'BattleSpeechBubbleDlg.json',None)]
-    for path in sorted(folder.glob('Voice_*.json')):
-        match=re.fullmatch(r'Voice_.+_([1-9][0-9]{2,7})\.json',path.name,re.I)
-        if match and match[1] in owners:sources.append((path,match[1]))
-    for path,owner in sources:
-        if not path.is_file():continue
+    lines={}
+    for path in sorted(folder.glob('*.json')):
+        kind = subtitle_file(path.name)
+        if kind is None or not path.is_file():
+            continue
         try:
             data=json.loads(path.read_bytes())
-        except (OSError,ValueError):continue
-        rows=data.get('dataList') if isinstance(data,dict) else None
-        if not isinstance(rows,list):continue
-        for row in rows:
-            if not isinstance(row,dict):continue
-            key=row.get('id')
-            line=row.get('dlg')
-            if not isinstance(key,str) or not re.fullmatch(r'battle[A-Za-z0-9_-]{0,185}',key) or not isinstance(line,str):continue
-            ids={part for part in key.split('_') if part in owners or re.fullmatch('[1-9][0-9]{4}',part)}
-            who=owner or (next(iter(ids)) if len(ids)==1 else None)
-            if who not in owners or (ids and who not in ids):continue
-            line=' '.join(re.sub(r'[\x00-\x1f\x7f]',' ',line).split())
-            if line and len(line.encode('utf8'))<=4095:by_key[who,key]=line
+        except (OSError, ValueError, RecursionError):
+            continue
+        priority = 2 if path.name.casefold().startswith('voice_') else (
+            1 if path.name.casefold() == 'battlespeechbubbledlg.json' else 0)
+        for key, owner, line in battle_dialogue(data, path.name):
+            if owner in owners and key.startswith('battle'):
+                lines.setdefault((owner, key), {}).setdefault(priority, set()).add(line)
+    for key, choices in lines.items():
+        preferred = choices[max(choices)]
+        if len(preferred) == 1:
+            by_key[key] = next(iter(preferred))
     content=''.join(f'{owner}\t{key}\t{line}\n' for (owner,key),line in sorted(by_key.items())).encode('utf8')
     target=folder/'bubbles.tsv'
     if not target.is_file() or target.read_bytes()!=content:
@@ -97,10 +109,17 @@ def reconcile_locked(root,evidence=None):
     library=root/'Assets/ImportedVoices'
     catalog=json.loads((root/'Assets/runtime/all_sinners_pools.json').read_bytes())
     models={}
+    declared={}
     for group in catalog.values():
         for entry in group['entries']:
             model=model_info(root,entry)
-            if model:models[model[0]]=model
+            if model:
+                models[model[0]]=model
+                if 'imported_voice' in entry:
+                    try:
+                        declared[model[0]] = validate_voice_policy(entry['imported_voice'])
+                    except ValueError:
+                        declared[model[0]] = None
     choices={look:[] for look in models}
     index={}
     for path in sorted(library.glob('*/voice.json')):
@@ -140,12 +159,24 @@ def reconcile_locked(root,evidence=None):
         targets=set(meta['targets'])
         names={family(meta.get(k,'')) for k in ('name','source')}-{''}
         together=set(meta.get('included_looks',[]))
+        scoped=meta.get('scoped_to_appearances') or bool(together.intersection(declared))
         included_has_match=any(look in together and bool(owners&targets)
                                for look,owners,_,_ in models.values())
         included_layouts={frozenset(owners) for look,owners,_,_ in models.values()
                           if look in together and owners}
         scores={}
+        selected_banks={}
         for look,owners,aliases,label in models.values():
+            if scoped and look not in together:
+                continue
+            if look in declared:
+                rule=declared[look]
+                if rule and look in together and rule['owner'] in targets:
+                    matched=[b for b in banks if b.casefold()==rule['bank'].casefold()]
+                    if len(matched)==1:
+                        selected_banks[look]=matched
+                        scores[look]=(4,rule['owner'])
+                continue
             overlap=owners&targets
             related=bool(aliases&names)
             if targets and owners and not overlap:
@@ -164,7 +195,7 @@ def reconcile_locked(root,evidence=None):
             best=max(score for score,o in scores.values() if o==owner)
             winners=[k for k,v in scores.items() if v==(best,owner)]
             if len(winners)>1 and not all(k in together for k in winners):continue
-            for k in winners:choices[k].append((best,owner,meta['revision'],banks))
+            for k in winners:choices[k].append((best,owner,meta['revision'],selected_banks.get(k,banks)))
     mapped={}
     lines=[]
     owners_by_revision={}

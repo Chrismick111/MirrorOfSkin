@@ -1,5 +1,5 @@
 static int local_clash_skin(Skin *skin){
- return skin&&(skin->imported||!strcmp(skin->look,"BRolandBaseAppearance"));
+ return skin_local_policy(skin)!=NULL;
 }
 /* A donor without any authored clash timeline should keep the game's native
    clash, not be forced through the special-clash pose path. */
@@ -32,21 +32,37 @@ static void *clash_visible(Unit *u,void *self){
  return self;
 }
 static const char *clash_layout(Skin *skin){
- /* The local base prefab retains the Index Father's Parrying (20/21) and
-    Duel_Win (32/33) groups under its own appearance name. */
- if(skin->imported)return skin->imported->layout;
- return !strcmp(skin->look,"BRolandBaseAppearance")?"1348_Index_father_Phase2Appearance":skin->look;
+ const ImportedConfig *policy=skin_local_policy(skin);
+ return policy?policy->layout:skin->look;
 }
 static int clash_donor_role(Skin *skin,int detail){
- if(!skin->imported)return sr_clash_role(clash_layout(skin),detail);
- return detail>=0&&detail<128?skin->imported->roles[detail]:0;
+ const ImportedConfig *policy=skin_local_policy(skin);
+ if(!policy)return sr_clash_role(skin->look,detail);
+ return detail>=0&&detail<128?policy->roles[detail]:0;
+}
+static int bundled_clash_slot(Skin *skin,int requested,int role){
+ const unsigned char *roles=skin->bundledPolicy->roles;
+ const signed char *available=skin->chapterRole;
+ if(role<1||role==6||role>7)return -1;
+ if(requested>=0&&requested<128&&roles[requested]==role&&available[requested]>0)return requested;
+ if(role==7)return -1;
+ for(int d=0;d<128;d++)
+  if(roles[d]==role&&available[d]>0&&sr_clash_default_role(d)!=role)return d;
+ if(role==5&&roles[19]==5&&available[19]>0)return 19;
+ return (role==2||role==3||role==5)?bundled_clash_slot(skin,17,4):-1;
 }
 static int clash_donor_slot(Skin *skin,int requested,int role){
- if(!skin->imported)return sr_clash_slot(clash_layout(skin),skin->chapterRole,requested,role);
+ if(skin->bundledPolicy)return bundled_clash_slot(skin,requested,role);
+ if(!skin->imported)return sr_clash_slot(skin->look,skin->chapterRole,requested,role);
  if(role<1||role>7||role==6)return -1;
  const unsigned char *roles=skin->imported->roles;
  if(requested>=0&&requested<128&&roles[requested]==role&&skin->chapterRole[requested]>0)return requested;
- if(role==7)return -1;  /* Each defensive state has its own meaning. */
+ if(role==7){
+  /* Evade and guard are defensive; a neutral parry is not. When the exact
+     defense is absent use the other verified defense, never the hit pose. */
+  int other=requested==2?3:requested==3?2:-1;
+  return other>=0&&roles[other]==7&&skin->chapterRole[other]>0?other:-1;
+ }
  static const int generic[]={0,36,37,38,17,19};
  int standard=generic[role];
  if(roles[standard]==role&&skin->chapterRole[standard]>0)return standard;
@@ -61,7 +77,7 @@ static int clash_fallback(Unit *u,Skin *skin,void **receiver,int requested,int r
  *receiver=skin->app;
  int detail=requested;
  if(*receiver==skin->app){
-  int neutral=clash_donor_slot(skin,17,4);
+  int neutral=role==7?-1:clash_donor_slot(skin,17,4);
   detail=neutral>=0?neutral:0;
  }
  char line[216];snprintf(line,sizeof(line),"clash fallback look=%.63s source=%d role=%d receiver=%s played=%d",

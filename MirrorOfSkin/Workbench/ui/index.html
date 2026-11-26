@@ -700,6 +700,8 @@
       .tutorial-tip-actions button {
         min-width: 66px;
       }
+      #importNotice { position: fixed; right: 20px; bottom: 20px; z-index: 9999; background: #222; color: white; padding: 14px; border: 1px solid #777; border-radius: 8px; width: min(420px, calc(100vw - 40px)); max-height: 40vh; overflow: auto; overflow-wrap: anywhere; box-sizing: border-box; }
+      #importProgress { width: 100%; }
       .tutorial-progress {
         color: #b4b8c1;
         font-size: 12px;
@@ -1351,7 +1353,8 @@
         padding: 6px 8px;
       }
       #identityModal .identity-scroll td:last-child {
-        width: 58px;
+        width: 140px;
+        white-space: nowrap;
         padding-right: 10px;
         text-align: right;
       }
@@ -1510,6 +1513,11 @@
         overflow: hidden;
         display: flex;
         flex-direction: column;
+      }
+      #identityModal #chapterManager {
+        flex: 0 1 auto;
+        min-height: 0;
+        overflow-y: auto;
       }
       #identityModal .identity-scroll {
         flex: 1 1 0;
@@ -1716,6 +1724,9 @@
       <symbol id="i-close" viewBox="0 0 24 24">
         <path d="M6 6l12 12M18 6L6 18" />
       </symbol>
+      <symbol id="i-pencil" viewBox="0 0 24 24">
+        <path d="m4 20 4.5-1 12-12a1.5 1.5 0 0 0 0-2l-1.5-1.5a1.5 1.5 0 0 0-2 0l-12 12L4 20ZM14.5 6l3.5 3.5" />
+      </symbol>
       <symbol id="i-minimize" viewBox="0 0 24 24">
         <path d="M5 12h14" />
       </symbol>
@@ -1785,6 +1796,10 @@
             <use href="#i-plus"></use>
           </svg>
         </button>
+        <button
+          id="headerChapters"
+          type="button"
+        >章节管理</button>
         <button
           id="helpButton"
           class="icon-btn"
@@ -2240,7 +2255,31 @@
             <input id="addStory" type="checkbox" checked />包含剧情/敌方外观
           </label>
         </div>
-        <div id="localImportResult" role="status" aria-live="polite" hidden></div>
+        <button id="localImportResult" type="button" aria-controls="importNotice" hidden></button>
+        <details id="chapterManager">
+          <summary>管理章节与批量归类</summary>
+          <div style="display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:8px 0">
+            <select id="manageChapter" aria-label="选择章节"></select>
+            <input id="chapterName" placeholder="输入章节名称" aria-label="章节名称">
+            <button type="button" id="chapterRename" class="icon-btn" title="保存章节名称" aria-label="保存章节名称">
+              <svg class="icon" aria-hidden="true"><use href="#i-pencil"></use></svg>
+            </button>
+            <button type="button" id="chapterCreate">新建章节</button>
+            <label>章节封面 <input type="file" id="chapterImage" accept="image/*"></label>
+            <button type="button" id="chapterCoverSave">上传封面</button>
+            <button type="button" id="chapterCoverReset">恢复封面</button>
+          </div>
+          <div style="display:flex;flex-wrap:wrap;gap:8px;align-items:center">
+            <input id="chapterSearch" placeholder="搜索要归类的外观" aria-label="搜索要归类的外观">
+            <button type="button" id="chapterSelectVisible">全选搜索结果</button>
+            <button type="button" id="chapterClear">清空选择</button>
+            <button type="button" id="chapterMove">移动到所选章节</button>
+            <button type="button" id="chapterAuto">恢复自动归类</button>
+            <span id="chapterSelectionCount" aria-live="polite"></span>
+          </div>
+          <div id="chapterManageStatus" role="status" aria-live="polite"></div>
+          <div id="chapterManageList" style="max-height:220px;overflow:auto;margin:8px 0;display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:4px"></div>
+        </details>
         <details class="chapter-browser" open>
           <summary>按章节浏览</summary>
           <div
@@ -2317,6 +2356,15 @@
       accept="image/png,image/jpeg,image/webp"
       hidden
     />
+    <div id="importNotice" hidden>
+      <div id="importNoticeText" role="status" aria-live="polite"></div>
+      <progress id="importProgress" aria-label="导入进度"></progress>
+      <details id="importDetails" hidden>
+        <summary>导入详情</summary>
+        <div id="importDetailsText" style="white-space:pre-wrap"></div>
+      </details>
+      <button id="importDismiss" type="button" hidden>关闭</button>
+    </div>
     <script>
       const $ = (s) => document.querySelector(s),
         names = [
@@ -3172,11 +3220,15 @@
           if (group.chapter && group.chapter !== "unassigned")
             groups.set(group.chapter, group.label || group.chapter);
         }
-        if (!groups.size && !personalityRole(entry))
+        if (!entry.user_chapter && personalityRole(entry))
+          groups.set("__personality__", "人格外观");
+        if (!groups.size)
           groups.set("unassigned", "待确认章节");
         return groups;
       }
       function fillAddFilters() {
+        const selectedRole = $("#addRole").value;
+        const selectedChapter = $("#addChapter").value;
         $("#addRole").innerHTML =
           '<option value="">全部角色</option>' +
           names
@@ -3194,6 +3246,7 @@
           }
         }
         for (const [id, info] of Object.entries(data.chapterArt || {})) {
+          if (info.label) chapters.set(id, info.label);
           if (!chapters.has(id)) {
             const label =
               info.label ||
@@ -3202,33 +3255,23 @@
             chapters.set(id, label);
           }
         }
+        const orderedChapters = [...chapters].sort(
+          (a, b) => chapterRank(a[0]) - chapterRank(b[0]) || a[1].localeCompare(b[1], "zh-CN"),
+        );
         $("#addChapter").innerHTML =
-          '<option value="">全部章节</option>' +
-          [...chapters]
-            .sort(
-              (a, b) =>
-                chapterRank(a[0]) - chapterRank(b[0]) ||
-                a[1].localeCompare(b[1], "zh-CN"),
-            )
+          '<option value="">全部章节</option>' + orderedChapters
             .map(
               ([id, label]) =>
                 `<option value="${esc(id)}">${esc(label)}</option>`,
             )
             .join("");
-        renderChapterCards(
-          [...chapters].sort(
-            (a, b) =>
-              chapterRank(a[0]) - chapterRank(b[0]) ||
-              a[1].localeCompare(b[1], "zh-CN"),
-          ),
-          counts,
-        );
+        $("#addRole").value = selectedRole;
+        $("#addChapter").value = chapters.has(selectedChapter) ? selectedChapter : "";
+        renderChapterCards(orderedChapters, counts);
       }
       function renderChapterCards(chapters, counts) {
         const art = data.chapterArt || {};
-        const personalityCount = (data.catalog || []).filter((entry) =>
-          personalityRole(entry),
-        ).length;
+        const personalityCount = counts.get("__personality__") || 0;
         const personalityArt = art.__personality__ || {};
         const personalityImage = personalityArt.image_url
           ? `<img src="${esc(personalityArt.image_url)}" alt="" loading="lazy">`
@@ -3238,7 +3281,7 @@
         $("#chapterCards").innerHTML =
           allCard +
             personalityCard +
-            chapters
+            chapters.filter(([id]) => id !== "__personality__")
               .map(([id, label]) => {
                 const item = art[id] || {};
                 const fallback = art[id.replace(/_part_\d+$/, "")] || {};
@@ -3257,20 +3300,93 @@
                 const badge = note.includes("共用")
                   ? '<span class="chapter-art-note">共用图</span>'
                   : "";
-                return `<button type="button" class="chapter-card" data-chapter="${esc(id)}" title="${esc(note ? label + " · " + note : label)}">${img}${tag}${timeline}${badge}<span class="chapter-name">${esc(item.title || label)} <small>· ${count}项</small></span></button>`;
+                return `<button type="button" class="chapter-card" data-chapter="${esc(id)}" title="${esc(note ? label + " · " + note : label)}">${img}${tag}${timeline}${badge}<span class="chapter-name">${esc(item.label || item.title || label)} <small>· ${count}项</small></span></button>`;
               })
               .join("") || '<span class="muted">暂无章节分类</span>';
       }
-      function selectChapterCard(id) {
-        if (id === "__personality__") {
-          $("#addChapter").value = "";
-          $("#addRole").value = "";
-          $("#addSource").value = "personality";
-          $("#addStory").checked = true;
-          $("#addSearch").value = "";
-          renderAddList();
+      const chapterSelection = new Set();
+      function refreshChapterManager() {
+        const select = $("#manageChapter"), old = select.value;
+        select.innerHTML = [...$("#addChapter").options].slice(1).filter(o => o.value !== "unassigned" && o.value !== "__personality__").map(o => `<option value="${esc(o.value)}">${esc(o.textContent)}</option>`).join("");
+        if ([...select.options].some(o => o.value === old)) select.value = old;
+        $("#chapterName").value = select.selectedOptions[0]?.textContent || "";
+        renderChapterManageList();
+      }
+      function renderChapterManageList() {
+        const q = $("#chapterSearch").value.trim().toLowerCase();
+        const entries = data.catalog.filter(e => `${e.name || ""} ${e.identity_id || ""} ${e.appearance_name || ""} ${e.import_source || ""}`.toLowerCase().includes(q));
+        $("#chapterManageList").innerHTML = entries.map(e => `<label><input type="checkbox" data-manage-id="${esc(String(e.identity_id))}" ${chapterSelection.has(String(e.identity_id)) ? "checked" : ""}> ${esc(e.name || e.identity_id)} <small>（${esc([...catalogChapters(e).values()].join("、") || "自动归类")}）</small></label>`).join("");
+        $("#chapterSelectionCount").textContent = `已选 ${chapterSelection.size} 项，搜索结果 ${entries.length} 项`;
+      }
+      let chapterSaving = false;
+      async function chapterOperation(route, body) {
+        if (chapterSaving) return false;
+        chapterSaving = true;
+        const buttons = $("#chapterManager").querySelectorAll("button");
+        buttons.forEach(button => button.disabled = true);
+        try {
+          const result = await api(route, {...body, revision: data.chapterRevision});
+          const latest = await api("data");
+          data.catalog = latest.catalog;
+          data.chapterArt = latest.chapterArt || {};
+          data.chapterRevision = latest.chapterRevision;
+          fillAddFilters();
+          refreshChapterManager();
+          if (result.id) { $("#manageChapter").value = result.id; $("#chapterName").value = $("#manageChapter").selectedOptions[0]?.textContent || ""; }
+          renderAddList(); $("#chapterManageStatus").textContent = "保存成功";
+          return true;
+        } catch (error) {
+          // Refresh the revision while keeping the user's name, search and selection.
+          try {
+            const latest = await api("data");
+            data.catalog = latest.catalog;
+            data.chapterArt = latest.chapterArt || {};
+            data.chapterRevision = latest.chapterRevision;
+          } catch (_) { /* Keep the original error visible. */ }
+          $("#chapterManageStatus").textContent = "保存失败：" + error.message + "；已尝试更新版本，可重试";
+          return false;
+        } finally {
+          chapterSaving = false;
+          buttons.forEach(button => button.disabled = false);
+        }
+      }
+      $("#chapterManager").addEventListener("toggle", () => { if ($("#chapterManager").open) refreshChapterManager(); });
+      $("#manageChapter").onchange = () => { $("#chapterName").value = $("#manageChapter").selectedOptions[0]?.textContent || ""; };
+      $("#chapterSearch").oninput = renderChapterManageList;
+      $("#chapterManageList").onchange = e => { const el = e.target.closest("[data-manage-id]"); if (!el) return; if (el.checked) chapterSelection.add(el.dataset.manageId); else chapterSelection.delete(el.dataset.manageId); $("#chapterSelectionCount").textContent = `已选 ${chapterSelection.size} 项`; };
+      $("#chapterSelectVisible").onclick = () => { $("#chapterManageList").querySelectorAll("[data-manage-id]").forEach(el => chapterSelection.add(el.dataset.manageId)); renderChapterManageList(); };
+      $("#chapterClear").onclick = () => { chapterSelection.clear(); renderChapterManageList(); };
+      $("#chapterCreate").onclick = () => { const label = $("#chapterName").value.trim(); if (label) chapterOperation("chapter-save", {label}); else $("#chapterManageStatus").textContent = "请输入章节名称"; };
+      $("#chapterRename").onclick = () => { const id = $("#manageChapter").value, label = $("#chapterName").value.trim(); if (id && label) chapterOperation("chapter-save", {id, label}); else $("#chapterManageStatus").textContent = "请选择章节并输入名称"; };
+      $("#chapterCoverSave").onclick = () => {
+        const file = $("#chapterImage").files[0], id = $("#manageChapter").value, label = $("#chapterName").value.trim();
+        if (!file || !id || !label) { $("#chapterManageStatus").textContent = "请选择章节和图片"; return; }
+        const url = URL.createObjectURL(file), img = new Image();
+        img.onload = () => {
+          URL.revokeObjectURL(url);
+          const scale = Math.min(1, 768 / Math.max(img.width, img.height));
+          const canvas = document.createElement("canvas");
+          canvas.width = Math.max(1, Math.round(img.width * scale));
+          canvas.height = Math.max(1, Math.round(img.height * scale));
+          canvas.getContext("2d").drawImage(img, 0, 0, canvas.width, canvas.height);
+          chapterOperation("chapter-save", {id, label, image: canvas.toDataURL("image/png")});
+        };
+        img.onerror = () => { URL.revokeObjectURL(url); $("#chapterManageStatus").textContent = "无法读取图片"; }; img.src = url;
+      };
+      $("#chapterCoverReset").onclick = () => { const id = $("#manageChapter").value, label = $("#chapterName").value.trim(); if (id && label) chapterOperation("chapter-save", {id, label, image: null}); };
+      async function moveChapter(chapter) {
+        if (!chapterSelection.size || chapter === "") {
+          $("#chapterManageStatus").textContent = "请选择外观和目标章节";
           return;
         }
+        if (await chapterOperation("chapter-move", {ids: [...chapterSelection], chapter})) {
+          chapterSelection.clear();
+          renderChapterManageList();
+        }
+      }
+      $("#chapterMove").onclick = () => moveChapter($("#manageChapter").value);
+      $("#chapterAuto").onclick = () => moveChapter(null);
+      function selectChapterCard(id) {
         $("#addChapter").value = id;
         $("#addRole").value = "";
         $("#addSource").value = "";
@@ -3329,10 +3445,21 @@
             (entry.category !== "humanoid_boss" ? String(entry.source) : "");
           if (role && owner !== role) return false;
           if (chapter && !catalogChapters(entry).has(chapter)) return false;
-          return `${entry.name} ${entry.import_source || ""} ${entry.identity_id} ${entry.appearance_name || ""} ${who(entry.source)} ${entry.chapter_label || ""} ${entry.no_attack ? "无攻击外观" : ""}`
+          return `${entry.name} ${entry.default_name || ""} ${entry.import_source || ""} ${entry.identity_id} ${entry.appearance_name || ""} ${who(entry.source)} ${entry.chapter_label || ""} ${entry.no_attack ? "无攻击外观" : ""}`
             .toLowerCase()
             .includes(query);
         });
+      }
+      function dialogueDetectionText(entry) {
+        const detection = entry.dialogue_detection;
+        if (!detection || typeof detection !== "object") return "";
+        const labels = {connected: "已绑定", found: "已检出", unassigned: "包内有素材，归属待确认",
+          text_only: "有战斗台词，未确认气泡", inherited: "沿用基础模型语音",
+          found_unattributed: "有模型语音，来源未确认", none: "未检出", unknown: "未能确认"};
+        const result = ["voice", "bubble"].map((key, i) =>
+          `${i ? "气泡" : "语音"}：${labels[detection[key]] || labels.unknown}`).join("；");
+        return entry.dialogue_needs_import && Object.values(detection).includes("unknown")
+          ? result + "（重新导入原包可检测）" : result;
       }
       function renderAddList() {
         const candidates = addCandidates();
@@ -3345,10 +3472,12 @@
                 ? `<img src="${esc(entry.portrait_url)}" alt="${esc(entry.name)}的战斗头像" loading="lazy" decoding="async" onerror="this.remove()">`
                 : '<svg class="icon" aria-hidden="true"><use href="#i-user"></use></svg>';
               const source = entrySource(entry);
-              const deletion = /^story_WBImp_[a-f0-9]{24}$/.test(id)
+              const deletion = (/^story_WBImp_[a-f0-9]{24}$/.test(id) || id === "story_BRolandBaseAppearance")
                 ? `<button type="button" class="identity-delete icon-btn" data-id="${esc(id)}" title="删除导入外观" aria-label="删除导入外观"><svg class="icon" aria-hidden="true"><use href="#i-close"></use></svg></button>`
                 : "";
-              return `<tr><td><div class="identity-cell"><span class="identity-orb">${orb}</span><div class="identity-copy"><strong>${esc(entry.name || entry.appearance_name || id)}</strong><small>${esc(source)}</small>${entry.no_attack ? '<small>缺少专属攻击动画</small>' : ""}</div></div></td><td class="identity-action">${deletion}<button class="identity-add${added ? " remove" : " primary"}" data-id="${esc(id)}" data-added="${added ? 1 : 0}" title="${added ? "移出池子" : "添加"}" aria-label="${added ? "移出池子" : "添加"}"><svg class="icon" aria-hidden="true"><use href="#${added ? "i-minus" : "i-plus"}"></use></svg></button></td></tr>`;
+              const dialogue = dialogueDetectionText(entry);
+              const missing = entry.missing_package_source ? `<small>模型缺失，可重新导入 ${esc(entry.missing_package_source)} 或删除此记录</small>` : "";
+              return `<tr><td><div class="identity-cell"><span class="identity-orb">${orb}</span><div class="identity-copy"><strong>${esc(entry.name || entry.appearance_name || id)}</strong><small>${esc(source)}</small>${missing}${dialogue ? `<small>${esc(dialogue)}</small>` : ""}${entry.no_attack ? '<small>缺少专属攻击动画</small>' : ""}</div></div></td><td class="identity-action">${deletion}<button type="button" class="identity-rename icon-btn" data-id="${esc(id)}" title="修改外观名称" aria-label="修改外观名称"><svg class="icon" aria-hidden="true"><use href="#i-pencil"></use></svg></button><button class="identity-add${added ? " remove" : " primary"}" data-id="${esc(id)}" data-added="${added ? 1 : 0}" title="${added ? "移出池子" : "添加"}" aria-label="${added ? "移出池子" : "添加"}"><svg class="icon" aria-hidden="true"><use href="#${added ? "i-minus" : "i-plus"}"></use></svg></button></td></tr>`;
             })
             .join("") ||
           '<tr><td colspan="2" class="empty-row">没有符合条件的人格</td></tr>';
@@ -3357,6 +3486,24 @@
             button.dataset.added === "1"
               ? removeIdentity(button.dataset.id)
               : addIdentity(button.dataset.id);
+        });
+        document.querySelectorAll(".identity-rename").forEach((button) => {
+          button.onclick = async () => {
+            const entry = data.catalog.find((item) => String(item.identity_id) === button.dataset.id);
+            if (!entry) return;
+            const name = prompt("设置显示名，留空恢复默认名称", entry.name || "");
+            if (name === null) return;
+            button.disabled = true;
+            try {
+              await api("appearance-name", {identity_id: button.dataset.id, name});
+              const latest = await api("data");
+              data.catalog = latest.catalog;
+              data.chapterRevision = latest.chapterRevision;
+              renderAddList();
+              render();
+              status("显示名已更新");
+            } catch (error) { status("修改显示名失败：" + error.message); button.disabled = false; }
+          };
         });
         document.querySelectorAll(".identity-delete").forEach((button) => {
           button.onclick = async () => {
@@ -3370,6 +3517,7 @@
               const latest = await api("data");
               data.catalog = latest.catalog;
               data.chapterArt = latest.chapterArt || {};
+              data.chapterRevision = latest.chapterRevision;
               data.ruleEntries = latest.ruleEntries;
               data.ruleRevision = latest.ruleRevision;
               fillAddFilters();
@@ -3388,6 +3536,7 @@
           const latest = await api("data");
           data.catalog = latest.catalog;
           data.chapterArt = latest.chapterArt || {};
+          data.chapterRevision = latest.chapterRevision;
         } catch (error) {
           status("更新外观列表失败：" + error.message);
         }
@@ -3415,6 +3564,13 @@
       function closeIdentityModal() {
         hideModal("#identityModal");
       }
+      $("#headerChapters").onclick = async () => {
+        if (!data) return;
+        await openIdentityModal();
+        $("#chapterManager").open = true;
+        refreshChapterManager();
+        $("#manageChapter").focus();
+      };
       function addIdentity(id) {
         if (data.activeRule?.kind === "global" && data.activeRule.locked) {
           status("纯随机默认池不可编辑，请右键清空");
@@ -3543,41 +3699,107 @@
         if (event.target.id === "newRuleModal") closeNewRule();
       };
       $("#addSearch").oninput = () => renderAddList();
-      async function importLocalSkin() {
-        const buttons = [$("#importLocalSkin"), $("#headerImportLocalSkin")];
-        const result = $("#localImportResult");
-        buttons.forEach((button) => { button.disabled = true; });
-        result.hidden = false;
-        result.textContent = "请选择外观或语音包，读取大型模型可能需要几分钟。";
-        status(result.textContent);
+      let importBusy = false;
+      function showImport(p) {
+        const active = p.stage === "picking" || p.stage === "importing";
+        $("#importNotice").hidden = false;
+        $("#importDismiss").hidden = active;
+        $("#importDetails").hidden = true; $("#importDetails").open = false;
+        const bar = $("#importProgress"); bar.hidden = !active;
+        if (p.stage === "importing" && typeof p.percent === "number") { bar.max = 100; bar.value = Math.max(0, Math.min(100, p.percent)); } else bar.removeAttribute("value");
+        const details = [];
+        if (p.filename) details.push(p.filename);
+        if (p.total > 0) details.push(`文件 ${p.done || 0}/${p.total}`);
+        if (p.stage === "importing" && typeof p.percent === "number") details.push(`${Math.floor(p.percent)}%`);
+        const text = (p.message || (active ? "正在导入，请稍候" : "导入完成")) + (details.length ? " · " + details.join(" · ") : "");
+        $("#importNoticeText").textContent = text;
+        $("#localImportResult").hidden = false; $("#localImportResult").textContent = text;
+        [$("#importLocalSkin"), $("#headerImportLocalSkin")].forEach(b => b.disabled = active);
+      }
+      $("#importDismiss").onclick = () => { $("#importNotice").hidden = true; };
+      $("#localImportResult").onclick = () => {
+        $("#importNotice").hidden = false;
+        if (!$("#importDetails").hidden) $("#importDetails").open = true;
+      };
+      async function followImport(request) {
+        if (importBusy) return;
+        importBusy = true;
         try {
-          const { rows, errors } = await api("local-skin-import", {});
-          if (rows.length) {
-            const latest = await api("data");
-            data.catalog = latest.catalog;
-            data.chapterArt = latest.chapterArt || {};
-            fillAddFilters();
-            selectChapterCard("imported_skins");
+          let p = await request;
+          while (p.stage === "picking" || p.stage === "importing") {
+            showImport(p);
+            await new Promise(resolve => setTimeout(resolve, 500));
+            p = await api("local-skin-import-status");
           }
+          if (p.stage === "idle") return;
+          showImport(p);
+          const rows = p.rows || [], errors = p.errors || [];
+          let refreshWarning = "";
+          if (rows.length && data) {
+            try {
+              const latest = await api("data");
+              data.catalog = latest.catalog;
+              data.chapterArt = latest.chapterArt || {};
+              data.chapterRevision = latest.chapterRevision;
+              fillAddFilters();
+              if (!$("#identityModal").classList.contains("hidden")) renderAddList();
+            } catch (_) { refreshWarning = "；列表刷新失败，请重新打开工作台后在导入外观中查看"; }
+          }
+          const directories = new Set();
           const messages = rows.map(row => {
-            const state = { added: "已加入", updated: "已更新", existing: "已在库中" }[row.status];
-            let voice = "";
-            if (row.kind === "voice")
-              voice = row.connected_to.length ? "，已接通 " + row.connected_to.join("、") : "，尚未绑定外观";
-            else if (row.voice_connected) voice = "，已接通语音";
-            return row.name + " " + state + voice + (row.voice_warning ? "，" + row.voice_warning : "");
+            const state = {added:"已加入",updated:"已更新",existing:"已在库中"}[row.status] || row.status || "";
+            const voice = row.kind === "voice" ? ((row.connected_to || []).length ? "，已接通 " + row.connected_to.join("、") : "，尚未绑定外观") : (dialogueDetectionText(row) ? "，" + dialogueDetectionText(row) : (row.voice_connected ? "，已接通语音（旧记录）" : ""));
+            if (row.package_directory) directories.add(row.package_directory);
+            return row.name + " " + state + voice + (row.presentation_warning ? "，" + row.presentation_warning : "") + (row.voice_warning ? "，" + row.voice_warning : "") + (row.cleanup_warning ? "，" + row.cleanup_warning : "");
           });
-          result.textContent = [...messages, ...errors].join("；") || "已取消导入";
-          status(result.textContent);
-        } catch (error) {
-          result.textContent = "导入失败：" + error.message;
-          status(result.textContent);
-        } finally {
-          buttons.forEach((button) => { button.disabled = false; });
-        }
+          const warnings = rows.reduce((n, row) => n + [row.presentation_warning, row.voice_warning, row.cleanup_warning].filter(Boolean).length, 0) + (refreshWarning ? 1 : 0);
+          const errorCount = errors.length || (p.stage === "error" ? 1 : 0);
+          const summary = (p.cancelled ? "已取消导入" : p.stage === "error" ? "导入失败" : `导入完成：${rows.length} 项`) + (errorCount ? ` · 错误 ${errorCount}` : "") + (warnings ? ` · 警告 ${warnings}` : "");
+          const text = [...messages, ...errors, ...Array.from(directories, d => "文件夹：" + d), refreshWarning.replace(/^；/, "")].filter(Boolean).join("\n") || p.message || summary;
+          $("#importNoticeText").textContent = summary;
+          $("#importDetailsText").textContent = text;
+          $("#importDetails").hidden = false;
+          $("#localImportResult").textContent = summary + "（点击查看详情）";
+          status(summary);
+        } catch (error) { showImport({stage:"error",message:"导入失败：" + error.message}); status("导入失败：" + error.message); }
+        finally { importBusy = false; }
+      }
+      let initialImportCheck;
+      async function importLocalSkin() {
+        if (initialImportCheck) await initialImportCheck;
+        if (importBusy) return;
+        showImport({stage:"picking",message:"正在打开文件选择窗口…"});
+        followImport(api("local-skin-import-start", {}));
       }
       $("#importLocalSkin").onclick = importLocalSkin;
       $("#headerImportLocalSkin").onclick = importLocalSkin;
+      initialImportCheck = followImport(api("local-skin-import-status"));
+      initialImportCheck.finally(() => { initialImportCheck = null; });
+      let syncingFolders = false;
+      async function syncImportedFolders() {
+        if (syncingFolders || !data) return;
+        syncingFolders = true;
+        try {
+          const report = await api("package-folders", {});
+          if (report.removed.length) {
+            for (const pack of report.removed)
+              for (const id of pack.identities) selected.delete(id);
+            const latest = await api("data");
+            for (const key of ["catalog", "chapterArt", "chapterRevision", "ruleEntries", "ruleRevision"])
+              data[key] = latest[key];
+            fillAddFilters();
+            renderAddList();
+            render();
+            status("已卸载：" + report.removed.map(p => p.directory).join("、"));
+          }
+          for (const item of report.blocked) status(item.directory + "：" + item.error);
+        } catch (error) {
+          status("外观目录同步失败：" + error.message);
+        } finally {
+          syncingFolders = false;
+        }
+      }
+      window.addEventListener("focus", syncImportedFolders);
       $("#chapterCards").onclick = (event) => {
         const button = event.target.closest("button[data-chapter]");
         if (button) selectChapterCard(button.dataset.chapter);
@@ -3824,6 +4046,7 @@
       }
       async function refresh() {
         try {
+          const folders = await api("package-folders", {});
           data = await api("data");
           settingsBaseline = structuredClone(data.settings.config);
           settingsDirty = false;
@@ -3831,6 +4054,7 @@
           $("#version").textContent = data.version;
           loadTarget();
           renderPrepare(data);
+          for (const item of folders.blocked) status(item.directory + "：" + item.error);
           $("#formRows").innerHTML = Object.entries(data.formAnnotations || {})
             .map(
               ([id, p]) =>
@@ -4034,6 +4258,7 @@
             chapter = $("#addChapter").value;
           data.catalog = latest.catalog;
           data.chapterArt = latest.chapterArt || {};
+          data.chapterRevision = latest.chapterRevision;
           fillAddFilters();
           $("#addRole").value = role;
           $("#addChapter").value = chapter;
@@ -4528,3 +4753,4 @@
     </script>
   </body>
 </html>
+

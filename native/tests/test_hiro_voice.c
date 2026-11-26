@@ -78,6 +78,36 @@ static void test_output_routing(void){
  puts("PASS output routing by device GUID, unavailable device and silent output");
 }
 
+static int deny_start(void *instance){(void)instance;return 1;}
+static int (*set_volume_real)(void*,float);
+static int deny_audible_gain(void *instance,float gain){return gain>0?1:set_volume_real(instance,gain);}
+static int (*set_mute_real)(void*,int);
+static unsigned mute_attempts;
+static int count_mute(void *group,int mute){
+ if(mute)++mute_attempts;
+ return set_mute_real(group,mute);
+}
+static void test_playback_failure(Unit *u,Skin *skin,void *desc,int gainFailure){
+ void *stock=NULL,*group=NULL;int muted=-1;
+ assert(!hStudio_EventDescription_CreateInstance(desc,&stock));
+ PrivateVoiceEvent *e=private_voice_track(u,skin,stock);assert(e);
+ assert(!hStudio_EventInstance_Start(stock));
+ int (*start)(void*)=hStudio_EventInstance_Start;
+ set_volume_real=hStudio_EventInstance_SetVolume;
+ set_mute_real=hChannelGroup_SetMute;
+ mute_attempts=0;hChannelGroup_SetMute=count_mute;
+ if(gainFailure)hStudio_EventInstance_SetVolume=deny_audible_gain;
+ else hStudio_EventInstance_Start=deny_start;
+ for(int i=0;i<100&&e->original;i++){private_voice_tick(1);Sleep(5);}
+ hStudio_EventInstance_Start=start;
+ hStudio_EventInstance_SetVolume=set_volume_real;
+ hChannelGroup_SetMute=set_mute_real;
+ assert(!e->original&&!mute_attempts);
+ assert(!hStudio_EventInstance_GetChannelGroup(stock,&group)&&group);
+ assert(!hChannelGroup_GetMute(group,&muted)&&!muted);
+ hStudio_EventInstance_Stop(stock,1);hStudio_EventInstance_Release(stock);
+}
+
 int main(void){
  test_output_routing();
  wchar_t game[2048],exe[2300],libfile[2300],temp[MAX_PATH];
@@ -155,6 +185,10 @@ int main(void){
  assert(privateVoiceEvents[1].original&&!hChannelGroup_GetMute(gb,&m)&&m);
  private_voice_tick(0);assert(!hChannelGroup_GetMute(gb,&m)&&!m);
  hStudio_EventInstance_Release(ia);hStudio_EventInstance_Release(ib);hStudio_EventInstance_Release(ic);
+ ua.worn=&a;
+ test_playback_failure(&ua,&a,desc,0);
+ test_playback_failure(&ua,&a,desc,1);
+ puts("PASS start and gain failures keep the stock event audible throughout");
  /* A delayed stock voice can still refer to the wearer's identity. Resolve
     the matching donor event instead of letting the original voice leak. */
  wchar_t sourceBank[2300],sourceAssets[2300];

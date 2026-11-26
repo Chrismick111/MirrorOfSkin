@@ -60,7 +60,8 @@ static void test_imported_clash(Unit *u,Skin *skin){
  api[API_FIELD]=clash_test_field;api[API_METHOD]=clash_test_method;api[API_INVOKE]=clash_test_invoke;
  m_getMotion=(void*)101;donor.fields[4]=(uintptr_t)&stock;clashMotion.fields[4]=(uintptr_t)&clashList;
  cache_clash_roles(skin);
- assert(!roland_armory(skin)&&skin->chapterRole[3]>0&&skin->chapterRole[2]<0);
+ assert(!skin_has_coin_groups(skin)&&skin->chapterRole[3]>0&&skin->chapterRole[2]<0);
+ assert(clash_donor_slot(skin,2,7)==3);
  assert(skin->chapterRole[21]<0&&skin->chapterRole[32]<0&&skin->chapterRole[33]>0);
  g_clashOwner=u;g_clashRole=2;int prevCoin=u->coinMotion;u->coinMotion=21;
  assert(clash_request(u,20)==2&&!clash_request(u,21));
@@ -71,7 +72,7 @@ static void test_imported_clash(Unit *u,Skin *skin){
  assert(calls==before+1&&lastReceiver==&donor&&lastDetail==33&&lastPart==1&&lastCallback==(void*)91);
  before=calls;change_motion_hook(&source,3,0,0,0,(void*)92,0,NULL);
  assert(calls==before+1&&lastReceiver==&donor&&lastDetail==3&&lastCallback==(void*)92);
- assert(get_motion_hook(&source,2,0,NULL)==&donor&&lastDetail==20);
+ assert(get_motion_hook(&source,2,0,NULL)==&donor&&lastDetail==3);
  assert(clash_donor_slot(skin,37,2)==33);
  config.roles[37]=2;skin->chapterRole[37]=1;
  assert(clash_donor_slot(skin,17,2)==37); /* Explicit standard slot precedes an alternate. */
@@ -128,6 +129,11 @@ static void test_imported_art(void){
  const char *dep="SD_Personality/10213_Faust_Shi_EastAppearance.prefab",*asset="assets/test folder/test.prefab";
  import_fixture(cfg,dep,asset);assert(imported_config_parse(cfg,strlen(cfg),&parsed));
  assert(parsed.roles[37]==2&&parsed.animator[3]&&!strcmp(parsed.hash,artHash));
+ import_fixture(cfg,dep,asset);cfg[5]='2';strcat(cfg,"R|1|7,10,24\n");
+ assert(imported_config_parse(cfg,strlen(cfg),&parsed));
+ assert(parsed.groupCount==3&&parsed.groupPassthrough==1&&parsed.groups[0]==7&&parsed.groups[2]==24);
+ import_fixture(cfg,dep,asset);cfg[5]='2';strcat(cfg,"R|0|7,7\n");assert(!imported_config_parse(cfg,strlen(cfg),&parsed));
+ import_fixture(cfg,dep,asset);cfg[5]='2';strcat(cfg,"R|0|7,17\n");assert(!imported_config_parse(cfg,strlen(cfg),&parsed));
  import_fixture(cfg,"SD_Enemy/../bad.prefab",asset);assert(!imported_config_parse(cfg,strlen(cfg),&parsed));
  import_fixture(cfg,dep,"Assets/x\\y.prefab");assert(!imported_config_parse(cfg,strlen(cfg),&parsed));
  import_fixture(cfg,dep,asset);strcat(cfg,"extra\n");assert(!imported_config_parse(cfg,strlen(cfg),&parsed));
@@ -148,7 +154,7 @@ static void test_imported_art(void){
  int oldGen=generation,oldUnloads=unloads;
  assert(build_art(0,looks[0])==1);
  Skin *first=&g_units[0].skins[0];
- assert(first->imported&&!strcmp(first->imported->dependency,dep)&&!roland_armory(first));
+ assert(first->imported&&!strcmp(first->imported->dependency,dep)&&!skin_has_coin_groups(first));
  assert(strlen(skin_timing_key(first))==95&&!strcmp(skin_timing_key(first)+31,artHash));
  assert(DeleteFileW(paths[0]));  /* The active entry retains its bundle and timing revision. */
  wchar_t timing[32768];assert(story_metadata_path(first,"story_example",timing,32768));
@@ -158,7 +164,7 @@ static void test_imported_art(void){
  unit_release(&g_units[0]);unit_release(&g_units[1]);assert(unloads==oldUnloads);
  unit_release(&g_units[2]);g_frame+=3;collect_retire();
  assert(unloads==oldUnloads+1&&roots==0);
- roland_clear();assert(DeleteFileW(paths[1]));
+ clear_local_art();assert(DeleteFileW(paths[1]));
  assert(!build_art(0,looks[0]));ui_unroot(g_loadRoot);g_loadBox=NULL;g_loadRoot=0;
  if(createdDir)RemoveDirectoryW(dir);
  puts("PASS imported configuration validation, versioned timing, actual build entry and shared bundle ownership across multiple units/prefabs");

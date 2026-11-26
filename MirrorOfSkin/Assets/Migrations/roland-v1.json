@@ -1,0 +1,109 @@
+{
+  "schema": 1,
+  "id": "builtin.roland",
+  "name": "罗兰·漆黑缄默",
+  "source_archive": "RolandBundle.zip",
+  "cab_namespace": "workbench.roland.",
+  "base": {
+    "member": "BRoland.bundle",
+    "sha256": "26263b7a6fbb11a604e7d1ef3741e077fa8e68b8693cfda8ce17468c0dca3f2e",
+    "prefab": "BRolandBase",
+    "root": "BRolandBaseAppearance",
+    "address": "Roland/BRolandBase.prefab",
+    "bind_groups": [7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 20, 21, 32, 33],
+    "replace_clips": [
+      "Index_father_Phase2_Dead",
+      "Index_father_Phase2_Special"
+    ],
+    "sprites": {
+      "keep_sprite_substring": "roland",
+      "exact": {
+        "dmg": "roland_dmg"
+      },
+      "ranges": [
+        {
+          "prefix": "skill_",
+          "first": 0,
+          "last": 8,
+          "target": "roland_special_0"
+        },
+        {
+          "prefix": "skill_",
+          "first": 9,
+          "last": 16,
+          "target": "roland_ready_0"
+        },
+        {
+          "prefix": "skill_",
+          "first": 17,
+          "last": 999,
+          "target": "roland_ready_1"
+        }
+      ]
+    }
+  },
+  "donors": [
+    {
+      "member": "BRolandGun.bundle",
+      "sha256": "b85a52a52f64b633f01969b13767162bb3cded9d77bd4287c573c55b77f99d7b",
+      "prefab": "BRolandGun",
+      "root": "BRolandGunAppearance",
+      "address": "Roland/BRolandGun.prefab",
+      "groups": [7, 8, 9, 15, 16],
+      "detail": 24,
+      "segments": 16,
+      "sprites": {
+        "keep_sprite_substring": "roland",
+        "exact": {
+          "dead": "roland_dmg_f",
+          "skill1_1": "roland_gun_f_0",
+          "skill1_2": "roland_gun_f_12",
+          "skill1_3": "roland_gun_f_13",
+          "skill1_4,7,10": "roland_gun_f_14",
+          "skill1_5,8": "roland_gun_f_16",
+          "skill1_6,9": "roland_gun_f_17"
+        }
+      }
+    },
+    {
+      "member": "BRolandUltraSword.bundle",
+      "sha256": "473cff26cbf4c4a0b3c069d54cfce792642dde4b94e68c9360e42f0d460fef33",
+      "prefab": "BRolandUltraSword",
+      "root": "BRolandUltraSwordAppearance",
+      "address": "Roland/BRolandUltraSword.prefab",
+      "groups": [7, 8, 9, 10, 11, 12],
+      "detail": 25,
+      "segments": 16,
+      "sprites": {
+        "keep_sprite_substring": "roland",
+        "exact": {
+          "idle": "roland_idle_f",
+          "miss": "roland_miss_f",
+          "dead": "roland_dmg_f",
+          "skill1_1": "roland_ultrasword_f_0",
+          "skill1_2": "roland_ultrasword_f_0",
+          "skill1_3": "roland_ultrasword_f_1",
+          "skill1_4": "roland_ultrasword_f_2",
+          "skill1_5": "roland_ultrasword_f_3",
+          "skill1_6": "roland_ultrasword_f_3",
+          "skill1_7": "roland_ultrasword_f_1",
+          "skill2_6": "roland_ultrasword_f_0",
+          "skill2_7": "roland_ultrasword_f_1",
+          "skill2_8": "roland_ultrasword_f_2",
+          "skill2_9": "roland_ultrasword_f_3",
+          "skill2_10": "roland_ultrasword_f_1",
+          "skill3_1": "roland_ultrasword_f_0",
+          "skill3_2": "roland_ultrasword_f_1",
+          "skill3_3": "roland_ultrasword_f_2",
+          "skill3_4": "roland_ultrasword_f_3",
+          "skill3_5": "roland_ultrasword_f_2",
+          "skill3_6": "roland_ultrasword_f_3"
+        },
+        "prefixes": {
+          "reload_": "roland_ultrasword_f_0"
+        }
+      }
+    }
+  ],
+  "verified_attack_details": [7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 24, 25]
+}

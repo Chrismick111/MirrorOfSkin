@@ -5,8 +5,11 @@
 #include "clash_motion.h"
 #define SR_MOTION_CACHE 128
 typedef struct {const char *base;} SrChapterActor;
-typedef struct {char layout[256];unsigned char roles[128];} TestImport;
-typedef struct {const TestImport *imported;void *app;const char *look;const SrChapterActor *chapterActor;int specialClashWarned;signed char chapterRole[128];short clashCount[128];void *clashSparse[128];} Skin;
+typedef struct {char layout[256];unsigned char roles[128];} ImportedConfig;
+typedef struct {const ImportedConfig *imported,*bundledPolicy;void *app;const char *look;const SrChapterActor *chapterActor;int specialClashWarned;signed char chapterRole[128];short clashCount[128];void *clashSparse[128];} Skin;
+static const ImportedConfig *skin_local_policy(Skin *skin){
+ return skin?(skin->imported?skin->imported:skin->bundledPolicy):NULL;
+}
 typedef struct {void *baseApp,*view;const char *baseName;int switching,preserveSpecial,dead,coinKnown,coinMotion,staticHidden;} Unit;
 static int cleanup_pending,g_creating,g_presentationGate,camera,busy,switches;
 static void *g_duelCameraBoundary,*introUnit,*g_clashOwner,*visible;

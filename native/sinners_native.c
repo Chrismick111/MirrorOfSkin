@@ -134,7 +134,8 @@ static void *m_getSkinPivot,*m_findAll;
 static void *g_staging,*g_stagingTr; static uintptr_t g_stagingRoot;
 
 static void *orig_init,*orig_changeMotion,*orig_parryOnly,*orig_skillStart,*orig_startDuel,*orig_getMotion;
-static void *orig_viewDestroy,*orig_changeAppearance,*orig_die;
+static void *orig_viewDestroy,*orig_changeAppearance,*orig_die,*orig_setActive;
+static int g_ownedActiveDepth;
 static void *m_formRound,*orig_formRound;
 static void *m_formHit,*orig_formHit,*m_formHp,*m_formMaxHp;
 static void (*orig_canvas)(void *);
@@ -304,8 +305,10 @@ static int random_double(double *out){
 #include "ordinary_body_index.h"
 typedef struct {
   const ImportedConfig *imported;
+  const ImportedConfig *bundledPolicy;
   int used,row;
   int formWarned,form,specialClashWarned;
+  int importedRouteValid,importedRouteSkill,importedRouteTier,importedRouteCoins,importedRouteSlot;
   void *weaponAction,*weaponViewer;
   unsigned char weaponGroups[SR_VARIETY_COINS],weaponParts[SR_VARIETY_COINS];
   int internalStage,internalFailed,chapterApplied,chapterDefault;
@@ -327,6 +330,9 @@ typedef struct {
   char rid[96];
   char look[64];
 } Skin;
+static const ImportedConfig *skin_local_policy(const Skin *skin){
+ return skin?(skin->imported?skin->imported:skin->bundledPolicy):NULL;
+}
 static const char *skin_timing_key(Skin *skin){
  return skin->imported?skin->imported->timingKey:skin->look;
 }
@@ -335,7 +341,7 @@ static const char *skin_timing_key(Skin *skin){
 typedef struct {
  void *source,*callback,*method,*action,*viewer;
  uintptr_t sourceRoot,callbackRoot;
- int row,coin,detail,index,tier,last,endReturned,chapterSkill;
+ int row,coin,detail,index,tier,last,endReturned,chapterSkill,importedSkill,importedCoins;
  uint8_t a1,a3,a5;
 } PendingMotion;
 typedef struct {
@@ -346,6 +352,8 @@ typedef struct {
   char baseName[96];
   uint32_t sinner;
   int clashDepth,switching,last,pending,wanted;
+  void *hiddenAppearance,*baseGo;
+  int retreated; DWORD retreatAt;
   int startupPending,startupRow;
   SrDrawState drawState[3];
   int coinKnown,coinLast,coinTier,coinMotion,coinIndex,dead;
@@ -473,7 +481,9 @@ static unsigned voice_skin_owner(const Skin *skin){
   const PoolRow *row=&g_rows[skin->row];
   unsigned owner=private_voice_owner(skin);
   if(owner)return owner;
-  if(skin->imported)return sr_voice_catalog_owner(skin->imported->layout);
+  /* An imported prefab's native layout is not proof that its author supplied
+     that character's voice. With no explicit bank binding retain the source. */
+  if(skin->imported)return 0;
   owner=sr_voice_catalog_owner(skin->look);
   if(owner)return owner;
   if(skin->look[0]&&strcmp(skin->look,row->appearance_name))return 0;
@@ -542,7 +552,7 @@ static int skin_index_form(Unit *u,int row,int form){
 }
 static int skin_index(Unit *u,int row){return skin_index_form(u,row,desired_row_form(u,row));}
 static Skin *held_appearance(Unit *u){
- if(!u||!u->used||u->dead||u->preserveSpecial||u->last<0||u->last>=SR_SKIN_MAX)return NULL;
+ if(!u||!u->used||u->dead||u->retreated||u->preserveSpecial||u->last<0||u->last>=SR_SKIN_MAX)return NULL;
  Skin *skin=&u->skins[u->last];return skin->used&&skin->app?skin:NULL;
 }
 static Skin *skin_alloc(Unit *u){
@@ -883,9 +893,10 @@ static int normalize_source_name(const char *id,char *name){
 /* Attack-like duel slots do not have attack timing contracts. Query the native
    motion itself once at prewarm/switch, including timeline-less Spine defenses. */
 static void cache_clash_roles(Skin *skin){
+ const ImportedConfig *policy=skin_local_policy(skin);
  for(int d=0;d<SR_MOTION_CACHE;d++){
-  if(skin->imported&&!skin->imported->roles[d]){skin->chapterRole[d]=-1;continue;}
-  if(!skin->imported&&d!=4&&!defenseMotions[d]&&!is_parry_detail(d)&&!(d>=20&&d<=22)&&d!=32&&d!=33&&!sr_clash_role(skin->look,d))continue;
+  if(policy&&!policy->roles[d]){skin->chapterRole[d]=-1;continue;}
+  if(!policy&&d!=4&&!defenseMotions[d]&&!is_parry_detail(d)&&!(d>=20&&d<=22)&&d!=32&&d!=33&&!sr_clash_role(skin->look,d))continue;
   uint8_t flag=0;int requested=d,ok=0;void *args[]={&requested,&flag};
   g_motionDepth++;void *motion=call_obj(m_getMotion,skin->app,args,&ok);g_motionDepth--;
   int available=0,actual=-1;
@@ -901,9 +912,7 @@ static void cache_clash_roles(Skin *skin){
     }
     void *f=find_field_obj(motion,"isSpineAnim");
     if(f&&*(uint8_t *)((char*)motion+((size_t (*)(void*))api[API_FIELD_OFFSET])(f)))available=1;
-    /* Roland's Evade, Guard and Damaged sprite clips are Animator states.
-       The prefab intentionally has an empty timeline list for each. */
-    if(count==0&&((skin->imported&&skin->imported->animator[d])||(d>=2&&d<=4&&!strcmp(skin->look,"BRolandBaseAppearance")))&&rfield(skin->app,"_anim"))available=1;
+    if(count==0&&policy&&policy->animator[d]&&rfield(skin->app,"_anim"))available=1;
    }
   }
   skin->chapterRole[d]=available?1:-1;
@@ -987,7 +996,7 @@ static void play_imported_defense_state(Skin *skin,int detail){
 /* Locally imported appearances own private timing metadata even when their
    pool row is intentionally not marked as native story content. */
 static int skin_uses_private_metadata(const Skin *s){
- return s&&(g_rows[s->row].story||s->imported||!strcmp(s->look,"BRolandBaseAppearance"));
+ return s&&(g_rows[s->row].story||skin_local_policy(s));
 }
 static void *skin_metadata(Unit *u,Skin *s){
   const SrChapterActor *actor=u&&g_rows[s->row].story&&!strcmp(s->look,g_rows[s->row].appearance_name)?
@@ -1095,8 +1104,9 @@ static void finish_presentation(void *app){
 }
 static int set_active(void *go,uint8_t value){
   if(!go||!m_setActive)return 0;
-  void *args[]={&value};return call_exc(m_setActive,go,args);
+  void *args[]={&value};g_ownedActiveDepth++;int ok=call_exc(m_setActive,go,args);g_ownedActiveDepth--;return ok;
 }
+#include "appearance_visibility_state.h"
 static int go_active_self(void *go){return go?call_bool(m_getActiveSelf,go,NULL):-1;}
 /* Visual-only donors keep the source timeline alive; hide only the source
    Spine renderers and restore the exact prior enabled state on exit. */
@@ -1149,11 +1159,48 @@ static void *app_go(void *app){
   void *getter=find_method(ui_class(app),"get_gameObject",0);
   int ok=1;return call_obj(getter,app,NULL,&ok);
 }
+/* CharacterState stores this as an ObscuredBool. Ask the game's own
+   GetDecrypted method; never interpret the encrypted struct layout. */
+static int native_retreat_state(Unit *u){
+ static int reported;
+ if(!u||!u->view)return -1;
+ void *model=rfield(u->view,"_unitModel");if(!model)return -1;
+ void *state=rfield(model,"_state");if(!state)return -1;
+ void *field=find_field_obj(state,"_isRetreated");if(!field)return -1;
+ void *ft=((void *(*)(void *))api[API_FIELD_TYPE])(field);
+ char *name=ft?((char *(*)(void *))api[API_TYPE_NAME])(ft):NULL;
+ int supported=name&&!strcmp(name,"CodeStage.AntiCheat.ObscuredTypes.ObscuredBool");
+ if(name)((void (*)(void *))api[API_FREE])(name);
+ if(!supported){if(!reported){bootlog("native retreat: unsupported field type");reported=1;}return -1;}
+ void *boxed=((void *(*)(void *,void *))api[API_FIELD_VALUE])(field,state);if(!boxed)return -1;
+ uintptr_t root=ui_root(boxed);if(!root)return -1;
+ void *method=find_method(ui_class(boxed),"GetDecrypted",0);int result=-1;
+ if(method){
+  void *rt=((void *(*)(void *))api[API_RETURN_TYPE])(method);
+  char *tn=rt?((char *(*)(void *))api[API_TYPE_NAME])(rt):NULL;
+  void *value=ui_unbox(boxed);
+  if(tn&&!strcmp(tn,"System.Boolean")&&value)result=call_bool(method,value,NULL);
+  if(tn)((void (*)(void *))api[API_FREE])(tn);
+ }
+ ui_unroot(root);
+ if(!reported){bootlog(result>=0?"native retreat: state reader ready":"native retreat: state reader unavailable");reported=1;}
+ return result;
+}
+static void update_native_retreat(Unit *u){
+ int state=sr_retreat_next(u->retreated,native_retreat_state(u));if(state==u->retreated)return;
+ u->retreated=state;
+ if(state)u->retreatAt=GetTickCount();
+ else {u->retreatAt=0;u->hiddenAppearance=NULL;u->idleRestoreFrames=0;}
+ {char line[128];snprintf(line,sizeof(line),"native retreat sinner=%lu active=%d",(unsigned long)u->sinner,state);bootlog(line);}
+}
 static void sync_visibility(Unit *u){
   if(!u||!u->view)return;
+  if(u->retreated)return;
   if(g_presentationGate&&enabled_now())return;
   void *current=rfield(u->view,"_curAppearance");
   if(!current)return;
+  sr_visibility_selection(&u->hiddenAppearance,current);
+  if(sr_visibility_suspended(u->hiddenAppearance,current))return;
   Skin *visible=skin_for_app(u,current);
   int visualOnly=visible && (g_rows[visible->row].excluded&SR_STATIC_APPEARANCE_FLAG);
   if(visible){static_hide_renderers(u);}else if(!held_appearance(u)||current!=u->baseApp||!enabled_now())static_restore_renderers(u);
@@ -1177,6 +1224,7 @@ static void disable_failed_form(Unit *u,int row,int form);
 static void poll_paired_native(Unit *u);
 static void *unit_switch(Unit *u,Skin *skin){
   if(!u||!u->view||!m_changeAppearance)return NULL;
+  if(u->retreated&&enabled_now())return NULL;
   if(g_presentationGate&&enabled_now())return NULL;
   if(skin&&!(g_rows[skin->row].excluded&SR_STATIC_APPEARANCE_FLAG)&&((g_cfg&&g_cfg->mode==1)||g_rows[skin->row].story||(g_rows[skin->row].excluded&SR_AUTO_FLAG))){
     void *metadata=skin_metadata(u,skin);
@@ -1184,6 +1232,7 @@ static void *unit_switch(Unit *u,Skin *skin){
   }
   void *desired=skin?skin->app:u->baseApp;
   void *current=rfield(u->view,"_curAppearance");
+  if(enabled_now()&&sr_visibility_suspended(u->hiddenAppearance,current))return NULL;
   if(!desired)return NULL;
   int hadMask=u->staticHidden;
   if(skin&&!static_hide_renderers(u)){bootlog("donor switch skipped: could not mask source renderers");return NULL;}
@@ -1218,6 +1267,7 @@ static void retain_last_appearance(Unit *u){
  Skin *held=held_appearance(u);
  if(!held||introUnit==u||cleanup_pending||!enabled_now())return;
  void *current=rfield(u->view,"_curAppearance");
+ if(sr_visibility_suspended(u->hiddenAppearance,current))return;
  if(!rfield(held->app,"m_CachedPtr")){u->last=-1;return;}
  void *action=rfield(u->view,"_currentActionLog");
  int repeated=0; /* Native idle selection may restore the base more than once per action. */
@@ -1250,6 +1300,8 @@ static void cache_ordinary_clips(void *app,uint32_t mask[128],Skin *donor){
  for(int i=0;i<count;i++){
   void *motion=list_item(list,i);int d=-1,n=timeline_count(motion,&d);
   if(!is_skill_detail(d)||defenseMotions[d]||n<1||n>TC_COINS)continue;
+  if(donor&&donor->imported&&!imported_attack_group_allowed(donor->imported,d))continue;
+  if(donor&&donor->bundledPolicy&&donor->bundledPolicy->roles[d])continue;
   void *assets=rfield(motion,"timelineAssets");
   for(int k=0;k<n;k++){
    void *tl=list_item(assets,k);int ok=0;char name[128];
@@ -1313,6 +1365,25 @@ static int loading_row(Unit *u,int row){return g_loadActive && g_loadUnit==u && 
 static int loading_form(Unit *u,int row,int form){return loading_row(u,row)&&g_loadForm==form;}
 static int g_creating;
 static int g_ready;
+/* Observe native requests only for game objects owned by registered units.
+   Never infer departure from skill, health, or camera state. */
+static void set_active_hook(void *go,uint8_t active,void *mi){
+ ((void (*)(void *,uint8_t,void *))orig_setActive)(go,active,mi);
+ if(g_quitting||g_ownedActiveDepth||g_creating||!go)return;
+ for(int i=0;i<SR_UNIT_MAX;i++){
+  Unit *u=&g_units[i];if(!u->used||u->dead||u->switching||!u->view)continue;
+  void *changed=NULL;
+  for(int k=0;k<SR_SKIN_MAX;k++)if(u->skins[k].used&&u->skins[k].go==go){changed=u->skins[k].app;break;}
+  if(!changed&&u->staticHidden&&u->baseGo==go)changed=u->baseApp;
+  if(!changed)continue;
+  void *current=rfield(u->view,"_curAppearance");
+  void *previous=u->hiddenAppearance;
+  sr_visibility_event(&u->hiddenAppearance,current,changed,active,0);
+  if(previous!=u->hiddenAppearance){char line[128];snprintf(line,sizeof(line),"native visibility sinner=%lu hidden=%d",(unsigned long)u->sinner,u->hiddenAppearance!=NULL);bootlog(line);}
+  if(!active&&changed==current&&changed==u->baseApp){Skin *held=held_appearance(u);if(held&&held->go)set_active(held->go,0);}
+  break;
+ }
+}
 typedef struct {void *go;void *handleBox;uintptr_t handleRoot;} Retire;
 static Retire g_retire[SR_RETIRE_MAX];
 static int g_retireAfter[SR_RETIRE_MAX];
@@ -1324,7 +1395,7 @@ static void retire_slot(void *go,void *handleBox,uintptr_t handleRoot){
   g_retire[g_retireCount]=(Retire){NULL,handleBox,handleRoot};
   g_retireAfter[g_retireCount]=g_frame+2;g_retireCount++;
 }
-static void roland_release_if_unused(const char *look);
+static void release_unused_local_art(const char *look);
 static void retire_skin(Skin *s){
   if(!s->used)return;
   if(s->app)release_owned_appearance_camera(s->app);
@@ -1336,7 +1407,7 @@ static void retire_skin(Skin *s){
   if(s->ordinaryBodies)HeapFree(GetProcessHeap(),0,s->ordinaryBodies);
   ui_unroot(s->appRoot);ui_unroot(s->goRoot);ui_unroot(s->metaRoot);ui_unroot(s->storyRoot);
   s->used=0;
-  roland_release_if_unused(s->look);
+  release_unused_local_art(s->look);
   memset(s,0,sizeof(*s));
 }
 static void collect_retire(void){
@@ -1368,7 +1439,7 @@ static Skin *replaceable_skin(Unit *u){
  }
  return NULL;
 }
-#include "roland_appearance.inc"
+#include "local_artwork.inc"
 static void *instantiate_skin(void *prefab,void *parent,void **actualParent){
   uintptr_t prefabRoot=ui_root(prefab);
   int world=0,ok=1;
@@ -1391,19 +1462,19 @@ static int build_skin(Unit *u,int row){
   void *getResult=find_method(type,"get_Result",0);
   void *prefab=call_obj(getResult,ui_unbox(handleBox),NULL,&ok);
   if(!ok||!prefab){bootlog("skin build: missing result");return 0;}
-  RolandForm *local=local_art_form(g_loadLook);
+  LocalArtForm *local=cached_art_form(g_loadLook);
   if(!local&&!strncmp(g_loadLook,"WBImp_",6))return 0;
   int reused=local&&rfield(local->bundle,"m_CachedPtr")&&rfield(local->prefab,"m_CachedPtr");
-  if(local && !(prefab=roland_prefab(local)))return 0;
+  if(local && !(prefab=load_local_prefab(local)))return 0;
   int pivotOk=1;
   void *pivotParent=call_obj(m_getSkinPivot,u->view,NULL,&pivotOk);
   void *stagingParent=(pivotOk&&pivotParent)?pivotParent:g_stagingTr;
   void *actualParent=NULL;
   void *cloneGO=instantiate_skin(prefab,stagingParent,&actualParent);
   if(!cloneGO&&reused){
-    bootlog("Roland: cached prefab rejected; retrying with fresh local art");
-    roland_discard(local);
-    prefab=roland_prefab(local);
+    bootlog("Local artwork: cached prefab rejected; retrying with fresh local art");
+    discard_local_art(local);
+    prefab=load_local_prefab(local);
     if(prefab)cloneGO=instantiate_skin(prefab,stagingParent,&actualParent);
   }
   if(!cloneGO){
@@ -1469,7 +1540,8 @@ static int build_skin(Unit *u,int row){
   if(!slot){bootlog("skin build: no slot after evict");ui_unroot(appRoot);ui_unroot(cloneRoot);retire_slot(cloneGO,NULL,0);return 0;}
   memset(slot,0,sizeof(*slot));
   slot->used=1;slot->row=row;slot->form=g_loadForm;slot->app=app;slot->go=cloneGO;slot->appRoot=appRoot;slot->goRoot=cloneRoot;
-  slot->imported=local?local->config:NULL;
+  slot->imported=local&&!local->bundled?&local->config:NULL;
+  slot->bundledPolicy=local&&local->bundled?&local->config:NULL;
   lstrcpynA(slot->look,g_loadLook,64);
   wsprintfA(slot->rid,"%.40s_SRN_%lu_%d",entry->identity,(unsigned long)g_frame,row);
   void *info=rfield(app,"charInfo");
@@ -1562,7 +1634,7 @@ static void startup_assets_tick(void){
  int budget=0;while((uint32_t)g_startupCursor<g_rowCount&&budget++<2){
   int row=g_startupCursor++;PoolRow *entry=&g_rows[row];
   if(!entry->enabled||entry->weight<=0||g_startupAssets[row])continue;
-  if(!strncmp(entry->appearance_name,"WBImp_",6)||roland_form(entry->appearance_name))continue;
+  if(!strncmp(entry->appearance_name,"WBImp_",6)||local_art_form(entry->appearance_name))continue;
   if(time_record(NULL,entry->appearance_name))continue; /* No asset load for an already scanned appearance. */
   void *key=make_string(entry->asset_key);uintptr_t root=ui_root(key);void *exc=NULL,*args[]={key};
   void *box=((void *(*)(void *,void *,void **,void **))api[API_INVOKE])(m_loadGO,NULL,args,&exc);ui_unroot(root);
@@ -1598,9 +1670,9 @@ static int loader_start(Unit *u,int row){
     lstrcpynA(g_loadLook,automatic->value.names[g_loadForm],64);asset=automatic->value.assets[g_loadForm];
   }
   {char line[240];snprintf(line,sizeof(line),"load form identity=%.40s form=%d mp=%d asset=%.130s",entry->identity,g_loadForm,u->sanity,asset);bootlog(line);}
-  RolandForm *local=local_art_form(g_loadLook);
+  LocalArtForm *local=local_art_form(g_loadLook);
   if(!local&&!strncmp(g_loadLook,"WBImp_",6))return 0;
-  if(local)asset=local->dependency;
+  if(local)asset=local->config.dependency;
   void *key=make_string(asset);uintptr_t keyRoot=ui_root(key);
   void *exc=NULL,*box=NULL;
   void *args[]={key};
@@ -1650,7 +1722,7 @@ static void loader_poll(void){
     bootlog("loader: load failed");loader_cancel();return;
   }
   int built=build_skin(g_loadUnit,g_loadRow);
-  if(built<=0)roland_release_if_unused(g_loadLook);
+  if(built<=0)release_unused_local_art(g_loadLook);
   if(built<0){loader_cancel();return;}
   if(!built){
     char line[192];snprintf(line,sizeof(line),"loader: build failed sinner=%lu row=%d identity=%.40s; skipped for unit",(unsigned long)g_loadUnit->sinner,g_loadRow,g_rows[g_loadRow].identity);bootlog(line);
@@ -1690,7 +1762,7 @@ static void unit_register(void *app,void *view){
   }
   for(int i=0;i<SR_UNIT_MAX;i++)if(g_units[i].used&&g_units[i].view==view){
     Unit *u=&g_units[i];
-    if(u->baseApp!=app&&!skin_for_app(u,app)){uintptr_t h=ui_root(app);if(h){static_restore_renderers(u);ui_unroot(u->baseRoot);u->baseRoot=h;u->baseApp=app;identity_text(app,u->baseName,sizeof(u->baseName));rebuild_candidates(u);}}
+    if(u->baseApp!=app&&!skin_for_app(u,app)){uintptr_t h=ui_root(app);if(h){static_restore_renderers(u);ui_unroot(u->baseRoot);u->baseRoot=h;u->baseApp=app;u->baseGo=app_go(app);identity_text(app,u->baseName,sizeof(u->baseName));rebuild_candidates(u);}}
     return;
   }
   uint32_t sinner=sinner_of(app);
@@ -1700,7 +1772,7 @@ static void unit_register(void *app,void *view){
   Unit *u=unit_alloc();
   if(!u)return;
   memset(u,0,sizeof(*u));
-  u->used=1;u->view=view;u->baseApp=app;u->sinner=sinner;u->last=-1;u->pending=-1;u->wanted=-1;u->stageShown=-1;u->stageWanted=-1;
+  u->used=1;u->view=view;u->baseApp=app;u->baseGo=app_go(app);u->sinner=sinner;u->last=-1;u->pending=-1;u->wanted=-1;u->stageShown=-1;u->stageWanted=-1;
   u->startupPending=1;u->startupRow=-1;
   u->viewRoot=ui_root(view);u->baseRoot=ui_root(app);
   if(!identity_text(app,u->baseName,sizeof(u->baseName)))lstrcpynA(u->baseName,"unknown",96);
@@ -1737,7 +1809,7 @@ static int startup_row_valid(Unit *u,int row){
 }
 static void stage_commit_source(Unit *u,int row);
 static void startup_select(Unit *u){
- if(!u||!u->startupPending||u->dead||u->preserveSpecial||!enabled_now())return;
+ if(!u||!u->startupPending||u->dead||u->retreated||u->preserveSpecial||!enabled_now())return;
  if(u->viewerActive||u->wanted>=0||u->motionCount){u->startupPending=0;return;}
  if(!startup_row_valid(u,u->startupRow))u->startupRow=-1;
  if(u->startupRow<0){double r;if(!random_double(&r))return;u->startupRow=unit_draw(u,0,r);if(u->startupRow<0)return;}
@@ -2025,13 +2097,13 @@ static MotionDelivery forward_projected_motion(void *app,int detail,uint8_t a1,i
   app=u->baseApp;skin=NULL;detail=sourceDetail;index=sourceIndex;
  }
  int specialDetail=-1,specialIndex=-1;
- if(roland_armory(skin)&&enabled_now()&&!cleanup_pending&&!g_motionDepth&&introApp!=app&&!u->coinDefense&&is_skill_detail(sourceDetail)){
-  int father=sr_pair_base(u->baseName,"10115_YiSang_Index_FatherAppearance");
-  detail=roland_weapon(u,skin,weaponAction,weaponCoin,sourceDetail,detail);
+ if(skin_has_coin_groups(skin)&&enabled_now()&&!cleanup_pending&&!g_motionDepth&&introApp!=app&&!u->coinDefense&&is_skill_detail(sourceDetail)){
+  int passthrough=group_source_passthrough(u,skin);
+  detail=group_for_coin(u,skin,weaponAction,weaponCoin,sourceDetail,detail);
   if(detail>=0&&detail<SR_MOTION_CACHE&&skin->motionCounts[detail]>0){
    int count=skin->motionCounts[detail];
-   if(father && detail==sourceDetail && sourceIndex<count)index=sourceIndex;
-   else if(!father&&weaponAction&&weaponCoin>=0&&weaponCoin<SR_VARIETY_COINS&&skin->weaponGroups[weaponCoin]==detail)index=skin->weaponParts[weaponCoin];
+   if(passthrough&&detail==sourceDetail&&sourceIndex<count)index=sourceIndex;
+   else if(!passthrough&&weaponAction&&weaponCoin>=0&&weaponCoin<SR_VARIETY_COINS&&skin->weaponGroups[weaponCoin]==detail)index=skin->weaponParts[weaponCoin];
    else if(index>=count)index=count-1;
    chosen=detail;
   }
@@ -2041,7 +2113,8 @@ static MotionDelivery forward_projected_motion(void *app,int detail,uint8_t a1,i
     weapon/group selection; otherwise a repeated source index replays a clip. */
  if(enabled_now()&&!cleanup_pending&&!g_motionDepth&&skin&&introApp!=app&&validAction&&
     !u->preserveSpecial&&!u->coinDefense&&u->coinKnown&&is_skill_detail(sourceDetail)&&
-    ((!roland_armory(skin)&&!skin->imported)||(detail>=0&&detail<SR_MOTION_CACHE&&skin->ordinaryClips[detail]))&&
+    !(skin->imported&&skin->imported->routeCount)&&
+    ((!skin_has_coin_groups(skin)&&!skin->imported)||(detail>=0&&detail<SR_MOTION_CACHE&&skin->ordinaryClips[detail]))&&
     sourceIndex>=0&&sourceIndex<TC_COINS&&(u->ordinarySourceClips[sourceDetail]&(UINT32_C(1)<<sourceIndex))&&
     !(g_rows[skin->row].excluded&(SR_STATIC_APPEARANCE_FLAG|2))&&
     coin>=0&&coin<SR_VARIETY_COINS&&u->observedAction&&u->observedViewer&&u->viewerActive&&
@@ -2100,11 +2173,29 @@ static int single_skin_cycle_index(Unit *u,Skin *skin,int coin,int count,int *ou
  u->cycleCoin=coin;*out=u->cycleOrdinal%count;return 1;
 }
 #include "native_order_runtime.h"
+static int observed_skill_id(Unit *u,void *action,int strictOwner);
+static int imported_routed_slot(Skin *skin,int skill,int tier,int coins){
+ if(!skin->imported->routeCount)return -1;
+ if(!skin->importedRouteValid||skill!=skin->importedRouteSkill||
+    tier!=skin->importedRouteTier||coins!=skin->importedRouteCoins){
+  skin->importedRouteSlot=imported_route_select(skin->imported,skin->motionCounts,skill,tier,coins);
+  skin->importedRouteSkill=skill;skin->importedRouteTier=tier;skin->importedRouteCoins=coins;
+  skin->importedRouteValid=1;
+  char line[176];
+  snprintf(line,sizeof(line),"imported attack route look=%.63s skill=%d tier=%d coins=%d slot=%d",
+           skin->look,skill,tier,coins,skin->importedRouteSlot);
+  bootlog(line);
+ }
+ return skin->importedRouteSlot;
+}
 /* Imported timelines use the author's motion layout. Special slot numbers
    are meaningful within that same layout; another identity supplies its tier. */
-static int imported_attack_detail(Unit *u,Skin *skin,int requested,int tier){
+static int imported_attack_detail_with_source(Unit *u,Skin *skin,int requested,int tier,int skill,int coins){
  const int *counts=skin->motionCounts;
  const unsigned char *roles=skin->imported->roles;
+ if(skin->imported->routeCount&&(tier<1||tier>3)&&requested>=7&&requested<=9)tier=requested-6;
+ int slot=imported_routed_slot(skin,skill,tier,coins);
+ if(slot>=0)return slot;
  int same=sr_pair_base(u->baseName,skin->imported->layout);
  if(same&&counts[requested]>0&&!roles[requested])return requested;
  if(tier>=1&&tier<=3&&counts[6+tier]>0&&!roles[6+tier])return 6+tier;
@@ -2112,10 +2203,23 @@ static int imported_attack_detail(Unit *u,Skin *skin,int requested,int tier){
  for(int d=7;d<=34;d++)if(is_skill_detail(d)&&counts[d]>0&&!roles[d])return d;
  return 0;
 }
+static int imported_attack_detail(Unit *u,Skin *skin,int requested,int tier){
+ int skill=0,coins=0;
+ if(skin->imported->routeCount&&u->viewerActive&&u->observedAction&&
+    rfield(u->view,"_currentActionLog")==u->observedAction){
+  skill=observed_skill_id(u,u->observedAction,0);
+  coins=native_order_coin_count(u);
+ }
+ return imported_attack_detail_with_source(u,skin,requested,tier,skill,coins);
+}
 static int imported_attack_part(Unit *u,Skin *skin,void *action,int coin,int source,int target,int index,int last){
  int count=skin->motionCounts[target];
  if(target==0)return 0;
  if(index<0)return index;
+ if(skin->imported->routeCount&&skin->importedRouteValid&&target==skin->importedRouteSlot){
+  int part=coin>=0?coin:index;
+  return part<count?part:count-1;
+ }
  if(source==target&&index<count&&sr_pair_base(u->baseName,skin->imported->layout))return index;
  int mapped;
  if(native_order_index(u,action,coin,count,&mapped)&&mapped>=-1&&mapped<count)return mapped;
@@ -2161,7 +2265,7 @@ static enum ClashTiming clash_timing(Skin *skin,void *app,int detail){
  /* These are authored duel tracks without damage markers. Keep Unity's
     original GetMotionAnimItem arguments, including its metadata fallback. */
  if(skin->imported&&detail>=0&&detail<128&&skin->imported->roles[detail])return ClashNativeTiming;
- if(roland_armory(skin)&&(detail==20||detail==21||detail==32||detail==33))return ClashNativeTiming;
+ if(skin->bundledPolicy&&detail>=0&&detail<128&&skin->bundledPolicy->nativeTiming[detail])return ClashNativeTiming;
  return skin->chapterActor?ClashChapterTiming:ClashSourceTiming;
 }
 #include "chapter_nine_runtime.inc"
@@ -2201,7 +2305,7 @@ static int special_playback(int slot,void *viewer,int detail,void *mi){
  if(!enabled_now()||cleanup_pending)return original;
  void *app=rfield(viewer,"_curAppearance");Unit *u=unit_for_app(app);
  Skin *skin=u?skin_for_app(u,app):NULL;if(!skin&&u&&app==u->baseApp&&u->staticHidden)skin=held_appearance(u);
- if(roland_armory(skin)||(skin&&skin->imported))return original;
+ if(skin_has_coin_groups(skin)||(skin&&skin->imported))return original;
  if(!skin||(g_rows[skin->row].excluded&(2|SR_STATIC_APPEARANCE_FLAG)))return original;
  /* Keep source detail through the viewer. The final motion hook maps a
     verified pair once, with source detail intact for timing projection. */
@@ -2245,7 +2349,7 @@ static void change_motion_hook(void *self,int detail,uint8_t a1,int index,uint8_
        if(index<0)index=0;
        else if(index>=skin->clashCount[mapped])index=skin->clashCount[mapped]-1;
       }
-      if(skin&&(mapped!=detail||skin->imported||roland_armory(skin))){char line[180];snprintf(line,sizeof(line),"clash pose look=%.63s requested=%d played=%d part=%d role=%d",skin->look,detail,mapped,index,role);bootlog(line);}
+      if(skin&&(mapped!=detail||skin->imported||skin_has_coin_groups(skin))){char line[180];snprintf(line,sizeof(line),"clash pose look=%.63s requested=%d played=%d part=%d role=%d",skin->look,detail,mapped,index,role);bootlog(line);}
       if(role==7)observe_defense(u,detail);
       ClashPlayback saved=g_clashPlayback;
       if(!clash_raw(app,mapped))g_clashPlayback=(ClashPlayback){app,mapped,detail,sourceIndex,timing};
@@ -2596,7 +2700,7 @@ static void *get_motion_hook(void *self,int detail,uint8_t flag,void *mi){
    Unit *u=unit_for_app(self);Skin *skin=u?skin_for_app(u,self):NULL;
    if(u&&!skin&&self==u->baseApp&&clash_request(u,detail)){
     Skin *visible=skin_for_app(u,clash_visible(u,self));
-    if(roland_armory(visible)||(visible&&visible->imported)){skin=visible;self=visible->app;}
+    if(local_clash_skin(visible)){skin=visible;self=visible->app;}
    }
    int role=skin?clash_request(u,detail):0;
    if(role&&special_clash_available(skin,"get_motion")){
@@ -2647,7 +2751,7 @@ static void *get_motion_hook(void *self,int detail,uint8_t flag,void *mi){
      if(attack)detail=sr_native_motion_detail(skin->motionCounts,skin->nativeMotionDetail,requested,detail);
      if(attack&&g_rows[skin->row].story)detail=sr_donor_coin_fit(skin->motionCounts,detail,native_order_coin_count(u));
      if(attack)detail=sr_verified_paired_attack(skin->motionCounts,paired_source(u,skin),motion_identity(skin),requested,detail);
-     detail=roland_weapon(u,skin,u->observedAction,u->coinKnown?u->coinIndex:-1,requested,detail);
+     detail=group_for_coin(u,skin,u->observedAction,u->coinKnown?u->coinIndex:-1,requested,detail);
     }
   }
   return ((void *(*)(void *,int,uint8_t,void *))orig_getMotion)(self,detail,flag,mi);
@@ -2747,7 +2851,7 @@ static void die_hook(void *view,uint8_t real,uint8_t over,float ratio,void *skil
 static void revive_hook(void *view,uint8_t produce,void *mi){
  sr_voice_cancel_view(view);
  ((void (*)(void *,uint8_t,void *))orig_revive)(view,produce,mi);
- for(int i=0;i<SR_UNIT_MAX;i++)if(g_units[i].used&&g_units[i].view==view){g_units[i].deathVoiceAccepted=0;break;}
+ for(int i=0;i<SR_UNIT_MAX;i++)if(g_units[i].used&&g_units[i].view==view){g_units[i].deathVoiceAccepted=0;g_units[i].hiddenAppearance=NULL;break;}
 }
 /* Only exact source appearance names provide a native form signal. */
 static int paired_native_stage(const char *base, const char *observed){
@@ -2795,7 +2899,8 @@ static void change_appearance_hook(void *view,void *name,uint8_t flag,void *mi){
       if(native>=0){u->nativeStage=native;u->nativeValid=1;u->nativeAppearance=actual;}
 
     }
-    if(enabled_now()&&!cleanup_pending&&!u->switching&&actual==u->baseApp&&u->staticHidden){
+    sr_visibility_selection(&u->hiddenAppearance,actual);
+    if(enabled_now()&&!cleanup_pending&&!u->switching&&!u->retreated&&actual==u->baseApp&&u->staticHidden&&!sr_visibility_suspended(u->hiddenAppearance,actual)){
      Skin *held=held_appearance(u);if(held&&held->go)set_active(held->go,1);
     }
     Skin *skin=actual?skin_for_app(u,actual):NULL;
@@ -3231,11 +3336,20 @@ static void update_donor_form(Unit *u){
 static PoolRow reload_rows[SR_ROW_MAX];
 static uint32_t reload_seen;
 static int incoming_for_old[SR_ROW_MAX];
+static int hot_imported_binding(const PoolRow *row){
+ if(row->sinner<101||row->sinner>112||row->enabled>1||row->story||row->kind||row->group_id[0]||
+    (row->excluded&~(31u|SR_STATIC_APPEARANCE_FLAG))||
+    (row->base_identity[0]&&!sr_pool_v5_id(row->base_identity))||!imported_look(row->appearance_name))return 0;
+ char identity[64],asset[128];
+ snprintf(identity,sizeof(identity),"story_%s",row->appearance_name);
+ snprintf(asset,sizeof(asset),"Imported/%s.prefab",row->appearance_name);
+ return !strcmp(identity,row->identity)&&!strcmp(asset,row->asset_key);
+}
 static int hot_pool_compatible(const PoolRow *rows,uint32_t count){
  if(count<g_rowCount||count>SR_ROW_MAX)return 0;
  for(uint32_t i=0;i<count;i++){
   const PoolRow *r=&rows[i];
-  if(!memchr(r->identity,0,64)||!memchr(r->asset_key,0,128)||!memchr(r->appearance_name,0,64)||!memchr(r->base_identity,0,64)||!isfinite(r->weight)||r->weight<0||r->weight>1000000)return 0;
+  if(!memchr(r->identity,0,64)||!memchr(r->asset_key,0,128)||!memchr(r->appearance_name,0,64)||!memchr(r->base_identity,0,64)||!memchr(r->group_id,0,64)||!isfinite(r->weight)||r->weight<0||r->weight>1000000)return 0;
   if(sr_pool_find_key(rows,i,r)>=0)return 0;
   int old=sr_pool_find_key(g_rows,g_rowCount,r);
   if(old<0){
@@ -3244,7 +3358,8 @@ static int hot_pool_compatible(const PoolRow *rows,uint32_t count){
     const PoolRow *base=&g_rows[j];
     if(sr_pool_catalog_binding(base,r)){catalogMatch=1;break;}
    }
-   if(catalogMatch)continue;
+   /* A Workbench import can publish a new local prefab while the game is open. */
+   if(catalogMatch||hot_imported_binding(r))continue;
    char asset[128];snprintf(asset,sizeof(asset),"SD_Personality/%s.prefab",r->appearance_name);
    int id=0;for(int c=0;c<5;c++){if(r->identity[c]<'0'||r->identity[c]>'9')return 0;id=id*10+r->identity[c]-'0';}
    if(strlen(r->identity)!=5||!(r->excluded&SR_AUTO_FLAG)||r->story||strcmp(asset,r->asset_key)||!sr_auto_identity(id,(int)r->sinner-100,r->appearance_name,0))return 0;
@@ -3268,7 +3383,8 @@ static void reload_probabilities(void){
  uint32_t newCount=0;
  int ok=pool_read(f,reload_rows,&newCount);
  CloseHandle(f);reload_seen=revision;
- if(!ok||!hot_pool_compatible(reload_rows,newCount)){bootlog("probability reload rejected; retaining last valid weights");return;}
+ if(!ok){bootlog("probability reload rejected: invalid pool snapshot; retaining last valid weights");return;}
+ if(!hot_pool_compatible(reload_rows,newCount)){bootlog("probability reload rejected: incompatible pool membership; retaining last valid weights");return;}
  for(uint32_t i=0;i<g_rowCount;i++){
   PoolRow *r=&reload_rows[incoming_for_old[i]];
   g_rows[i].enabled=r->enabled;g_rows[i].excluded=r->excluded;g_rows[i].weight=r->weight;
@@ -3348,6 +3464,9 @@ static void tick(void){
     return;
   }
 
+  if(g_frame%15==0)for(int i=0;i<SR_UNIT_MAX;i++){
+   Unit *u=&g_units[i];if(u->used&&!u->dead&&u->view&&rfield(u->view,"m_CachedPtr"))update_native_retreat(u);
+  }
   g_anyViewerActive=0;
   for(int i=0;i<SR_UNIT_MAX;i++)if(g_units[i].used&&!g_units[i].dead){
     Unit *u=&g_units[i];
@@ -3370,11 +3489,11 @@ static void tick(void){
   if(introUnit)pump_transform_intro();
   /* Keep Unity model construction out of a skill's close-up. In-flight
      Addressables operations remain asynchronous and rooted until safe. */
-  for(int i=0;i<SR_UNIT_MAX;i++)if(g_units[i].used)motion_dispatch(&g_units[i],0);
+  for(int i=0;i<SR_UNIT_MAX;i++)if(g_units[i].used&&!g_units[i].retreated)motion_dispatch(&g_units[i],0);
   for(int i=0;i<SR_UNIT_MAX;i++)if(g_units[i].used)startup_select(&g_units[i]);
   if(!g_presentationGate&&!g_anyViewerActive)loader_poll();
   else if(g_loadActive){loader_probe_paused();g_loadStart=GetTickCount();} /* Presentation pauses do not consume the loader timeout. */
-  for(int i=0;i<SR_UNIT_MAX;i++)if(g_units[i].used)warm_enqueue(&g_units[i]);
+  for(int i=0;i<SR_UNIT_MAX;i++)if(g_units[i].used&&!g_units[i].retreated)warm_enqueue(&g_units[i]);
   if(!g_loadActive&&!g_presentationGate){
     Unit *u;int row;
     if(queue_pop(&u,&row)){
@@ -3389,10 +3508,17 @@ static void tick(void){
     Unit *u=&g_units[i];
     if(introUnit==u&&u->dead)stop_transform_intro(0);
     if(u->dead || !rfield(u->view,"m_CachedPtr")){unit_release(u);continue;}
+    if(u->retreated){
+     void *current=rfield(u->view,"_curAppearance");
+     if(sr_retreat_hide_ready(u->viewerActive,presentation_busy(current),(DWORD)(GetTickCount()-u->retreatAt))){
+      for(int k=0;k<SR_SKIN_MAX;k++)if(u->skins[k].used&&u->skins[k].go&&go_active_self(u->skins[k].go)==1)set_active(u->skins[k].go,0);
+     }
+     continue;
+    }
 
     /* A viewer can reset only the native receiver while the presentation is busy.
        Keep the held donor drawn until the safe appearance rebind. */
-    if(u->staticHidden&&rfield(u->view,"_curAppearance")==u->baseApp){
+    if(u->staticHidden&&rfield(u->view,"_curAppearance")==u->baseApp&&!sr_visibility_suspended(u->hiddenAppearance,u->baseApp)){
      Skin *held=held_appearance(u);
      if(held&&held->go&&go_active_self(held->go)==0)set_active(held->go,1);
     }
@@ -3430,7 +3556,7 @@ static void cleanup_all(void){
     if(current&&current!=u->baseApp)unit_switch(u,NULL);
     unit_release(u);
   }
-  loader_cancel();roland_clear();q_head=q_tail=0;
+  loader_cancel();clear_local_art();q_head=q_tail=0;
   if(g_metaBox && m_releaseMeta){void *args[]={ui_unbox(g_metaBox)};
     if(call_exc(m_releaseMeta,NULL,args)){ui_unroot(g_metaBoxRoot);ui_unroot(g_metaDBRoot);g_metaBox=NULL;g_metaBoxRoot=g_metaDBRoot=0;g_metadataDB=NULL;g_metadataPhase=0;}
     else bootlog("metadata release failed; roots retained");
@@ -3546,6 +3672,7 @@ static int install_hooks(void){
   m_applicationQuit=application?find_method(application,"Internal_ApplicationQuit",0):NULL;
   if(!m_applicationQuit||!add_hook(m_applicationQuit,application_quit_hook,&orig_applicationQuit))return 0;
   add_hook(canvasMethod,canvas_tick,(void **)&orig_canvas);
+  if(!add_hook(m_setActive,set_active_hook,&orig_setActive))bootlog("native visibility observation unavailable");
   add_hook(m_init,initialize_hook,&orig_init);
   add_hook(m_changeMotion,change_motion_hook,&orig_changeMotion);
   add_hook(m_parryOnly,parry_hook,&orig_parryOnly);
@@ -3754,13 +3881,13 @@ static int resolve_all(void){
   c_containerClass=klass(g_game,"SD","SkinMetadataContainer");
   c_objectClass=klass(g_core,"UnityEngine","Object");
   c_goClass=klass(g_core,"UnityEngine","GameObject");
-  if(rolandImage && c_goClass){
-    void *ab=klass(rolandImage,"UnityEngine","AssetBundle");
+  if(localBundleImage && c_goClass){
+    void *ab=klass(localBundleImage,"UnityEngine","AssetBundle");
     const char *pathType[]={"System.String"},*assetTypes[]={"System.String","System.Type"};
-    rolandOpen=method_by_types(ab,"LoadFromFile",pathType,1);
-    rolandAsset=method_by_types(ab,"LoadAsset",assetTypes,2);
-    rolandUnload=find_method(ab,"Unload",1);
-    rolandGoType=((void *(*)(void *))api[API_TYPE_OBJECT])(((void *(*)(void *))api[API_CLASS_TYPE])(c_goClass));
+    localBundleOpen=method_by_types(ab,"LoadFromFile",pathType,1);
+    localBundleAsset=method_by_types(ab,"LoadAsset",assetTypes,2);
+    localBundleUnload=find_method(ab,"Unload",1);
+    localBundleGoType=((void *(*)(void *))api[API_TYPE_OBJECT])(((void *(*)(void *))api[API_CLASS_TYPE])(c_goClass));
   }
   c_transform=klass(g_core,"UnityEngine","Transform");
   c_typeClass=klass(g_corlib,"System","Type");
@@ -3972,7 +4099,7 @@ static DWORD WINAPI run(void *unused){
     if(!label)continue;
     if(!strcmp(label,"Assembly-CSharp.dll"))g_game=image;
     else if(!strcmp(label,"UnityEngine.CoreModule.dll"))g_core=image;
-    else if(!strcmp(label,"UnityEngine.AssetBundleModule.dll"))rolandImage=image;
+    else if(!strcmp(label,"UnityEngine.AssetBundleModule.dll"))localBundleImage=image;
     else if(!strcmp(label,"UnityEngine.UIModule.dll"))g_ui=image;
     else if(!strcmp(label,"UnityEngine.JSONSerializeModule.dll"))g_json=image;
     else if(!strcmp(label,"Unity.Addressables.dll"))g_addr=image;

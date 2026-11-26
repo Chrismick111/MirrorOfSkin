@@ -8,7 +8,7 @@ import os
 from pathlib import Path, PurePosixPath
 import re
 import shutil
-import tempfile
+from model_workspace import model_tempdir, carra_base_path
 from zipfile import ZipFile
 
 ENTRY=re.compile(r'([0-9a-f]{32})/([0-9a-f]{32})/(-?\d+)\.(\d+)',re.I)
@@ -62,7 +62,7 @@ def expanded(path,root,unity=None):
         for info,p in _members(outer):
             if p.name=='__data' and len(p.parts)>=3:sources[tuple(x.lower() for x in p.parts[-3:-1])].append(info)
         consumed=set()
-        with tempfile.TemporaryDirectory() as tmp:
+        with model_tempdir() as tmp:
             target=Path(tmp)/(path.stem+'.zip')
             saved_bases=[]
             with ZipFile(target,'w') as result:
@@ -83,7 +83,7 @@ def expanded(path,root,unity=None):
                         if not groups:raise ValueError('Carra2 没有包含模型对象')
                         for (a,b),changes in groups.items():
                             bundled=sources[a,b]
-                            saved=root/'Assets/CarraBases'/revision/a/b/'__data'
+                            saved,legacy=carra_base_path(root,revision,a,b)
                             if len(bundled)>1:raise ValueError('Carra2 包含多个相同目标的底包')
                             if bundled:
                                 base=outer.read(bundled[0]);consumed.add(bundled[0].filename)
@@ -92,7 +92,7 @@ def expanded(path,root,unity=None):
                                 saved_bases.append((saved,staged,hashlib.sha256(base).hexdigest()))
                             else:
                                 folder=cache/a/b
-                                source=next((p for p in (saved,folder/'__original',folder/'__data') if p.is_file()),None)
+                                source=next((p for p in (saved,legacy,folder/'__original',folder/'__data') if p.is_file()),None)
                                 if source is None:raise ValueError(f'Carra2 缺少匹配的游戏底包 {a}/{b}。可以选择同时带有 bundle 和 Carra2 的完整模组压缩包。')
                                 base=source.read_bytes()
                             label=PurePosixPath(item.filename).stem if item else path.stem

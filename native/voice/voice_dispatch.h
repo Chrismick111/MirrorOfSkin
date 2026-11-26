@@ -40,14 +40,6 @@ static Unit *voice_unit_for_async_id(int id){
   if(found)return NULL;
   found=u;
  }
- if(found)return found;
- for(int i=0;i<SR_UNIT_MAX;i++){
-  Unit *u=&g_units[i];
-  Skin *skin=u->used?voice_worn_skin(u):NULL;
-  if(!skin||!skin->imported||voice_worn_owner(u)!=(unsigned)id)continue;
-  if(found)return NULL;
-  found=u;
- }
  return found;
 }
 static void *voice_dialog_method(void *object,int argc){
@@ -200,17 +192,19 @@ static void private_caption_result(Unit *u,VoiceBinding *b,const char *key,int s
  bootlog(message);
 }
 static void private_playing_caption(PrivateVoiceEvent *e){
- if(e->captionBlocked||e->captionHandled||!private_caption(e->binding,e->key))return;
+ if(e->captionBlocked||e->captionHandled||e->captionFallback||!private_caption(e->binding,e->key))return;
  int shown=voice_show_key(e->u,e->binding->owner,e->key,2.0f,0);
  e->captionHandled=shown;
  private_caption_result(e->u,e->binding,e->key,shown);
 }
 static _Thread_local Unit *voiceView;
 static _Thread_local Unit *multiRequestView;
+static _Thread_local int multiHasView;
 static _Thread_local PrivateVoiceEvent *registeringVoice;
 static void print_bubble_hook(int32_t id,void *key,float length,uint8_t custom,void *mi){
  Unit *scope=registeringVoice?registeringVoice->u:(multiRequestView?multiRequestView:voiceView);
- Unit *u=scope&&(voice_source_id(scope)==(unsigned)id||voice_worn_owner(scope)==(unsigned)id)?scope:voice_unit(id,NULL);
+ Unit *u=scope?(voice_source_id(scope)==(unsigned)id||voice_worn_owner(scope)==(unsigned)id?scope:NULL):
+               (multiHasView?NULL:voice_unit(id,NULL));
  Skin *skin=voice_worn_skin(u);unsigned owner=voice_skin_owner(skin);
  VoiceBinding *binding=voice_binding(skin);
  char incoming[192];
@@ -220,18 +214,21 @@ static void print_bubble_hook(int32_t id,void *key,float length,uint8_t custom,v
    PrivateVoiceEvent *event=NULL;
    for(unsigned i=0;i<32;i++){
     PrivateVoiceEvent *e=&privateVoiceEvents[i];
-    if(e->u==u&&e->app==skin->app&&e->binding==binding&&!strcmp(e->key,mapped)&&
-       (!event||(LONG)(e->queued-event->queued)>0))event=e;
+    if(e->u!=u||e->view!=u->view||e->app!=skin->app||e->binding!=binding||strcmp(e->key,mapped))continue;
+    if(e==registeringVoice){event=e;break;}
+    if(!event||(LONG)(e->queued-event->queued)>0)event=e;
    }
-   if(registeringVoice&&registeringVoice->u==u&&!strcmp(registeringVoice->key,mapped))event=registeringVoice;
-   if(event&&(event->captionHandled||event->captionBlocked))return;
-   int shown=voice_show_key(u,owner,mapped,length,custom);
-   if(event)event->captionHandled=shown;
-   private_caption_result(u,binding,mapped,shown);
-   if(shown)return;
+   if(event&&event->captionHandled)return;
+   if((scope||event)&&!(event&&(event->captionBlocked||event->captionFallback))){
+    int shown=voice_show_key(u,owner,mapped,length,custom);
+    if(event)event->captionHandled=shown;
+    private_caption_result(u,binding,mapped,shown);
+    if(shown)return;
+   }
+   if(event)event->captionFallback=1;
   }
  }
- if(skin&&skin->imported&&!owner){
+ if(skin&&skin->imported){
   ((void (*)(int,void *,float,uint8_t,void *))orig_printBubble)(id,key,length,custom,mi);return;
  }
  if(skin&&owner!=(unsigned)id){
@@ -274,7 +271,7 @@ static int voice_index_hook(void *path,int id,int index,void **voiceId,void **ou
  if(!sr_voice_string_text(path,event,sizeof(event))||(!scoped&&strncmp(event,"battle_",7)&&strcmp(event,"battleentry")))
   return ((Lookup)orig_checkVoiceIndex)(path,id,index,voiceId,outputPath,mi);
  Unit *u=scoped?voiceView:voice_unit(id,NULL);Skin *skin=voice_worn_skin(u);unsigned donor=voice_skin_owner(skin);
- if(!skin||(!donor&&skin->imported)||donor==(unsigned)id)return ((Lookup)orig_checkVoiceIndex)(path,id,index,voiceId,outputPath,mi);
+ if(!skin||skin->imported||donor==(unsigned)id)return ((Lookup)orig_checkVoiceIndex)(path,id,index,voiceId,outputPath,mi);
  /* Keep an unknown stage-script event in its native context. For a recognized
     event, zero sends an ownerless costume through the stock missing-key path. */
  if(!scoped&&!voice_common_event(event)&&!sr_voice_catalog_has_event(donor,event)&&!sr_voice_catalog_has_event((unsigned)id,event))
@@ -295,7 +292,6 @@ typedef struct {int owner,source;void *key;} VoiceRegistration;
 static _Thread_local VoiceRegistration voiceRegistration;
 typedef struct {Unit *unit;Skin *skin;uintptr_t instance;} VoiceSegment;
 static _Thread_local VoiceSegment voiceSegment;
-static _Thread_local int multiHasView;
 static uint8_t voice_timeline_hook(void *mixer,void *app,uintptr_t instance,void *segment,void *mi){
  typedef uint8_t (*Register)(void *,void *,uintptr_t,void *,void *);
  Unit *unit=enabled_now()&&!cleanup_pending&&!g_quitting?unit_for_app(app):NULL;
@@ -315,7 +311,7 @@ static void *voice_add_hook(uintptr_t instance,int id,int type,float volume,uint
  typedef void *(*Add)(uintptr_t,int,int,float,uint8_t,float,void *,uint8_t,void *,uint8_t,uint8_t,void *);
  if(voiceRegistration.owner==id&&voiceRegistration.key&&alternate==voiceRegistration.key)id=voiceRegistration.source;
  Unit *u=voiceSegment.unit;Skin *skin=voiceSegment.skin;
- if(u&&skin&&instance&&voiceSegment.instance==instance){
+ if(u&&skin&&!skin->imported&&instance&&voiceSegment.instance==instance){
   unsigned owner=voice_skin_owner(skin),source=voice_source_id(u);
   if(source&&((unsigned)id==source||(owner&&(unsigned)id==owner))){
    id=(int)source;
@@ -342,7 +338,7 @@ static void *voice_multi_dispatch(int id,void *key,void *view,uint8_t special,ui
  Unit *u=view?voice_unit(id,view):NULL;
  Skin *skin=voice_worn_skin(u);unsigned owner=voice_skin_owner(skin),source=voice_source_id(u);
  char literal[192];
- if(!skin||(!owner&&skin->imported)||owner==source||!source||((unsigned)id!=source&&(unsigned)id!=owner)||!sr_voice_string_text(key,literal,sizeof(literal)))
+ if(!skin||skin->imported||owner==source||!source||((unsigned)id!=source&&(unsigned)id!=owner)||!sr_voice_string_text(key,literal,sizeof(literal)))
   return ((Multi)orig_multiVoice)(id,key,view,special,custom,length,mi);
  const char *mapped=sr_voice_catalog_event_key(source,owner,literal);
  /* A donor's own explicit request is authoritative even for newly released lines. */

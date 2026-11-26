@@ -12,8 +12,8 @@ def filename(identity):
 
 def path_for(root, identity):
  return folder_for(root)/filename(identity)
-def validate_png(blob):
- if len(blob)>MAX_BYTES or not blob.startswith(b'\x89PNG\r\n\x1a\n'):raise ValueError('图片格式无效或超过 1 MiB')
+def validate_png(blob, *, max_bytes=MAX_BYTES, max_dimension=384):
+ if len(blob)>max_bytes or not blob.startswith(b'\x89PNG\r\n\x1a\n'):raise ValueError(f'图片格式无效或超过 {max_bytes // (1024*1024)} MiB')
  pos=8;first=True;idat=False;ended=False;encoded=[];raw_size=0
  while pos<len(blob):
   if pos+12>len(blob):raise ValueError('PNG 数据不完整')
@@ -24,7 +24,7 @@ def validate_png(blob):
   if first:
    if kind!=b'IHDR' or size!=13:raise ValueError('PNG 头无效')
    width,height=struct.unpack_from('>II',data)
-   if not 0<width<=384 or not 0<height<=384:raise ValueError('图片尺寸无效')
+   if not 0<width<=max_dimension or not 0<height<=max_dimension:raise ValueError('图片尺寸无效')
    depth,colour,compression,filter_type,interlace=struct.unpack_from('5B',data,8)
    if depth!=8 or colour not in (2,6) or compression or filter_type or interlace:raise ValueError('PNG 格式不受支持')
    raw_size=(1+width*(4 if colour==6 else 3))*height

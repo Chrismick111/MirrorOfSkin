@@ -1,7 +1,7 @@
 #ifndef SR_CLASH_MOTION_H
 #define SR_CLASH_MOTION_H
 #include "named_clash_slots.h"
-static int sr_clash_role(const char *source,int detail){
+static int sr_clash_default_role(int detail){
  switch(detail){
  case 36:return 1;
  case 37:return 2;
@@ -10,8 +10,14 @@ static int sr_clash_role(const char *source,int detail){
  case 19:return 5;
  case 41:case 42:case 43:return 6;
  }
+ return 0;
+}
+static int sr_clash_role(const char *source,int detail){
+ int standard=sr_clash_default_role(detail);
+ if(standard)return standard;
+ if(!source)return 0;
  for(unsigned i=0;i<sizeof(sr_named_clashes)/sizeof(*sr_named_clashes);i++)
-  if(detail==sr_named_clashes[i].detail&&source&&!strcmp(source,sr_named_clashes[i].look))return sr_named_clashes[i].role;
+  if(detail==sr_named_clashes[i].detail&&!strcmp(source,sr_named_clashes[i].look))return sr_named_clashes[i].role;
  return 0;
 }
 static int sr_clash_slot(const char *look,const signed char *available,int requested,int role){

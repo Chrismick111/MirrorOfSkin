@@ -17,7 +17,8 @@ import github_update
 class ReleasePrivacyTest(unittest.TestCase):
     def test_personal_assets_are_protected(self):
         for name in ('Assets/ImportedSkins/x.cfg', 'Assets/ImportedVoices/x/voice.json',
-                     'Assets/CarraBases/x/data', 'Assets/Roland/BRoland.bundle'):
+                     'Assets/CarraBases/x/data', 'Assets/Roland/BRoland.bundle',
+                     'Workbench/appearance_names.json'):
             self.assertTrue(github_update._protected(name), name)
         self.assertFalse(github_update._protected('Assets/Roland/appearance.json'))
 

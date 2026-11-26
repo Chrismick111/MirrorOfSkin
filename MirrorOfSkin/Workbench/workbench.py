@@ -18,6 +18,7 @@ from file_lock import FileLock
 import director
 import stage_files
 import custom_portraits
+import imported_portraits
 import rulesets
 import group_entries
 import schemes
@@ -31,6 +32,7 @@ import effect_plan
 import fx_activation
 import instance_control
 import host_lifetime
+import skin_import_jobs
 import struct
 import socket
 import select
@@ -79,6 +81,16 @@ def _stop_children():
   except subprocess.TimeoutExpired:
    try:proc.kill();proc.wait(timeout=2)
    except OSError:pass
+
+def _pick_local_skins():
+ picked=_spawn_child(['powershell.exe','-NoProfile','-STA','-ExecutionPolicy','RemoteSigned','-File',
+                      str(_HERE/'import_local.ps1'),'-PickOnly'],stdout=subprocess.PIPE,stderr=subprocess.PIPE,
+                     encoding='utf8',errors='replace',creationflags=getattr(subprocess,'CREATE_NO_WINDOW',0))
+ try:out,err=picked.communicate()
+ finally:_forget_child(picked)
+ if picked.returncode:raise ValueError('打开文件选择窗口失败：'+err.strip()[-300:])
+ return json.loads(out) if out.strip() else []
+
 def _portrait_state():
  with _PORTRAIT_LOCK:return dict(_PORTRAIT_JOB)
 
@@ -121,7 +133,7 @@ def _delete_images(root):
  root=pathlib.Path(root);wb=root/'Workbench';count=0;size=0
  with FileLock(wb/'image_resources.lock'):
   (wb/'images_disabled.flag').write_text('图片已关闭；点击下载资源恢复。\n',encoding='utf8')
-  for folder in ('portraits','local_portraits','user_portraits','chapter_art'):
+  for folder in ('portraits','local_portraits','chapter_art'):
    path=wb/folder
    if path.is_symlink() or not path.is_dir():continue
    for file in path.iterdir():
@@ -245,6 +257,11 @@ class Store:
   self._refresh_local_portraits()
   custom=custom_portraits.get(self.root,identity)
   if custom is not None:return custom
+  imported=imported_portraits.get(self.root,identity)
+  if imported is not None:return imported
+  if isinstance(identity,str) and re.fullmatch(r'[A-Za-z0-9_-]+',identity):
+   path=getattr(self,'addon_root',self.root)/'Workbench/data/bundled_portraits'/(identity+'.png')
+   if path.is_file():return path.read_bytes()
   row=self.portraits.get(identity,{})
   name=row.get('file','')
   if name and pathlib.Path(name).name==name and '/' not in name and '\\' not in name and name.endswith('.png'):
@@ -333,7 +350,7 @@ class Store:
   status['pool']=prepare_view.pool_status(pool,tail,self.root)
   return status
  def portrait_lookup(self):
-  """Share one view of all three portrait folders throughout a catalog request."""
+  """Share one view of available portraits throughout a catalog request."""
   self._refresh_local_portraits()
   def filenames(folder):
    try:
@@ -341,7 +358,10 @@ class Store:
      return {entry.name.lower() for entry in files if entry.name.lower().endswith('.png') and entry.is_file()}
    except FileNotFoundError:
     return set()
-  available=set()
+  bundled=getattr(self,'addon_root',self.root)/'Workbench/data/bundled_portraits'
+  try:available={p.stem for p in bundled.iterdir() if p.is_file() and re.fullmatch(r'[A-Za-z0-9_-]+\.png',p.name)}
+  except FileNotFoundError:available=set()
+  available.update(imported_portraits.identities(self.root))
   for folder,manifest in (('portraits',self.portraits),('local_portraits',self.local_portraits)):
    names=filenames(self.root/'Workbench'/folder)
    for identity,row in manifest.items():
@@ -366,10 +386,26 @@ class Store:
   entries = rulesets.entries(self.root, selected, pool_data) if selected else []
   revision = rulesets.revision(self.root, selected) if selected else hashlib.sha256(b'').hexdigest()
   return state, items, selected, entries, revision
- def data(self):
-  pools=read(self.root/'Assets/runtime/all_sinners_pools.json',{})
-  portrait_ok=self.portrait_lookup()
-  rule_state, rule_items, active_rule, rule_entries, rule_revision = self.ruleset_snapshot(pools,portrait_ok)
+ def save_appearance_name(self, identity, name):
+  if not isinstance(identity,str) or not isinstance(name,str) or len(name)>100 or any(not c.isprintable() for c in name):
+   raise ValueError('名称最多可填写 100 个可显示字符')
+  with self.lock:
+   pools=read(self.root/'Assets/runtime/all_sinners_pools.json',{})
+   known=any(str(e['identity_id'])==identity for group in pools.values() for e in group.get('entries',[]))
+   if not known and not any(str(e['id'])==identity for e in read(self.root/'identity_catalog.json',{}).get('rows',[])):
+    raise ValueError('未知人格')
+   path=self.root/'Workbench/appearance_names.json'
+   names=read(path,{})
+   if not isinstance(names,dict):raise ValueError('自定义名称文件无效')
+   name=name.strip()
+   if name:names[identity]=name
+   else:names.pop(identity,None)
+   from skin_import import write_atomic
+   write_atomic(path,(json.dumps(names,ensure_ascii=False,indent=2)+'\n').encode('utf8'))
+  return {'name':name}
+ def catalog_snapshot(self,pools=None,portrait_ok=None):
+  if pools is None:pools=read(self.root/'Assets/runtime/all_sinners_pools.json',{})
+  if portrait_ok is None:portrait_ok=self.portrait_lookup()
   catalog={str(e['identity_id']):dict(e,source="Boss" if e.get("category")=="humanoid_boss" else key) for key,p in pools.items() for e in p.get('entries',[])}
   for e in read(self.root/'identity_catalog.json',{}).get('rows',[]):
    catalog.setdefault(str(e['id']),{'identity_id':str(e['id']),'name':e['appearance'],'source':str(100+int(e['character']))})
@@ -384,17 +420,40 @@ class Store:
     e.update(chapter=group.get('chapter','unassigned'),chapter_label=group.get('label','未归档'),chapter_memberships=chapter_categories.memberships(group))
     e.update(chapter_rank=group.get('rank',20000),chapter_sources=group.get('appearances_in',[]),source_note='；'.join(x.get('note','') for x in group.get('special_evidence',[])),source_evidence_level=group.get('confidence',''),source_battles=sorted({str(x['battle_id']) for x in group.get('battle_evidence',[]) if x.get('battle_id') is not None}))
   walpurgis_catalog.apply(catalog,walpurgis_catalog.load(self.root))
-  imported_catalog.apply(catalog)
+  imported_catalog.apply(catalog,self.root)
+  aliases=read(self.root/'Workbench/appearance_names.json',{})
+  if isinstance(aliases,dict):
+   for identity,e in catalog.items():
+    if isinstance(aliases.get(identity),str) and aliases[identity]:
+     e['default_name']=e.get('name','')
+     e['name']=aliases[identity]
   for pair in read(self.root/'Workbench/data/appearance_pairs.json',{}).get('pairs',[]):
    entry=catalog.get(pair.get('pool_id') or pair['appearance'])
    if entry is not None:entry.setdefault('paired_identities',[]).append(str(pair['identity']))
+  art,revision=chapter_cards.project(self.root,catalog)
+  return catalog,art,revision
+ def save_chapter(self,body):
+  if not isinstance(body,dict):raise ValueError('章节数据无效')
+  with self.lock:
+   _,art,_=self.catalog_snapshot()
+   return chapter_cards.save(self.root,body,art)
+ def move_chapter(self,body):
+  if not isinstance(body,dict):raise ValueError('章节数据无效')
+  with self.lock:
+   catalog,art,_=self.catalog_snapshot()
+   return chapter_cards.move(self.root,body,catalog,art)
+ def data(self):
+  pools=read(self.root/'Assets/runtime/all_sinners_pools.json',{})
+  portrait_ok=self.portrait_lookup()
+  rule_state, rule_items, active_rule, rule_entries, rule_revision = self.ruleset_snapshot(pools,portrait_ok)
+  catalog,chapter_art,chapter_revision=self.catalog_snapshot(pools,portrait_ok)
   native_forms=read(self.root/'native_forms.json',{})
   pool_status=read(self.root/'pool_update_status.json',{});pid=pool_status.get('pid');alive=prepare_view.process_alive(pid)
   evidence=self.evidence.read(pid) if alive else ''
   preparation=prepare_view.summarize(evidence,pid,alive,list(catalog.values()))
   addon_info=read(self.addon_root/'addon_info.json',{})
   tutorial=bool((addon_info.get('settings') or {}).get('是否展示教程',True))
-  return dict(self.snapshot(),preparation=preparation,rulesetState=rule_state,rulesets=rule_items,activeRule=active_rule,ruleEntries=rule_entries,ruleRevision=rule_revision,settings=self.settings_snapshot(),runtime=self.runtime_status(pool_status,evidence),director=self.director_snapshot(),formAnnotations=self.form_annotations(),catalog=list(catalog.values()),chapterArt=chapter_cards.load(self.root),pools=pools,forms=native_forms,warmup=read(self.root/'warmup_status.json',{}),version=addon_info.get('version','未知'),tutorial=tutorial,launcherBackground=self.launcher_background())
+  return dict(self.snapshot(),preparation=preparation,rulesetState=rule_state,rulesets=rule_items,activeRule=active_rule,ruleEntries=rule_entries,ruleRevision=rule_revision,settings=self.settings_snapshot(),runtime=self.runtime_status(pool_status,evidence),director=self.director_snapshot(),formAnnotations=self.form_annotations(),catalog=list(catalog.values()),chapterArt=chapter_art,chapterRevision=chapter_revision,pools=pools,forms=native_forms,warmup=read(self.root/'warmup_status.json',{}),version=addon_info.get('version','未知'),tutorial=tutorial,launcherBackground=self.launcher_background())
  def known_appearances(self):
   """pool 里的外观名集合，按文件 mtime 缓存：扫描期间页面每 5 秒轮询，1.5 MB 的池文件不该重复解析。"""
   path=self.root/'Assets/runtime/all_sinners_pools.json'
@@ -565,6 +624,10 @@ def main():
  if args.startup_pid:lifetime.register(args.startup_pid)
  else:lifetime.register(args.host_pid,args.game_pid)
  store=Store(args.addon)
+ def import_local_skin(path, **callbacks):
+  from skin_import import import_skin
+  return import_skin(path,store.addon_root,**callbacks)
+ skin_jobs=skin_import_jobs.ImportJobs(_pick_local_skins,import_local_skin)
  if lifetime.unowned():
   lifetime.close();instance.close();return
  gateway=_load_gateway(data_root)
@@ -602,6 +665,7 @@ def main():
      if image is not None:return self.send(image,ctype=ctype,cache='no-store')
      return self.send({'error':'未找到'},404)
     if route=='portrait-progress':return self.send(_portrait_state())
+    if route=='local-skin-import-status':return self.send(skin_jobs.state())
     if route=='rulesets':return self.send(_ruleset_payload(store))
     if route=='data':return self.send(store.data())
     if route=='events':return self.send(store.events())
@@ -610,7 +674,7 @@ def main():
     if route=='effect-schemes':return self.send({'schemes':effect_schemes.listing(store.root)})
     if route=='effect-selection':return self.send(fx_activation.read_selection(store.root))
     if route and route.startswith('chapter-image/'):
-     image=chapter_cards.image(store.root,unquote(route[len('chapter-image/'):]))
+     image=chapter_cards.image(store.root,unquote(route[len('chapter-image/'):].split('?',1)[0]))
      if image is not None:return self.send(image,ctype='image/png',cache='no-store')
     if route and route.startswith('effect-sprite/'):
      roots=resource_catalog.resolve_roots()
@@ -627,36 +691,26 @@ def main():
    except Exception as e:return self.send({'error':str(e)},500)
   def do_POST(self):
    route=self.route()
-   if route not in ('save','import','local-skin-import','local-skin-delete','director','bundle','boss-preview','update-check','update-install','portrait-save','portrait-reset','portrait-download','images-delete','ruleset-activate','ruleset-select','ruleset-save','ruleset-create','ruleset-only','ruleset-deactivate','ruleset-fill','ruleset-clear','scan','scheme-save','scheme-load','scheme-delete','scheme-import','scheme-get','effect-scheme-save','effect-scheme-get','effect-scheme-delete','effect-timelines','effect-live-start','effect-live-status','effect-plan-preview','effect-selection','effect-sprites','effect-sprites-start','effect-sprites-status','effect-sprites-cancel','effect-sprite-export','tutorial-complete','instance-shutdown','instance-attach','instance-release'):return self.send({'error':'未找到'},404)
+   if route not in ('appearance-name','chapter-save','chapter-move','package-folders','save','import','local-skin-import','local-skin-import-start','local-skin-delete','director','bundle','boss-preview','update-check','update-install','portrait-save','portrait-reset','portrait-download','images-delete','ruleset-activate','ruleset-select','ruleset-save','ruleset-create','ruleset-only','ruleset-deactivate','ruleset-fill','ruleset-clear','scan','scheme-save','scheme-load','scheme-delete','scheme-import','scheme-get','effect-scheme-save','effect-scheme-get','effect-scheme-delete','effect-timelines','effect-live-start','effect-live-status','effect-plan-preview','effect-selection','effect-sprites','effect-sprites-start','effect-sprites-status','effect-sprites-cancel','effect-sprite-export','tutorial-complete','instance-shutdown','instance-attach','instance-release'):return self.send({'error':'未找到'},404)
    if self.headers.get('X-Workbench')!=token:return self.send({'error':'请求无效'},403)
    try:
     n=int(self.headers.get('Content-Length',0))
-    limit=2*1024*1024 if route=='portrait-save' else 1024*1024
+    limit={'chapter-save':3*1024*1024,'portrait-save':2*1024*1024}.get(route,1024*1024)
     if not 0<n<=limit:raise ValueError('请求过大或为空')
     body=json.loads(self.rfile.read(n))
+    if route=='appearance-name':return self.send(store.save_appearance_name(body.get('identity_id'),body.get('name')))
+    if route=='chapter-save':return self.send(store.save_chapter(body))
+    if route=='chapter-move':return self.send(store.move_chapter(body))
+    if route=='package-folders':
+     from package_lifecycle import synchronize
+     return self.send(synchronize(store.root,store.addon_root))
     if route=='local-skin-delete':
      from delete_imported import delete
      identity=body.get('identity_id')
      if not isinstance(identity,str):raise ValueError('请选择要删除的导入外观')
-     return self.send(delete(store.root,identity,lock_factory=lambda _path:store.lock))
-    if route=='local-skin-import':
-     from skin_import import import_skin
-     paths=body.get('paths')
-     if paths is None:
-      picked=_spawn_child(['powershell.exe','-NoProfile','-STA','-ExecutionPolicy','RemoteSigned','-File',
-                           str(_HERE/'import_local.ps1'),'-PickOnly'],stdout=subprocess.PIPE,stderr=subprocess.PIPE,
-                          encoding='utf8',errors='replace',creationflags=getattr(subprocess,'CREATE_NO_WINDOW',0))
-      try:out,err=picked.communicate()
-      finally:_forget_child(picked)
-      if picked.returncode:raise ValueError('打开文件选择窗口失败：'+err.strip()[-300:])
-      paths=json.loads(out) if out.strip() else []
-     if not isinstance(paths,list) or len(paths)>128:raise ValueError('一次最多选择 128 个文件')
-     rows=[];errors=[]
-     for path in paths:
-      if not isinstance(path,str) or not pathlib.Path(path).is_absolute():raise ValueError('请选择本地文件')
-      try:rows.extend(import_skin(pathlib.Path(path),store.addon_root))
-      except Exception as error:errors.append(pathlib.Path(path).name+'：'+str(error))
-     return self.send({'rows':rows,'errors':errors})
+     return self.send(delete(store.root,identity,lock_factory=lambda _path:store.lock,addon=store.addon_root))
+    if route=='local-skin-import':return self.send(skin_jobs.run(body.get('paths')))
+    if route=='local-skin-import-start':return self.send(skin_jobs.start(body.get('paths')))
     if route=='tutorial-complete':
      path=store.addon_root/'addon_info.json'
      info=read(path,{})
@@ -799,5 +853,7 @@ def main():
  finally:
   try:(data_root/_BUILD_FILE).unlink(missing_ok=True)
   except OSError:pass
-  server.stopping.set();_stop_children();server.server_close();lifetime.close();instance.close()
+  server.stopping.set();skin_jobs.stop();_stop_children();server.server_close()
+  skin_jobs.join();lifetime.close();instance.close()
 if __name__=='__main__':main()
+

@@ -101,6 +101,34 @@ class VoiceUniversalityTests(unittest.TestCase):
         self.voice(['10109'])
         self.assertEqual(voice_binding.reconcile(self.root), {})
 
+    def test_package_voice_owner_and_bank_select_only_the_declared_bank(self):
+        look = self.skin('a', '10109', 'A')
+        other = self.skin('b', '10916', 'B')
+        self.entries[0]['imported_voice'] = {'owner': '10916', 'bank': 'Custom.bank'}
+        self.catalog.write_text(json.dumps({'101': {'entries': self.entries}}), encoding='utf8')
+        rev = self.voice(['10916','10213'], [look])
+        directory = self.library / rev
+        (directory/'second.bank').write_bytes(b'another playable bank')
+        meta = json.loads((directory/'voice.json').read_bytes())
+        meta['banks'].append('second.bank'); meta['playable_banks'].append('second.bank')
+        (directory/'voice.json').write_text(json.dumps(meta), encoding='utf8')
+        self.assertEqual(set(voice_binding.reconcile(self.root)), {look})
+        self.assertEqual((self.library/'bindings.tsv').read_text().splitlines(), [f'{look}\t10916\t{rev}\tcustom.bank'])
+        for declaration in ({'owner':'10916','bank':'absent.bank'}, {'owner':'10303','bank':'custom.bank'}):
+            self.entries[0]['imported_voice'] = declaration
+            self.catalog.write_text(json.dumps({'101': {'entries': self.entries}}), encoding='utf8')
+            self.assertEqual(voice_binding.reconcile(self.root), {})
+
+    def test_explicit_voice_requires_same_package_and_valid_bank_name(self):
+        look = self.skin('a', '10109', 'A')
+        self.entries[0]['imported_voice'] = {'owner': '10109', 'bank': 'custom.bank'}
+        self.catalog.write_text(json.dumps({'101': {'entries': self.entries}}), encoding='utf8')
+        self.voice(['10109'], [], name='unrelated')
+        self.assertNotIn(look, voice_binding.reconcile(self.root))
+        for bank_name in ('../custom.bank','master.bank','a'*245+'.bank'):
+            with self.assertRaises(ValueError):
+                voice_binding.validate_voice_policy({'owner':'10109','bank':bank_name})
+
     def test_old_unresolved_playable_bank_is_reprobed_once_per_evidence(self):
         look = self.skin('a', '10109', 'A')
         self.voice([], [look])

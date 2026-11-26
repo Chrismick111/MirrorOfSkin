@@ -1,5 +1,6 @@
 /* Exercise the production dispatch functions using a fake game view and stock
    method callbacks. No running game or mod installation is required. */
+#undef NDEBUG
 #include "sinners_native.c"
 #include <assert.h>
 typedef struct {void *klass,*cached,*appearance,*manager;} TestView;
@@ -73,7 +74,7 @@ static unsigned roots;
 static void *identity_type(void *p){(void)p;return &typeToken;}
 static uintptr_t root_stub(void *o,int pinned){(void)pinned;++roots;return (uintptr_t)o;}
 static void unroot_stub(uintptr_t h){assert(h&&roots);--roots;}
-static int lastId,lastIndex,lastBlock,lastType,lookups;
+static int lastId,lastIndex,lastBlock,lastType,lookups,multiId;
 static void *stock_lookup_path;
 static int lookup_stub(void *path,int id,int index,void **key,void **out,void *mi){
  (void)mi;*key=path;*out=stock_lookup_path;lastId=id;lastIndex=index;++lookups;return 0;
@@ -89,7 +90,8 @@ static void *add_stub(uintptr_t instance,int id,int type,float volume,uint8_t cu
  (void)alternate;(void)subtitle;lastId=id;lastBlock=blocked;lastType=type;return &stock_event;
 }
 static void *multi_stub(int id,void *key,void *view,uint8_t special,uint8_t custom,float length,void *mi){
- assert(id==10102&&special==1&&custom==1&&length==3.5f&&mi==NULL&&view!=NULL);
+ assert(special==1&&custom==1&&length==3.5f&&mi==NULL&&view!=NULL);
+ multiId=id;
  return voice_add_hook(42,id,7,0.75f,custom,length,key,0,NULL,0,1,NULL);
 }
 int main(void){
@@ -166,17 +168,27 @@ int main(void){
  voice_index_hook(&event,10101,1,&key,&out,NULL);assert(lastId==0);
  ImportedConfig imported={0};skin->imported=&imported;
  strcpy(imported.layout,"10109_Yisang_RingFingerAppearance");voiceManifestRead=1;
- voice_index_hook(&event,10101,1,&key,&out,NULL);assert(lastId==10109);
+ voice_index_hook(&event,10101,1,&key,&out,NULL);assert(lastId==10101);
+ int nativeBubbleBefore=stockBubbles;
+ TestString sourceLine=test_string("battle_select_10101_1");
+ print_bubble_hook(10101,&sourceLine,2.0f,0,NULL);assert(stockBubbles==nativeBubbleBefore+1&&lastBubbleId==10101);
  strcpy(imported.layout,"UnknownLayout");
  voice_index_hook(&event,10101,1,&key,&out,NULL);assert(lastId==10101);
  VoiceLibrary lib={.captionsRead=1};
  VoiceCaption *cap=calloc(1,sizeof(*cap)+strlen(expectedCaption)+1);assert(cap);
  strcpy(cap->key,"battle_select_10109_1");strcpy(cap->text,expectedCaption);cap->owner=10109;lib.captions=cap;
  VoiceBinding binding={.owner=10109,.library=&lib};strcpy(binding.look,skin->look);voiceBindings=&binding;
- /* Late AddMultiVoice callbacks still find the unique source or imported
-    owner; an ambiguous shared donor must not bind to either unit. */
+ /* The bank binding alone must leave the game's original audio request intact. */
+ voice_index_hook(&event,10101,1,&key,&out,NULL);assert(lastId==10101);
+ assert(voice_multi_hook(10101,&sourceLine,&view,1,1,3.5f,NULL)==&stock_event);
+ assert(multiId==10101&&lastId==10101);
+ int beforeStock=stockBubbles;
+ print_bubble_hook(10101,&sourceLine,2.0f,0,NULL);
+ assert(stockBubbles==beforeStock+1);
+ /* Late callbacks may find a unique source. A donor id alone supplies no
+    evidence of which view requested this line. */
  assert(voice_unit_for_async_id(10101)==u);
- assert(voice_unit_for_async_id(10109)==u);
+ assert(!voice_unit_for_async_id(10109));
  TestView secondView={0,&app,&app};
  Unit *second=&g_units[1];*second=*u;second->view=&secondView;
  strcpy(second->baseName,"10102_YiSang_BaseAppearance");
@@ -189,12 +201,31 @@ int main(void){
  *e=(PrivateVoiceEvent){.u=u,.view=&view,.app=&app,.binding=&binding};strcpy(e->key,cap->key);
  TestString selection=test_string(cap->key);
  int priorShown=centerShown;languageMissing=0;
+ registeringVoice=e;
  print_bubble_hook(10109,&selection,3.5f,1,NULL);private_playing_caption(e);
  assert(e->captionHandled&&captionObserved&&centerShown==priorShown+1);
  e->captionHandled=0;private_playing_caption(e);print_bubble_hook(10109,&selection,3.5f,1,NULL);
  assert(e->captionHandled&&centerShown==priorShown+2);
  e->captionHandled=0;e->captionBlocked=1;private_playing_caption(e);
  assert(!e->captionHandled&&centerShown==priorShown+2);
+ e->captionBlocked=0;allowCenter=0;dialogSuccess=0;
+ beforeStock=stockBubbles;
+ print_bubble_hook(10109,&selection,3.5f,1,NULL);
+ allowCenter=1;dialogSuccess=1;priorShown=centerShown;
+ private_playing_caption(e);
+ assert(stockBubbles==beforeStock+1&&centerShown==priorShown);
+ registeringVoice=NULL;
+ /* Another view with the same source identity retains its own bubble. */
+ *second=*u;second->view=&secondView;secondView.appearance=NULL;
+ voiceView=second;
+ print_bubble_hook(10109,&selection,3.5f,1,NULL);
+ assert(stockBubbles==beforeStock+2&&centerShown==priorShown);
+ voiceView=NULL;memset(second,0,sizeof(*second));
+ /* Blank caption data keeps the stock bubble even when audio has taken over. */
+ cap->text[0]=0;e->muted=1;registeringVoice=e;
+ print_bubble_hook(10109,&selection,3.5f,1,NULL);
+ assert(stockBubbles==beforeStock+3&&centerShown==priorShown);
+ registeringVoice=NULL;
  VoiceBinding other=binding;other.owner=10102;
  assert(!private_caption(&other,cap->key)&&!private_caption(&binding,"battle_kill_10109_1"));
  memset(e,0,sizeof(*e));voiceBindings=NULL;skin->imported=NULL;free(cap);

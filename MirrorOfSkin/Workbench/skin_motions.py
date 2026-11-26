@@ -7,11 +7,21 @@ import boss_importer
 
 
 _DEFENSE = {2: 'Evade', 3: 'Guard', 4: 'Damaged'}
+_STANDARD_VISUAL_ROLES = {2: 7, 3: 7, 4: 7, 17: 4, 23: 3, 36: 1, 37: 2, 38: 3}
 _DUEL = re.compile(
     r'(?:^|_)(?:duel|parrying|clash)(?:_?(ready|prepare|win|lose|loss))?'
     r'(?:_timeline)?(?:[_ ]\d+)*$', re.I)
+_NUMBERED_DUEL = re.compile(
+    r'(?:^|_)(?:duel|parry|parrying|clash)(?:_(ready|prepare|win|lose|loss))?'
+    r'(?:_timeline)?_?\d+$', re.I)
+_DUEL_ROLES = {None: 4, 'ready': 1, 'prepare': 1, 'win': 2, 'lose': 3, 'loss': 3}
 _SCOPED = re.compile(r'(?:^|_)(?:summon|actor|target|link|special)(?:_|$)', re.I)
 _DEFENSE_NAME = re.compile(r'(?:^|_)(evade|guard|damaged)(?:_timeline)?(?:[_ ]\d+)*$', re.I)
+_OTHER_TIMELINE = re.compile(r'(?:^|[_ ])(?:attack|skill|voice|sound|audio|fmod|sfx|vfx)(?:[_ ]|$)', re.I)
+_VOICE_TRACK = 'fmodcustomtrack_voice'
+_FMOD_TRACKS = {'fmodcustomtrack', _VOICE_TRACK, 'fmodeventtrack'}
+_VOICE_PATH = re.compile(r'(?:^|[/_ :])(?:voice|voices|vo)(?=[/_ :]|$)', re.I)
+_NON_VOICE_PATH = re.compile(r'(?:^|[/_ :])(?:sfx|bgm|music|ambience)(?=[/_ :]|$)', re.I)
 
 
 def _object_id(ref):
@@ -19,6 +29,8 @@ def _object_id(ref):
 
 
 def _role(name, detail):
+    if _OTHER_TIMELINE.search(name):
+        return 0
     lower = name.lower()
     duel_name = re.search(r'(?:^|_)(?:duel|parrying|clash)', lower)
     if detail in (41, 42, 43):
@@ -29,8 +41,15 @@ def _role(name, detail):
         return 0
     match = _DUEL.search(name)
     if match:
-        return {None: 4, 'ready': 1, 'prepare': 1, 'win': 2,
-                'lose': 3, 'loss': 3}[(match[1] or '').lower() or None]
+        return _DUEL_ROLES[(match[1] or '').lower() or None]
+    # Independently authored timelines can prefix a numbered action with the
+    # character name. Only the corresponding standard clash slot can claim it.
+    if detail in (17, 36, 37, 38):
+        words = re.sub(r'(?<=[a-z0-9])(?=[A-Z])', '_', name).lower()
+        match = _NUMBERED_DUEL.search(words)
+        if (match and not _SCOPED.search(words) and not _OTHER_TIMELINE.search(words)
+                and _DUEL_ROLES[match[1]] == _STANDARD_VISUAL_ROLES[detail]):
+            return _DUEL_ROLES[match[1]]
     match = _DEFENSE_NAME.search(name)
     if match and match[1].lower() == _DEFENSE.get(detail, '').lower():
         return 7
@@ -39,6 +58,121 @@ def _role(name, detail):
 
 def _number(value):
     return type(value) in (int, float) and math.isfinite(value)
+
+
+def _voice_event(asset, voice_track):
+    """FMOD playables store either a path or a GUID, sometimes under a template."""
+    fields = {name.casefold(): value for name, value in asset.items()}
+    sources = [fields]
+    template = fields.get('template')
+    if isinstance(template, dict):
+        sources.append({name.casefold(): value for name, value in template.items()})
+    for source in sources:
+        reference = source.get('eventreference')
+        if not isinstance(reference, dict):
+            reference = {}
+        path = reference.get('Path') or reference.get('path') or source.get('eventname') or ''
+        if isinstance(path, str) and _NON_VOICE_PATH.search(path):
+            return None
+        voice_path = isinstance(path, str) and _VOICE_PATH.search(path)
+        guid = reference.get('Guid') or reference.get('guid') or {}
+        if (voice_track or voice_path) and isinstance(guid, dict):
+            parts = tuple(guid.get('Data' + str(i)) for i in range(1, 5))
+            if all(type(part) is int for part in parts) and any(parts):
+                return ('guid', parts)
+        if voice_path:
+            return ('path', path.casefold())
+    return None
+
+
+def _voice_events(app, read):
+    """Inspect the selected appearance's motion timelines and their owned tracks."""
+    complete = True
+
+    def resolve(ref, field=None):
+        nonlocal complete
+        if not ref or not ref.get('m_PathID'):
+            return None
+        pid = _object_id(ref)
+        try:
+            tree = read(pid) if pid else None
+        except Exception:
+            tree = None
+        if not isinstance(tree, dict) or (field and not isinstance(tree.get(field), list)):
+            complete = False
+            return None
+        return tree
+
+    @lru_cache(maxsize=None)
+    def track_type(pid):
+        track = read(pid)
+        script_pid = _object_id(track.get('m_Script'))
+        if script_pid:
+            try:
+                script = read(script_pid) or {}
+            except Exception:
+                script = {}
+            if script.get('m_ClassName'):
+                return script['m_ClassName'].casefold()
+        # Native script references can point into the game rather than the bundle.
+        name = re.sub(r'(?:\(Clone\)| \(\d+\))+$', '', track.get('m_Name') or '')
+        return name.replace(' ', '').casefold()
+
+    seen_timelines, seen_tracks = set(), set()
+    events = []
+    for motion in app['motionList']:
+        for ref in motion.get('timelineAssets') or []:
+            timeline = resolve(ref, 'm_Tracks')
+            if timeline is None or _object_id(ref) in seen_timelines:
+                continue
+            seen_timelines.add(_object_id(ref))
+            pending = [*timeline['m_Tracks'], timeline.get('m_MarkerTrack')]
+            while pending:
+                ref = pending.pop()
+                track = resolve(ref, 'm_Clips')
+                pid = _object_id(ref)
+                if track is None or pid in seen_tracks or track.get('m_Muted'):
+                    continue
+                seen_tracks.add(pid)
+                pending.extend(track.get('m_Children') or [])
+                kind = track_type(pid)
+                voice_track = kind == _VOICE_TRACK
+                for ref in (track.get('m_Markers') or {}).get('m_Objects', []):
+                    marker = resolve(ref)
+                    if marker and _number(marker.get('m_Time')):
+                        event = _voice_event(marker, voice_track)
+                        if event:
+                            events.append(event)
+                if kind in _FMOD_TRACKS:
+                    for clip in track['m_Clips']:
+                        duration = clip.get('m_Duration')
+                        if not _number(clip.get('m_Start')) or not _number(duration) or duration <= 0:
+                            continue
+                        asset = resolve(clip.get('m_Asset'))
+                        if asset:
+                            event = _voice_event(asset, voice_track)
+                            if event:
+                                events.append(event)
+    return events, complete
+
+
+def _model_voice_evidence(app, read, *, stock_voice=None, stock_only=False):
+    events, complete = _voice_events(app, read)
+    if not events:
+        return dict(state='none' if complete else 'unknown', count=0)
+    if stock_only:
+        return dict(state='inherited', count=len(events))
+    if stock_voice is None:
+        return dict(state='found', count=len(events))
+    inherited = stock_voice()
+    if inherited is None:
+        return dict(state='found_unattributed', count=len(events))
+    authored_count = sum(event not in inherited for event in events)
+    if authored_count:
+        return dict(state='found', count=authored_count)
+    if complete:
+        return dict(state='inherited', count=len(events))
+    return dict(state='unknown', count=0)
 
 
 def _timeline(tree, read, kind):
@@ -130,8 +264,7 @@ def _spine_states(app, read):
     return states
 
 
-def analyze_motion(env, root, look, asset_key, name):
-    """Return (pool entry, SST1 bytes, classified actions) for one root ObjectReader/PPtr."""
+def _appearance_reader(root):
     if not hasattr(root, 'assets_file') or not hasattr(root, 'type'):
         root = root.deref()
     objects = root.assets_file.objects
@@ -150,9 +283,24 @@ def analyze_motion(env, root, look, asset_key, name):
     apps = [app for app in apps if app and 'motionList' in app]
     if len(apps) != 1:
         raise ValueError('所选预制体根节点须有一个可识别的外观动作列表')
-    app = apps[0]
+    return apps[0], read, kind
+
+
+def stock_voice_events(root):
+    """Get the event identities attached to a verified stock appearance root."""
+    app, read, _ = _appearance_reader(root)
+    events, _ = _voice_events(app, read)
+    return frozenset(events)
+
+
+def analyze_motion(env, root, look, asset_key, name, *, declared_roles=False, stock_voice=None, stock_only=False):
+    """Return (pool entry, SST1 bytes, classified actions) for one root ObjectReader/PPtr."""
+    app, read, kind = _appearance_reader(root)
     animator, spine = _animator_states(app, read, kind), _spine_states(app, read)
     actions = dict(attack=[], clash=[], defense=[], unclassified=[], runtime_roles={}, runtime_animator=[])
+    actions['model_voice_evidence'] = _model_voice_evidence(app, read, stock_voice=stock_voice, stock_only=stock_only)
+    if declared_roles:
+        actions['declarable_timeline_roles'] = {}
     groups = {}
     for motion in app['motionList']:
         detail = motion.get('_motiondetail')
@@ -184,12 +332,17 @@ def analyze_motion(env, root, look, asset_key, name):
                                               hits=[[hit[0] for hit in p['hits']] for p in parts]))
                 continue
             roles = {_role(n, detail) for n in names}
-            if len(roles) == 1 and 0 not in roles and all(p['visual'] and not p['damage_count'] for p in parts):
+            visual_only = all(p['visual'] and not p['damage_count'] for p in parts)
+            if len(roles) == 1 and 0 not in roles and visual_only:
                 role = roles.pop()
                 actions['runtime_roles'][str(detail)] = role
                 actions['defense' if role == 7 else 'clash'].append(
                     dict(detail=detail, role=role, evidence='timeline', parts=names))
                 continue
+            if (declared_roles and visual_only and roles == {0} and detail in _STANDARD_VISUAL_ROLES
+                    and all(not (_SCOPED.search(n) or _OTHER_TIMELINE.search(n)
+                                 or _DEFENSE_NAME.search(n) or _DUEL.search(n)) for n in names)):
+                actions['declarable_timeline_roles'][str(detail)] = _STANDARD_VISUAL_ROLES[detail]
         pose = _DEFENSE.get(detail)
         if not refs and pose:
             evidence = None

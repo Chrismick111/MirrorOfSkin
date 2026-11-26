@@ -1,17 +1,18 @@
 #include "ch9_skill_map.h"
-static int chapter_skill_id(Unit *u,void *action){
+static int observed_skill_id(Unit *u,void *action,int strictOwner){
  if(!u||!u->viewerActive||!action||u->observedAction!=action||!u->observedViewer||
     rfield(u->view,"_currentActionLog")!=action||rfield(u->observedViewer,"_actor")!=u->view)return 0;
  void *model=rfield(u->observedViewer,"_currentSkillModel");
  if(!model)return 0;
  static void *lastClass,*getter,*idField;
+ static int genericGetter;
  void *klass=ui_class(model);
  if(lastClass!=klass){
-  lastClass=klass;getter=NULL;idField=NULL;
+  lastClass=klass;getter=NULL;idField=NULL;genericGetter=0;
   const char *names[]={"GetSkillID","GetSkillId","get_SkillID","get_SkillId","GetID","get_ID"};
   for(unsigned i=0;i<sizeof(names)/sizeof(*names);i++){
    void *method=find_method(klass,names[i],0);
-   if(method&&team_returns(method,"System.Int32")){getter=method;break;}
+   if(method&&team_returns(method,"System.Int32")){getter=method;genericGetter=i>=4;break;}
   }
   const char *fields[]={"_skillID","_skillId","skillID","skillId","<SkillID>k__BackingField"};
   for(unsigned i=0;i<sizeof(fields)/sizeof(*fields);i++){
@@ -23,12 +24,18 @@ static int chapter_skill_id(Unit *u,void *action){
   }
  }
  int id=getter?call_int(getter,model,NULL):0;
- if((id<=0||id/100!=atoi(u->baseName))&&idField){
+ int owner=atoi(u->baseName);
+ if(id>0&&((!strictOwner&&!genericGetter)||id/100==owner))return id;
+ if(idField){
   void *boxed=((void *(*)(void*,void*))api[API_FIELD_VALUE])(idField,model);
-  int *value=boxed?ui_unbox(boxed):NULL;if(value)id=*value;
+  int *value=boxed?ui_unbox(boxed):NULL;
+  if(value&&*value>0&&(!strictOwner||*value/100==owner))return *value;
  }
  /* A model instance ID cannot identify a personality skill record. */
- return id>0&&id/100==atoi(u->baseName)?id:0;
+ return 0;
+}
+static int chapter_skill_id(Unit *u,void *action){
+ return observed_skill_id(u,action,1);
 }
 /* Both immediate and deferred playback use the same authored group. */
 static const char *chapter_source(Unit *unit,const SrChapterActor *actor){

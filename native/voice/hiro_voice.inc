@@ -145,7 +145,7 @@ static const char *private_caption(VoiceBinding *binding,const char *key){
    char line[4352];
    while(fgets(line,sizeof(line),f)){
     char *lf=strchr(line,'\n');if(!lf)break;
-    *lf=0;
+   *lf=0;if(lf>line&&lf[-1]=='\r')lf[-1]=0;
     char *event=strchr(line,'\t');if(!event)continue;*event++=0;
     char *text=strchr(event,'\t');if(!text)continue;*text++=0;
     size_t n=strlen(text),k=strlen(event),digits=strspn(line,"0123456789");
@@ -159,7 +159,7 @@ static const char *private_caption(VoiceBinding *binding,const char *key){
   }
  }
  for(VoiceCaption *c=lib->captions;c;c=c->next)
-  if(c->owner==binding->owner&&!strcmp(c->key,key))return c->text;
+  if(c->owner==binding->owner&&*c->text&&!strcmp(c->key,key))return c->text;
  return NULL;
 }
 static int voice_open(VoiceLibrary *library,const wchar_t *gameExe,int silentOutput){
@@ -218,7 +218,7 @@ static unsigned private_voice_owner(const Skin *skin){
 }
 typedef struct {
  Unit *u;void *view,*app,*original,*replacement,*group;
- VoiceBinding *binding;DWORD queued;int muted,started,captionHandled,captionBlocked;
+ VoiceBinding *binding;DWORD queued;int muted,started,captionHandled,captionBlocked,captionFallback;
  char key[192];void *meter;int peakLogged;
  VoiceParameterPair parameters[32];unsigned parameterCount;
 } PrivateVoiceEvent;
@@ -359,9 +359,9 @@ static void private_voice_step(PrivateVoiceEvent *e){
   private_voice_end(e);return;
  }
  if(replacementState==0){
+  if(hStudio_EventInstance_SetVolume(e->replacement,gain)){private_voice_end(e);return;}
   if(hChannelGroup_SetMute(group,1)){private_voice_end(e);return;}
   e->group=group;e->muted=1;
-  if(hStudio_EventInstance_SetVolume(e->replacement,gain)){private_voice_end(e);return;}
   void *privateGroup=NULL,*meter=NULL;
   if(!hStudio_EventInstance_GetChannelGroup(e->replacement,&privateGroup)&&privateGroup&&
      !hChannelGroup_GetDSP(privateGroup,-2,&meter)&&!hDSP_SetMeteringEnabled(meter,0,1))e->meter=meter;

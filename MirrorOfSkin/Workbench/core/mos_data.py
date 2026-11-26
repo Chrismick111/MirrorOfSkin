@@ -12,6 +12,10 @@ import subprocess
 DATA_NAME = 'MOS_data'
 LAUNCHER_NAME = 'FaustLauncher'
 
+
+def imported_config_shape(lines):
+    return bool(lines) and {'WBMOD1': 7, 'WBMOD2': 8, 'WBMOD3': 9}.get(lines[0]) == len(lines)
+
 # Files that live directly in MOS_data instead of the add-on directory.
 ROOT_FILES = (
     '随机设置.json', '自定义人格池.json', '演出编排.json', '规则集状态.json',
@@ -31,9 +35,9 @@ WORKBENCH_FILES = (
     'scan_state.json', 'scan.lock', 'discovered_units.json',
     'scan_last_error.txt', 'images_disabled.flag', 'image_resources.lock',
     'name_translations.json', 'resource-paths.json', 'workbench_gateway.json', 'server_build.json',
-    'webview-window.json',
+    'webview-window.json', 'appearance_chapters.json',
 )
-WORKBENCH_DIRS = ('portraits', 'local_portraits', 'user_portraits', 'chapter_art', 'resource-cache')
+WORKBENCH_DIRS = ('portraits', 'local_portraits', 'user_portraits', 'chapter_art', 'resource-cache', 'user_chapter_art')
 ANIMATION_PREFIXES = ('animation-times-',)
 
 
@@ -149,10 +153,9 @@ def _copy_shared(addon, data, rel):
     try:
         if dst.is_file() and dst.read_bytes() == src.read_bytes():
             return
-        dst.parent.mkdir(parents=True, exist_ok=True)
-        shutil.copy2(src, dst)
-    except OSError:
-        pass
+        _atomic_copy(src, dst)
+    except OSError as exc:
+        raise OSError(f'同步共享文件失败：{src} -> {dst}: {exc}') from exc
 
 
 def _remove_junction(path):
@@ -245,7 +248,7 @@ def _prepare_assets(addon, data):
         local_catalog = data / CATALOG
         tombstone = data / 'imported-skin-deletions.json'
         deleted = json.loads(tombstone.read_bytes()) if tombstone.is_file() else []
-        if not isinstance(deleted, list) or not all(isinstance(x, str) and re.fullmatch(r'story_WBImp_[0-9a-f]{24}', x) for x in deleted):
+        if not isinstance(deleted, list) or not all(isinstance(x, str) and (re.fullmatch(r'story_WBImp_[0-9a-f]{24}', x) or x == 'story_BRolandBaseAppearance') for x in deleted):
             raise ValueError('导入外观删除记录无效')
         looks = {x.removeprefix('story_') for x in deleted}
         source_skins = shipped / 'ImportedSkins'
@@ -254,7 +257,7 @@ def _prepare_assets(addon, data):
             for folder in (source_skins, assets / 'ImportedSkins'):
                 for cfg in folder.glob('WBImp_*.cfg'):
                     parts = cfg.read_text(encoding='ascii').splitlines()
-                    if len(parts) != 7 or parts[0] != 'WBMOD1' or not re.fullmatch(r'[0-9a-f]{64}\.bundle', parts[3]):
+                    if not imported_config_shape(parts) or not re.fullmatch(r'[0-9a-f]{64}\.bundle', parts[3]):
                         raise ValueError('导入外观资源记录无效')
                     (deleted_bundles if cfg.stem in looks else retained_bundles).add(parts[3])
                 for timing in folder.glob('WBImp_*-*.sst'):
@@ -265,6 +268,8 @@ def _prepare_assets(addon, data):
             if not source.is_file():
                 continue
             rel = source.relative_to(shipped)
+            if rel.as_posix() == 'Roland/BRoland.bundle' and 'story_BRolandBaseAppearance' in deleted:
+                continue
             if rel.parts[0] == 'ImportedSkins':
                 if any(rel.name == look + '.cfg' or rel.name.startswith(look + '-') and rel.name.endswith('.sst') for look in looks):
                     continue
@@ -335,6 +340,17 @@ def prepare(addon_root):
         timeline.parent.mkdir(parents=True, exist_ok=True)
         shutil.copytree(data / 'Workbench' / 'timeline_data', timeline)
     remove_legacy_links(addon)
+    # Also runs when the launcher is configured to keep the workbench closed.
+    # Early fixtures and older add-ons do not ship the folder layout module.
+    bench = addon / 'Workbench'
+    if (bench / 'package_lifecycle.py').is_file():
+        import sys
+        if str(bench) not in sys.path:
+            sys.path.insert(0, str(bench))
+        from package_lifecycle import synchronize
+        result = synchronize(data, addon)
+        for message in result['blocked']:
+            print('外观目录：' + message['error'])
     return data
 
 
