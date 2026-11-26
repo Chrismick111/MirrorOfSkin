@@ -68,8 +68,12 @@ def _load(roots, appearance):
 
 @lru_cache(maxsize=1)
 def _bundle_families():
-    with (HERE/'native_bundle_families.json').open(encoding='utf8') as stream:
-        return json.load(stream)
+    try:
+        with (HERE/'native_bundle_families.json').open(encoding='utf8') as stream:
+            return json.load(stream)
+    except FileNotFoundError:
+        # Current installs discover bundles via the local index and unit scan.
+        return {}
 
 
 def _candidate_bundles(appearance, roots, index):

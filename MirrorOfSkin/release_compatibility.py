@@ -40,16 +40,42 @@ def digest(path):
     return h.hexdigest()
 
 
+def checked_file(root, name, label):
+    path = (root / name).resolve()
+    if not path.is_relative_to(root) or not path.is_file():
+        raise CompatibilityError(label + '文件缺失或路径无效：' + name)
+    return path
+
+
 def verify_files(root, expected, label):
     root = pathlib.Path(root).resolve()
     if not expected:
         raise CompatibilityError(label + '校验清单为空，已停止加载')
     for name, wanted in expected.items():
-        path = (root / name).resolve()
-        if not path.is_relative_to(root) or not path.is_file():
-            raise CompatibilityError(label + '文件缺失或路径无效：' + name)
+        path = checked_file(root, name, label)
         if digest(path).lower() != wanted.lower():
             raise CompatibilityError(label + '版本或文件不匹配：' + name + '；已停止加载，请使用适配版本')
+
+
+def select_game_files(game_dir, manifest):
+    """Match a complete known build without mixing files from different releases."""
+    names = ('GameAssembly.dll', 'UnityPlayer.dll',
+             'LimbusCompany_Data/il2cpp_data/Metadata/global-metadata.dat')
+    additional = manifest.get('additional_game_builds', {})
+    if not isinstance(additional, dict):
+        raise CompatibilityError('游戏构建清单无效')
+    candidates = [manifest.get('game_files'), *additional.values()]
+    for files in candidates:
+        if not isinstance(files, dict) or files.keys() != set(names):
+            raise CompatibilityError('游戏构建清单不完整')
+    root = pathlib.Path(game_dir).resolve()
+    for name in names:
+        actual = digest(checked_file(root, name, '游戏'))
+        candidates = [files for files in candidates
+                      if isinstance(files[name], str) and files[name].lower() == actual]
+        if not candidates:
+            raise CompatibilityError('游戏版本或文件不匹配：' + name + '；已停止加载，请使用适配版本')
+    return candidates[0]
 
 
 def pe_machine(path):
@@ -79,7 +105,7 @@ def validate(root, game_dir, modules, dll_name, pointer_size=None, allow_existin
             raise CompatibilityError('插件版本与兼容性清单不一致')
         stable_files = {name: digest for name, digest in manifest['package_files'].items() if name != 'addon_info.json'}
         verify_files(root, stable_files, '插件')
-        verify_files(game_dir, manifest['game_files'], '游戏')
+        select_game_files(game_dir, manifest)
         for path in (root / dll_name, pathlib.Path(game_dir) / 'GameAssembly.dll'):
             if pe_machine(path) != 0x8664:
                 raise CompatibilityError('需要AMD64/x64程序，已停止加载')

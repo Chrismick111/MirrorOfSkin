@@ -65,9 +65,9 @@
     "Workbench/dialogue_status.py": "3fe3f1181926fc45d85f4bb59bcc9cc6f7eb7e801e93c8c374c5915c71f0d973",
     "Workbench/fx/effect_plan.py": "5ba8ce3af687a6eafe6d72669264ae04295d66fe159455d763ed8752665cc261",
     "Workbench/fx/effect_schemes.py": "0c8cc81e72271f2129058da00bea999fe15d0bebfb86cf807497aa02079756d2",
-    "Workbench/fx/effect_timelines.py": "cf7f6b4620001ef0e115d7f4d3c4633e8513f6a0e8f93e320c5617c26c178b8a",
-    "Workbench/fx/fx_activation.py": "4c914ddae55d97f4bdcc2a194395ed522e7783d2eee6621efade4b6cac14fa3b",
-    "Workbench/fx/fx_handoff.py": "0ab1f53b1abe7e0f29d7639f90e81952cc58eecab19efcf89bca31a078376b71",
+    "Workbench/fx/effect_timelines.py": "993bf7c9e1d35b66b0763eb498e5e8d6793b1007205c1a7a0f95a82709dc24db",
+    "Workbench/fx/fx_activation.py": "746ddf467d9433b2871cd4899f099bdb0270d0702697eaa568f2aa0c51a64d0a",
+    "Workbench/fx/fx_handoff.py": "19e3d44f6c0085695d4330633a35b5b1ca3ec994e3fdae533aa6bf14821cbffc",
     "Workbench/fx/fx_plan_binary.py": "17bb37cb18c994699b6393c564f4989722c0ad8cf65cc0a699dcae79807a9e32",
     "Workbench/fx/fx_prepare_runner.py": "70443056dec31539819a98c8ccba6cd339571c2afb26a4ea6d8b61b7fa792480",
     "Workbench/fx/native_timeline_extract.py": "5b56816670a50ba0a45612559452de99608bbdebbbed129cbe5b146095ac3d65",
@@ -158,7 +158,7 @@
     "export_diagnostics.cmd": "2a318cd825e09a8d95a59add73046f0e571b2b9cb672b877582c5a622e3788dc",
     "export_diagnostics.ps1": "94ac21db6589b0cdcc1c35180289151964c2b90f784a62dbf573346535bfb42c",
     "hot_pool.py": "b407535f974e4d6eaa744ef9daba8c90edfda505322e34fe5d18c9811fd7d3e3",
-    "release_compatibility.py": "b452f771c51452b2b3bddea7e8226cd8b89969bfd45c71711964e0c51c8a1a16",
+    "release_compatibility.py": "d7a31b650f2cfcc1d34641f622700caf889bcbf1c2802e42b12a9a8f2e5f7255",
     "scr.py": "397ca08d7b8dc43e522564078fc4967b3ea68b32507ce624d604cb6ac68ea34e",
     "weekly_discovery.py": "f5ca1395ba3e1df24f7a354dc84479f320ab11a78768448b5bf139d066cf1abd",
     "导入外观.cmd": "60bc30b0d2e3d9502d62895e4dcc4495daeab553db29e5a20eef091b0e0c99e0",
@@ -181,5 +181,12 @@
   ],
   "validation_note": "MirrorOfSkin frontend and runtime with local cosmetic imports.",
   "local_skin_import": 1,
-  "import_package_folders": 1
+  "import_package_folders": 1,
+  "additional_game_builds": {
+    "26917622": {
+      "GameAssembly.dll": "2b870dede96e38d95cbc9c8938fdca83ff49e7176fba8f00c522cdc75baeb45f",
+      "UnityPlayer.dll": "5078f65f0a41ceba1f0a844b087dd3a4fd4c40965d95d6612f8742f1bab632a3",
+      "LimbusCompany_Data/il2cpp_data/Metadata/global-metadata.dat": "474a38ac64c2cf228ef81b2846e2f67e28ad29529e091331d11548157e958af3"
+    }
+  }
 }

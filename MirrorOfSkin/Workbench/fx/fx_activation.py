@@ -1,5 +1,5 @@
 """Choose and prepare one effect scheme; preparation never injects into a game."""
-import json,os,pathlib,tempfile
+import json,os,pathlib,tempfile,importlib.util
 import effect_schemes,effect_timelines,prepare_plan,scan_units
 import resource_catalog
 
@@ -50,8 +50,12 @@ def prepare_start(root, game_dir, log):
             state=effect_timelines.state(look)
             if state.get('status')!='done':raise ValueError('读取外观资源失败：'+str(state.get('message','未知错误')))
         compiled=__import__('effect_plan').preview_workbench(plan,effect_timelines.state)
-        manifest=json.loads((root/'compatibility.json').read_text(encoding='utf-8-sig'))
-        expected=manifest['game_files']['GameAssembly.dll']
+        addon=pathlib.Path(__file__).resolve().parents[2]
+        spec=importlib.util.spec_from_file_location('_fx_release_compatibility',addon/'release_compatibility.py')
+        compatibility=importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(compatibility)
+        manifest=json.loads((addon/'compatibility.json').read_text(encoding='utf-8-sig'))
+        expected=compatibility.select_game_files(game_dir,manifest)['GameAssembly.dll']
         binary=prepare_plan.prepare(compiled,cache,pathlib.Path(game_dir)/'GameAssembly.dll',expected,effect_timelines.state)
         atomic_bytes(active,binary)
         log('特效方案已准备：'+selection['name']);return True
@@ -60,3 +64,4 @@ def prepare_start(root, game_dir, log):
             if active.exists():active.unlink()
         except OSError:pass
         log('特效方案准备失败：'+str(exc));return False
+

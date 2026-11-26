@@ -19,7 +19,7 @@ def prepare(root,game_dir,log,python_exe=None,timeout=600,cancelled=None):
     addon=pathlib.Path(root);data=mos_data.data_dir();active=mos_data.path(addon,'fx-active.bin')
     try:active.unlink(missing_ok=True)
     except OSError as exc:raise RuntimeError('无法清除旧特效快照，停止加载原生插件') from exc
-    runner=addon/'Workbench/fx_prepare_runner.py'
+    runner=addon/'Workbench/fx/fx_prepare_runner.py'
     try:
         state_file=mos_data.path(addon,'特效启用状态.json')
         if not state_file.is_file():log('特效方案未启用');return False
@@ -50,3 +50,4 @@ def prepare(root,game_dir,log,python_exe=None,timeout=600,cancelled=None):
         try:active.unlink(missing_ok=True)
         except OSError as cleanup:raise RuntimeError('无法清除特效快照，停止加载原生插件') from cleanup
         log('特效未启用：'+str(exc));return False
+
