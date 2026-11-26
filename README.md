@@ -17,180 +17,65 @@
 
 ---
 
-## 安装
+## 安装插件
 
-全新安装时，在 FaustLauncher 中选择“从本地安装”，导入下表中的启动器安装包。使用旧版本的用户可以在工作台中选择“检查并更新”。
+在 Windows 64 位系统上打开 FaustLauncher，确认已安装并启用 WarpHook。下载下表第一项，在启动器中选择「从本地安装」，选中 ZIP。安装完成后，从启动器托盘打开「镜像幻化 → 人格、概率与演出设置」。
 
-| 文件 | 说明 |
+| 下载 | 用途 |
 | --- | --- |
-| [启动器完整安装包（通用 ZIP）](https://github.com/Chrismick111/faust-random-identity/releases/download/v1.2.9/FaustRandomIdentity-Launcher-Deflate.zip) | 推荐全新安装，内含启动器识别用的中文插件目录 |
-| [启动器完整安装包（小体积）](https://github.com/Chrismick111/faust-random-identity/releases/download/v1.2.9/FaustRandomIdentity-Launcher.zip) | 相同内容，使用 LZMA 压缩 |
-| [工作台更新包](https://github.com/Chrismick111/faust-random-identity/releases/download/v1.2.9/FaustRandomIdentity-WarpHook.zip) | 工作台自动下载使用，文件位于压缩包根目录 |
-| [默认图像包](https://github.com/Chrismick111/faust-random-identity/releases/download/v0.79.1/FaustRandomIdentity-Portraits.zip) | 可选，623 张图片，覆盖 693 个外观条目，工作台也可单独下载 |
+| [1.3.7 启动器安装包](https://github.com/Chrismick111/MirrorOfSkin/releases/download/v1.3.7/MirrorOfSkin-1.3.7-no-images.zip) | 首次安装或手动更新。公开版不含头像，可在工作台获取资源。 |
+| [1.3.7 兼容安装包](https://github.com/Chrismick111/MirrorOfSkin/releases/download/v1.3.7/MirrorOfSkin-1.3.7-no-images-store.zip) | 启动器解压上一个文件失败时选用。两个包的插件内容相同，安装其中一个即可。 |
+| [1.3.7 工作台更新包](https://github.com/Chrismick111/MirrorOfSkin/releases/download/v1.3.7/FaustRandomIdentity-WarpHook.zip) | 供旧版工作台的自动更新功能读取。 |
 
-手动安装时，把启动器完整安装包解压到 `FaustLauncher/addons/`。确认目录结构如下。可选图像包解压到 `MirrorOfSkin/` 内。
+手动解压安装时，将启动器安装包解压到 `FaustLauncher/addons/`。安装正确后能直接看到 `addons/MirrorOfSkin/addon_info.json`；如果中间多了一层同名目录，启动器可能识别不到插件。
 
-```
-FaustLauncher/addons/MirrorOfSkin/
-  addon_info.json
-  compatibility.json
-  scr.py
-  Assets/
-  Workbench/
-    portraits/          <- 来自立绘包
-```
+## 第一次设置外观
 
-也可以只装核心包，之后在插件里点「下载默认头像」自动补齐。1.2.9 只通过 WarpHook 加载原生模块。若 WarpHook 返回错误 87，插件会在日志中保留原因并停止本次游戏的加载。
+1. 打开工作台，选择要配置的规则集。可以对全部罪人、某个罪人或单个人格设置外观池。
+2. 点「添加人格」，按角色、章节或名称找到外观，点击该行的加号。只想固定使用一个外观时，可以在池中右键该外观，选择「仅抽中此人格」。
+3. 要随机使用多个外观，就把它们加入同一个池，并调整各自权重。到规则集页面启用对应规则；只切换到某个规则集编辑，不会自动启用它。
 
-Workbench 的 Python 代码按功能拆分：
+外观替换保留佩戴者的技能、伤害和战斗规则。能看到哪些攻击、拼点、守备或闪避画面，取决于模型实际具备的动作以及作者提供的映射。
 
-```
-Workbench/
-  core/    文件锁、实例控制、宿主生命周期、更新与打包
-  pool/    规则集、方案、导演与池子数据
-  scan/    资源扫描、单位发现、头像与章节资源
-  fx/      特效方案、时间线、精灵与动作数据
-  tools/   验收与发布工具
-  tests/   工作台单元测试
-  ui/      网页、启动脚本与使用说明
-  data/    外观配对、章节、立绘源与工具数据
-  workbench.py   工作台 HTTP 入口
-```
+## 导入本地外观
 
-原生代码目录：
+点击工作台右上角的「导入本地外观」，也可以从「添加人格」窗口进入。选择外观文件后，工作台会显示当前文件、处理步骤和百分比。完成后展开导入明细，可查看新增或重复的外观、模型保存位置，以及未能识别的资源。导入的条目在「添加人格 → 外来人格」中，加入规则集后即可使用。
 
-```
-native/
-  core/    池、形态、策略与运行时基础
-  clash/   拼点、硬币与章节技能映射
-  voice/   语音表、语音路由与语音目录
-  fx/      特效计划与播放
-  story/   章节、连携、楔子与双人/三人演出
-  unity/   Unity 资源读取与纹理导出
-  tests/   当前原生测试，archive/ 为旧版本回归
-  tools/   原生数据生成与发布工具
-  data/    原生数据表
-  sinners_native.c / build.ps1
-```
+文件选择框支持 ZIP、7z、RAR，也可选择 `.bundle` 模型、`.carra2` 替换资源或 `.bank` 语音库。语音库需要与外观建立绑定。导入私服模组时，工作台结合包内人格声明、身体图像和动作轨选择作者制作的外观。已验证的形式包括独立角色模型、替换原版身体帧，以及逐枚硬币切换模型。只有技能数值、被动或 E.G.O 配置的模组会提示属于玩法改动包；单独的依赖 DLL 不能生成外观。
 
-模块目录由 `Workbench/_module_paths.py` 注入到 `sys.path`，原有扁平导入无需改动。
+**语音和气泡分别判断。** 导入明细会区分「已检出」「已绑定」和「沿用基础模型语音」。仅检出音频或台词时会保留本体对应表现。已绑定的外观语音进入播放状态后才接管该佩戴者的原声；外观气泡成功显示后才隐藏对应的本体气泡。其他单位各自使用自己的声音和台词。
 
-**依赖**：Windows x64、FaustLauncher、WarpHook。工作台优先使用启动器自带的 `resources/mod_loader/_internal/venv` 里的 Python；
-该路径不存在时才回退到系统 Python，此时需要 3.9 或更新版本。
+### 善意的巡礼
 
-> 立绘是分离分发的：核心包不含图片，只装核心包时人格卡片暂时没有立绘，功能不受影响。
+[下载「善意的巡礼」独立内容包](https://github.com/Chrismick111/MirrorOfSkin/releases/download/v1.3.7/Pilgrimage-Compassion-Skins.zip)。包中包含十个战斗外观、对应头像及模型内的原有动作和音效。
 
-### 启动器设置与数据目录
+1. **将下载的 `Pilgrimage-Compassion-Skins.zip` 改名为 `善意的巡礼-战斗外观.zip`。** 工作台按原包名关联外观编号和头像。
+2. 在工作台点「导入本地外观」，直接选择改名后的 ZIP，无需解压。
+3. 打开「添加人格 → 外来人格」，搜索「善意的巡礼」。已导入旧包的玩家也可按相同步骤更新，原有十个外观沿用原编号，自己上传的头像优先显示。
 
-插件设置中的「是否自动打开调整面板」控制启动时是否自动打开工作台。关闭后仍可从启动器托盘打开：**镜像幻化 → 人格、概率与演出设置**。
+## 整理章节、名称和头像
 
-「是否展示教程」控制首次使用教程；教程开始前会先询问一次，跳过时还会再次确认。完成后该设置关闭，右上角问号可随时重新打开。
+- **管理章节**：在「添加人格」中展开「管理章节与批量归类」，可以新建章节、自定义章节名、上传封面，或搜索并勾选要移入的外观。移入自建章节后，仍可在「全部外观」找到；恢复自动归类后，条目会回到原分类。
+- **修改外观名称**：点击外观行右侧的铅笔。新名称可用于搜索，清空后恢复默认名称。
+- **更换头像**：在池中右键外观，选择上传图片或恢复默认图片。导入包提供头像时，重置自选头像后会重新显示包内图片。首次使用时缺少游戏头像，可点击工作台的「重新获取资源」。
 
-规则集、方案、设置、头像、扫描结果、动画时间缓存和原生池等用户数据统一保存在：
+## 文件存在哪里
 
-```
-%APPDATA%\FaustLauncher\MOS_data
-```
+| 内容 | 默认位置 |
+| --- | --- |
+| 新导入的外观模型 | `FaustLauncher/addons/MirrorOfSkin/外来外观/<压缩包名>/`，跟随启动器所在磁盘 |
+| 个人设置、规则集、方案、章节、头像、索引及独立语音库 | `%APPDATA%\FaustLauncher\MOS_data\` |
+| 战斗运行日志 | `%APPDATA%\FaustLauncher\MOS_data\native_runtime.log` |
 
-插件目录只保留程序和随包静态资源；升级插件时不会覆盖 MOS_data。旧版本在插件目录留下的用户数据会在首次启动时自动迁移。
+移除外观时，可以在「添加人格」中删除对应条目。按包管理时，也可以删除对应的模型子文件夹，再回到工作台刷新。删除插件后重装，若看到旧外观显示「模型缺失」，重新导入原压缩包可恢复原编号和已选规则。
 
----
+## 模组作者与问题反馈
 
-## 使用
+作者可在 `mos-skin.json` 中声明攻击、拼点、守备及语音归属，也可通过 `mos-portraits.json` 随包提供头像。格式和示例见[外来外观包动作配置](docs/外来外观包动作配置.md)。
 
-启动器托盘菜单 → 插件 → **镜像幻化** → 打开网页端工作台。
+反馈导入问题时，请附插件版本、压缩包名称和展开后的导入提示。反馈战斗表现时，请注明佩戴的人格、外观、技能，以及问题发生在第几枚硬币或哪一次拼点；遇到朝向问题时，也请指出角色和敌人各在哪一侧。[提交问题](https://github.com/Chrismick111/MirrorOfSkin/issues)
 
-工作台监听 `127.0.0.1` 的临时端口，每次启动生成新的随机 token 并作为 URL 前缀；只接受带 `X-Workbench` 头的请求。
-启动日志在 `%TEMP%\FaustRandomIdentity-Workbench`（`workbench-start-*.log` / `workbench-error-*.log`）。
-
-设置保存在插件目录，更新时不会被覆盖：
-
-- `随机设置.json` — 概率、开关；`prewarm_full_pool` 默认 `false`，关闭全池预载以避免持续掉帧，需要时可手动开启；`disable_special_clash` 默认 `true`，禁用特殊拼点动画以避免个别外观拼点时卡住，设为 `false` 可恢复
-- `自定义人格池.json` — 人格挑选与覆盖
-- `演出编排.json` — 演出编排
-
-### 规则集
-
-- 默认不启用任何随机；需要在左侧「规则集」页面点击规则集才会生效
-- 支持三种范围：全局、罪人全部人格、单个人格
-- 同一罪人同时只能启用一个规则集；全局规则与其它规则互斥，最后选择的优先
-- 单人格规则集在创建时生成 `规则集/人格-<人格ID>.json`，未创建时不会出现
-- 「填入默认全随机」会用当前罪人的默认池覆盖当前规则集内容
-- 单人格规则需要配套的原生 DLL：本仓库的 `native/` 已加入按基础人格筛选池子的逻辑
-
-### 立绘
-
-- **默认立绘**：点「下载默认头像」，直接读取 `Workbench/data/portrait_source.json` 中锁定的独立直链与 SHA-256，不再查询 GitHub Release；头像包与核心版本相互独立
-- **直链覆盖**：复制为 `Workbench/data/portrait_source.local.json` 并填写 `url` / `sha256`（可选 `size`）即可换镜像或独立地址；该文件在核心更新时受保护
-- **自定义立绘**：每个人格都可单独上传或重置。浏览器端缩放到 ≤384×384 转 PNG，服务端还要校验 PNG 结构与 CRC、体积 ≤1 MiB，存到 `Workbench/user_portraits/`（按人格名 SHA-256 命名），更新时受保护
-
----
-
-## 更新
-
-工作台「检查并更新」读取本仓库的 **latest 正式 Release**，不使用 main 分支源码当安装包。要求：
-
-- 标签形如 `v0.63.3`，且高于已装版本（只比较 `主.次.修订`，后缀被忽略）
-- 资产含 `FaustRandomIdentity-WarpHook.zip`，GitHub 提供 SHA-256 摘要
-- 下载地址必须是本仓库的 `releases/download/`
-
-更新会自动备份被替换的文件、保留个人设置、合并本地人格目录（保留你自己的 `weight` / `enabled`）。
-**安装前请完全退出游戏与启动器**，否则会被拒绝。
-
----
-
-## 1.0.0 的本机资源与外观适配
-
-选中外观后，特效编辑器从本机已经下载的游戏资源读取动作、时长和特效轨道，生成可复用的缓存。若某个外观缺少资源，在游戏里下载后回到编辑器点击“读取本机资源”。战斗覆盖使用的基础动作表随核心包提供。玩家无需安装 LimbusArchive。
-
-工作台优先使用启动器已有的资源解析、纹理和音频组件。启动器的 64 位 Python 3.9 缺少组件时，工作台会从 Python 官方包仓库下载约 7.31 MB 并校验，之后复用本地副本。启动器作者只需托管上面的标准安装包。
-
-选用对应人格并覆盖对应敌方外观时，工作台会自动应用配对适配，包括第九章父辈与子辈。楔子连携沿用原生演出，保留对应外观适配。
-
-拼点动作区分准备、胜利和失败，也能读取位于技能槽里的专用拼点动作。语音按当前可见形态匹配，气泡跟随实际出战角色。
-
-本版沿用 0.79.1 的独立图像包，更新插件后可以继续使用已安装的立绘。游戏兼容检查使用安装包内 `compatibility.json` 记录的文件摘要。
-
-### 从源码编译
-
-在 Windows x64 准备 Zig 和 MinHook 源码。在仓库根目录运行以下命令，把两个参数改为本机路径。
-
-```powershell
-./native/build.ps1 -Zig C:/tools/zig/zig.exe -MinHook C:/src/minhook
-```
-
-生成物为 `native/SinnersNative.dll`。`addon/` 包含启动器与网页工作台源码，完整插件安装还需要匹配的资源目录和兼容清单。安装用的 zip 见 Releases，发布页标示其独立版本。
-
-公开版通过游戏的语言接口读取气泡。游戏本地化缺项时，如需为自己的构建加入中文备用台词，可用本机资源运行 `native/build_appearance_voice_catalog.py --help` 查看所需的索引、静态数据和语言目录。
-
-## 发布流程（维护者）
-
-合法发布包必须满足：
-
-1. 从**已通过校验**的完整插件目录生成
-2. zip 内文件集合 **精确等于** `package_files ∪ {compatibility.json, Assets/runtime/all_sinners_pools.json}`——多一个（运行时缓存、日志、备份）或少一个都会被更新器拒绝
-3. `addon_info.json` 与 `compatibility.json` 的 `version` **必须一致**，且与标签的 `主.次.修订` 匹配
-4. `scr.py` 的 `DLL_NAME` 必须等于 `compatibility.json` 的 `dll`
-5. `Workbench/data/portrait_source.json` 必须列入 `package_files`，其 `url` / `sha256` 与实际头像包一致
-6. 不得包含 `native_pools.bin`、`随机设置.json`、`自定义人格池.json`、`animation-times-*`、`*.log`、`*.bak*`
-
-```powershell
-python Workbench/core/package_release.py --addon . --output C:\temp\FaustRandomIdentity-WarpHook.zip
-```
-
-输出路径须在插件目录外且原先不存在。
-
-向 FaustLauncher 的“从本地安装”提供 ZIP 时，加上 `--launcher`。启动器用包含 `addon_info.json` 的文件夹名登记插件，包内路径应为 `MirrorOfSkin/addon_info.json`。工作台在线更新继续使用清单位于包根目录的标准包。
-
-> 注意：`release_compatibility.py` 加载时对 `addon_info.json` 只校验版本、跳过哈希（启动器安装时会改写名称与说明），
-> 但 `github_update.py` 的安装校验 **仍会比对它的包内哈希**。两边都要满足，改版本号后记得同步 `package_files`。
-
----
-
-## 致谢
-
-插件由原「全角色随机人格」模组演进。启动器为 [FaustLauncher](https://github.com/f0lkskill/FaustLauncher)。
-现有元数据列出的作者为神必六角恐龙。第三方代码与资源的许可由各自权利人决定。
+插件源自「全角色随机人格」，启动器为 [FaustLauncher](https://github.com/f0lkskill/FaustLauncher)。项目许可证见 [LICENSE](LICENSE)。
 
 ## 许可证
 
