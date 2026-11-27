@@ -11,6 +11,7 @@ import subprocess
 
 DATA_NAME = 'MOS_data'
 LAUNCHER_NAME = 'FaustLauncher'
+BLOOD_VISIBILITY_FILE = 'appearance-blood-visibility.txt'
 
 
 def imported_config_shape(lines):
@@ -20,7 +21,7 @@ def imported_config_shape(lines):
 ROOT_FILES = (
     '随机设置.json', '自定义人格池.json', '演出编排.json', '规则集状态.json',
     '停止随机运行.flag',
-    'native_pools.bin', 'native_forms.json', 'native_stage_groups.bin',
+    'native_pools.bin', 'native_forms.json', 'native_stage_groups.bin', BLOOD_VISIBILITY_FILE,
     'pool_update_status.json', 'warmup_status.json', 'probe_asset.txt',
     'auto_forms.bin', 'auto_form_annotations.json', 'auto_internal_forms.jsonl',
     'auto_registry.json', 'identity_catalog.json', 'workbench_rules.bin',

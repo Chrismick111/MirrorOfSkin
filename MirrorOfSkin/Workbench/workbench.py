@@ -386,14 +386,34 @@ class Store:
   entries = rulesets.entries(self.root, selected, pool_data) if selected else []
   revision = rulesets.revision(self.root, selected) if selected else hashlib.sha256(b'').hexdigest()
   return state, items, selected, entries, revision
+ def known_appearance(self, identity):
+  pools=read(self.root/'Assets/runtime/all_sinners_pools.json',{})
+  if any(str(e['identity_id'])==identity for group in pools.values() for e in group.get('entries',[])):
+   return True
+  return any(str(e['id'])==identity for e in read(self.root/'identity_catalog.json',{}).get('rows',[]))
+ def blood_visible_ids(self):
+  try:
+   lines=(self.root/mos_data.BLOOD_VISIBILITY_FILE).read_text(encoding='utf-8-sig').splitlines()
+  except FileNotFoundError:
+   return []
+  return sorted({line for line in lines if line})
+ def save_blood_visibility(self, identity, visible):
+  if not isinstance(identity,str) or not re.fullmatch(r'[A-Za-z0-9_-]{1,63}',identity) or type(visible) is not bool:
+   raise ValueError('血迹设置无效')
+  with self.lock:
+   if not self.known_appearance(identity):raise ValueError('未知人格')
+   saved=self.blood_visible_ids()
+   if (identity in saved)!=visible:
+    if visible and len(saved)>=4096:raise ValueError('显示血迹的外观已达 4096 个上限')
+    saved=sorted([*saved,identity]) if visible else [item for item in saved if item!=identity]
+    from skin_import import write_atomic
+    write_atomic(self.root/mos_data.BLOOD_VISIBILITY_FILE,''.join(item+'\n' for item in saved).encode('utf8'))
+  return {'blood_visible_ids':saved}
  def save_appearance_name(self, identity, name):
   if not isinstance(identity,str) or not isinstance(name,str) or len(name)>100 or any(not c.isprintable() for c in name):
    raise ValueError('名称最多可填写 100 个可显示字符')
   with self.lock:
-   pools=read(self.root/'Assets/runtime/all_sinners_pools.json',{})
-   known=any(str(e['identity_id'])==identity for group in pools.values() for e in group.get('entries',[]))
-   if not known and not any(str(e['id'])==identity for e in read(self.root/'identity_catalog.json',{}).get('rows',[])):
-    raise ValueError('未知人格')
+   if not self.known_appearance(identity):raise ValueError('未知人格')
    path=self.root/'Workbench/appearance_names.json'
    names=read(path,{})
    if not isinstance(names,dict):raise ValueError('自定义名称文件无效')
@@ -453,7 +473,7 @@ class Store:
   preparation=prepare_view.summarize(evidence,pid,alive,list(catalog.values()))
   addon_info=read(self.addon_root/'addon_info.json',{})
   tutorial=bool((addon_info.get('settings') or {}).get('是否展示教程',True))
-  return dict(self.snapshot(),preparation=preparation,rulesetState=rule_state,rulesets=rule_items,activeRule=active_rule,ruleEntries=rule_entries,ruleRevision=rule_revision,settings=self.settings_snapshot(),runtime=self.runtime_status(pool_status,evidence),director=self.director_snapshot(),formAnnotations=self.form_annotations(),catalog=list(catalog.values()),chapterArt=chapter_art,chapterRevision=chapter_revision,pools=pools,forms=native_forms,warmup=read(self.root/'warmup_status.json',{}),version=addon_info.get('version','未知'),tutorial=tutorial,launcherBackground=self.launcher_background())
+  return dict(self.snapshot(),blood_visible_ids=self.blood_visible_ids(),preparation=preparation,rulesetState=rule_state,rulesets=rule_items,activeRule=active_rule,ruleEntries=rule_entries,ruleRevision=rule_revision,settings=self.settings_snapshot(),runtime=self.runtime_status(pool_status,evidence),director=self.director_snapshot(),formAnnotations=self.form_annotations(),catalog=list(catalog.values()),chapterArt=chapter_art,chapterRevision=chapter_revision,pools=pools,forms=native_forms,warmup=read(self.root/'warmup_status.json',{}),version=addon_info.get('version','未知'),tutorial=tutorial,launcherBackground=self.launcher_background())
  def known_appearances(self):
   """pool 里的外观名集合，按文件 mtime 缓存：扫描期间页面每 5 秒轮询，1.5 MB 的池文件不该重复解析。"""
   path=self.root/'Assets/runtime/all_sinners_pools.json'
@@ -691,13 +711,14 @@ def main():
    except Exception as e:return self.send({'error':str(e)},500)
   def do_POST(self):
    route=self.route()
-   if route not in ('appearance-name','chapter-save','chapter-move','package-folders','save','import','local-skin-import','local-skin-import-start','local-skin-delete','director','bundle','boss-preview','update-check','update-install','portrait-save','portrait-reset','portrait-download','images-delete','ruleset-activate','ruleset-select','ruleset-save','ruleset-create','ruleset-only','ruleset-deactivate','ruleset-fill','ruleset-clear','scan','scheme-save','scheme-load','scheme-delete','scheme-import','scheme-get','effect-scheme-save','effect-scheme-get','effect-scheme-delete','effect-timelines','effect-live-start','effect-live-status','effect-plan-preview','effect-selection','effect-sprites','effect-sprites-start','effect-sprites-status','effect-sprites-cancel','effect-sprite-export','tutorial-complete','instance-shutdown','instance-attach','instance-release'):return self.send({'error':'未找到'},404)
+   if route not in ('appearance-blood','appearance-name','chapter-save','chapter-move','package-folders','save','import','local-skin-import','local-skin-import-start','local-skin-delete','director','bundle','boss-preview','update-check','update-install','portrait-save','portrait-reset','portrait-download','images-delete','ruleset-activate','ruleset-select','ruleset-save','ruleset-create','ruleset-only','ruleset-deactivate','ruleset-fill','ruleset-clear','scan','scheme-save','scheme-load','scheme-delete','scheme-import','scheme-get','effect-scheme-save','effect-scheme-get','effect-scheme-delete','effect-timelines','effect-live-start','effect-live-status','effect-plan-preview','effect-selection','effect-sprites','effect-sprites-start','effect-sprites-status','effect-sprites-cancel','effect-sprite-export','tutorial-complete','instance-shutdown','instance-attach','instance-release'):return self.send({'error':'未找到'},404)
    if self.headers.get('X-Workbench')!=token:return self.send({'error':'请求无效'},403)
    try:
     n=int(self.headers.get('Content-Length',0))
     limit={'chapter-save':3*1024*1024,'portrait-save':2*1024*1024}.get(route,1024*1024)
     if not 0<n<=limit:raise ValueError('请求过大或为空')
     body=json.loads(self.rfile.read(n))
+    if route=='appearance-blood':return self.send(store.save_blood_visibility(body.get('identity_id'),body.get('visible')))
     if route=='appearance-name':return self.send(store.save_appearance_name(body.get('identity_id'),body.get('name')))
     if route=='chapter-save':return self.send(store.save_chapter(body))
     if route=='chapter-move':return self.send(store.move_chapter(body))

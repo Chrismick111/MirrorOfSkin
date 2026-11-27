@@ -1162,6 +1162,7 @@ static void *app_go(void *app){
   int ok=1;return call_obj(getter,app,NULL,&ok);
 }
 #include "body_visibility.inc"
+#include "appearance_blood.inc"
 /* CharacterState stores this as an ObscuredBool. Ask the game's own
    GetDecrypted method; never interpret the encrypted struct layout. */
 static int native_retreat_state(Unit *u){
@@ -1528,6 +1529,7 @@ static int build_skin(Unit *u,int row){
   void *charInfo=rfield(app,"charInfo");
   {char line[160];wsprintfA(line,"skin build: init ok flag=%d value=%d charInfo=%d spines=%d",!!flag,initialized,!!charInfo,!!rfield(app,"_spineSkins"));bootlog(line);}
   if(!initialized){bootlog("skin build: not initialized");ui_unroot(appRoot);ui_unroot(cloneRoot);retire_slot(cloneGO,NULL,0);return 0;}
+  observe_appearance_blood(app,u->view,entry->identity);
   Skin motionProbe={0};
   if(entry->excluded&SR_AUTO_FLAG){
     motionProbe.app=app;cache_skin_motions(&motionProbe);
@@ -2772,6 +2774,7 @@ static void initialize_hook(void *app,void *view,void *mi){
   ((void (*)(void *,void *,void *))orig_init)(app,view,mi);
   if(g_creating||!enabled_now()||cleanup_pending)return;
   if(InterlockedCompareExchange(&g_busy,1,0))return;
+  observe_appearance_blood(app,view,NULL);
   unit_register(app,view);
   InterlockedExchange(&g_busy,0);
 }
@@ -2983,6 +2986,7 @@ static void register_existing(void){
     if(!flag||!*(uint8_t *)((char *)app+((size_t (*)(void *))api[API_FIELD_OFFSET])(flag)))continue;
     void *view=rfield(app,"_battleUnitView");
     if(!view||!rfield(view,"m_CachedPtr"))continue;
+    observe_appearance_blood(app,view,NULL);
     int before=0;for(int k=0;k<SR_UNIT_MAX;k++)if(g_units[k].used)before++;
     unit_register(app,view);
     int after=0;for(int k=0;k<SR_UNIT_MAX;k++)if(g_units[k].used)after++;
@@ -3435,6 +3439,8 @@ static void tick(void){
   int frame=m_frameCount?call_int(m_frameCount,NULL,NULL):-1;
   if(frame<0){fatal("Unity frame count unavailable",7);return;}
   if(frame==g_lastUnityFrame)return;g_lastUnityFrame=frame;g_frame=frame;
+  int bloodConfigChanged=poll_appearance_blood_config();
+  sync_appearance_blood(enabled_now(),bloodConfigChanged||frame%15==0);
   collect_retire();
   for(int k=0;k<SR_UNIT_MAX;k++){
    if(visibleWatches[k].app)visible_watch_tick(&g_units[k],GetTickCount());
@@ -3914,6 +3920,27 @@ static int resolve_all(void){
   c_typeClass=klass(g_corlib,"System","Type");
   if(!c_appearance||!c_view||!c_metadataClass||!c_containerClass||!c_objectClass||!c_goClass||!c_transform||!c_typeClass){
     bootlog("resolve: core classes missing");return 0;
+  }
+  {
+    void *blood=klass(g_game,"","CharacterAppearanceBlood");
+    void *(*field)(void *,const char *)=api[API_FIELD];
+    size_t (*offset)(void *)=api[API_FIELD_OFFSET];
+    void *get=find_method(c_appearance,"get_AppearanceBlood",0);
+    const char *types[]={"System.Boolean"};
+    void *set=blood?pick_method(blood,"SetDisableBlood",types,1):NULL;
+    void *flag=blood?field(blood,"_isDisableBlood"):NULL;
+    void *native=field(c_objectClass,"m_CachedPtr");
+    void *view=field(c_appearance,"_battleUnitView");
+    void *type=flag?((void *(*)(void *))api[API_FIELD_TYPE])(flag):NULL;
+    char *name=type?((char *(*)(void *))api[API_TYPE_NAME])(type):NULL;
+    if(get&&set&&name&&!strcmp(name,"System.Boolean")&&native&&view&&
+       team_returns(get,"CharacterAppearanceBlood")&&team_instance_method(c_appearance,get)&&
+       team_returns(set,"System.Void")&&team_instance_method(blood,set)){
+      m_getAppearanceBlood=get;m_setDisableBlood=set;
+      blood_flag_offset=offset(flag);blood_native_offset=offset(native);blood_view_offset=offset(view);
+    }
+    if(name)((void (*)(void *))api[API_FREE])(name);
+    bootlog(m_setDisableBlood?"resolve: character blood visual control ready":"resolve: character blood visual control unavailable");
   }
   {
     const char *initTypes[1]={"BattleUnitView"};

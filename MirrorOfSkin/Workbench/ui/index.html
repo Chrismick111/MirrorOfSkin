@@ -1751,7 +1751,7 @@
         <path d="M20 5v7h-7M20 12a8 8 0 11-2.34-5.66" />
       </symbol>
       <symbol id="i-resource-refresh" viewBox="0 0 24 24">
-        <path d="M19.5 13a8 8 0 1 0-2.4 5.7M12 5.5v9m-4-4 4 4 4-4" />
+        <path d="M16.8 18.4A8 8 0 1 1 20 12M17 9l3 3 3-3" />
       </symbol>
       <symbol id="i-package" viewBox="0 0 24 24">
         <path d="M4 7l8-4 8 4-8 4-8-4zM4 7v10l8 4 8-4V7M12 11v10" />
@@ -3165,6 +3165,15 @@
         event.preventDefault();
         openIdentityMenu(card.dataset.id, event.clientX, event.clientY);
       });
+      $("#poolGrid").addEventListener("keydown", event => {
+        if (event.key !== "ContextMenu" && !(event.shiftKey && event.key === "F10")) return;
+        const card = event.target.closest(".pool-card[data-id]");
+        if (!card || event.target.closest(".author-links, input, button, a")) return;
+        event.preventDefault();
+        const rect = card.getBoundingClientRect();
+        openIdentityMenu(card.dataset.id, rect.left, rect.bottom);
+        $("#identityMenu button[data-action=blood]").focus();
+      });
       async function handlePoolAdd() {
         const rule = data.activeRule;
         if (!rule) {
@@ -3207,6 +3216,8 @@
           const index = [...selected.keys()].indexOf(id);
           menu.innerHTML = `<div class="context-title">${esc(entry?.name || entry?.appearance_name || id)}</div><button data-action="only">仅抽中此人格</button><button data-action="onlyRole">仅启用此角色</button><button data-action="equal">当前池恢复均等</button><div class="sep"></div><button data-action="up"${index <= 0 ? " disabled" : ""}>上移</button><button data-action="down"${index < 0 || index >= selected.size - 1 ? " disabled" : ""}>下移</button><div class="sep"></div><button data-action="upload">上传图片</button><button data-action="reset">恢复默认图片</button><div class="sep"></div><button data-action="remove" class="danger">移出池子</button><button data-action="clear" class="danger">清空当前池</button>`;
         }
+        const bloodVisible = (data.blood_visible_ids || []).includes(id);
+        menu.insertAdjacentHTML("beforeend", `<div class="sep"></div><button data-action="blood" role="menuitemcheckbox" aria-checked="${bloodVisible}">${bloodVisible ? "☑" : "☐"} 显示受伤血迹</button>`);
         menu.classList.remove("hidden");
         menu.style.left = "0px";
         menu.style.top = "0px";
@@ -3219,11 +3230,24 @@
           button.onclick = () => runIdentityAction(button.dataset.action);
         });
       }
+      const bloodPending = new Set();
       async function runIdentityAction(action) {
         const id = contextIdentity;
         closeIdentityMenu();
         if (!id) return;
-        if (action === "only") {
+        if (action === "blood") {
+          if (bloodPending.has(id)) { status("正在保存受伤血迹设置"); return; }
+          bloodPending.add(id);
+          const visible = !(data.blood_visible_ids || []).includes(id);
+          try {
+            const result = await api("appearance-blood", { identity_id: id, visible });
+            const ids = new Set(data.blood_visible_ids || []);
+            if (result.blood_visible_ids.includes(id)) ids.add(id); else ids.delete(id);
+            data.blood_visible_ids = [...ids];
+            status(visible ? "已开启受伤血迹" : "已关闭受伤血迹");
+          } catch (error) { status("设置受伤血迹失败：" + error.message); }
+          finally { bloodPending.delete(id); }
+        } else if (action === "only") {
           selected = new Map([[id, 1]]);
           render();
           autoSave();
