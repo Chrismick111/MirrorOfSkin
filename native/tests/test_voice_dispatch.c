@@ -94,6 +94,117 @@ static void *multi_stub(int id,void *key,void *view,uint8_t special,uint8_t cust
  multiId=id;
  return voice_add_hook(42,id,7,0.75f,custom,length,key,0,NULL,0,1,NULL);
 }
+static int bank_description(void *event,void **desc){*desc=event;return 0;}
+static int bank_event_path(void *desc,char *path,int cap,int *used){
+ (void)desc;*used=snprintf(path,cap,"event:/Voice/battle_s2_11116_1_1")+1;return 0;
+}
+static int bank_event_guid(void *desc,GUID *id){(void)desc;memset(id,0,sizeof(*id));return 0;}
+static int bank_event_by_guid(void *system,const GUID *id,void **desc){(void)id;*desc=system;return 0;}
+static void wav_caption_fixture(Unit *unit,Skin *skin,TestView *view){
+ const char look[]="WBImp_123456789012345678901234";
+ const char hash[]="aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa";
+ wchar_t relative[192],path[2048];
+ ImportedConfig imported={0};
+ skin->imported=&imported;strcpy(skin->look,look);view->appearance=skin->app;
+ LocalArtEntry art={0};
+ strcpy(art.art.look,look);swprintf(art.art.file,256,L"%hs.bundle",hash);
+ art.next=localArtEntries;localArtEntries=&art;
+ const wchar_t pack[]=L"\u5916\u6765\u5916\u89c2\\wav_caption_fixture";
+ assert(CreateDirectoryW(L"\u5916\u6765\u5916\u89c2",NULL)||GetLastError()==ERROR_ALREADY_EXISTS);
+ assert(CreateDirectoryW(pack,NULL)||GetLastError()==ERROR_ALREADY_EXISTS);
+ swprintf(path,2048,L"%ls\\%ls",pack,art.art.file);
+ FILE *file=_wfopen(path,L"wb");assert(file);fclose(file);
+ swprintf(path,2048,L"%ls\\%hs.voice.tsv",pack,look);
+ file=_wfopen(path,L"wb");assert(file);
+ fprintf(file,"11116\tbattle_s3_11116\t\tcustom caption\n"
+              "11116\tbattle_s2_11116_1_1\t\tcustom caption\n");fclose(file);
+ assert(addon_file_path(path,2048,L"Assets\\ImportedSkins"));
+ swprintf(relative,192,L"Assets\\ImportedSkins\\%hs.loc",look);
+ assert(addon_file_path(path,2048,relative));
+ wchar_t *slash=wcsrchr(path,L'\\');*slash=0;
+ wchar_t *assets=wcsrchr(path,L'\\');*assets=0;
+ CreateDirectoryW(path,NULL);*assets=L'\\';
+ CreateDirectoryW(path,NULL);*slash=L'\\';
+ file=_wfopen(path,L"wb");assert(file);
+ fprintf(file,"\xe5\xa4\x96\xe6\x9d\xa5\xe5\xa4\x96\xe8\xa7\x82/wav_caption_fixture/%s.bundle\n",hash);fclose(file);
+ strcpy(unit->baseName,"10109_Yisang_RingFingerAppearance");
+ TestString key=test_string("battle_s3_10109_1_1");
+ int shown=centerShown,stock=stockBubbles;
+ print_bubble_hook(10109,&key,3.5f,1,NULL);
+ assert(centerShown==shown+1&&stockBubbles==stock&&lastLength==3.5f&&lastCustom==1);
+ allowCenter=0;dialogSuccess=0;
+ print_bubble_hook(10109,&key,3.5f,1,NULL);
+ assert(stockBubbles==++stock);
+ allowCenter=1;dialogSuccess=1;
+ Unit *second=&g_units[1];*second=*unit;
+ TestView otherView=*view;otherView.appearance=NULL;second->view=&otherView;
+ voiceView=second;
+ print_bubble_hook(10109,&key,3.5f,1,NULL);
+ assert(stockBubbles==++stock);
+ memset(second,0,sizeof(*second));voiceView=NULL;
+ key=test_string("battle_select_10109_1");
+ shown=centerShown;
+ print_bubble_hook(10109,&key,3.5f,1,NULL);
+ assert(centerShown==shown&&stockBubbles==stock);
+ key=test_string("battle_s3_10101_1_1");
+ print_bubble_hook(10101,&key,3.5f,1,NULL);
+ assert(stockBubbles==++stock);
+ key=test_string("battle_stage_10109_1");
+ print_bubble_hook(10109,&key,3.5f,1,NULL);
+ assert(stockBubbles==++stock);
+ /* A late stock caption for a registered event is part of the earlier
+    successful replacement. A different variant remains a separate cue. */
+ const char exact[]="battle_s2_10109_1_1";
+ ImportedWavEvent *record=&importedWavEvents[0];
+ *record=(ImportedWavEvent){.unit=unit,.view=view,.app=skin->app};
+ assert(imported_wav_read(skin,10109,exact,1,&record->caption));
+ shown=centerShown;
+ imported_wav_playing_caption(record);
+ key=test_string(exact);
+ print_bubble_hook(10109,&key,3.5f,1,NULL);
+ assert(record->captionHandled&&centerShown==shown+1&&stockBubbles==stock);
+ key=test_string("battle_s2_10109_1_2");
+ print_bubble_hook(10109,&key,3.5f,1,NULL);
+ assert(centerShown==shown+1&&stockBubbles==stock);
+ /* A new caption-only row may coexist with the same skin's playable
+    legacy bank. Keep the bank event, and replace its caption independently. */
+ VoiceLibrary library={.system=&stock_event,.captionsRead=1};
+ VoiceCaption *bankText=calloc(1,sizeof(*bankText)+sizeof("legacy caption"));assert(bankText);
+ strcpy(bankText->key,record->caption.key);strcpy(bankText->text,"legacy caption");
+ bankText->owner=11116;library.captions=bankText;
+ VoiceBinding binding={.owner=11116,.library=&library};strcpy(binding.look,skin->look);
+ voiceBindings=&binding;
+ hStudio_EventInstance_GetDescription=bank_description;hStudio_EventDescription_GetPath=bank_event_path;
+ hStudio_EventDescription_GetID=bank_event_guid;hStudio_System_GetEventByID=bank_event_by_guid;
+ PrivateVoiceEvent *bank=&privateVoiceEvents[0];
+ *bank=(PrivateVoiceEvent){.u=unit,.view=view,.app=skin->app,.original=(void*)42,
+                           .replacement=&stock_event,.binding=&binding};
+ strcpy(bank->key,bankText->key);
+ assert(voice_track_bank(unit,skin,(void*)42,record,0)==bank&&bank->replacement&&bank->captionBlocked);
+ wcscpy(record->path,L"sample.wav");
+ assert(!voice_track_bank(unit,skin,(void*)42,record,0));
+ *record->path=0;
+ registeringVoice=bank;registeringWav=record;
+ record->captionHandled=0;record->captionFallback=0;
+ shown=centerShown;stock=stockBubbles;key=test_string(exact);
+ print_bubble_hook(10109,&key,3.5f,1,NULL);
+ private_playing_caption(bank);
+ assert(record->captionHandled&&centerShown==shown+1&&stockBubbles==stock);
+ record->captionHandled=0;allowCenter=0;dialogSuccess=0;
+ key=test_string(bankText->key);
+ print_bubble_hook(11116,&key,3.5f,1,NULL);
+ assert(!record->captionHandled&&record->captionFallback&&stockBubbles==stock+1&&bank->replacement);
+ allowCenter=1;dialogSuccess=1;
+ shown=centerShown;
+ print_bubble_hook(11116,&key,3.5f,1,NULL);
+ assert(centerShown==shown&&stockBubbles==stock+2);
+ registeringVoice=NULL;registeringWav=NULL;voiceBindings=NULL;
+ memset(bank,0,sizeof(*bank));free(bankText);
+ hStudio_EventInstance_GetDescription=NULL;hStudio_EventDescription_GetPath=NULL;
+ hStudio_EventDescription_GetID=NULL;hStudio_System_GetEventByID=NULL;
+ memset(record,0,sizeof(*record));
+ localArtEntries=art.next;skin->imported=NULL;view->appearance=NULL;
+}
 int main(void){
  static void *functions[37];api=functions;functions[API_OBJECT_CLASS]=object_class;
  functions[API_PARENT]=no_parent;functions[API_FIELD]=field_named;functions[API_FIELD_OFFSET]=field_offset;
@@ -183,8 +294,12 @@ int main(void){
  assert(voice_multi_hook(10101,&sourceLine,&view,1,1,3.5f,NULL)==&stock_event);
  assert(multiId==10101&&lastId==10101);
  int beforeStock=stockBubbles;
+ TestString unmatchedBank=test_string("battle_kill_10101_1");
+ print_bubble_hook(10101,&unmatchedBank,2.0f,0,NULL);
+ assert(stockBubbles==beforeStock);
+ int bankShown=centerShown;
  print_bubble_hook(10101,&sourceLine,2.0f,0,NULL);
- assert(stockBubbles==beforeStock+1);
+ assert(stockBubbles==beforeStock&&centerShown==bankShown+1);
  /* Late callbacks may find a unique source. A donor id alone supplies no
     evidence of which view requested this line. */
  assert(voice_unit_for_async_id(10101)==u);
@@ -229,6 +344,7 @@ int main(void){
  VoiceBinding other=binding;other.owner=10102;
  assert(!private_caption(&other,cap->key)&&!private_caption(&binding,"battle_kill_10109_1"));
  memset(e,0,sizeof(*e));voiceBindings=NULL;skin->imported=NULL;free(cap);
+ wav_caption_fixture(u,skin,&view);
  view.appearance=NULL;voice_index_hook(&event,10101,1,&key,&out,NULL);assert(lastId==10101);
  assert(sr_voice_request(&view,8378,"OnDie_View")&&roots==1);
  assert(!sr_voice_request(&view,8378,"OnDie_View"));

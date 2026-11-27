@@ -49,6 +49,42 @@ class AppearanceDialogueTests(unittest.TestCase):
                 scan = scan_archive(path)
             return [for_record(scan, item, records) for item in records]
 
+    def test_framepack_dialogue_is_limited_to_the_declared_skin_and_owner(self):
+        first, second = 'pack/skins/first', 'pack/skins/second'
+        files = {'pack/pack.json': {'schema_version': 2, 'pack_id': 'pack', 'skins': ['first', 'second']}}
+        for root, owner in ((first, 10123), (second, 10987)):
+            files[root + '/manifest.json'] = {
+                'schema_version': 2,
+                'meta': {'skin_id': root.rsplit('/', 1)[-1], 'display_name': root},
+                'target': {'kind': 'personality', 'personality_id': owner},
+                'visual': {'sd_frames_dir': 'assets/sd_frames'},
+                'voice': {'dir': 'voice'},
+                'locale': {'exclusive_dir': 'locale/exclusive'},
+            }
+            files[root + '/assets/sd_frames/Default.png'] = b'\x89PNG\r\n\x1a\n'
+        files.update({
+            first + '/voice/battle_special_10123_2_3-01.wav': wave_bytes(),
+            first + '/voice/battle_break_10987_1.wav': wave_bytes(),
+            second + '/voice/battle_break_10987_1.wav': b'not audio',
+            second + '/other/battle_break_10987_1.wav': wave_bytes(),
+            first + '/locale/exclusive/battleSpeechBubbleText/first.json': {
+                'battle_s3_10123': {'id': 'battle_s3_10123', 'dlg': '  我来帮忙！  '},
+            },
+            second + '/locale/exclusive/battleSpeechBubbleText/second.json': {
+                'battle_s3_10123': {'id': 'battle_s3_10123', 'dlg': '同包另一角色'},
+                'battle_special_10987_1': {'id': 'battle_special_10987_2', 'dlg': '编号不一致'},
+            },
+            second + '/locale/shared_optional/battleSpeechBubbleText/second.json': {
+                'dataList': [{'id': 'battle_s3_10987_1', 'dlg': '非专属台词'}],
+            },
+        })
+        self.assertEqual(self.detect(files, [record(first, '10123', 'First'),
+                                             record(second, '10987', 'Second'),
+                                             record('another/skins/first', '10123', 'Unrelated')]),
+                         [{'voice': 'found', 'bubble': 'found'},
+                          {'voice': 'unknown', 'bubble': 'none'},
+                          {'voice': 'none', 'bubble': 'none'}])
+
     def test_scoped_declared_audio_and_foreign_bubble(self):
         files = {
             'mod/custom_limbus_data/personality/Medic.json': {

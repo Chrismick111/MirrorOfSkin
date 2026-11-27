@@ -18,6 +18,7 @@ static unsigned voice_worn_owner(Unit *u){
  return voice_skin_owner(voice_worn_skin(u));
 }
 #include "hiro_voice.inc"
+#include "imported_wav.inc"
 static Unit *voice_unit(int id,void *view){
  if(!enabled_now()||cleanup_pending||g_quitting)return NULL;
  Unit *found=NULL;
@@ -122,8 +123,8 @@ static void *voice_dialog_component(void *object){
  ui_unroot(root);
  return ok&&component&&voice_dialog_method(component,4)?component:NULL;
 }
-static int voice_show(void *view,int id,void *key,const char *literal,float length,uint8_t custom,int nativeCue){
- if(!view||!key||!c_voiceGenerator)return 0;
+static int voice_show_text(void *view,int id,void *key,const char *literal,float length,uint8_t custom,int nativeCue,const char *override){
+ if(!view||(!key&&!override)||!c_voiceGenerator)return 0;
  void *enabled=find_method(c_voiceGenerator,"CheckSpeechBubbleSystemEnabled",0);
  int enabledResult=enabled?call_bool(enabled,NULL,NULL):-2;
  if(enabledResult!=1){
@@ -132,7 +133,7 @@ static int voice_show(void *view,int id,void *key,const char *literal,float leng
  }
  Unit *wearer=voice_unit(0,view);
  VoiceBinding *binding=voice_binding(voice_worn_skin(wearer));
- const char *caption=binding&&binding->owner==(unsigned)id?private_caption(binding,literal):NULL;
+ const char *caption=override?override:binding&&binding->owner==(unsigned)id?private_caption(binding,literal):NULL;
  void *text=NULL;
  if(caption)text=make_string(caption);
  else{
@@ -180,6 +181,9 @@ static int voice_show(void *view,int id,void *key,const char *literal,float leng
  }
  ui_unroot(er);ui_unroot(lr);ui_unroot(tr);return result;
 }
+static int voice_show(void *view,int id,void *key,const char *literal,float length,uint8_t custom,int nativeCue){
+ return voice_show_text(view,id,key,literal,length,custom,nativeCue,NULL);
+}
 static int voice_show_key(Unit *u,unsigned owner,const char *key,float length,uint8_t custom){
  if(!key)return 0;
  void *str=make_string(key);uintptr_t root=ui_root(str);
@@ -197,20 +201,61 @@ static void private_playing_caption(PrivateVoiceEvent *e){
  e->captionHandled=shown;
  private_caption_result(e->u,e->binding,e->key,shown);
 }
+static int imported_wav_show_caption(Unit *unit,const ImportedWavAsset *asset,float length,uint8_t custom){
+ int shown=voice_show_text(unit->view,(int)asset->owner,NULL,asset->key,length,custom,0,asset->text);
+ char message[360];
+ snprintf(message,sizeof(message),"Imported WAV bubble: view=%p owner=%u key=%s shown=%d",unit->view,asset->owner,asset->key,shown);
+ bootlog(message);
+ return shown;
+}
+static void imported_wav_playing_caption(ImportedWavEvent *event){
+ /* An event-level fallback belongs to the game's subtitle cue, which can
+    cover more than one recorded variant or clip in the same skill. */
+ if(event->caption.rank<=1||event->captionBlocked||event->captionHandled||event->captionFallback||event->captionAttempted)return;
+ event->captionAttempted=1;
+ event->captionHandled=imported_wav_show_caption(event->unit,&event->caption,2.0f,0);
+}
 static _Thread_local Unit *voiceView;
 static _Thread_local Unit *multiRequestView;
 static _Thread_local int multiHasView;
 static _Thread_local PrivateVoiceEvent *registeringVoice;
 static void print_bubble_hook(int32_t id,void *key,float length,uint8_t custom,void *mi){
  Unit *scope=registeringVoice?registeringVoice->u:(multiRequestView?multiRequestView:voiceView);
+ if(registeringWav)scope=registeringWav->unit;
+ Unit *wavUnit=scope?scope:(multiHasView?NULL:voice_unit(id,NULL));
+ Skin *wavSkin=voice_worn_skin(wavUnit);
+ char wavKey[192]={0};ImportedWavAsset wavCaption={0};
+ if(wavSkin&&wavSkin->imported&&sr_voice_string_text(key,wavKey,sizeof(wavKey))&&
+    imported_wav_read(wavSkin,voice_source_id(wavUnit),wavKey,1,&wavCaption)&&
+    ((unsigned)id==voice_source_id(wavUnit)||(unsigned)id==wavCaption.owner)){
+  ImportedWavEvent *event=NULL;
+  int ambiguous=0;
+  for(int i=0;i<32;i++){
+   ImportedWavEvent *candidate=&importedWavEvents[i];
+   if(candidate->unit!=wavUnit||candidate->view!=wavUnit->view||candidate->app!=wavSkin->app||
+      strcmp(candidate->caption.key,wavCaption.key))continue;
+   if(candidate==registeringWav){event=candidate;ambiguous=0;break;}
+   if(event)ambiguous=1;
+   event=candidate;
+  }
+  if(!ambiguous&&(!event||(!event->captionBlocked&&!event->captionFallback))){
+   if(event&&event->captionHandled)return;
+   int shown=imported_wav_show_caption(wavUnit,&wavCaption,length,custom);
+   if(event){event->captionHandled=shown;event->captionFallback=!shown;}
+   if(shown)return;
+  }
+ }
  Unit *u=scope?(voice_source_id(scope)==(unsigned)id||voice_worn_owner(scope)==(unsigned)id?scope:NULL):
                (multiHasView?NULL:voice_unit(id,NULL));
  Skin *skin=voice_worn_skin(u);unsigned owner=voice_skin_owner(skin);
  VoiceBinding *binding=voice_binding(skin);
- char incoming[192];
+ char incoming[192]={0},remapped[192];int bankCaption=0;
  if(binding&&sr_voice_string_text(key,incoming,sizeof(incoming))){
   const char *mapped=private_caption(binding,incoming)?incoming:sr_voice_catalog_event_key((unsigned)id,owner,incoming);
+  if((!mapped||!private_caption(binding,mapped))&&
+     battle_voice_remap(incoming,voice_source_id(u),owner,remapped,sizeof(remapped)))mapped=remapped;
   if(mapped&&private_caption(binding,mapped)){
+   bankCaption=1;
    PrivateVoiceEvent *event=NULL;
    for(unsigned i=0;i<32;i++){
     PrivateVoiceEvent *e=&privateVoiceEvents[i];
@@ -219,7 +264,8 @@ static void print_bubble_hook(int32_t id,void *key,float length,uint8_t custom,v
     if(!event||(LONG)(e->queued-event->queued)>0)event=e;
    }
    if(event&&event->captionHandled)return;
-   if((scope||event)&&!(event&&(event->captionBlocked||event->captionFallback))){
+   if((scope||event||battle_voice_owner_field(incoming,voice_source_id(u)))&&
+      !(event&&(event->captionBlocked||event->captionFallback))){
     int shown=voice_show_key(u,owner,mapped,length,custom);
     if(event)event->captionHandled=shown;
     private_caption_result(u,binding,mapped,shown);
@@ -229,6 +275,9 @@ static void print_bubble_hook(int32_t id,void *key,float length,uint8_t custom,v
   }
  }
  if(skin&&skin->imported){
+  unsigned source=voice_source_id(u);
+  if(!bankCaption&&!*wavCaption.key&&source==(unsigned)id&&*wavKey&&battle_voice_owner_field(wavKey,source)&&
+     (private_battle_caption_ready(binding)||imported_wav_has_channel(skin,source,1,NULL)))return;
   ((void (*)(int,void *,float,uint8_t,void *))orig_printBubble)(id,key,length,custom,mi);return;
  }
  if(skin&&owner!=(unsigned)id){
@@ -292,6 +341,17 @@ typedef struct {int owner,source;void *key;} VoiceRegistration;
 static _Thread_local VoiceRegistration voiceRegistration;
 typedef struct {Unit *unit;Skin *skin;uintptr_t instance;} VoiceSegment;
 static _Thread_local VoiceSegment voiceSegment;
+static PrivateVoiceEvent *voice_track_bank(Unit *unit,Skin *skin,void *original,ImportedWavEvent *wav,int blocked){
+ if(wav&&*wav->path)return NULL;
+ int mapped=0;
+ PrivateVoiceEvent *bank=private_voice_track_impl(unit,skin,original,&mapped);
+ if(wav&&mapped)wav->suppress=0;
+ if(bank){
+  if(wav&&*wav->caption.key)bank->captionBlocked=1;
+  else if(blocked>=0)bank->captionBlocked=blocked;
+ }
+ return bank;
+}
 static uint8_t voice_timeline_hook(void *mixer,void *app,uintptr_t instance,void *segment,void *mi){
  typedef uint8_t (*Register)(void *,void *,uintptr_t,void *,void *);
  Unit *unit=enabled_now()&&!cleanup_pending&&!g_quitting?unit_for_app(app):NULL;
@@ -299,10 +359,14 @@ static uint8_t voice_timeline_hook(void *mixer,void *app,uintptr_t instance,void
  VoiceSegment previous=voiceSegment;
  voiceSegment=(VoiceSegment){unit,skin&&skin->app==app?skin:NULL,instance};
  PrivateVoiceEvent *previousEvent=registeringVoice;
- registeringVoice=skin&&skin->app==app?private_voice_track(unit,skin,(void*)instance):NULL;
+ ImportedWavEvent *previousWav=registeringWav;
+ registeringWav=skin&&skin->app==app?imported_wav_track(unit,skin,(void*)instance):NULL;
+ registeringVoice=skin&&skin->app==app?voice_track_bank(unit,skin,(void*)instance,registeringWav,-1):NULL;
  uint8_t result=((Register)orig_registerAppearanceVoice)(mixer,app,instance,segment,mi);
  if(!result&&registeringVoice)private_voice_end(registeringVoice);
+ if(!result&&registeringWav&&registeringWav!=previousWav)imported_wav_end(registeringWav);
  registeringVoice=previousEvent;
+ registeringWav=previousWav;
  voiceSegment=previous;
  return result;
 }
@@ -326,11 +390,17 @@ static void *voice_add_hook(uintptr_t instance,int id,int type,float volume,uint
                  (multiHasView?multiRequestView:voiceView);
  if(!requester&&!multiHasView&&!voiceSegment.unit)requester=voice_unit_for_async_id(id);
  PrivateVoiceEvent *previousEvent=registeringVoice;
- registeringVoice=requester?private_voice_track(requester,voice_worn_skin(requester),(void*)instance):NULL;
- if(registeringVoice)registeringVoice->captionBlocked=blocked;
+ ImportedWavEvent *previousWav=registeringWav;
+ Skin *worn=voice_worn_skin(requester);
+ registeringWav=requester&&((voiceSegment.skin&&voiceSegment.instance==instance)||
+              voice_source_id(requester)==(unsigned)id)?imported_wav_track(requester,worn,(void*)instance):NULL;
+ registeringVoice=requester?voice_track_bank(requester,worn,(void*)instance,registeringWav,blocked):NULL;
+ if(registeringWav)registeringWav->captionBlocked=blocked;
  void *result=((Add)orig_addMultiVoice)(instance,id,type,volume,custom,length,alternate,blocked,subtitle,duck,interrupt,mi);
  if(!result&&registeringVoice&&registeringVoice!=previousEvent)private_voice_end(registeringVoice);
+ if(!result&&registeringWav&&registeringWav!=previousWav)imported_wav_end(registeringWav);
  registeringVoice=previousEvent;
+ registeringWav=previousWav;
  return result;
 }
 static void *voice_multi_dispatch(int id,void *key,void *view,uint8_t special,uint8_t custom,float length,void *mi){

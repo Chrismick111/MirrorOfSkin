@@ -52,8 +52,8 @@ static int managed_bundle_file(wchar_t *path){
  return ok;
 }
 
-static int imported_bundle_path(const char *look,const wchar_t *file,const char *assetPath,
-                                wchar_t *out,size_t cap){
+static int imported_bundle_path_mode(const char *look,const wchar_t *file,const char *assetPath,
+                                     wchar_t *out,size_t cap,int allowFallback){
  wchar_t relative[512];
  swprintf(relative,512,L"Assets\\ImportedSkins\\%hs.loc",look);
  if(!addon_file_path(out,cap,relative))return 0;
@@ -61,7 +61,7 @@ static int imported_bundle_path(const char *look,const wchar_t *file,const char 
                            OPEN_EXISTING,FILE_FLAG_OPEN_REPARSE_POINT,NULL);
  if(locator==INVALID_HANDLE_VALUE){
   DWORD err=GetLastError();
-  if(err!=ERROR_FILE_NOT_FOUND&&err!=ERROR_PATH_NOT_FOUND)return 0;
+  if(!allowFallback||(err!=ERROR_FILE_NOT_FOUND&&err!=ERROR_PATH_NOT_FOUND))return 0;
   if(assetPath){
    swprintf(relative,512,L"Assets\\%hs",assetPath);
    for(wchar_t *p=relative;*p;p++)if(*p==L'/')*p=L'\\';
@@ -77,6 +77,11 @@ static int imported_bundle_path(const char *look,const wchar_t *file,const char 
  CloseHandle(locator);
  return ok&&imported_bundle_relative(bytes,n,file,relative,512)&&
         addon_file_path(out,cap,relative)&&managed_bundle_file(out);
+}
+
+static int imported_bundle_path(const char *look,const wchar_t *file,const char *assetPath,
+                                wchar_t *out,size_t cap){
+ return imported_bundle_path_mode(look,file,assetPath,out,cap,1);
 }
 
 #endif

@@ -31,7 +31,8 @@ class RolandLifecycleTest(unittest.TestCase):
             path.parent.mkdir(parents=True, exist_ok=True)
             path.write_bytes(b'previous-model')
         self.archive = Path(self.tmp.name) / 'RolandBundle.zip'
-        self.archive.write_bytes(b'fixture')
+        with zipfile.ZipFile(self.archive, 'w') as archive:
+            archive.writestr('custom_appearance/model.bundle', b'fixture')
 
     def rows(self):
         data = json.loads((self.root / skin_import.CATALOG).read_bytes())

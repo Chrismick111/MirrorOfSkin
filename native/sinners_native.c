@@ -303,6 +303,7 @@ static int random_double(double *out){
 #include "imported_skin.h"
 #include "segment_latch.h"
 #include "ordinary_body_index.h"
+typedef struct BodyVisibility BodyVisibility;
 typedef struct {
   const ImportedConfig *imported;
   const ImportedConfig *bundledPolicy;
@@ -316,6 +317,7 @@ typedef struct {
   int motionCounts[SR_MOTION_CACHE];
   uint32_t ordinaryClips[SR_MOTION_CACHE];
   SrOrdinaryBodies *ordinaryBodies;
+  BodyVisibility *bodyVisibility;
   int nativeMotionDetail[SR_MOTION_CACHE];
   unsigned motionMapped[4],motionMissing[4];
   void *app,*go;
@@ -1159,6 +1161,7 @@ static void *app_go(void *app){
   void *getter=find_method(ui_class(app),"get_gameObject",0);
   int ok=1;return call_obj(getter,app,NULL,&ok);
 }
+#include "body_visibility.inc"
 /* CharacterState stores this as an ObscuredBool. Ask the game's own
    GetDecrypted method; never interpret the encrypted struct layout. */
 static int native_retreat_state(Unit *u){
@@ -1202,6 +1205,7 @@ static void sync_visibility(Unit *u){
   sr_visibility_selection(&u->hiddenAppearance,current);
   if(sr_visibility_suspended(u->hiddenAppearance,current))return;
   Skin *visible=skin_for_app(u,current);
+  sync_donor_body(visible);
   int visualOnly=visible && (g_rows[visible->row].excluded&SR_STATIC_APPEARANCE_FLAG);
   if(visible){static_hide_renderers(u);}else if(!held_appearance(u)||current!=u->baseApp||!enabled_now())static_restore_renderers(u);
   void *apps[SR_SKIN_MAX+1];int total=0;
@@ -1236,7 +1240,7 @@ static void *unit_switch(Unit *u,Skin *skin){
   if(!desired)return NULL;
   int hadMask=u->staticHidden;
   if(skin&&!static_hide_renderers(u)){bootlog("donor switch skipped: could not mask source renderers");return NULL;}
-  if(current==desired){if(skin)u->last=(int)(skin-u->skins);return desired;}
+  if(current==desired){if(skin){u->last=(int)(skin-u->skins);sync_donor_body(skin);}return desired;}
   /* A draw can replace the native appearance before the first periodic poll. */
   if(skin&&current&&!u->nativeValid)poll_paired_native(u);
   u->switching=1;
@@ -1287,6 +1291,7 @@ static void retain_last_appearance(Unit *u){
   g_motionDepth++;
  playback_begin(held->app);
   ((void (*)(void *,int,uint8_t,int,uint8_t,void *,uint8_t,void *))orig_changeMotion)(held->app,0,0,0,0,NULL,0,m_changeMotion);
+  sync_donor_body(held);
   g_motionDepth--;
   u->retainConsumed=1;u->retainedAction=action;u->retainedApp=held->app;u->idleRestoreFrames=0;
   bootlog("last random appearance retained after viewer and both timelines ended");
@@ -1405,6 +1410,7 @@ static void retire_skin(Skin *s){
   }
   retire_slot(NULL,s->handleBox,s->handleRoot);
   if(s->ordinaryBodies)HeapFree(GetProcessHeap(),0,s->ordinaryBodies);
+  if(s->bodyVisibility)HeapFree(GetProcessHeap(),0,s->bodyVisibility);
   ui_unroot(s->appRoot);ui_unroot(s->goRoot);ui_unroot(s->metaRoot);ui_unroot(s->storyRoot);
   s->used=0;
   release_unused_local_art(s->look);
@@ -1543,6 +1549,10 @@ static int build_skin(Unit *u,int row){
   slot->imported=local&&!local->bundled?&local->config:NULL;
   slot->bundledPolicy=local&&local->bundled?&local->config:NULL;
   lstrcpynA(slot->look,g_loadLook,64);
+  if(!local&&prepare_stock_donor_body(slot,prefab)){
+    char line[150];snprintf(line,sizeof(line),"donor body: %.63s authored body poses and parts ready",slot->look);
+    bootlog(line);
+  }
   wsprintfA(slot->rid,"%.40s_SRN_%lu_%d",entry->identity,(unsigned long)g_frame,row);
   void *info=rfield(app,"charInfo");
   if(info){
@@ -2150,6 +2160,7 @@ static MotionDelivery forward_projected_motion(void *app,int detail,uint8_t a1,i
     !(g_rows[skin->row].excluded&2))
   visible_watch_begin(u,skin,sourceDetail,coin);
  ((void (*)(void *,int,uint8_t,int,uint8_t,void *,uint8_t,void *))orig_changeMotion)(app,detail,a1,index,a3,cb,a5,mi);
+ sync_donor_body(skin);
  hiddenTimingApp=savedTiming;g_fxCapture=savedCapture;g_fxCaptureOwner=savedOwner;
  g_projection=saved;
  return (MotionDelivery){app,detail,index};
@@ -2357,6 +2368,7 @@ static void change_motion_hook(void *self,int detail,uint8_t a1,int index,uint8_
       playback_begin(app);
       play_imported_defense_state(skin,mapped);
       ((void (*)(void *,int,uint8_t,int,uint8_t,void *,uint8_t,void *))orig_changeMotion)(app,mapped,a1,index,a3,callback,a5,mi);
+      sync_donor_body(skin);
       g_clashPlayback=saved;return;
      }
     }
@@ -2904,6 +2916,7 @@ static void change_appearance_hook(void *view,void *name,uint8_t flag,void *mi){
      Skin *held=held_appearance(u);if(held&&held->go)set_active(held->go,1);
     }
     Skin *skin=actual?skin_for_app(u,actual):NULL;
+    if(!u->switching&&!u->retreated&&!sr_visibility_suspended(u->hiddenAppearance,actual))sync_donor_body(skin);
     u->voiceBoss=voice_skin_owner(skin);
     break;
   }
@@ -3430,6 +3443,7 @@ static void tick(void){
   voice_refresh_poll_at(GetTickCount());
   if(enabled_now()&&!cleanup_pending)voice_pump();else sr_voice_clear();
   private_voice_tick(enabled_now()&&!cleanup_pending);
+  imported_wav_tick(enabled_now()&&!cleanup_pending);
   draw_rules_tick();
   sr_wf_poll(g_self);
   sr_sg_poll(g_self);
@@ -3522,6 +3536,12 @@ static void tick(void){
      Skin *held=held_appearance(u);
      if(held&&held->go&&go_active_self(held->go)==0)set_active(held->go,1);
     }
+    Skin *held=held_appearance(u);
+    if(held&&held->bodyVisibility){
+     void *actual=rfield(u->view,"_curAppearance");
+     if((actual==held->app||(actual==u->baseApp&&u->staticHidden))&&!sr_visibility_suspended(u->hiddenAppearance,actual))
+      sync_donor_body(held);
+    }
     update_sanity(u);
     if(g_frame%15==0)poll_paired_native(u);
     update_stage_group(u);
@@ -3544,6 +3564,7 @@ static void tick(void){
 }
 static void cleanup_all(void){
   private_voice_close();
+  imported_wav_tick(0);
   fx_plan_close_all();
   sr_voice_clear();
   startup_assets_clear();

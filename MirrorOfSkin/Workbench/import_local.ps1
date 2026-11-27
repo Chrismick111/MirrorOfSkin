@@ -44,7 +44,7 @@ public static class ImportPickerForeground {
 }
 '@
     $picker=New-Object System.Windows.Forms.OpenFileDialog
-    $picker.Title='选择要加入本地工作台的外观模组'
+    $picker.Title='选择外观模组（按 Ctrl 或 Shift 可多选）'
     $picker.Filter='模组文件 (*.zip;*.7z;*.rar;*.bundle;*.carra2;*.bank)|*.zip;*.7z;*.rar;*.bundle;*.carra2;*.bank|所有文件 (*.*)|*.*'
     $picker.Multiselect=$true
     $picker.InitialDirectory=$addon

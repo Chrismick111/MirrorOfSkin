@@ -1,11 +1,13 @@
 """Exercise package folders and stable identifiers through the production importer."""
 import hashlib
+from io import BytesIO
 import json
 from pathlib import Path
 import sys
 import tempfile
 import unittest
 from unittest.mock import patch
+import wave
 from zipfile import ZipFile
 
 
@@ -47,10 +49,148 @@ class ImportPackageTest(unittest.TestCase):
         with ZipFile(self.archive, 'w') as container:
             container.writestr('model.bundle', b'dummy')
 
-    def convert(self, filename, *records):
+    def convert(self, filename, *records, framepack_dialogue=False):
         with patch('skin_assets.build_assets', return_value=iter(records)):
             return skin_import._import_normalized(self.archive, self.data, unity=object(),
-                                                   package_addon=self.addon, package_source=filename)
+                                                   package_addon=self.addon, package_source=filename,
+                                                   framepack_dialogue=framepack_dialogue)
+
+    def test_reimport_updates_and_clears_author_without_resetting_personal_settings(self):
+        from pathlib import PurePosixPath
+
+        candidate = dict(record('a'), _source_member=PurePosixPath('Pack/custom_appearance/model.bundle'))
+        manifest = 'Pack/README.md'
+        catalog_path = self.data / skin_import.CATALOG
+
+        def catalog():
+            return json.loads(catalog_path.read_bytes())
+
+        def update_document(content):
+            with ZipFile(self.archive, 'w') as package:
+                package.writestr(manifest, content)
+            return self.convert('Pack.zip', candidate)[0]
+
+        self.assertEqual(update_document('Description only')['status'], 'added')
+        data = catalog()
+        data['101']['entries'][0].update(name='我的外观名', weight=31, enabled=False)
+        catalog_path.write_bytes(skin_import.encode(data))
+        for author in ('First', 'Second'):
+            imported = update_document('Author: ' + author)
+            self.assertEqual((imported['status'], imported['author'], imported['imported_author_source']),
+                             ('updated', author, manifest))
+            self.assertEqual(update_document('Author: ' + author)['status'], 'existing')
+        self.assertEqual(update_document('Description only')['status'], 'updated')
+        self.assertEqual(update_document('Description only')['status'], 'existing')
+        [saved] = catalog()['101']['entries']
+        self.assertNotIn('author', saved)
+        self.assertNotIn('imported_author_source', saved)
+        self.assertEqual((saved['name'], saved['weight'], saved['enabled']), ('我的外观名', 31, False))
+
+    def test_reimport_updates_and_clears_links_without_an_author(self):
+        candidate = dict(record('a'), _source_member='Pack/custom_appearance/model.bundle')
+        catalog_path = self.data / skin_import.CATALOG
+
+        def update(url=''):
+            with ZipFile(self.archive, 'w') as package:
+                package.writestr('Pack/README.md', '发布页：' + url if url else '说明')
+            [result] = self.convert('Pack.zip', candidate)
+            data = json.loads(catalog_path.read_bytes())
+            [saved] = data['101']['entries']
+            links = [{'url': url, 'label': '发布页'}] if url else None
+            self.assertEqual(result.get('author_links'), links)
+            self.assertEqual(saved.get('author_links'), links)
+            self.assertNotIn('author', saved)
+            return result['status']
+
+        self.assertEqual(update(), 'added')
+        for url in ('https://mod.example/old', 'https://mod.example/new?key=2'):
+            self.assertEqual(update(url), 'updated')
+            self.assertEqual(update(url), 'existing')
+        self.assertEqual(update(), 'updated')
+        self.assertEqual(update(), 'existing')
+
+    def dialogue_record(self, digit, owner, sample):
+        buffer = BytesIO()
+        with wave.open(buffer, 'wb') as clip:
+            clip.setparams((1, 2, 28000, 0, 'NONE', 'not compressed'))
+            clip.writeframes(sample * 20)
+        audio = buffer.getvalue()
+        filename = hashlib.sha256(audio).hexdigest() + '.wav'
+        source = self.base / filename
+        source.write_bytes(audio)
+        manifest = f'{owner}\tbattle_kill_{owner}_1\t{filename}\t台词\n'.encode('utf8')
+        return dict(record(digit), framepack_dialogue=(manifest, {filename: source})), filename
+
+    def test_framepack_dialogue_reload_reimport_and_delete(self):
+        from imported_package_uninstall import delete_identity
+        import imported_catalog
+
+        native = self.addon / 'SinnersNative-v64.dll'
+        native.write_bytes(b'fixture core')
+        manifest = self.addon / 'compatibility.json'
+        manifest.write_bytes(json.dumps({'framepack_dialogue': 1, 'import_package_folders': 1,
+                                         'package_files':{native.name:hashlib.sha256(native.read_bytes()).hexdigest()}}).encode())
+        first, old = self.dialogue_record('a', '11116', b'\0\1')
+        second, same = self.dialogue_record('b', '10316', b'\0\1')
+        self.assertEqual(old, same)
+        rows = self.convert('双人.zip', first, second, framepack_dialogue=True)
+        folder = Path(rows[0]['package_directory'])
+        first_id, second_id = (row['identity_id'] for row in rows)
+        identities = (first_id, second_id)
+
+        def reopen():
+            rows = {identity: {'identity_id': identity, 'name': identity,
+                               'dialogue_detection': {'voice': 'found', 'bubble': 'found'}}
+                    for identity in identities}
+            imported_catalog.apply(rows, self.data, self.addon)
+            return [rows[identity]['dialogue_detection'] for identity in identities]
+
+        both = {'voice': 'connected', 'bubble': 'connected'}
+        self.assertEqual(reopen(), [both, both])
+        (folder / old).unlink()
+        self.assertEqual(reopen(), [{'voice': 'found', 'bubble': 'connected'}] * 2)
+        self.convert('双人.zip', first, second, framepack_dialogue=True)
+        self.assertEqual(reopen(), [both, both])
+        native.write_bytes(b'older core')
+        self.assertEqual(reopen(), [{'voice': 'found', 'bubble': 'found'}] * 2)
+        native.write_bytes(b'fixture core')
+
+        changed, new = self.dialogue_record('a', '11116', b'\0\2')
+        [updated] = self.convert('双人.zip', changed, framepack_dialogue=True)
+        self.assertEqual(updated['status'], 'updated')
+        self.assertEqual({path.name for path in folder.glob('*.wav')}, {old, new})
+        delete_identity(self.data, self.addon, second_id, lock_factory=skin_import.FileLock)
+        self.assertFalse((folder / old).exists())
+        self.assertFalse((folder / (second['look'] + '.voice.tsv')).exists())
+        self.assertTrue((folder / new).is_file())
+
+        [updated] = self.convert('双人.zip', first, framepack_dialogue=True)
+        self.assertEqual(updated['status'], 'updated')
+        self.assertEqual({path.name for path in folder.glob('*.wav')}, {old})
+        delete_identity(self.data, self.addon, first_id, lock_factory=skin_import.FileLock)
+        self.assertFalse(list(folder.glob('*.wav')))
+        self.assertFalse(list(folder.glob('*.voice.tsv')))
+
+    def test_framepack_dialogue_failure_restores_previous_manifest(self):
+        old, wav_before = self.dialogue_record('a', '11116', b'\0\1')
+        [row] = self.convert('重导.zip', old, framepack_dialogue=True)
+        folder = Path(row['package_directory'])
+        sidecar = folder / (old['look'] + '.voice.tsv')
+        before = sidecar.read_bytes()
+        new, wav_after = self.dialogue_record('a', '11116', b'\0\2')
+        write = skin_import.write_atomic
+
+        def fail_sidecar(path, data):
+            if path == sidecar:
+                raise OSError('simulated sidecar failure')
+            return write(path, data)
+
+        with patch.object(skin_import, 'write_atomic', side_effect=fail_sidecar):
+            with self.assertRaisesRegex(OSError, 'simulated sidecar failure'):
+                self.convert('重导.zip', new, framepack_dialogue=True)
+        self.assertEqual(sidecar.read_bytes(), before)
+        self.assertTrue((folder / wav_before).is_file())
+        self.assertFalse((folder / wav_after).exists())
 
     def test_folder_keeps_real_models_and_multiple_stable_identities(self):
         rows = self.convert('测试压缩包.zip', record('a'), record('b'))

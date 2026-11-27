@@ -198,6 +198,34 @@ int main(void){
  void *sourceDesc=NULL,*sourceEvent=NULL;
  assert(!lookup(original,"event:/Voice/battle_endcommand_10115_1",&sourceDesc));
  assert(!hStudio_EventDescription_CreateInstance(sourceDesc,&sourceEvent));
+ /* An author bank can own combat audio before any author line has played.
+    A stock-only cue must not leak, and undoing the appearance restores it. */
+ assert(private_battle_audio_ready(ba));
+ const char *stockPrefix="event:/Voice/";
+ void *unmatched=NULL;
+ for(size_t i=0;i<sizeof(sr_voice_labels)/sizeof(*sr_voice_labels)&&!unmatched;i++){
+  const char *key=sr_voice_labels[i].key;
+  char stockPath[256],authorKey[192],authorPath[256];void *unused=NULL;
+  if(!battle_voice_remap(key,10115,10916,authorKey,sizeof(authorKey)))continue;
+  snprintf(stockPath,sizeof(stockPath),"%s%s",stockPrefix,key);
+  snprintf(authorPath,sizeof(authorPath),"%s%s",stockPrefix,authorKey);
+  if(!lookup(original,stockPath,&unused)&&lookup(ba->library->system,authorPath,&unused)){
+   assert(!lookup(original,stockPath,&unmatched));
+  }
+ }
+ assert(unmatched);
+ void *silentOriginal=NULL,*silentGroup=NULL;
+ assert(!hStudio_EventDescription_CreateInstance(unmatched,&silentOriginal));
+ PrivateVoiceEvent *silenced=private_voice_track(&ua,&a,silentOriginal);
+ assert(silenced&&silenced->suppress&&!silenced->replacement);
+ assert(!hStudio_EventInstance_Start(silentOriginal));
+ for(int i=0;i<100&&!silenced->muted;i++){private_voice_tick(1);Sleep(5);}
+ assert(silenced->muted&&!hStudio_EventInstance_GetChannelGroup(silentOriginal,&silentGroup));
+ assert(!hChannelGroup_GetMute(silentGroup,&m)&&m);
+ ua.worn=&regular;private_voice_tick(1);
+ assert(!hChannelGroup_GetMute(silentGroup,&m)&&!m);
+ hStudio_EventInstance_Stop(silentOriginal,1);hStudio_EventInstance_Release(silentOriginal);
+ puts("PASS a loaded author bank suppresses only the worn appearance's unmapped combat voice");
  ua.worn=&a;PrivateVoiceEvent *mapped=private_voice_track(&ua,&a,sourceEvent);
  assert(mapped&&!strcmp(mapped->key,"battle_endcommand_10916_1"));
  assert(!hStudio_EventInstance_Start(sourceEvent));

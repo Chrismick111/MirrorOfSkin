@@ -12,6 +12,7 @@ AUDIO_EXTENSIONS = frozenset(('.wav', '.ogg', '.mp3', '.flac', '.opus', '.m4a'))
 _MAX_JSON = 16 * 1024**2
 _OWNER = r'[1-9][0-9]{2,7}'
 _BATTLE = re.compile(r'battle[A-Za-z0-9_-]{0,185}', re.I)
+_FRAMEPACK_BATTLE = re.compile(r'battle[a-z0-9]*(?:_[a-z][a-z0-9]*)*_(%s)(?:_[0-9]+)*(?:-[0-9]+)?' % _OWNER, re.I)
 _VOICE = re.compile(r'(?:[a-z]{2,3}(?:[-_][a-z]{2,4})?_)?voice_[\w-]+\.json', re.I)
 _BUBBLE = re.compile(r'(?:[a-z]{2,3}(?:[-_][a-z]{2,4})?_)?battlespeechbubbledlg(?:[-_][\w-]+)?\.json', re.I)
 _BATTLE_DIRS = {'battlespeechbubbletext', 'battlespeechbubbledlg'}
@@ -28,6 +29,7 @@ class Evidence:
     owner: str = ''
     label: str = ''
     bank: str = ''
+    scope_exact: bool = False
 
 
 @dataclass
@@ -102,11 +104,63 @@ def battle_dialogue(data, path):
                 event_owner = next(iter(ids))
             elif ids:
                 continue
-        line = ' '.join(re.sub(r'[\x00-\x1f\x7f]', ' ', line).split())
-        if (line and len(line.encode('utf8', errors='replace')) <= 4095
-                and not any(0xD800 <= ord(char) <= 0xDFFF for char in line)
-                and not (owner and event_owner and owner != event_owner)):
+        line = _battle_line(line)
+        if line and not (owner and event_owner and owner != event_owner):
             yield event, owner or event_owner, line
+
+
+def _battle_line(line):
+    if not isinstance(line, str):
+        return ''
+    line = ' '.join(re.sub(r'[\x00-\x1f\x7f]', ' ', line).split())
+    if (not any(0xD800 <= ord(char) <= 0xDFFF for char in line)
+            and len(line.encode('utf8')) <= 4095):
+        return line
+    return ''
+
+
+def _framepack_owner(event):
+    match = _FRAMEPACK_BATTLE.fullmatch(event) if _BATTLE.fullmatch(event) else None
+    return match[1] if match else ''
+
+
+def _scan_framepack(archive, skin, scan):
+    voice_dir = _path(skin.voice_dir) if skin.voice_dir else None
+    locale_dir = _path(skin.locale_exclusive_dir) if skin.locale_exclusive_dir else None
+    scope = _path(skin.package_root).parts
+    owner = skin.personality
+    lines = defaultdict(set)
+    for name, info in skin.members.items():
+        path = PurePosixPath(name)
+        if (voice_dir is not None and path.is_relative_to(voice_dir) and path.suffix == '.wav'
+                and _framepack_owner(path.stem) == owner):
+            try:
+                valid = _audio_valid(archive, info, path)
+            except (BadZipFile, OSError, RuntimeError, NotImplementedError):
+                valid = False
+            scan.evidence.add(Evidence('voice', 'found' if valid else 'unknown', scope, owner, scope_exact=True))
+        if (locale_dir is None or not path.is_relative_to(locale_dir)
+                or not _BATTLE_DIRS.intersection(path.relative_to(locale_dir).parts[:-1])
+                or subtitle_file(path) != 'bubble'):
+            continue
+        try:
+            data = json.loads(archive.read(info)) if info.file_size <= _MAX_JSON else None
+        except (BadZipFile, OSError, ValueError, RuntimeError, NotImplementedError, RecursionError):
+            data = None
+        if not isinstance(data, dict):
+            scan.evidence.add(Evidence('bubble', 'unknown', scope, owner, scope_exact=True))
+            continue
+        rows = data.get('dataList')
+        entries = ((row.get('id'), row) for row in rows if isinstance(row, dict)) if isinstance(rows, list) else data.items()
+        for event, row in entries:
+            if (isinstance(event, str) and isinstance(row, dict) and row.get('id') == event
+                    and _framepack_owner(event) == owner):
+                line = _battle_line(row.get('dlg'))
+                if line:
+                    lines[event.casefold()].add(line)
+    if lines:
+        state = 'found' if any(len(choices) == 1 for choices in lines.values()) else 'unknown'
+        scan.evidence.add(Evidence('bubble', state, scope, owner, scope_exact=True))
 
 
 def _audio_valid(archive, info, path):
@@ -291,10 +345,16 @@ def scan_archive(zip_path):
     skills = []
     try:
         with ZipFile(zip_path) as archive:
+            from framepack_manifest import read_framepacks
+
+            framepacks = read_framepacks(archive)
+            framepack_members = {name for skin in framepacks for name in skin.members}
+            for skin in framepacks:
+                _scan_framepack(archive, skin, scan)
             grouped = defaultdict(list)
             for info in archive.infolist():
                 path = _path(info.filename)
-                if path is not None and not info.is_dir():
+                if path is not None and str(path) not in framepack_members and not info.is_dir():
                     grouped[path].append(info)
             items = {path: infos[0] for path, infos in grouped.items() if len(infos) == 1}
             scan.unreadable = any(len(infos) > 1 and (subtitle_file(path) or path.suffix in AUDIO_EXTENSIONS)
@@ -369,7 +429,7 @@ def for_record(scan, record, records=None):
     status = dict.fromkeys(('voice', 'bubble'), 'unknown' if scan.unreadable else 'none')
     priority = {'none': 0, 'unknown': 1, 'unassigned': 2, 'text_only': 3, 'found': 4}
     for item in scan.evidence:
-        if scope and item.scope and item.scope != scope:
+        if (item.scope_exact or scope and item.scope) and item.scope != scope:
             continue
         if item.owner:
             if item.owner not in owners:

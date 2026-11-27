@@ -1,5 +1,6 @@
 /* Each imported revision owns a private Studio mixer. Multiple wearers can
    share its bank data, while each voice has an independent event instance. */
+#include "battle_voice_key.h"
 typedef struct {int samples;float peak[32],rms[32];short channels;} VoiceMeter;
 typedef struct {unsigned data1,data2;} VoiceParameterId;
 typedef struct {
@@ -11,6 +12,10 @@ typedef struct {VoiceParameterId source,target;} VoiceParameterPair;
  X(Studio_System_GetCoreSystem,(void*,void**)) \
  X(Studio_System_Create,(void**,unsigned)) X(Studio_System_Initialize,(void*,int,unsigned,unsigned,void*)) \
  X(Studio_System_LoadBankFile,(void*,const char*,unsigned,void**)) X(Studio_System_Update,(void*)) \
+ X(Studio_System_FlushSampleLoading,(void*)) X(Studio_Bank_GetEventCount,(void*,int*)) \
+ X(Studio_Bank_GetEventList,(void*,void**,int,int*)) \
+ X(Studio_EventDescription_LoadSampleData,(void*)) X(Studio_EventDescription_GetSampleLoadingState,(void*,int*)) \
+ X(Studio_EventDescription_UnloadSampleData,(void*)) \
  X(Studio_System_GetEventByID,(void*,const GUID*,void**)) X(Studio_System_GetEvent,(void*,const char*,void**)) X(Studio_System_Release,(void*)) \
  X(Studio_EventDescription_GetID,(void*,GUID*)) X(Studio_EventDescription_GetPath,(void*,char*,int,int*)) \
  X(Studio_EventDescription_GetParameterDescriptionCount,(void*,int*)) X(Studio_EventDescription_GetParameterDescriptionByIndex,(void*,int,VoiceParameterDescription*)) \
@@ -35,6 +40,7 @@ VOICE_CORE_API(H_DECL)
 typedef struct VoiceFile {
  struct VoiceFile *next;
  char name[256];
+ void *eventBank;
 } VoiceFile;
 typedef struct VoiceCaption {
  struct VoiceCaption *next;
@@ -55,6 +61,7 @@ typedef struct VoiceBinding {
  char look[64];
  unsigned owner;
  VoiceLibrary *library;
+ int battleAudioReady;
 } VoiceBinding;
 static VoiceBinding *voiceBindings;
 static VoiceLibrary *voiceLibraries;
@@ -128,13 +135,15 @@ static VoiceBinding *voice_binding(const Skin *skin){
  for(VoiceBinding *b=voiceBindings;b;b=b->next)if(!strcmp(b->look,skin->look))return b;
  return NULL;
 }
-static int voice_load_bank(void *system,const wchar_t *path){
- char utf8[8192];void *bank=NULL;
+static int voice_load_bank_ref(void *system,const wchar_t *path,void **bank){
+ char utf8[8192];
  return WideCharToMultiByte(CP_UTF8,0,path,-1,utf8,sizeof(utf8),NULL,NULL)&&
-        !hStudio_System_LoadBankFile(system,utf8,0,&bank);
+        !hStudio_System_LoadBankFile(system,utf8,0,bank);
 }
-static const char *private_caption(VoiceBinding *binding,const char *key){
- if(!binding||!key)return NULL;
+static int voice_load_bank(void *system,const wchar_t *path){
+ void *bank=NULL;return voice_load_bank_ref(system,path,&bank);
+}
+static void voice_load_captions(VoiceBinding *binding){
  VoiceLibrary *lib=binding->library;
  if(!lib->captionsRead){
   lib->captionsRead=1;
@@ -158,9 +167,21 @@ static const char *private_caption(VoiceBinding *binding,const char *key){
    fclose(f);
   }
  }
+}
+static const char *private_caption(VoiceBinding *binding,const char *key){
+ if(!binding||!key)return NULL;
+ voice_load_captions(binding);
+ VoiceLibrary *lib=binding->library;
  for(VoiceCaption *c=lib->captions;c;c=c->next)
   if(c->owner==binding->owner&&*c->text&&!strcmp(c->key,key))return c->text;
  return NULL;
+}
+static int private_battle_caption_ready(VoiceBinding *binding){
+ if(!binding)return 0;
+ voice_load_captions(binding);
+ for(VoiceCaption *c=binding->library->captions;c;c=c->next)
+  if(c->owner==binding->owner&&*c->text&&battle_voice_owner_field(c->key,c->owner))return 1;
+ return 0;
 }
 static int voice_open(VoiceLibrary *library,const wchar_t *gameExe,int silentOutput){
  HMODULE lib=GetModuleHandleW(L"fmodstudio.dll");if(!lib)return 0;
@@ -190,17 +211,20 @@ static int voice_open(VoiceLibrary *library,const wchar_t *gameExe,int silentOut
  }
  for(VoiceFile *f=library->files;f;f=f->next){
   char companion[256];
+  void *bank=NULL;f->eventBank=NULL;
   const char *ext=strchr(f->name,'.');int asset=!_stricmp(ext,".assets.bank");
   snprintf(companion,sizeof(companion),"%.*s%s",(int)(ext-f->name),f->name,asset?".bank":".assets.bank");
   if(!voice_file(library,companion)){
    swprintf(path,2600,L"%ls%hs",folder,companion);
    /* Standalone event banks may contain their own samples. An assets-only
       replacement always needs the game's event definitions. */
-   if((asset||GetFileAttributesW(path)!=INVALID_FILE_ATTRIBUTES)&&!voice_load_bank(sys,path))goto fail;
+   if((asset||GetFileAttributesW(path)!=INVALID_FILE_ATTRIBUTES)&&!voice_load_bank_ref(sys,path,&bank))goto fail;
+   if(asset)f->eventBank=bank;
   }
   wchar_t relative[512];
   swprintf(relative,512,L"Assets\\ImportedVoices\\%hs\\%hs",library->revision,f->name);
-  if(!addon_file_path(path,2600,relative)||!voice_load_bank(sys,path))goto fail;
+  if(!addon_file_path(path,2600,relative)||!voice_load_bank_ref(sys,path,&bank))goto fail;
+  if(!asset)f->eventBank=bank;
  }
  library->system=sys;return 1;
 fail:hStudio_System_Release(sys);return 0;
@@ -216,9 +240,34 @@ static int voice_ready(VoiceLibrary *lib){
 static unsigned private_voice_owner(const Skin *skin){
  VoiceBinding *b=voice_binding(skin);return b?b->owner:0;
 }
+static int private_battle_audio_ready(VoiceBinding *binding){
+ if(binding->battleAudioReady)return binding->battleAudioReady>0;
+ if(!hStudio_Bank_GetEventCount||!hStudio_Bank_GetEventList)return 0;
+ VoiceLibrary *library=binding->library;
+ for(VoiceFile *file=library->files;file;file=file->next){
+  int count=0,used=0;
+  if(!file->eventBank||hStudio_Bank_GetEventCount(file->eventBank,&count)||count<=0||count>65536)continue;
+  void **events=calloc((size_t)count,sizeof(*events));if(!events)return 0;
+  int ready=0;
+  if(!hStudio_Bank_GetEventList(file->eventBank,events,count,&used)&&used<=count)
+   for(int i=0;i<used&&!ready;i++){
+    char path[256];int length=0,state=0;
+    void *event=events[i];
+    if(hStudio_EventDescription_GetPath(event,path,sizeof(path),&length)||strncmp(path,"event:/Voice/",13)||
+       !battle_voice_owner_field(path+13,binding->owner)||hStudio_EventDescription_LoadSampleData(event))continue;
+    ready=!hStudio_System_FlushSampleLoading(library->system)&&
+          !hStudio_EventDescription_GetSampleLoadingState(event,&state)&&state==3;
+    hStudio_EventDescription_UnloadSampleData(event);
+   }
+  free(events);
+  if(ready){binding->battleAudioReady=1;return 1;}
+ }
+ binding->battleAudioReady=-1;
+ return 0;
+}
 typedef struct {
  Unit *u;void *view,*app,*original,*replacement,*group;
- VoiceBinding *binding;DWORD queued;int muted,started,captionHandled,captionBlocked,captionFallback;
+ VoiceBinding *binding;DWORD queued;int muted,started,captionHandled,captionBlocked,captionFallback,suppress;
  char key[192];void *meter;int peakLogged;
  VoiceParameterPair parameters[32];unsigned parameterCount;
 } PrivateVoiceEvent;
@@ -245,7 +294,7 @@ static int private_voice_device(void *system,void *group){
 }
 static void private_voice_end(PrivateVoiceEvent *e){
  if(e->muted){
-  if(!e->peakLogged){
+  if(e->replacement&&!e->peakLogged){
    char msg[420];snprintf(msg,sizeof(msg),"Imported voice: view=%p owner=%u key=%s ended, no nonzero event output measured",e->view,e->binding->owner,e->key);
    bootlog(msg);
   }
@@ -255,32 +304,44 @@ static void private_voice_end(PrivateVoiceEvent *e){
  if(e->replacement){hStudio_EventInstance_Stop(e->replacement,1);hStudio_EventInstance_Release(e->replacement);}
  memset(e,0,sizeof(*e));
 }
-static PrivateVoiceEvent *private_voice_track(Unit *u,Skin *skin,void *original){
+static PrivateVoiceEvent *private_voice_track_impl(Unit *u,Skin *skin,void *original,int *mappedEvent){
  VoiceBinding *b=voice_binding(skin);
  if(!u||!b||!original||!voice_ready(b->library))return NULL;
- void *desc=NULL,*local=NULL;GUID guid;char path[256],mappedPath[256],token[24];int used=0;
+ void *desc=NULL,*local=NULL;GUID guid;char path[256],mappedPath[256],remapped[192],token[24];int used=0;
  snprintf(token,sizeof(token),"_%u",b->owner);
  if(hStudio_EventInstance_GetDescription(original,&desc)||hStudio_EventDescription_GetPath(desc,path,sizeof(path),&used)||
     strncmp(path,"event:/Voice/",13))return NULL;
  const char *key=path+13,*match=strstr(key,token);
- if((match&&(match[strlen(token)]=='_'||!match[strlen(token)]))||sr_voice_member_index(b->owner,key)>=0){
-  if(hStudio_EventDescription_GetID(desc,&guid)||hStudio_System_GetEventByID(b->library->system,&guid,&local))return NULL;
+ int ownKey=!strncmp(key,"battle",6)?battle_voice_speaker(key,b->owner)!=NULL:
+    ((match&&(match[strlen(token)]=='_'||!match[strlen(token)]))||sr_voice_member_index(b->owner,key)>=0);
+ if(ownKey){
+  if(hStudio_EventDescription_GetID(desc,&guid)||hStudio_System_GetEventByID(b->library->system,&guid,&local))local=NULL;
  }else{
   unsigned source=voice_source_id(u);
   const char *mapped=source?sr_voice_catalog_event_key(source,b->owner,key):NULL;
-  if(!mapped||!sr_voice_catalog_audio(b->owner,mapped)||
-     snprintf(mappedPath,sizeof(mappedPath),"event:/Voice/%s",mapped)>=(int)sizeof(mappedPath)||
-     hStudio_System_GetEvent(b->library->system,mappedPath,&local))return NULL;
-  key=mapped;
+  if((!mapped||!sr_voice_catalog_audio(b->owner,mapped))&&
+     battle_voice_remap(key,source,b->owner,remapped,sizeof(remapped)))mapped=remapped;
+  if(mapped&&snprintf(mappedPath,sizeof(mappedPath),"event:/Voice/%s",mapped)<(int)sizeof(mappedPath)&&
+     !hStudio_System_GetEvent(b->library->system,mappedPath,&local))key=mapped;
+  else local=NULL;
  }
  PrivateVoiceEvent *slot=NULL;
  for(unsigned i=0;i<32;i++){
   PrivateVoiceEvent *e=&privateVoiceEvents[i];
-  if(e->original==original)return e->u==u&&e->app==skin->app&&e->binding==b?e:NULL;
+  if(e->original==original){
+   if(e->u!=u||e->app!=skin->app||e->binding!=b)return NULL;
+   *mappedEvent=e->replacement!=NULL;return e;
+  }
   if(!slot&&!e->original)slot=e;
  }
- void *instance=NULL;if(!slot||hStudio_EventDescription_CreateInstance(local,&instance))return NULL;
- *slot=(PrivateVoiceEvent){.u=u,.view=u->view,.app=skin->app,.original=original,.replacement=instance,.binding=b,.queued=GetTickCount()};
+ *mappedEvent=local!=NULL;
+ if(!slot)return NULL;
+ int suppress=!local&&battle_voice_owner_field(key,voice_source_id(u))&&private_battle_audio_ready(b);
+ void *instance=NULL;
+ if(!suppress&&(!local||hStudio_EventDescription_CreateInstance(local,&instance)||!instance))return NULL;
+ *slot=(PrivateVoiceEvent){.u=u,.view=u->view,.app=skin->app,.original=original,.replacement=instance,
+                          .binding=b,.queued=GetTickCount(),.suppress=suppress};
+ if(suppress)return slot;
  int parameterCount=0,targetCount=0;
  if(!hStudio_EventDescription_GetParameterDescriptionCount(desc,&parameterCount)&&
     !hStudio_EventDescription_GetParameterDescriptionCount(local,&targetCount))
@@ -299,6 +360,10 @@ static PrivateVoiceEvent *private_voice_track(Unit *u,Skin *skin,void *original)
  if(strlen(key)<sizeof(slot->key))strcpy(slot->key,key);
  return slot;
 }
+static PrivateVoiceEvent *private_voice_track(Unit *u,Skin *skin,void *original){
+ int mapped=0;
+ return private_voice_track_impl(u,skin,original,&mapped);
+}
 static void private_voice_step(PrivateVoiceEvent *e){
  Unit *u=e->u;Skin *skin=u->used&&u->view==e->view?voice_worn_skin(u):NULL;
  int state=0;void *group=NULL;
@@ -310,6 +375,13 @@ static void private_voice_step(PrivateVoiceEvent *e){
   return;
  }
  if(hStudio_EventInstance_GetChannelGroup(e->original,&group)||!group)return;
+ if(e->suppress){
+  int muted=0;
+  if(e->muted&&e->group!=group){private_voice_end(e);return;}
+  if(!e->muted&&!hChannelGroup_GetMute(group,&muted)&&!muted&&private_voice_device(e->binding->library->system,group)&&
+     !hChannelGroup_SetMute(group,1)){e->group=group;e->muted=1;}
+  return;
+ }
  for(unsigned i=0;i<e->parameterCount;i++){
   float value=0;
   if(!hStudio_EventInstance_GetParameterByID(e->original,e->parameters[i].source,&value,NULL))

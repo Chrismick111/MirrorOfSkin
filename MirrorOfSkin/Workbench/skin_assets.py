@@ -419,7 +419,52 @@ def _stock_voice_lookup(unity):
     return lookup
 
 
-def build_assets(archive,work,unity,*,name=None,progress=None,registered=(),source_name=None,workflow=None):
+def _framepack_base(skin, registered):
+    declared = skin.manifest.get('private_server', {}).get('vanilla_appearance_id')
+    if declared is None:
+        matches = {row.get('appearance_name') for row in registered
+                   if row.get('identity_id') == skin.personality}
+        if len(matches) == 1:
+            declared = matches.pop()
+    if not isinstance(declared, str) or not re.fullmatch(r'[A-Za-z0-9_]+', declared):
+        raise ValueError(f'{skin.label} 缺少可确认的基础模型，请检查人格 {skin.personality} 的游戏资源或包内声明。')
+    return declared
+
+
+def _framepack_records(archive, skins, work, unity, name, source, registered, report, framepack_dialogue):
+    from frame_pack_model import build_frame_pack_record
+    from framepack_manifest import portrait_png
+    from import_progress import progress_range
+    from imported_catalog import display_name
+    from private_identity import recipe_identities
+    from stock_coin_import import _locate
+
+    identities = recipe_identities(skins, 'declared-frames', source, registered)
+    bases = [_framepack_base(skin, registered) for skin in skins]
+    files = _locate(set(bases), unity, progress_range(report, 0, 15))
+    keys = _catalog_keys()
+    for i, (skin, base) in enumerate(zip(skins, bases)):
+        identity = identities[skin]
+        label = display_name(name or skin.label, Path(source).stem)
+        if name and len(skins) > 1:
+            label = display_name(name + ' · ' + skin.label, Path(source).stem)
+        step = progress_range(report, 15 + 85*i//len(skins), 15 + 85*(i+1)//len(skins))
+        step(0, '正在读取逐帧外观：' + label)
+        partners = [(archive, other, files[other_base]) for other, other_base in zip(skins, bases)
+                    if other is not skin]
+        record = build_frame_pack_record(archive, skin, files[base], work, unity, identity.look, label,
+                                         partners=partners, progress=step,
+                                         dependency=_dependency(base, files[base][1], keys))
+        record['entry']['private_declaration'] = identity.owner
+        record['portrait'] = portrait_png(archive, skin)
+        if framepack_dialogue:
+            from framepack_dialogue import collect
+            record['framepack_dialogue'] = collect(archive, skin, work)
+        yield record
+
+
+def build_assets(archive,work,unity,*,name=None,progress=None,registered=(),source_name=None,workflow=None,
+                 framepack_dialogue=False):
     """Yield validated local skin records. Never run ZIP programs or edit the game cache."""
     from skin_motions import analyze_motion
     from imported_catalog import display_name
@@ -430,6 +475,12 @@ def build_assets(archive,work,unity,*,name=None,progress=None,registered=(),sour
     if not unity.config.FALLBACK_UNITY_VERSION:
         unity.config.FALLBACK_UNITY_VERSION='6000.3.0f1'
     with ZipFile(archive) as z:
+        from framepack_manifest import read_framepacks
+        frame_skins = read_framepacks(z)
+        if frame_skins:
+            yield from _framepack_records(z, frame_skins, work, unity, name,
+                                          source_name or archive.name, registered, report, framepack_dialogue)
+            return
         from generic_skin_policy import apply_action_policy, read_manifest
         policies=read_manifest(z)
         unmatched=set(policies)
@@ -519,7 +570,9 @@ def build_assets(archive,work,unity,*,name=None,progress=None,registered=(),sour
                 # Same file names with changed data are ordinary custom models.
                 pass
             else:
-                yield {'builtin': 'roland', 'model_voice_evidence': {'state': 'unknown', 'count': 0}}
+                folders = {path.parent for _, path in members}
+                yield {'builtin': 'roland', 'model_voice_evidence': {'state': 'unknown', 'count': 0},
+                       '_source_member': members[0][1] if len(folders) == 1 else None}
                 return
         report(5, '正在核对游戏资源目录')
         keys=_catalog_keys()
@@ -724,6 +777,7 @@ def build_assets(archive,work,unity,*,name=None,progress=None,registered=(),sour
                     entry['private_declaration'] = identities.owner(declaration)
                 yield dict(look=look,name=label,asset=output_address,layout=layout,dependency=dep,
                            bundle=dest,entry=entry,timing=timing,actions=actions,policy=policy,
+                           _source_member=path, _source_address=address,
                            model_voice_evidence=actions.pop('model_voice_evidence', dict(state='unknown', count=0)),
                            voice_warning=standalone.voice_warning() if standalone is not None else '',
                            presentation_warning='；'.join(presentation_notes),
@@ -776,4 +830,5 @@ def _migrated_record(archive, recipe, policies, work, unity, label):
     dest.write_bytes(encoded)
     return dict(look=look, name=label, asset=address, layout=layout, dependency=dependency,
                 bundle=dest, entry=entry, timing=timing, actions=actions, policy=policy,
+                _source_member=members[0].filename, _source_address=address,
                 model_voice_evidence=actions.pop('model_voice_evidence', dict(state='unknown', count=0)))

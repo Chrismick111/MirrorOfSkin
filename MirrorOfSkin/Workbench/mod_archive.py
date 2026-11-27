@@ -12,16 +12,25 @@ from bundle_migration import assets, builtin_recipe
 from custom_asset_manifest import (MAX_BUNDLE, MAX_MANIFEST, UNITY_BUNDLE_MAGIC,
                                    bundle_directory, is_manifest, read_manifest, relative_path)
 from appearance_dialogue import AUDIO_EXTENSIONS, subtitle_file
+from appearance_authors import MAX_METADATA as AUTHOR_METADATA_LIMIT, metadata_member
 from imported_portraits import member_limit as portrait_member_limit
+from framepack_manifest import skin_member_roots
 
 
-def _supported_member(path):
+def _supported_member(path, size=1):
+    folders = {part.casefold() for part in path.parts[:-1]}
+    # These are game asset directories. Their internal notes do not credit the skin.
+    asset_dirs = {'custom_sprites', 'custom_sounds', 'custom_limbus_locale', 'custom_buffs'}
+    if not folders.intersection(asset_dirs) and metadata_member(path) and 0 < size <= AUTHOR_METADATA_LIMIT:
+        return True
     if portrait_member_limit(str(path)):
         return True
     suffix = path.suffix.casefold()
+    if next(skin_member_roots(path), None) is not None and suffix in (
+            AUDIO_EXTENSIONS | {'.json', '.png', '.atlas', '.skel', '.bank'}):
+        return True
     if suffix in ('.bank', '.carra2'):
         return True
-    folders = {part.casefold() for part in path.parts[:-1]}
     if suffix in AUDIO_EXTENSIONS:
         return 'custom_sounds' in folders and not folders.intersection({'sfx', 'bgm', 'music', 'effects'})
     if bundle_directory(path) is None:
@@ -64,8 +73,8 @@ def _directory_zip(folder, dest):
                 if key in files:
                     raise ValueError('目录中包含重复文件名：' + str(member))
                 files[key] = (path, member)
-                if _supported_member(member):
-                    entry_size = path.stat().st_size
+                entry_size = path.stat().st_size
+                if _supported_member(member, entry_size):
                     size += entry_size
                     portrait_limit = portrait_member_limit(str(member))
                     if (len(selected) >= 8192 or size > 4 * 1024**3
@@ -180,7 +189,7 @@ def normalized(archive):
                     if p.is_absolute() or '..' in p.parts or ':' in str(p):
                         raise ValueError('压缩包包含无效路径')
                     key = str(p).casefold()
-                    if not (_supported_member(p) if wanted is None else key in wanted):
+                    if not (_supported_member(p, entry.size) if wanted is None else key in wanted):
                         continue
                     if is_manifest(p) or wanted is not None:
                         relative_path(entry.name, 2048)

@@ -25,9 +25,9 @@
 
 | 下载 | 用途 |
 | --- | --- |
-| [1.3.9 启动器安装包](https://github.com/Chrismick111/MirrorOfSkin/releases/download/v1.3.9/MirrorOfSkin-1.3.9-no-images.zip) | 首次安装或手动更新。公开版不含头像，可在工作台获取资源。 |
-| [1.3.9 兼容安装包](https://github.com/Chrismick111/MirrorOfSkin/releases/download/v1.3.9/MirrorOfSkin-1.3.9-no-images-store.zip) | 启动器解压上一个文件失败时选用。两个包的插件内容相同，安装其中一个即可。 |
-| [1.3.9 工作台更新包](https://github.com/Chrismick111/MirrorOfSkin/releases/download/v1.3.9/FaustRandomIdentity-WarpHook.zip) | 供旧版工作台的自动更新功能读取。 |
+| [1.4.0 启动器安装包](https://github.com/Chrismick111/MirrorOfSkin/releases/download/v1.4.0/MirrorOfSkin-1.4.0-no-images.zip) | 首次安装或手动更新。公开版不含头像，可在工作台获取资源。 |
+| [1.4.0 兼容安装包](https://github.com/Chrismick111/MirrorOfSkin/releases/download/v1.4.0/MirrorOfSkin-1.4.0-no-images-store.zip) | 启动器解压上一个文件失败时选用。两个包的插件内容相同，安装其中一个即可。 |
+| [1.4.0 工作台更新包](https://github.com/Chrismick111/MirrorOfSkin/releases/download/v1.4.0/FaustRandomIdentity-WarpHook.zip) | 供旧版工作台的自动更新功能读取。 |
 
 手动解压安装时，将启动器安装包解压到 `FaustLauncher/addons/`。安装正确后能直接看到 `addons/MirrorOfSkin/addon_info.json`；如果中间多了一层同名目录，启动器可能识别不到插件。
 
@@ -41,7 +41,9 @@
 
 ## 导入本地外观
 
-点击工作台右上角的「导入本地外观」，也可以从「添加人格」窗口进入。选择外观文件后，工作台会显示当前文件、处理步骤和百分比。完成后展开导入明细，可查看新增或重复的外观、模型保存位置，以及未能识别的资源。导入的条目在「添加人格 → 外来人格」中，加入规则集后即可使用。
+点击工作台右上角的圆形下箭头，或在「添加人格」窗口选择「导入外观（可多选）」。按住 Ctrl 逐个点选文件，按住 Shift 可连续选择。工作台会显示当前包名、文件序号和总进度。某个包导入失败时，后续文件会继续处理。完成后展开明细即可按包查看结果，再到「添加人格 → 外来人格」把需要的外观加入规则集。
+
+1.4.0 会优先读取当前外观及所属包 README 中的作者全称和模组链接。人格池卡片上可直接点击演示视频，其他文字链接可在「更多链接」中查看。**从旧版升级后，请重新导入原压缩包一次**，即可补齐或更新现有卡片的署名和链接，并保留原外观编号与权重。
 
 文件选择框支持 ZIP、7z、RAR，也可选择 `.bundle` 模型、`.carra2` 替换资源或 `.bank` 语音库。语音库需要与外观建立绑定。导入私服模组时，工作台结合包内人格声明、身体图像和动作轨选择作者制作的外观。已验证的形式包括独立角色模型、替换原版身体帧，以及逐枚硬币切换模型。只有技能数值、被动或 E.G.O 配置的模组会提示属于玩法改动包；单独的依赖 DLL 不能生成外观。
 
@@ -72,6 +74,8 @@
 移除外观时，可以在「添加人格」中删除对应条目。按包管理时，也可以删除对应的模型子文件夹，再回到工作台刷新。删除插件后重装，若看到旧外观显示「模型缺失」，重新导入原压缩包可恢复原编号和已选规则。
 
 ## 模组作者与问题反馈
+
+制作外观包时，可在包根目录的 `README.md` 写明作者全称，并用「演示视频」「作者主页」「项目仓库」等文字标注链接。如果同一包内的外观分别由不同作者制作，可在各自的外观目录中提供独立 README。依赖和致谢链接请放在相应章节。
 
 作者可在 `mos-skin.json` 中声明攻击、拼点、守备及语音归属，也可通过 `mos-portraits.json` 随包提供头像。格式和示例见[外来外观包动作配置](docs/外来外观包动作配置.md)。
 

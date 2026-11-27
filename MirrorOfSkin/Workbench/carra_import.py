@@ -45,7 +45,7 @@ def materialize(z, base, changes, unity):
 
 
 @contextmanager
-def expanded(path,root,unity=None):
+def expanded(path,root,unity=None,*,source_members=None):
     from skin_assets import _members,_low_dir
     with ZipFile(path) as outer:
         direct=path.suffix.lower()=='.carra2'
@@ -99,6 +99,8 @@ def expanded(path,root,unity=None):
                             dest=f'{label}/Installation/{a}/{b}/__data'
                             if dest in emitted:raise ValueError('多个 Carra2 条目冲突：'+dest)
                             emitted.add(dest)
+                            if source_members is not None and item is not None:
+                                source_members[dest.casefold()] = item.filename
                             result.writestr(dest,materialize(patch,base,changes,unity))
                 if not direct:
                     for info in outer.infolist():

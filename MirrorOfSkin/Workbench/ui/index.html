@@ -1265,6 +1265,13 @@
         -webkit-box-orient: vertical;
         overflow-wrap: anywhere;
       }
+      .pool-source.is-imported { width: 100%; height: 2.7em; display: block; white-space: nowrap; text-overflow: ellipsis; }
+      .pool-source.is-imported span { display: block; overflow: hidden; text-overflow: ellipsis; }
+      .author-links { width: 100%; min-width: 0; font-size: 12px; text-align: center; }
+      .author-links summary { cursor: pointer; color: #f0d79b; }
+      .author-links > a { display: inline-block; overflow-wrap: anywhere; }
+      .author-links-list { display: flex; flex-wrap: wrap; justify-content: center; gap: 4px 10px; max-height: 7.5em; overflow-y: auto; overflow-wrap: anywhere; }
+      .author-links a { color: #f0d79b; max-width: 100%; }
       .pool-meta {
         display: flex;
         align-items: center;
@@ -1721,6 +1728,10 @@
       <symbol id="i-download" viewBox="0 0 24 24">
         <path d="M12 3v12m0 0l-4-4m4 4l4-4M5 21h14" />
       </symbol>
+      <symbol id="i-skin-import" viewBox="0 0 24 24">
+        <circle cx="12" cy="12" r="9" />
+        <path d="M12 7v10M8 13l4 4 4-4" />
+      </symbol>
       <symbol id="i-check" viewBox="0 0 24 24">
         <path d="M5 13l4 4L19 7" />
       </symbol>
@@ -1798,11 +1809,11 @@
           id="headerImportLocalSkin"
           class="icon-btn"
           type="button"
-          title="导入本地外观"
-          aria-label="导入本地外观"
+          title="导入本地外观：可单选，按 Ctrl 或 Shift 多选"
+          aria-label="导入本地外观：可单选，按 Ctrl 或 Shift 多选"
         >
           <svg class="icon" aria-hidden="true">
-            <use href="#i-plus"></use>
+            <use href="#i-skin-import"></use>
           </svg>
         </button>
         <button
@@ -2247,7 +2258,7 @@
           </button>
         </div>
         <div class="bar identity-filters">
-          <button id="importLocalSkin" type="button">导入本地外观</button>
+          <button id="importLocalSkin" type="button" title="可单选，按 Ctrl 或 Shift 多选"><svg class="icon" aria-hidden="true"><use href="#i-skin-import"></use></svg> 导入外观（可多选）</button>
           <input id="addSearch" placeholder="搜索名字、ID或来源" />
           <select id="addSource">
             <option value="">全部来源</option>
@@ -2858,6 +2869,29 @@
           ? "当前规则集没有可用的外观候选，游戏内不会替换外观；请点击右侧随机按钮填入默认候选。"
           : "";
       }
+      function isImportedIdentity(id) {
+        return /^story_WBImp_[a-f0-9]{24}$/.test(String(id)) || id === "story_BRolandBaseAppearance";
+      }
+      function authorLinks(entry) {
+        if (!Array.isArray(entry.author_links)) return "";
+        const links = entry.author_links.flatMap((item) => {
+          if (!item || typeof item.url !== "string" || !/^https?:\/\//i.test(item.url) || /[\x00-\x20\x7f\\]/.test(item.url)) return [];
+          try {
+            const url = new URL(item.url);
+            if (!/^https?:$/.test(url.protocol) || url.username || url.password) return [];
+            const rawLabel = typeof item.label === "string" ? item.label.trim() : "";
+            const looksLikeAddress = /(?:https?:\/\/|www\.|[^\s]+\.[^\s.]{2,}(?:[\/:?#]|$))/i.test(rawLabel);
+            const label = rawLabel && !looksLikeAddress ? rawLabel : "作者链接";
+            return [{ url: url.href, label }];
+          } catch (_) { return []; }
+        });
+        if (!links.length) return "";
+        const preferred = links.findIndex(link => /演示视频|演示影片/i.test(link.label));
+        if (preferred > 0) links.unshift(...links.splice(preferred, 1));
+        const anchor = ({url, label}) => `<a href="${esc(url)}" target="_blank" rel="noopener noreferrer" draggable="false">${esc(label)}</a>`;
+        const more = links.length > 1 ? `<details><summary>更多链接（${links.length - 1}）</summary><div class="author-links-list">${links.slice(1).map(anchor).join("")}</div></details>` : "";
+        return `<div class="author-links">${anchor(links[0])}${more}</div>`;
+      }
       function entrySource(entry) {
         const code = entry.appearance_name || String(entry.identity_id);
         const status = entry.translation_status === "暂译" ? "暂译 " : "";
@@ -3004,11 +3038,23 @@
             const backdrop = entry.portrait_url
               ? `<span class="pool-bg" style="background-image:url('${esc(entry.portrait_url)}')"></span>`
               : "";
-            return `<div class="pool-card" data-id="${esc(id)}" tabindex="0">${backdrop}<span class="pool-orb">${orb}</span><strong class="pool-name">${esc(entry.name || entry.appearance_name || id)}</strong><span class="pool-source">${esc(entrySource(entry))}</span><span class="pool-meta"><input class="weight" type="number" min="0" max="1000000" step="0.1" value="${weight}"${locked ? " disabled" : ""}><span class="share"></span></span></div>`;
+            const author = typeof entry.author === "string" && entry.author.trim() ? entry.author.trim() : "未注明或未识别";
+            const source = isImportedIdentity(id)
+              ? `<span class="pool-source is-imported" title="${esc(entrySource(entry))}"><span title="${esc(author)}">作者：${esc(author)}</span><span>外来人格</span></span>`
+              : `<span class="pool-source">${esc(entrySource(entry))}</span>`;
+            return `<div class="pool-card" data-id="${esc(id)}" tabindex="0">${backdrop}<span class="pool-orb">${orb}</span><strong class="pool-name">${esc(entry.name || entry.appearance_name || id)}</strong>${source}${isImportedIdentity(id) ? authorLinks(entry) : ""}<span class="pool-meta"><input class="weight" type="number" min="0" max="1000000" step="0.1" value="${weight}"${locked ? " disabled" : ""}><span class="share"></span></span></div>`;
           })
           .join("");
         const add = `<button type="button" class="pool-card pool-add${blocked ? " is-disabled" : ""}" data-action="add" aria-disabled="${blocked}"><span class="pool-orb"><svg class="icon" aria-hidden="true"><use href="#i-plus"></use></svg></span><strong class="pool-name">？？？</strong><span class="pool-source">？？？</span><span class="pool-meta pool-meta-ghost" aria-hidden="true"></span></button>`;
         $("#poolGrid").innerHTML = add + cards;
+        $("#poolGrid").querySelectorAll(".author-links").forEach(group => {
+          ["click", "pointerdown", "keydown", "contextmenu", "dragstart"].forEach(type => {
+            group.addEventListener(type, event => {
+              event.stopPropagation();
+              if (type === "dragstart") event.preventDefault();
+            });
+          });
+        });
         updatePoolSummary();
       }
       let poolEditVersion = 0;
@@ -3497,7 +3543,7 @@
                 ? `<img src="${esc(entry.portrait_url)}" alt="${esc(entry.name)}的战斗头像" loading="lazy" decoding="async" onerror="this.remove()">`
                 : '<svg class="icon" aria-hidden="true"><use href="#i-user"></use></svg>';
               const source = entrySource(entry);
-              const deletion = (/^story_WBImp_[a-f0-9]{24}$/.test(id) || id === "story_BRolandBaseAppearance")
+              const deletion = isImportedIdentity(id)
                 ? `<button type="button" class="identity-delete icon-btn" data-id="${esc(id)}" title="删除导入外观" aria-label="删除导入外观"><svg class="icon" aria-hidden="true"><use href="#i-close"></use></svg></button>`
                 : "";
               const dialogue = dialogueDetectionText(entry);
@@ -3734,7 +3780,10 @@
         if (p.stage === "importing" && typeof p.percent === "number") { bar.max = 100; bar.value = Math.max(0, Math.min(100, p.percent)); } else bar.removeAttribute("value");
         const details = [];
         if (p.filename) details.push(p.filename);
-        if (p.total > 0) details.push(`文件 ${p.done || 0}/${p.total}`);
+        if (p.total > 0) {
+          const current = p.filename && p.stage === "importing" ? Math.min(p.total, (p.done || 0) + 1) : (p.done || 0);
+          details.push(`文件 ${current}/${p.total}`);
+        }
         if (p.stage === "importing" && typeof p.percent === "number") details.push(`${Math.floor(p.percent)}%`);
         const text = (p.message || (active ? "正在导入，请稍候" : "导入完成")) + (details.length ? " · " + details.join(" · ") : "");
         $("#importNoticeText").textContent = text;
@@ -3746,6 +3795,37 @@
         $("#importNotice").hidden = false;
         if (!$("#importDetails").hidden) $("#importDetails").open = true;
       };
+      function importResult(p, refreshWarning = "") {
+        const rows = Array.isArray(p.rows) ? p.rows : [];
+        const errors = Array.isArray(p.errors) ? p.errors : [];
+        const files = Array.isArray(p.files) ? p.files : [];
+        function rowMessage(row, directories) {
+          const state = {added:"已加入",updated:"已更新",existing:"已在库中"}[row.status] || row.status || "";
+          const voice = row.kind === "voice" ? ((row.connected_to || []).length ? "，已接通 " + row.connected_to.join("、") : "，尚未绑定外观") : (dialogueDetectionText(row) ? "，" + dialogueDetectionText(row) : (row.voice_connected ? "，已接通语音（旧记录）" : ""));
+          if (row.package_directory) directories.add(row.package_directory);
+          return row.name + " " + state + voice + (row.presentation_warning ? "，" + row.presentation_warning : "") + (row.voice_warning ? "，" + row.voice_warning : "") + (row.cleanup_warning ? "，" + row.cleanup_warning : "");
+        }
+        const warnings = rows.reduce((n, row) => n + [row.presentation_warning, row.voice_warning, row.cleanup_warning].filter(Boolean).length, 0) + (refreshWarning ? 1 : 0);
+        const failedFiles = files.filter(file => file.error).length;
+        const errorCount = Math.max(errors.length, failedFiles, p.stage === "error" ? 1 : 0);
+        const summary = (p.cancelled ? "已取消导入" : p.stage === "error" ? "导入失败" : errorCount ? `导入完成：${rows.length} 项，部分失败` : `导入完成：${rows.length} 项`) + (errorCount ? ` · 错误 ${errorCount}` : "") + (warnings ? ` · 警告 ${warnings}` : "");
+        const directories = new Set();
+        let messages;
+        if (files.length > 1) {
+          messages = files.map(file => {
+            const start = Math.max(0, Number(file.rowStart) || 0);
+            const count = Math.max(0, Number(file.rowCount) || 0);
+            const detail = rows.slice(start, start + count).map(row => "  " + rowMessage(row, directories));
+            return [String(file.filename || "未命名文件") + (file.error ? "：失败 · " + file.error : "：成功"), ...detail].join("\n");
+          });
+          if (errors.length > failedFiles) messages.push(...errors.slice(failedFiles));
+        } else {
+          messages = [...rows.map(row => rowMessage(row, directories)), ...errors];
+          if (files.length && files[0].error && !errors.length) messages.push(String(files[0].error));
+        }
+        const text = [...messages, ...Array.from(directories, d => "文件夹：" + d), refreshWarning.replace(/^；/, "")].filter(Boolean).join("\n") || p.message || summary;
+        return { summary, text };
+      }
       async function followImport(request) {
         if (importBusy) return;
         importBusy = true;
@@ -3758,7 +3838,7 @@
           }
           if (p.stage === "idle") return;
           showImport(p);
-          const rows = p.rows || [], errors = p.errors || [];
+          const rows = p.rows || [];
           let refreshWarning = "";
           if (rows.length && data) {
             try {
@@ -3766,21 +3846,12 @@
               data.catalog = latest.catalog;
               data.chapterArt = latest.chapterArt || {};
               data.chapterRevision = latest.chapterRevision;
+              if (rows.some(row => selected.has(String(row.identity_id)))) render();
               fillAddFilters();
               if (!$("#identityModal").classList.contains("hidden")) renderAddList();
             } catch (_) { refreshWarning = "；列表刷新失败，请重新打开工作台后在导入外观中查看"; }
           }
-          const directories = new Set();
-          const messages = rows.map(row => {
-            const state = {added:"已加入",updated:"已更新",existing:"已在库中"}[row.status] || row.status || "";
-            const voice = row.kind === "voice" ? ((row.connected_to || []).length ? "，已接通 " + row.connected_to.join("、") : "，尚未绑定外观") : (dialogueDetectionText(row) ? "，" + dialogueDetectionText(row) : (row.voice_connected ? "，已接通语音（旧记录）" : ""));
-            if (row.package_directory) directories.add(row.package_directory);
-            return row.name + " " + state + voice + (row.presentation_warning ? "，" + row.presentation_warning : "") + (row.voice_warning ? "，" + row.voice_warning : "") + (row.cleanup_warning ? "，" + row.cleanup_warning : "");
-          });
-          const warnings = rows.reduce((n, row) => n + [row.presentation_warning, row.voice_warning, row.cleanup_warning].filter(Boolean).length, 0) + (refreshWarning ? 1 : 0);
-          const errorCount = errors.length || (p.stage === "error" ? 1 : 0);
-          const summary = (p.cancelled ? "已取消导入" : p.stage === "error" ? "导入失败" : `导入完成：${rows.length} 项`) + (errorCount ? ` · 错误 ${errorCount}` : "") + (warnings ? ` · 警告 ${warnings}` : "");
-          const text = [...messages, ...errors, ...Array.from(directories, d => "文件夹：" + d), refreshWarning.replace(/^；/, "")].filter(Boolean).join("\n") || p.message || summary;
+          const { summary, text } = importResult(p, refreshWarning);
           $("#importNoticeText").textContent = summary;
           $("#importDetailsText").textContent = text;
           $("#importDetails").hidden = false;

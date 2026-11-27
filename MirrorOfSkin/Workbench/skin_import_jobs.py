@@ -1,5 +1,6 @@
 """Run one local skin import at a time, with a status snapshot for the workbench."""
 
+from os.path import normcase, normpath
 from pathlib import Path
 from threading import Event, Lock, Thread
 from uuid import uuid4
@@ -14,16 +15,20 @@ def _paths(raw):
         raise ValueError('一次最多选择 128 个文件')
     if any(not isinstance(path, str) or not Path(path).is_absolute() for path in raw):
         raise ValueError('请选择本地文件')
-    return [Path(path) for path in raw]
+    unique = {}
+    for path in raw:
+        unique.setdefault(normcase(normpath(path)), Path(path))
+    return list(unique.values())
 
 
 def _state(stage='idle', job_id=None, message=''):
     return dict(stage=stage, jobId=job_id, message=message, percent=0, done=0,
-                total=0, filename='', rows=[], errors=[], cancelled=False)
+                total=0, filename='', rows=[], errors=[], files=[], cancelled=False)
 
 
 def _copy(state):
-    return dict(state, rows=list(state['rows']), errors=list(state['errors']))
+    return dict(state, rows=list(state['rows']), errors=list(state['errors']),
+                files=[file.copy() for file in state['files']])
 
 
 class ImportJobs:
@@ -89,7 +94,7 @@ class ImportJobs:
                 raise _ImportStopped()
             in_commit = in_commit or committing
 
-        rows, errors = [], []
+        rows, errors, files = [], [], []
         try:
             check_cancelled()
             if paths is None:
@@ -109,11 +114,19 @@ class ImportJobs:
                     update(percent=max(job['percent'], min(99, (index * 100 + percent) // total)),
                            message=message)
 
+                start = len(rows)
+                message = ''
                 try:
-                    rows.extend(self._import(path, progress=report, check_cancelled=check_cancelled))
+                    imported = list(self._import(path, progress=report, check_cancelled=check_cancelled))
                 except Exception as error:
-                    errors.append(path.name + '：' + str(error))
-                update(done=index + 1, rows=list(rows), errors=list(errors))
+                    message = str(error) or type(error).__name__
+                    errors.append(path.name + '：' + message)
+                else:
+                    rows.extend(imported)
+                files.append(dict(filename=path.name, rowStart=start, rowCount=len(rows) - start,
+                                  error=message))
+                update(done=index + 1, filename='', rows=list(rows), errors=list(errors), files=list(files),
+                       percent=min(99, (index + 1) * 100 // total))
             failed = bool(errors and not rows)
             return update(stage='error' if failed else 'done', percent=100, filename='',
                           message='导入失败' if failed else '导入完成')

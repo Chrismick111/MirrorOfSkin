@@ -420,7 +420,7 @@ class Store:
     e.update(chapter=group.get('chapter','unassigned'),chapter_label=group.get('label','未归档'),chapter_memberships=chapter_categories.memberships(group))
     e.update(chapter_rank=group.get('rank',20000),chapter_sources=group.get('appearances_in',[]),source_note='；'.join(x.get('note','') for x in group.get('special_evidence',[])),source_evidence_level=group.get('confidence',''),source_battles=sorted({str(x['battle_id']) for x in group.get('battle_evidence',[]) if x.get('battle_id') is not None}))
   walpurgis_catalog.apply(catalog,walpurgis_catalog.load(self.root))
-  imported_catalog.apply(catalog,self.root)
+  imported_catalog.apply(catalog,self.root,getattr(self,'addon_root',self.root))
   aliases=read(self.root/'Workbench/appearance_names.json',{})
   if isinstance(aliases,dict):
    for identity,e in catalog.items():

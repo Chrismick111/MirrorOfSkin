@@ -1,10 +1,11 @@
 """Optional declarative animation policy supplied by an appearance package."""
 import json
 import re
+from appearance_authors import LINK_METADATA_FIELDS
 
 MANIFEST = 'mos-skin.json'
 _RULES = {'attack_groups', 'dependency', 'native_layout', 'clash', 'defense', 'animator',
-          'plugin_version', 'voice'}
+          'plugin_version', 'voice', 'author', 'authors', 'meta', 'metadata'} | LINK_METADATA_FIELDS
 _CLASH_ROLES = {'ready': 1, 'win': 2, 'lose': 3, 'neutral': 4, 'special': 5, 'linked': 6}
 _DEFENSE_SLOTS = {'evade': 2, 'guard': 3, 'damaged': 4}
 
@@ -21,7 +22,10 @@ def read_manifest(z):
     if not matches: return {}
     if matches[0].file_size>65536: raise ValueError('外观配置文件过大')
     data=json.loads(z.read(matches[0]).decode('utf-8-sig'),object_pairs_hook=_unique_pairs)
-    if not isinstance(data,dict) or set(data)!={'schema','appearances'} or type(data['schema']) is not int or data['schema'] != 1 or not isinstance(data['appearances'],dict):
+    metadata = {'author', 'authors', 'meta', 'metadata'} | LINK_METADATA_FIELDS
+    if (not isinstance(data, dict) or data.keys() - ({'schema', 'appearances'} | metadata)
+            or type(data.get('schema')) is not int or data['schema'] != 1
+            or not isinstance(data.get('appearances'), dict)):
         raise ValueError('外观配置格式不受支持')
     result={}
     for address, policy in data['appearances'].items():

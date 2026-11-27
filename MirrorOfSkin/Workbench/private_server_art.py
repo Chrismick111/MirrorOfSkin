@@ -191,12 +191,17 @@ def _pose_sprite(source, texture_id, image, scale):
     ppu = original.m_PixelsToUnits
     if any(abs(a-b)>1.1 for a,b in zip(((x1-x0)*ppu,(y1-y0)*ppu), image.size)):
         raise ValueError('作者图像尺寸与动作网格不符：' + original.m_Name)
+    return _quad_sprite(source, texture_id, image.size, ppu / scale,
+                        (x0 * scale, y0 * scale, x1 * scale, y1 * scale))
+
+
+def _quad_sprite(source, texture_id, size, ppu, bounds):
+    x0, y0, x1, y1 = bounds
     tree = source.read_typetree()
     tree.update(m_AtlasTags=[], m_SpriteAtlas={'m_FileID':0,'m_PathID':0}, m_Bones=[], m_PhysicsShape=[])
-    ppu /= scale
     tree['m_PixelsToUnits'] = ppu
-    w,h = image.size
-    pivot_x, pivot_y = -x0*scale*ppu/w, -y0*scale*ppu/h
+    w,h = size
+    pivot_x, pivot_y = -x0*ppu/w, -y0*ppu/h
     tree.update(m_Rect={'x':0.,'y':0.,'width':float(w),'height':float(h)},
                 m_Pivot={'x':pivot_x,'y':pivot_y},
                 m_Offset={'x':(pivot_x-0.5)*w,'y':(pivot_y-0.5)*h})
@@ -209,12 +214,12 @@ def _pose_sprite(source, texture_id, image, scale):
     channels = vd['m_Channels']
     if len(channels)<5 or [(i,c['format'],c['dimension'],c['stream'],c['offset']) for i,c in enumerate(channels) if c['dimension']] != [(0,0,3,0,0),(4,0,2,1,0)]:
         raise ValueError('暂不支持此身体网格顶点格式')
-    xyz = [v for x,y in [(x0,y0),(x0,y1),(x1,y1),(x1,y0)] for v in (x*scale,y*scale,0.)]
+    xyz = [v for x,y in [(x0,y0),(x0,y1),(x1,y1),(x1,y0)] for v in (x,y,0.)]
     vd.update(m_VertexCount=4, m_DataSize=struct.pack('<20f', *(xyz+[0.,0.,0.,1.,1.,1.,1.,0.])))
     submesh = rd['m_SubMeshes'][0]
     submesh.update(firstByte=0,indexCount=6,topology=0,baseVertex=0,firstVertex=0,vertexCount=4,
-                   localAABB={'m_Center':{'x':(x0+x1)*scale/2,'y':(y0+y1)*scale/2,'z':0.},
-                              'm_Extent':{'x':(x1-x0)*scale/2,'y':(y1-y0)*scale/2,'z':0.}})
+                   localAABB={'m_Center':{'x':(x0+x1)/2,'y':(y0+y1)/2,'z':0.},
+                              'm_Extent':{'x':(x1-x0)/2,'y':(y1-y0)/2,'z':0.}})
     rd.update(m_IndexBuffer=list(struct.pack('<6H',0,1,2,0,2,3)), m_SubMeshes=[submesh])
     if any(p['m_PathID'] for p in _refs(tree) if p is not rd['texture']):
         raise ValueError('暂不支持带附属渲染资源的角色姿势')

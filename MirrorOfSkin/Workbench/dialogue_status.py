@@ -17,14 +17,15 @@ def detected_status(record, scans, records):
     return states
 
 
-def runtime_bindings(root):
-    """Read the same owner, revision, bank and subtitle map as the game."""
+def runtime_bindings(root, addon=None):
+    """Read the appearance-local WAV and legacy bank maps used by the game."""
     library = root / 'Assets/ImportedVoices'
     try:
         lines = (library / 'bindings.tsv').read_text(encoding='ascii').splitlines()
     except (OSError, UnicodeError):
-        return {}
-    bindings = {}
+        lines = []
+    from framepack_dialogue import installed_states
+    bindings = installed_states(root, addon or root)
     subtitles = {}
     for line in lines:
         fields = line.split('\t')
@@ -50,7 +51,8 @@ def runtime_bindings(root):
             except (OSError, UnicodeError):
                 pass
             subtitles[revision] = owners
-        status = bindings.setdefault('story_' + look, {'voice': 'connected'})
+        status = bindings.setdefault('story_' + look, {})
+        status['voice'] = 'connected'
         if owner in subtitles[revision]:
             status['bubble'] = 'connected'
     return bindings

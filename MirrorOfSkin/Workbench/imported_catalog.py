@@ -22,9 +22,9 @@ def display_name(current, archive_stem):
     return (title or archive_stem) + (cache[1] or '')
 
 
-def apply(catalog, root=None):
+def apply(catalog, root=None, addon=None):
     from dialogue_status import apply_binding, runtime_bindings
-    bindings = runtime_bindings(root) if root is not None else {}
+    bindings = runtime_bindings(root, addon) if root is not None else {}
     if root is not None:
         from import_packages import read_index
         try:

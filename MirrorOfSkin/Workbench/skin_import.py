@@ -201,11 +201,15 @@ def import_skin(archive, addon, *, name=None, unity=None, progress=None, check_c
     report(3, '正在读取压缩包')
     with import_workspace(addon_root), normalized(archive) as container, ExitStack() as companions:
         portraits = imported_portraits.read_archive(container)
-        path = companions.enter_context(expanded(container,root,unity))
+        expanded_members = {}
+        path = companions.enter_context(expanded(container, root, unity, source_members=expanded_members))
         with ZipFile(path) as z:
             has_banks=any(i.filename.lower().endswith('.bank') for i in z.infolist())
             workflow = None
             has_models = not has_banks or bool(_members(z) or read_bindings(z))
+            if not has_models:
+                from framepack_manifest import read_framepacks
+                has_models = bool(read_framepacks(z))
             if not has_models:
                 from private_appearance_workflow import PrivateAppearanceWorkflow
                 workflow = PrivateAppearanceWorkflow.discover(z, unity)
@@ -230,7 +234,9 @@ def import_skin(archive, addon, *, name=None, unity=None, progress=None, check_c
         rows = (_import_normalized(path, root, name=name, unity=unity, dialogue_scans=scans,
                                    package_addon=addon_root if grouped else None,
                                    package_source=Path(archive).name, progress=progress_range(report, 5, 94),
-                                   check_cancelled=check_cancelled, workflow=workflow, portraits=portraits)
+                                   check_cancelled=check_cancelled, workflow=workflow, portraits=portraits,
+                                   author_archive=container, expanded_members=expanded_members,
+                                   framepack_dialogue=grouped and manifest.get('framepack_dialogue') == 1)
                 if has_models else [])
         included=[r['identity_id'][6:] for r in rows if r['identity_id'].startswith('story_WBImp_')]
         declared=[r['identity_id'][6:] for r in rows if r.get('voice_declared')]
@@ -258,14 +264,16 @@ def import_skin(archive, addon, *, name=None, unity=None, progress=None, check_c
                 row['voice_warning']='；'.join(filter(None, (row.get('voice_warning'), companion_warning)))
         report(98, '正在同步外观库')
         mapped=reconcile(root)
-        bindings=runtime_bindings(root)
+        bindings=runtime_bindings(root, addon_root)
         mirror_import_assets(root, addon_root, reads_user_assets=grouped)
         signal_runtime(root)
         for row in rows:
             if row.get('kind')=='voice':
                 row['connected_to']=[label for rev,label in mapped.values() if rev==row['revision']]
             else:
-                row['voice_connected']=row['identity_id'].removeprefix('story_') in mapped
+                identity = row['identity_id']
+                row['voice_connected'] = (identity.removeprefix('story_') in mapped
+                                          or bindings.get(identity, {}).get('voice') == 'connected')
                 apply_binding(row, bindings)
     report(100, '导入完成')
     return rows
@@ -288,8 +296,11 @@ def install_roland_bundles(archive, root, *, destination=None):
 
 
 def _import_normalized(archive, addon, *, name=None, unity=None, package_addon=None, package_source=None,
-                       progress=None, check_cancelled=None, workflow=None, dialogue_scans=(), portraits=None):
+                       progress=None, check_cancelled=None, workflow=None, dialogue_scans=(), portraits=None,
+                       framepack_dialogue=False, author_archive=None, expanded_members=None):
     from contextlib import ExitStack
+    from zipfile import ZipFile
+    from appearance_authors import read_attribution
     from skin_assets import build_assets
     from model_workspace import model_tempdir
     from private_identity import PrivateIdentities
@@ -321,11 +332,17 @@ def _import_normalized(archive, addon, *, name=None, unity=None, package_addon=N
     with model_tempdir(prefix='faust-skin-') as tmp:
         records = list(build_assets(archive, Path(tmp), unity, name=name,
                                     progress=progress_range(report, 3, 90),
-                                    registered=registered, source_name=source_name, workflow=workflow))
+                                    registered=registered, source_name=source_name, workflow=workflow,
+                                    framepack_dialogue=framepack_dialogue))
         if not records:
             raise ValueError('压缩包内没有可加入池的战斗外观')
+        with ZipFile(author_archive or archive) as authors:
+            author_credits = read_attribution(authors, records, expanded_members=expanded_members)
         from dialogue_status import detected_status
         for rec in records:
+            portrait = rec.pop('portrait', None)
+            if portrait is not None:
+                portraits.setdefault(rec['entry']['identity_id'], portrait)
             if dialogue_scans:
                 rec['dialogue_detection'] = detected_status(rec, dialogue_scans, records)
         report(91, '正在校验外观与动作')
@@ -333,6 +350,7 @@ def _import_normalized(archive, addon, *, name=None, unity=None, package_addon=N
         assets = {}
         seen = set()
         restored_builtin = False
+        builtin_author_changed = False
         package = folder = None
         for rec in records:
             if rec.get('builtin') == 'roland':
@@ -369,6 +387,8 @@ def _import_normalized(archive, addon, *, name=None, unity=None, package_addon=N
                            for identity, data in portraits.items())
             generated = set()
             replaced = set()
+            previous_audio = set()
+            dialogue_changed = set()
             catalog_file = root/CATALOG
             catalog = json.loads(catalog_file.read_bytes())
             by_id = {r['identity_id']: r for group in catalog.values() for r in group['entries']}
@@ -392,6 +412,26 @@ def _import_normalized(archive, addon, *, name=None, unity=None, package_addon=N
                     loc = locator_path(root, identity)
                     pending[loc] = relative_model_path(package, filename).encode('utf-8')
                     if identity != BUILTIN:
+                        if framepack_dialogue:
+                            from framepack_dialogue import audio_names, plain_file
+                            path = folder / (rec['look'] + '.voice.tsv')
+                            data, audio = rec.get('framepack_dialogue', (b'', {}))
+                            exists = path.exists() or path.is_symlink()
+                            if exists:
+                                previous_audio.update(audio_names(path))
+                            if data or exists:
+                                pending[path] = data
+                                if not exists or path.read_bytes() != data:
+                                    dialogue_changed.add(identity)
+                            for wav, source in audio.items():
+                                destination = folder / wav
+                                if destination.exists() or destination.is_symlink():
+                                    if not plain_file(destination) or digest(destination) != wav[:-4]:
+                                        raise ValueError('外观语音文件已存在但内容不匹配')
+                                    continue
+                                write_bundle(destination, source, wav[:-4])
+                                rollback.callback(destination.unlink, missing_ok=True)
+                                dialogue_changed.add(identity)
                         try:
                             old_cfg = root / LOCAL / (rec['look'] + '.cfg')
                             previous = old_cfg.read_text(encoding='ascii').splitlines()[3]
@@ -400,7 +440,8 @@ def _import_normalized(archive, addon, *, name=None, unity=None, package_addon=N
                                 replaced.add((folder / previous, relative_model_path(package, previous), previous[:-7]))
                         except (OSError, IndexError, UnicodeError):
                             pass
-            for rec in records:
+            for rec, attribution in zip(records, author_credits):
+                author_fields = ('author', 'imported_author_source', 'author_links')
                 if rec.get('builtin') == 'roland':
                     old_bundle = folder/'BRoland.bundle' if folder is not None else root/'Assets/Roland/BRoland.bundle'
                     already_present = old_bundle.is_file()
@@ -425,12 +466,24 @@ def _import_normalized(archive, addon, *, name=None, unity=None, package_addon=N
                     if not old_bundle.is_file():
                         raise ValueError('该工作台缺少配套的统一罗兰模型')
                     actions = json.loads((root/'Assets/Roland/import-actions.json').read_bytes())
-                    results.append(dict(identity_id=BUILTIN, name=by_id[BUILTIN]['name'], status='added' if restored_builtin else 'updated' if not already_present else 'existing', actions=actions))
+                    entry = by_id[BUILTIN]
+                    previous = {key: entry[key] for key in author_fields if key in entry}
+                    if 'imported_author_source' in previous:
+                        entry.pop('author', None)
+                        entry.pop('imported_author_source', None)
+                    entry.pop('author_links', None)
+                    entry.update(attribution)
+                    builtin_author_changed = previous != {key: entry[key] for key in author_fields if key in entry}
+                    status = ('added' if restored_builtin else
+                              'updated' if not already_present or builtin_author_changed else 'existing')
+                    results.append(dict(identity_id=BUILTIN, name=entry['name'], status=status, actions=actions,
+                                        **attribution))
                     if 'dialogue_detection' in rec:
                         by_id[BUILTIN]['dialogue_detection'] = rec['dialogue_detection']
                         results[-1]['dialogue_detection'] = rec['dialogue_detection']
                     continue
                 entry = rec['entry'].copy()
+                entry.update(attribution)
                 if 'dialogue_detection' in rec:
                     entry['dialogue_detection'] = rec['dialogue_detection']
                 entry['import_source']=archive.stem
@@ -460,6 +513,7 @@ def _import_normalized(archive, addon, *, name=None, unity=None, package_addon=N
                     pointer = root/LOCAL/(rec['look']+'.cfg')
                     before_entry = dict(old, private_declaration=owner) if owner and 'private_declaration' not in old else old
                     changed = before_entry != entry or not pointer.is_file() or pointer.read_bytes()!=pending[pointer]
+                    changed = changed or identity in dialogue_changed
                     if identity in portraits:
                         changed = changed or imported_portraits.get(root, identity) != portraits[identity]
                     if folder is not None:
@@ -470,12 +524,16 @@ def _import_normalized(archive, addon, *, name=None, unity=None, package_addon=N
                         old.pop('imported_voice',None)
                     if 'presentation_warning' not in entry:
                         old.pop('presentation_warning', None)
+                    for key in author_fields:
+                        if key not in attribution:
+                            old.pop(key, None)
                     old.update(entry)
                     status = 'updated' if changed else 'existing'
                 else:
                     catalog[entry['sinner']]['entries'].append(entry)
                     status = 'added'
-                results.append(dict(identity_id=identity,name=entry['name'],status=status,actions=rec['actions']))
+                results.append(dict(identity_id=identity, name=entry['name'], status=status, actions=rec['actions'],
+                                    **attribution))
                 if 'dialogue_detection' in entry:
                     results[-1]['dialogue_detection'] = entry['dialogue_detection']
                 if rec.get('voice_warning'):
@@ -513,7 +571,8 @@ def _import_normalized(archive, addon, *, name=None, unity=None, package_addon=N
                     path,data = rec['timing_path'],rec['timing']
                     if not path.exists() or path.read_bytes()!=data:
                         write_atomic(path,data)
-            if seen or restored_builtin or (dialogue_scans and any(rec.get('builtin') == 'roland' for rec in records)):
+            if (seen or restored_builtin or builtin_author_changed
+                    or (dialogue_scans and any(rec.get('builtin') == 'roland' for rec in records))):
                 pending[catalog_file] = encode(catalog)
             if seen or any(rec.get('builtin') == 'roland' for rec in records):
                 tombstone = root/'imported-skin-deletions.json'
@@ -543,6 +602,13 @@ def _import_normalized(archive, addon, *, name=None, unity=None, package_addon=N
             if package is not None:
                 rollback.pop_all()
                 clean_replaced_models(root / LOCAL, replaced, digest)
+                if previous_audio:
+                    from framepack_dialogue import obsolete_audio
+                    for path in obsolete_audio(folder, previous_audio):
+                        try:
+                            path.unlink()
+                        except OSError:
+                            continue
                 for row in results:
                     row['package_directory'] = str(folder)
                 obsolete = {i for rec in records for i in rec.get('_obsolete_stock_ids', [])}
