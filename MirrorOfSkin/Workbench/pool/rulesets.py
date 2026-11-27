@@ -211,6 +211,39 @@ def entries(root, rule, pool_data=None):
     return []
 
 
+def effective_entries(root, rule, pool_data=None):
+    """Return only entries the native pool builder can actually resolve.
+
+    An empty rule set is valid JSON, so it used to be activated silently and
+    left the game with zero candidates. Every activation/creation path uses
+    this check to fail loudly instead of disabling all appearance replacement.
+    """
+    root = pathlib.Path(root)
+    if pool_data is None:
+        pool_data = pools(root)
+    cat = catalog(root, pool_data)
+    kind = rule.get('kind')
+    if kind == 'sinner':
+        sinner = str(rule.get('sinner') or '')
+        profile = (custom(root).get('characters') or {}).get(sinner)
+        if not isinstance(profile, dict):
+            # No custom pool yet: the native builder uses this character's
+            # default catalog entries, so activating it is still safe.
+            return _default_entries(pool_data.get(sinner, {}), sinner)
+    result = []
+    for entry in entries(root, rule, pool_data):
+        if entry.get('entry_kind', 'appearance') != 'appearance':
+            continue
+        identity = str(entry.get('identity_id', ''))
+        try:
+            weight = float(entry.get('weight', 1))
+        except (TypeError, ValueError):
+            continue
+        if identity in cat and weight > 0:
+            result.append(entry)
+    return result
+
+
 def revision(root, rule):
     root = pathlib.Path(root)
     if not rule:
@@ -273,10 +306,14 @@ def fill_default(root, rule, pool_data=None):
     kind, sinner, identity = rule.get('kind'), str(rule.get('sinner') or ''), rule.get('identity')
     if kind == 'global':
         entries = _all_default_entries(pool_data)
+        if not entries:
+            raise ValueError('没有可填入的默认外观候选；请先更新资源。')
         with FileLock(root / 'workbench-save.lock'):
             _write(global_file(root), {'schema': 1, 'scope': 'global', 'name': '所有角色', 'entries': entries, 'locked': True})
         return entries
     entries = _default_entries(pool_data.get(sinner, {}), sinner)
+    if not entries:
+        raise ValueError('该角色没有可填入的默认外观候选；请先更新资源。')
     if kind == 'sinner':
         with FileLock(root / 'workbench-save.lock'):
             data = custom(root)
@@ -328,6 +365,8 @@ def activate(root, rule):
     root = pathlib.Path(root)
     if not rule:
         raise ValueError('未选择规则集')
+    if not effective_entries(root, rule):
+        raise ValueError('该规则集没有可用的外观候选，已拒绝启用；请先点击“填入默认全随机”。')
     st = state(root)
     kind, sinner, identity = rule.get('kind'), rule.get('sinner'), rule.get('identity')
     cfg = settings(root)
@@ -387,6 +426,8 @@ def create_identity(root, sinner, identity, known):
     if entry_sinner not in ('', sinner):
         raise ValueError('该人格不属于当前角色')
     entries = _default_entries(pools(root).get(sinner, {}), sinner)
+    if not entries:
+        raise ValueError('该角色没有可用的默认外观候选，无法创建规则集；请先更新资源。')
     data = {
         'schema': 1, 'scope': 'identity', 'sinner': int(sinner), 'identity': identity,
         'name': str(entry.get('name') or identity), 'entries': entries,
@@ -404,6 +445,10 @@ def only(root, rule):
     current = st['active'].get(sinner, 'none')
     if current == 'none':
         current = 'sinner'
+    if current.startswith('identity:'):
+        identity = current.split(':', 1)[1]
+        if not effective_entries(root, {'kind': 'identity', 'sinner': sinner, 'identity': identity}):
+            current = 'sinner'
     st['global'] = False
     st['active'] = {sinner: current}
     st['selected'] = {'id': rule.get('id'), 'kind': rule.get('kind'), 'sinner': rule.get('sinner'), 'identity': rule.get('identity')}

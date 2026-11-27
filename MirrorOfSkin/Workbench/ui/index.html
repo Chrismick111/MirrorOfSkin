@@ -943,6 +943,12 @@
         text-overflow: ellipsis;
         white-space: nowrap;
       }
+      .scope-warning {
+        color: #e3b45c;
+        font-size: 12px;
+        line-height: 1.35;
+        white-space: normal;
+      }
       .scope-actions {
         margin-left: auto;
         display: flex;
@@ -1761,6 +1767,9 @@
       <symbol id="i-grid" viewBox="0 0 24 24">
         <path d="M4 4h6v6H4zM14 4h6v6h-6zM4 14h6v6H4zM14 14h6v6h-6z" />
       </symbol>
+      <symbol id="i-book" viewBox="0 0 24 24">
+        <path d="M12 6c-2-2-5-2-8-1v13c3-1 6-1 8 1 2-2 5-2 8-1V5c-3-1-6-1-8 1zM12 6v14" />
+      </symbol>
       <symbol id="i-save" viewBox="0 0 24 24">
         <path d="M5 3h11l3 3v15H5zM8 3v6h8V3M8 21v-7h8v7" />
       </symbol>
@@ -1798,8 +1807,15 @@
         </button>
         <button
           id="headerChapters"
+          class="icon-btn"
           type="button"
-        >章节管理</button>
+          title="章节管理"
+          aria-label="章节管理"
+        >
+          <svg class="icon" aria-hidden="true">
+            <use href="#i-book"></use>
+          </svg>
+        </button>
         <button
           id="helpButton"
           class="icon-btn"
@@ -1839,6 +1855,7 @@
           <div id="scopeCard" class="scope-card">
             <div class="scope-copy">
               <strong id="scopeName">未选择规则集</strong>
+              <span id="scopeWarning" class="scope-warning hidden" role="status"></span>
             </div>
             <div class="scope-actions">
               <button
@@ -2825,13 +2842,21 @@
       }
       function renderScopeCard() {
         const rule = data.activeRule;
+        const warning = $("#scopeWarning");
         if (!rule) {
           $("#scopeName").textContent = "未选择规则集";
           $("#fillDefault").disabled = true;
+          warning.hidden = true;
+          warning.textContent = "";
           return;
         }
-        $("#scopeName").textContent = rule.name;
+        const empty = !(data.ruleEntries || []).length;
+        $("#scopeName").textContent = rule.name + (empty ? "（候选为空）" : "");
         $("#fillDefault").disabled = rule.kind === "global" && rule.locked;
+        warning.hidden = !empty;
+        warning.textContent = empty
+          ? "当前规则集没有可用的外观候选，游戏内不会替换外观；请点击右侧随机按钮填入默认候选。"
+          : "";
       }
       function entrySource(entry) {
         const code = entry.appearance_name || String(entry.identity_id);

@@ -404,6 +404,25 @@ def _prepare_native_pools_unlocked():
             for row in _resolve_rows(profile.get('entries', []), base, catalog, include_zero=True):
                 add(sinner, row)
 
+    def default_entries(sinner):
+        # Mirrors Workbench/rulesets._default_entries. Used only as a safety net:
+        # a cleared or damaged active rule set must not leave the unit with zero
+        # candidates, which would silently disable every appearance for the game.
+        result = []
+        for entry in pools.get(str(sinner), {}).get('entries', []):
+            identity = str(entry.get('identity_id', ''))
+            if not identity.isdigit() or len(identity) != 5 or identity[:3] != str(sinner):
+                continue
+            if entry.get('story_metadata') or entry.get('category') == 'humanoid_boss':
+                continue
+            try:
+                weight = float(entry.get('weight', 1))
+            except (TypeError, ValueError):
+                continue
+            if weight > 0:
+                result.append({'identity_id': identity, 'weight': weight})
+        return result[:256]
+
     # Keep every catalog identity at zero weight so changing rule sets never
     # has to remove native rows (the hot reload path requires old rows).
     for sinner, pool in pools.items():
@@ -455,29 +474,45 @@ def _prepare_native_pools_unlocked():
     for sinner in range(101, 113):
         key = str(sinner)
         base = ''
+        source = ''
+        entries = []
         if state['global']:
-            entries = None
+            source = 'global'
             if global_rule and isinstance(global_rule.get('entries'), list):
                 entries = global_rule['entries']
             elif global_rule and isinstance(global_rule.get('pools'), dict):
                 profile = global_rule['pools'].get(key)
-                entries = profile.get('entries', []) if isinstance(profile, dict) else None
-            if entries is None:
-                continue
+                if isinstance(profile, dict):
+                    entries = profile.get('entries', [])
         else:
             active = state['active'].get(key, 'none')
             if active == 'sinner':
+                source = 'sinner:' + key
                 profile = (custom.get('characters') or {}).get(key)
                 entries = profile.get('entries', []) if isinstance(profile, dict) else pools[key].get('entries', [])
             elif active.startswith('identity:'):
                 base = active.split(':', 1)[1]
+                source = active
                 rule = _identity_ruleset(base)
-                if not rule or str(rule.get('sinner')) != key:
-                    continue
-                entries = rule.get('entries', [])
-            else:
-                continue
+                if rule and str(rule.get('sinner')) == key:
+                    entries = rule.get('entries', [])
+        if not source:
+            continue
+        resolved = False
         for row in _resolve_rows(entries, base, catalog):
+            row['sinner'] = sinner
+            row_key = _pool_row_key(sinner, row)
+            active_rows.setdefault(row_key, row)
+            known.pop(row_key, None)
+            resolved = True
+        if resolved:
+            continue
+        fallback = default_entries(sinner)
+        if not fallback:
+            log('Active ruleset %s for sinner=%s resolved 0 rows and no default candidates exist; native pool will be empty for this unit' % (source, key))
+            continue
+        log('Active ruleset %s for sinner=%s resolved 0 rows; falling back to %s default candidates' % (source, key, len(fallback)))
+        for row in _resolve_rows(fallback, base, catalog):
             row['sinner'] = sinner
             row_key = _pool_row_key(sinner, row)
             active_rows.setdefault(row_key, row)

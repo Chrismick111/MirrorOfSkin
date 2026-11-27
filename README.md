@@ -3,7 +3,9 @@
 适用于 [FaustLauncher](https://github.com/f0lkskill/FaustLauncher) 的《边狱巴士》(Limbus Company) 人格外观随机插件。
 通过 WarpHook 注入原生 DLL，在战斗中替换罪人外观、随机切换人格，并按原生触发条件播放 Boss 语音与气泡。
 
-当前源码版本 **1.3.7**
+当前源码版本 **1.3.9**
+
+1.3.9 修复规则集候选为空时整个外观池被静默清空的问题：启用空规则集会直接提示并拒绝，自动填入与新建规则集在无候选时也会报错；运行时会检测激活规则集解析出的候选数，若为零则回退到该角色的默认候选并写入日志，避免游戏内所有角色突然不换装。工作台会在规则集为空时显示醒目的候选为空提示。同时把顶部章节管理按钮改为与其他图标按钮一致的样式。
 
 1.3.7 读取并兼容了多种不同格式的私服mod的导入，普适性得到初步验证；增加了允许自行添加自定义章节，自定义章节名称以及图像以及修改章节目录下外观的功能；修改了默认外观导入的路径，现在所有导入外观将于插件同处一个文件夹，而不是单独放到C盘中；添加了导入人格的进度；整理了联动章节外观，并修复了音效会不生效的问题
 
@@ -23,9 +25,9 @@
 
 | 下载 | 用途 |
 | --- | --- |
-| [1.3.7 启动器安装包](https://github.com/Chrismick111/MirrorOfSkin/releases/download/v1.3.7/MirrorOfSkin-1.3.7-no-images.zip) | 首次安装或手动更新。公开版不含头像，可在工作台获取资源。 |
-| [1.3.7 兼容安装包](https://github.com/Chrismick111/MirrorOfSkin/releases/download/v1.3.7/MirrorOfSkin-1.3.7-no-images-store.zip) | 启动器解压上一个文件失败时选用。两个包的插件内容相同，安装其中一个即可。 |
-| [1.3.7 工作台更新包](https://github.com/Chrismick111/MirrorOfSkin/releases/download/v1.3.7/FaustRandomIdentity-WarpHook.zip) | 供旧版工作台的自动更新功能读取。 |
+| [1.3.9 启动器安装包](https://github.com/Chrismick111/MirrorOfSkin/releases/download/v1.3.9/MirrorOfSkin-1.3.9-no-images.zip) | 首次安装或手动更新。公开版不含头像，可在工作台获取资源。 |
+| [1.3.9 兼容安装包](https://github.com/Chrismick111/MirrorOfSkin/releases/download/v1.3.9/MirrorOfSkin-1.3.9-no-images-store.zip) | 启动器解压上一个文件失败时选用。两个包的插件内容相同，安装其中一个即可。 |
+| [1.3.9 工作台更新包](https://github.com/Chrismick111/MirrorOfSkin/releases/download/v1.3.9/FaustRandomIdentity-WarpHook.zip) | 供旧版工作台的自动更新功能读取。 |
 
 手动解压安装时，将启动器安装包解压到 `FaustLauncher/addons/`。安装正确后能直接看到 `addons/MirrorOfSkin/addon_info.json`；如果中间多了一层同名目录，启动器可能识别不到插件。
 
