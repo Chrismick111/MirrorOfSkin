@@ -3,7 +3,15 @@ import json
 import pathlib
 import re
 
-NAME_FIXES={'story_8372_Barber_NicoleAppearance':'理发师·妮可莉娜'}
+NAME_FIXES={
+    'story_8372_Barber_NicoleAppearance': '理发师·妮可莉娜',
+    # Newly discovered identities without an official Chinese localization row.
+    '10117': '高级定制:: 黑潮控制器 李箱',
+    '10316': '楔子事务所收尾人 堂吉诃德',
+    '11017': '楔子事务所收尾人 辛克莱',
+    '11116': '楔子事务所代表 奥提斯',
+    '11217': '高级定制:: B2 楼层经理 格里高尔',
+}
 
 def load(root):
     try:

@@ -125,7 +125,7 @@
   "Workbench/scan/discovery_metadata.py": "e97e2a3d728cee3ea60dcd7ac1f9d9454b911840cf26eabaa71a727e2a865430",
   "Workbench/scan/discovery_personalities.py": "856ba0b8684a3e1f23121eeee60b1c70feefd100a7b815abfde1d1f9d69c7eb9",
   "Workbench/scan/local_portraits.py": "60f205a0fb5cbb70244f02b47e8ba39ec015f615fd59bbb2f77d8e554ab7e1ba",
-  "Workbench/scan/name_translations.py": "e4f0110f128f4a62ffef1ae77b16bd3e3246e8220e5cff9fee0eb5a7c37c5802",
+  "Workbench/scan/name_translations.py": "a5d8760f2ead99408b6b7a99ea27952e7bf9c23f7e5dcdc6e143f4e9e520e765",
   "Workbench/scan/portrait_download.py": "04958eb1ab4fd56c3b19d708d6866014c52220df240b70cb9eb89497ccbc9ec8",
   "Workbench/scan/resource_catalog.py": "aca34e90de71fd9dc68cd5abe7eee29901d4bee8be83e32970bbbb0a99c61dd0",
   "Workbench/scan/resource_identity.py": "8d9f47b43c3266b6d1d6924f89e31c587841260602f87bee3845f8a16998cd1f",
