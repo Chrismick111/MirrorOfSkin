@@ -53,10 +53,13 @@ class RulesetHardeningTest(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, '没有可填入的默认外观候选'):
             rulesets.fill_default(self.root, {'kind': 'sinner', 'sinner': '102'})
 
-    def test_create_identity_rejects_empty_default_pool(self):
+    def test_create_identity_starts_with_empty_entries(self):
         known = {'10201': {'source': '102', 'name': 'Zero only'}}
-        with self.assertRaisesRegex(ValueError, '没有可用的默认外观候选'):
-            rulesets.create_identity(self.root, '102', '10201', known)
+        data = rulesets.create_identity(self.root, '102', '10201', known)
+        self.assertEqual(data['entries'], [])
+        self.assertEqual(rulesets.entries(self.root, self.rule('identity', '102', '10201')), [])
+        with self.assertRaisesRegex(ValueError, '没有可用的外观候选'):
+            rulesets.activate(self.root, self.rule('identity', '102', '10201'))
 
     def test_sinner_mode_without_custom_pool_still_activates(self):
         rulesets.activate(self.root, self.rule('sinner'))

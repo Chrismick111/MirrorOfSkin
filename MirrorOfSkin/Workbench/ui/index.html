@@ -3772,7 +3772,7 @@
         }
         try {
           await api("ruleset-create", { sinner, identity });
-          await api("ruleset-activate", {
+          await api("ruleset-select", {
             rule: {
               id: "identity:" + identity,
               kind: "identity",
@@ -3782,7 +3782,7 @@
           });
           closeNewRule();
           await refresh();
-          status("已创建并启用单人格规则集");
+          status("已创建单人格规则集，添加外观后可启用");
         } catch (error) {
           status(error.message);
         }

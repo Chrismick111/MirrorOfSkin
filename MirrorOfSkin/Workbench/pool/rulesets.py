@@ -425,9 +425,10 @@ def create_identity(root, sinner, identity, known):
     entry_sinner = str(entry.get('source', ''))
     if entry_sinner not in ('', sinner):
         raise ValueError('该人格不属于当前角色')
-    entries = _default_entries(pools(root).get(sinner, {}), sinner)
-    if not entries:
-        raise ValueError('该角色没有可用的默认外观候选，无法创建规则集；请先更新资源。')
+    # A new rule set is an empty canvas: the user decides which appearances
+    # belong in it. Activation still rejects empty pools, so an unfinished rule
+    # set cannot silently disable appearance replacement in the game.
+    entries = []
     data = {
         'schema': 1, 'scope': 'identity', 'sinner': int(sinner), 'identity': identity,
         'name': str(entry.get('name') or identity), 'entries': entries,
