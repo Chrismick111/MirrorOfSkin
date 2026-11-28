@@ -3700,7 +3700,9 @@
         });
       }
       function renderRulesets() {
-        const cards = (data.rulesets || []).map(rulesetCard).join("");
+        const cards = (data.rulesets || [])
+          .map((item) => rulesetCard(item))
+          .join("");
         const page = $("#rulesetList");
         page.innerHTML = cards + rulesetCreateCard("page");
         bindRulesetCards(page);
