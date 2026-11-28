@@ -3278,109 +3278,67 @@
       const tutorialSteps = [
         {
           page: "pool",
-          selector: "nav",
-          title: "五个主面板",
-          html: `<p>这一排是工作台的五个面板，教程会逐个说明它们和页面上的图标。</p><ul><li><strong>人格池</strong>：选择每名罪人的候选外观和权重。</li><li><strong>规则集</strong>：启用/停用随机规则。</li><li><strong>方案管理</strong>：保存、读取整套配置。</li><li><strong>准备状态</strong>：确认游戏和原生模块是否连接。</li><li><strong>运行日志</strong>：查看原生抽选、热重载和异常记录。</li></ul>`,
-        },
-        {
-          selector: "#helpButton",
-          title: "问号：重新打开教程",
-          html: `<p>右上角问号随时打开本教程。它不会修改你的配置，只负责讲解。</p>`,
-        },
-        {
-          selector: 'header a[href="effect-editor"]',
-          title: "闪光：特效方案编辑器",
-          html: `<p>打开独立特效方案编辑器，读取本机游戏资源并制作技能特效方案。</p><ul><li>方案保存后回到工作台「准备状态」查看是否已应用。</li><li>编辑器中的轨道、脚本和素材替换都只影响特效方案。</li></ul>`,
+          open: "source",
+          selector: '#poolSourceModal .source-card[data-source="native"]',
+          title: "第一步：先选角色来源",
+          html: `<p>这是新版最重要的一步。点“添加人格”后会先让你选来源，选错来源就找不到想要的外观。</p><ul><li><strong>原版角色</strong>：游戏内出现的角色、Boss 与异想体外观。</li><li><strong>Mod 角色</strong>：私服 bundle 导入的外观，会进入独立的外来人格窗口。</li></ul><p>教程已经替你打开了这个窗口，按“下一步”继续。</p>`,
         },
         {
           page: "pool",
-          selector: "#scopeCard",
-          title: "当前规则集",
-          html: `<p>顶部卡片显示“当前编辑对象”。未选择规则集时，随机不会启用，右侧两个图标也不可用。</p><ul><li>卡片名称来自当前规则集。</li><li>纯随机默认池锁定后只能查看，不能改成员。</li></ul>`,
+          open: "identities",
+          selector: "#identityModal .identity-filters",
+          title: "挑外观：搜索、角色、章节",
+          html: `<p>选“原版角色”后到这里。筛选栏现在只保留真正用来找外观的控件。</p><ul><li>输入名字、编号或来源即可搜索；再用角色、章节、类型缩小范围。</li><li>点行尾加号加入当前池；已有卡片上的数字是权重，改完自动保存。</li><li>这里不再混入导入按钮、章节管理和剧情开关，界面更干净。</li></ul>`,
         },
         {
           page: "pool",
-          selector: "#fillDefault",
-          title: "交叉箭头：填入默认全随机",
-          html: `<p>把当前罪人的默认人格池填入当前规则集，作为快速起点。</p><ul><li>会覆盖当前规则集已有的成员和权重。</li><li>纯随机默认池锁定时此按钮不可用。</li></ul>`,
+          open: "imported",
+          selector: "#importLocalSkin",
+          title: "外来人格：导入和管理",
+          html: `<p>顶部“导入外观”现在打开这个独立窗口，不再挤在添加人格里。</p><ul><li>支持 ZIP、7z、RAR、bundle、carra2、bank，可按住 Ctrl 或 Shift 多选。</li><li>导入结果按压缩包分组；某个包失败不会中断后面的文件。</li><li>卡片会显示作者和演示视频链接，重新导入原包可补齐署名与链接。</li></ul>`,
         },
         {
           page: "pool",
-          selector: "#scopeGo",
-          title: "九宫格：选择规则集",
-          html: `<p>打开规则集选择器，只切换“当前要查看和编辑的规则集”。</p><ul><li>它不会直接启用规则；启用仍在规则集页面或卡片开关完成。</li><li>选错对象时不会改动任何概率。</li></ul>`,
-        },
-        {
-          page: "pool",
-          selector: "#poolGrid .pool-add, #poolGrid .pool-card",
-          title: "人格卡片与加号",
-          html: `<p>“？？”加号卡片打开人格选择器；已有卡片代表当前规则集里的候选外观。</p><ul><li>加号：搜索、按角色/章节/来源筛选并添加外观。</li><li>卡片权重数字：调整被抽中的相对概率，输入后自动保存。</li><li>卡片右键/长按：打开编辑菜单，可改权重、替换为其他外观或移除。</li><li>卡片上的百分比显示当前权重占比。</li></ul>`,
+          open: "chapters",
+          selector: "#chapterManager",
+          title: "章节管理已独立",
+          html: `<p>“管理章节与批量归类”搬到了自己的窗口，顶部书本按钮随时打开。</p><ul><li>可新建、改名、上传或恢复章节封面。</li><li>搜索外观后批量移动到章节，也能一键恢复自动归类。</li><li>添加人格里仍保留“按章节浏览”，只用于筛选，不会误改归类。</li></ul>`,
         },
         {
           page: "rulesets",
-          selector: "#rulesetList .ruleset-card[data-id], #rulesetList",
-          title: "规则集卡片：点击启用/停用",
-          html: `<p>卡片代表一条规则。点击卡片启用或停用；同一罪人同时只能启用一条规则。</p><ul><li>高亮边框表示已启用。</li><li>“全局”与其他规则互斥，最后选择者优先。</li><li>卡片圆形图标是规则集预览图或角色图标。</li></ul>`,
+          selector: "#rulesetList .ruleset-card[data-id] .ruleset-delete, #rulesetList .ruleset-card[data-id]",
+          title: "规则集：启用与删除",
+          html: `<p>点击卡片启用或停用；同一罪人同时只能启用一条规则。</p><ul><li>鼠标浮在<strong>自定义单人格规则集</strong>上，右上角会出现红色垃圾桶，确认后即可删除。</li><li>“所有角色”“某某 · 全部人格”是默认规则集，不会出现删除按钮。</li><li>删除规则集不会删除已导入的外观，只是移除这条规则。</li></ul>`,
         },
         {
-          page: "rulesets",
-          selector: "#rulesetList .ruleset-add, #rulesetList",
-          title: "加号：新建单人格规则",
-          html: `<p>新建一条只针对某个人格的规则集，适合只为单个外观设置候选。</p><ul><li>先选罪人，再选具体人格。</li><li>创建后可以在人格池页面编辑它的成员。</li></ul>`,
+          page: "pool",
+          selector: "#poolGrid .pool-card[data-id], #poolGrid .pool-add",
+          title: "人格池：权重与血迹",
+          html: `<p>“？？”加号打开人格选择器；池里的卡片就是当前候选外观。</p><ul><li>权重数字决定抽中概率，百分比是相对占比。</li><li>右键或长按卡片可打开菜单，含“仅抽中此人格”“显示受伤血迹”等。</li><li>血迹开关按外观独立保存，不会因为借用模型串到别的角色。</li></ul>`,
         },
         {
           page: "schemes",
           selector: "#saveScheme",
-          title: "软盘：保存当前方案",
-          html: `<p>把当前人格池、规则集、演出编排和随机开关保存为一套方案。</p><ul><li>输入方案名称后点击软盘。</li><li>同名方案需要确认覆盖。</li></ul>`,
-        },
-        {
-          page: "schemes",
-          selector: "#importScheme",
-          title: "向上箭头：导入方案",
-          html: `<p>选择本地 JSON 方案文件导入。导入前会校验版本、角色和形态数据。</p><ul><li>导入不会自动应用，需再点方案卡片的“读取”。</li><li>读取前会自动备份当前配置。</li></ul>`,
-        },
-        {
-          page: "schemes",
-          selector: "#schemeList .scheme-card, #schemeList",
-          title: "方案卡片：读取、导出、删除",
-          html: `<p>已保存方案会显示在这里。</p><ul><li><strong>读取</strong>：应用整套配置，并先备份当前配置。</li><li><strong>导出</strong>：下载 JSON 文件。</li><li><strong>删除</strong>：二次确认后删除方案。</li><li>鼠标悬停卡片可预览方案包含的外观。</li></ul>`,
+          title: "方案：一键保存整套配置",
+          html: `<p>调好后点软盘，把人格池、规则集、演出编排和随机开关存成一套方案。</p><ul><li>导入方案不会自动应用，点方案卡片的“读取”才会生效。</li><li>读取前会自动备份当前配置，可放心尝试。</li></ul>`,
         },
         {
           page: "prepare",
           selector: "#prepareData",
-          title: "准备状态：连接与 revision",
-          html: `<p>这里显示游戏进程、原生模块、规则池 revision、已加载和已展示外观。</p><ul><li>规则修改后，等待原生显示已应用新 revision 再进战斗。</li><li>未连接或长期不应用时，查看运行日志和 native.log。</li></ul>`,
-        },
-        {
-          page: "events",
-          selector: "#exportEvents",
-          title: "下载图标：导出运行记录",
-          html: `<p>导出当前运行日志、配置、演出规则和准备状态，便于反馈问题。</p><ul><li>反馈时优先保留包含 revision、applied、segment actual 的行。</li></ul>`,
-        },
-        {
-          page: "events",
-          selector: "#eventLog",
-          title: "运行日志：实际发生了什么",
-          html: `<p>日志会记录 coin draw、原生加载、规则热重载、动画补全和异常。</p><ul><li>会持续轮询新日志，不需要手动刷新。</li><li>日志不包含你的本地路径。</li></ul>`,
-        },
-        {
-          page: "pool",
-          selector: "#poolGrid",
-          title: "扫描、回顶与下载进度",
-          html: `<p>页面滚动后右下角会出现<strong>向上箭头</strong>，点击回到人格池顶部。</p><ul><li>扫描进行时右下角显示<strong>扫描进度卡片</strong>，点击查看详情。</li><li>下载资源弹窗使用<strong>关闭</strong>、<strong>最小化到右下角</strong>和<strong>重试</strong>图标。</li><li>所有模态窗口右上角的<strong>×</strong>只关闭当前窗口，不会修改配置。</li></ul>`,
+          title: "进战斗前看一眼这里",
+          html: `<p>准备状态显示游戏进程、原生模块、规则池 revision 和已应用情况。</p><ul><li>改完规则后，等“已应用”追上新 revision 再进战斗。</li><li>如果一直没应用，去运行日志和 native.log 查原因。</li></ul>`,
         },
         {
           selector: ".header-actions",
-          title: "完成教程",
-          html: `<p>你可以在启动器设置中关闭「是否自动打开调整面板」，也可以从托盘「镜像幻化 → 人格、概率与演出设置」打开工作台。</p><p>教程完成后可在右上角问号重新查看。</p>`,
+          title: "随时重看教程",
+          html: `<p>右上角问号随时重新打开本教程；它只讲解，不会改你的配置。</p><p>教程完成后可在启动器设置里关闭自动打开调整面板，也可以从托盘重新进入工作台。</p>`,
         },
       ];
       let tutorialOpen = false, tutorialIndex = -1;
       function tutorialIntro() {
         $("#tutorialTitle").textContent = "欢迎使用镜像幻化";
-        $("#tutorialBody").innerHTML = `<p>这是首次使用引导。点击开始后，页面会变暗并聚焦到具体按钮，旁边用悬浮提示说明作用和效果；不会只弹一个说明窗口。</p><p>你可以现在开始，也可以跳过；跳过前会再确认一次。</p>`;
-        $("#tutorialProgress").textContent = "";
+        $("#tutorialBody").innerHTML = `<p>新版引导只讲最重要、最常用的功能，并按新界面顺序带你看一遍。它会<strong>自动打开对应窗口、切换页面、滚动到目标</strong>，你只需要点“下一步”。</p><p>第一步就是最容易踩坑的：添加人格前先选<strong>原版角色 / Mod 角色</strong>。</p><p>教程只讲解和演示，不会替你修改任何配置。</p>`;
+        $("#tutorialProgress").textContent = "新功能优先 · 9 步";
         $("#tutorialPrev").classList.add("hidden");
         $("#tutorialNext").textContent = "开始教程";
         tutorialIndex = -1;
@@ -3392,6 +3350,31 @@
         } catch (e) {
           return null;
         }
+      }
+      const tourModalSelectors = [
+        "#poolSourceModal",
+        "#identityModal",
+        "#importedModal",
+        "#chapterModal",
+        "#rulePickerModal",
+        "#newRuleModal",
+      ];
+      function closeTourModals() {
+        tourModalSelectors.forEach((selector) => {
+          const el = $(selector);
+          if (!el) return;
+          clearTimeout(el._hideTimer);
+          el.classList.add("hidden");
+          el.classList.remove("closing");
+        });
+      }
+      function openTourModal(step) {
+        closeTourModals();
+        if (!step?.open) return;
+        if (step.open === "source") openPoolSourceModal();
+        else if (step.open === "identities") openIdentityModal();
+        else if (step.open === "imported") openImportedModal();
+        else if (step.open === "chapters") openChapterModal();
       }
       function positionTour(step, target) {
         const layer = $("#tutorialLayer");
@@ -3446,6 +3429,7 @@
           tutorialIndex === tutorialSteps.length - 1 ? "完成教程" : "下一步";
         layer.classList.remove("hidden");
         if (step.page) selectPage(step.page);
+        openTourModal(step);
         const target = tourStepTarget(step);
         if (target) {
           try {
@@ -3467,6 +3451,7 @@
         if (tutorialOpen && !$("#tutorialModal").classList.contains("hidden")) return;
         tutorialOpen = true;
         tutorialIndex = -1;
+        closeTourModals();
         $("#tutorialLayer").classList.add("hidden");
         tutorialIntro();
         showModal("#tutorialModal");
@@ -3475,6 +3460,7 @@
         tutorialOpen = false;
         tutorialIndex = -1;
         hideModal("#tutorialModal");
+        closeTourModals();
         $("#tutorialLayer").classList.add("hidden");
         $("#tutorialSpot").classList.add("hidden");
         if (data) data.tutorial = false;
@@ -3516,6 +3502,17 @@
         if (event.target.id === "tutorialModal") requestSkipTutorial();
       };
       $("#helpButton").onclick = openTutorial;
+      document.addEventListener("keydown", (event) => {
+        if (!tutorialOpen || tutorialIndex < 0) return;
+        if (event.target.closest("input, select, textarea")) return;
+        if (event.key === "ArrowRight") {
+          event.preventDefault();
+          tutorialNext();
+        } else if (event.key === "ArrowLeft") {
+          event.preventDefault();
+          tutorialPrev();
+        }
+      });
       window.addEventListener("resize", () => {
         if (tutorialOpen && tutorialIndex >= 0) {
           const step = tutorialSteps[tutorialIndex];
