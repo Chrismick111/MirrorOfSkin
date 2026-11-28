@@ -739,7 +739,7 @@ def main():
    except Exception as e:return self.send({'error':str(e)},500)
   def do_POST(self):
    route=self.route()
-   if route not in ('appearance-blood','appearance-name','chapter-save','chapter-move','package-folders','save','import','local-skin-import','local-skin-import-start','local-skin-delete','mod-package-import','director','bundle','boss-preview','update-check','update-install','portrait-save','portrait-reset','portrait-download','images-delete','ruleset-activate','ruleset-select','ruleset-save','ruleset-create','ruleset-only','ruleset-deactivate','ruleset-fill','ruleset-clear','scan','scheme-save','scheme-load','scheme-delete','scheme-import','scheme-get','feature-settings-save','effect-scheme-save','effect-scheme-get','effect-scheme-delete','effect-timelines','effect-live-start','effect-live-status','effect-plan-preview','effect-selection','effect-sprites','effect-sprites-start','effect-sprites-status','effect-sprites-cancel','effect-sprite-export','tutorial-complete','instance-shutdown','instance-attach','instance-release'):return self.send({'error':'未找到'},404)
+   if route not in ('appearance-blood','appearance-name','chapter-save','chapter-move','package-folders','save','import','local-skin-import','local-skin-import-start','local-skin-delete','mod-package-import','director','bundle','boss-preview','update-check','update-install','portrait-save','portrait-reset','portrait-download','images-delete','ruleset-activate','ruleset-select','ruleset-save','ruleset-create','ruleset-only','ruleset-deactivate','ruleset-delete','ruleset-fill','ruleset-clear','scan','scheme-save','scheme-load','scheme-delete','scheme-import','scheme-get','feature-settings-save','effect-scheme-save','effect-scheme-get','effect-scheme-delete','effect-timelines','effect-live-start','effect-live-status','effect-plan-preview','effect-selection','effect-sprites','effect-sprites-start','effect-sprites-status','effect-sprites-cancel','effect-sprite-export','tutorial-complete','instance-shutdown','instance-attach','instance-release'):return self.send({'error':'未找到'},404)
    if self.headers.get('X-Workbench')!=token:return self.send({'error':'请求无效'},403)
    try:
     n=int(self.headers.get('Content-Length',0))
@@ -837,6 +837,9 @@ def main():
      return self.send(_ruleset_payload(store))
     if route=='ruleset-deactivate':
      rulesets.deactivate(store.root, body.get('rule') or body)
+     return self.send(_ruleset_payload(store))
+    if route=='ruleset-delete':
+     rulesets.delete(store.root, body.get('rule') or body)
      return self.send(_ruleset_payload(store))
     if route=='ruleset-fill':
      rulesets.fill_default(store.root, body.get('rule') or body, rulesets.pools(store.root))

@@ -488,3 +488,33 @@ def deactivate(root, rule):
         _write(root / 'random_settings.json', cfg)
     return st
 
+def delete(root, rule):
+    root = pathlib.Path(root)
+    if not rule or rule.get('kind') != 'identity':
+        raise ValueError('只能删除单人格规则集')
+    identity = str(rule.get('identity') or '')
+    path = identity_file(root, identity)
+    data = _read(path, None)
+    if not data or data.get('scope') != 'identity' or str(data.get('identity')) != identity:
+        raise ValueError('规则集不存在或已损坏')
+    sinner = str(data.get('sinner', ''))
+    with FileLock(root / 'workbench-save.lock'):
+        path.unlink(missing_ok=True)
+        st = state(root)
+        if st['active'].get(sinner) == 'identity:' + identity:
+            st['active'][sinner] = 'none'
+        selected = st.get('selected') or {}
+        if selected.get('id') == rule.get('id'):
+            st['selected'] = None
+        save_state(root, st)
+        cfg = settings(root)
+        cfg['characters'] = {str(i): False for i in range(101, 113)}
+        for key, value in st['active'].items():
+            if str(value) != 'none' and str(key).isdigit():
+                cfg['characters'][str(key)] = True
+        if st['global']:
+            for i in range(101, 113):
+                cfg['characters'][str(i)] = True
+        _write(root / 'random_settings.json', cfg)
+    return st
+
