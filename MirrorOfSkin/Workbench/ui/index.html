@@ -1079,7 +1079,8 @@
         content: "✓ 已启用";
         position: absolute;
         top: 4px;
-        right: 4px;
+        left: 50%;
+        transform: translateX(-50%);
         padding: 2px 7px;
         border-radius: 999px;
         background: #deb970;
@@ -1346,37 +1347,47 @@
         height: 32px;
         color: #deb970;
       }
-      #identityModal .modal {
+      #identityModal .modal,
+      #importedModal .modal,
+      #chapterModal .modal {
         padding: 14px 16px;
       }
-      #identityModal .modal-title {
+      #identityModal .modal-title,
+      #importedModal .modal-title,
+      #chapterModal .modal-title {
         margin-bottom: 6px;
       }
-      #identityModal .identity-filters {
+      #identityModal .identity-filters,
+      #importedModal .identity-filters {
         gap: 6px;
         margin-bottom: 6px;
       }
       #identityModal .chapter-browser {
         margin: 4px 0;
       }
-      #identityModal .identity-scroll table {
+      #identityModal .identity-scroll table,
+      #importedModal .identity-scroll table {
         table-layout: fixed;
       }
-      #identityModal .identity-scroll td {
+      #identityModal .identity-scroll td,
+      #importedModal .identity-scroll td {
         padding: 6px 8px;
       }
-      #identityModal .identity-scroll td:last-child {
+      #identityModal .identity-scroll td:last-child,
+      #importedModal .identity-scroll td:last-child {
         width: 140px;
         white-space: nowrap;
         padding-right: 10px;
         text-align: right;
       }
-      #identityModal .identity-add {
+      #identityModal .identity-add,
+      #importedModal .identity-add {
         width: 38px;
         height: 38px;
         border-radius: 50%;
       }
-      #identityModal .identity-add .icon {
+      #identityModal .identity-add .icon,
+      #importedModal .identity-add .icon {
         width: 18px;
         height: 18px;
       }
@@ -1520,19 +1531,16 @@
         max-height: calc(100vh - 40px);
         overflow-y: auto;
       }
-      #identityModal .identity-modal {
+      #identityModal .identity-modal,
+      #importedModal .identity-modal {
         height: calc(100vh - 40px);
         max-height: calc(100vh - 40px);
         overflow: hidden;
         display: flex;
         flex-direction: column;
       }
-      #identityModal #chapterManager {
-        flex: 0 1 auto;
-        min-height: 0;
-        overflow-y: auto;
-      }
-      #identityModal .identity-scroll {
+      #identityModal .identity-scroll,
+      #importedModal .identity-scroll {
         flex: 1 1 0;
         min-height: 0;
         max-height: none;
@@ -1540,7 +1548,9 @@
       }
       #identityModal .modal-title,
       #identityModal .identity-filters,
-      #identityModal .chapter-browser {
+      #identityModal .chapter-browser,
+      #importedModal .modal-title,
+      #importedModal .identity-filters {
         flex: 0 0 auto;
       }
       #identityModal .chapter-cards {
@@ -2258,7 +2268,6 @@
           </button>
         </div>
         <div class="bar identity-filters">
-          <button id="importLocalSkin" type="button" title="可单选，按 Ctrl 或 Shift 多选"><svg class="icon" aria-hidden="true"><use href="#i-skin-import"></use></svg> 导入外观（可多选）</button>
           <input id="addSearch" placeholder="搜索名字、ID或来源" />
           <select id="addSource">
             <option value="">全部来源</option>
@@ -2278,13 +2287,48 @@
           <select id="addChapter">
             <option value="">全部章节</option>
           </select>
-
-          <label class="add-toggle">
-            <input id="addStory" type="checkbox" checked />包含剧情/敌方外观
-          </label>
         </div>
         <button id="localImportResult" type="button" aria-controls="importNotice" hidden></button>
-        <details id="chapterManager">
+        <details class="chapter-browser" open>
+          <summary>按章节浏览</summary>
+          <div
+            id="chapterCards"
+            class="chapter-cards"
+            aria-label="章节分类"
+          ></div>
+        </details>
+        <div class="scroll identity-scroll">
+          <table>
+            <tbody id="identityRows"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+    <div
+      id="chapterModal"
+      class="modal-backdrop hidden"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="chapterTitle"
+    >
+      <div class="modal identity-modal">
+        <div class="modal-title">
+          <h2 id="chapterTitle">
+            <svg class="icon" aria-hidden="true"><use href="#i-book"></use></svg>
+            章节管理
+          </h2>
+          <button
+            id="chapterClose"
+            class="icon-btn"
+            aria-label="关闭"
+            title="关闭"
+          >
+            <svg class="icon" aria-hidden="true">
+              <use href="#i-close"></use>
+            </svg>
+          </button>
+        </div>
+        <details id="chapterManager" open>
           <summary>管理章节与批量归类</summary>
           <div style="display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:8px 0">
             <select id="manageChapter" aria-label="选择章节"></select>
@@ -2308,17 +2352,45 @@
           <div id="chapterManageStatus" role="status" aria-live="polite"></div>
           <div id="chapterManageList" style="max-height:220px;overflow:auto;margin:8px 0;display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:4px"></div>
         </details>
-        <details class="chapter-browser" open>
-          <summary>按章节浏览</summary>
-          <div
-            id="chapterCards"
-            class="chapter-cards"
-            aria-label="章节分类"
-          ></div>
-        </details>
+      </div>
+    </div>
+    <div
+      id="importedModal"
+      class="modal-backdrop hidden"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="importedTitle"
+    >
+      <div class="modal identity-modal">
+        <div class="modal-title">
+          <h2 id="importedTitle">
+            <svg class="icon" aria-hidden="true"><use href="#i-package"></use></svg>
+            添加外来人格
+          </h2>
+          <button
+            id="importedClose"
+            class="icon-btn"
+            aria-label="关闭"
+            title="关闭"
+          >
+            <svg class="icon" aria-hidden="true">
+              <use href="#i-close"></use>
+            </svg>
+          </button>
+        </div>
+        <div class="bar identity-filters">
+          <button id="importLocalSkin" type="button" title="可单选，按 Ctrl 或 Shift 多选"><svg class="icon" aria-hidden="true"><use href="#i-skin-import"></use></svg> 导入外观（可多选）</button>
+          <input id="importedSearch" placeholder="搜索名字、ID或来源" />
+          <select id="importedRole">
+            <option value="">全部角色</option>
+          </select>
+          <select id="importedChapter">
+            <option value="">全部章节</option>
+          </select>
+        </div>
         <div class="scroll identity-scroll">
           <table>
-            <tbody id="identityRows"></tbody>
+            <tbody id="importedRows"></tbody>
           </table>
         </div>
       </div>
@@ -3339,6 +3411,7 @@
         const chapters = new Map();
         const counts = new Map();
         for (const entry of data.catalog) {
+          if (isImportedIdentity(String(entry.identity_id))) continue;
           for (const [key, label] of catalogChapters(entry)) {
             chapters.set(key, label);
             counts.set(key, (counts.get(key) || 0) + 1);
@@ -3366,6 +3439,19 @@
             .join("");
         $("#addRole").value = selectedRole;
         $("#addChapter").value = chapters.has(selectedChapter) ? selectedChapter : "";
+        const importedRole = $("#importedRole").value;
+        const importedChapter = $("#importedChapter").value;
+        const options = orderedChapters
+          .map(([id, label]) => `<option value="${esc(id)}">${esc(label)}</option>`)
+          .join("");
+        $("#importedRole").innerHTML =
+          '<option value="">全部角色</option>' +
+          names
+            .map((name, index) => `<option value="${101 + index}">${esc(name)}</option>`)
+            .join("");
+        $("#importedChapter").innerHTML = '<option value="">全部章节</option>' + options;
+        $("#importedRole").value = importedRole;
+        $("#importedChapter").value = chapters.has(importedChapter) ? importedChapter : "";
         renderChapterCards(orderedChapters, counts);
       }
       function renderChapterCards(chapters, counts) {
@@ -3376,7 +3462,10 @@
           ? `<img src="${esc(personalityArt.image_url)}" alt="" loading="lazy">`
           : "";
         const personalityCard = `<button type="button" class="chapter-card" data-chapter="__personality__" title="全部人物的人格外观">${personalityImage}<span class="chapter-tag">人格</span><span class="chapter-name">人格外观 <small>· ${personalityCount}项</small></span></button>`;
-        const allCard = `<button type="button" class="chapter-card" data-chapter=""><span class="chapter-name">全部外观 <small>· ${data.catalog.length}项</small></span></button>`;
+        const stockCount = data.catalog.filter(
+          (entry) => !isImportedIdentity(String(entry.identity_id)),
+        ).length;
+        const allCard = `<button type="button" class="chapter-card" data-chapter=""><span class="chapter-name">全部外观 <small>· ${stockCount}项</small></span></button>`;
         $("#chapterCards").innerHTML =
           allCard +
             personalityCard +
@@ -3432,7 +3521,7 @@
           fillAddFilters();
           refreshChapterManager();
           if (result.id) { $("#manageChapter").value = result.id; $("#chapterName").value = $("#manageChapter").selectedOptions[0]?.textContent || ""; }
-          renderAddList(); $("#chapterManageStatus").textContent = "保存成功";
+          renderAddList(); renderImportedList(); $("#chapterManageStatus").textContent = "保存成功";
           return true;
         } catch (error) {
           // Refresh the revision while keeping the user's name, search and selection.
@@ -3490,7 +3579,6 @@
         $("#addRole").value = "";
         $("#addSource").value = "";
         $("#addSearch").value = "";
-        $("#addStory").checked = true;
         renderAddList();
       }
       function personalityRole(entry) {
@@ -3512,12 +3600,7 @@
         const role = $("#addRole").value;
         const chapter = $("#addChapter").value;
         return data.catalog.filter((entry) => {
-          if (
-            !$("#addStory").checked &&
-            entry.story_metadata &&
-            !["no_attack", "personality", "paired"].includes(source)
-          )
-            return false;
+          if (isImportedIdentity(String(entry.identity_id))) return false;
           if (
             source === "paired" &&
             !entry.paired_identities?.includes(
@@ -3560,9 +3643,8 @@
         return entry.dialogue_needs_import && Object.values(detection).includes("unknown")
           ? result + "（重新导入原包可检测）" : result;
       }
-      function renderAddList() {
-        const candidates = addCandidates();
-        $("#identityRows").innerHTML =
+      function renderIdentityRows(container, candidates) {
+        container.innerHTML =
           candidates
             .map((entry) => {
               const id = String(entry.identity_id);
@@ -3599,6 +3681,7 @@
               data.catalog = latest.catalog;
               data.chapterRevision = latest.chapterRevision;
               renderAddList();
+              renderImportedList();
               render();
               status("显示名已更新");
             } catch (error) { status("修改显示名失败：" + error.message); button.disabled = false; }
@@ -3621,6 +3704,7 @@
               data.ruleRevision = latest.ruleRevision;
               fillAddFilters();
               renderAddList();
+              renderImportedList();
               render();
               status("已删除导入外观");
             } catch (error) {
@@ -3629,6 +3713,24 @@
             }
           };
         });
+      }
+      function renderAddList() {
+        renderIdentityRows($("#identityRows"), addCandidates());
+      }
+      function renderImportedList() {
+        const query = $("#importedSearch").value.trim().toLowerCase();
+        const role = $("#importedRole").value;
+        const chapter = $("#importedChapter").value;
+        renderIdentityRows($("#importedRows"), data.catalog.filter((entry) => {
+          if (!isImportedIdentity(String(entry.identity_id))) return false;
+          const owner = personalityRole(entry) ||
+            (entry.category !== "humanoid_boss" ? String(entry.source) : "");
+          if (role && owner !== role) return false;
+          if (chapter && !catalogChapters(entry).has(chapter)) return false;
+          return `${entry.name} ${entry.default_name || ""} ${entry.import_source || ""} ${entry.identity_id} ${entry.appearance_name || ""} ${who(entry.source)} ${entry.chapter_label || ""}`
+            .toLowerCase()
+            .includes(query);
+        }));
       }
       async function openIdentityModal() {
         try {
@@ -3654,7 +3756,6 @@
         $("#addSource").value = "";
         $("#addChapter").value = "";
         $("#addSearch").value = "";
-        $("#addStory").checked = true;
         renderAddList();
         showModal("#identityModal");
         $("#addSearch").focus();
@@ -3663,13 +3764,47 @@
       function closeIdentityModal() {
         hideModal("#identityModal");
       }
-      $("#headerChapters").onclick = async () => {
+      async function openChapterModal() {
         if (!data) return;
-        await openIdentityModal();
-        $("#chapterManager").open = true;
+        try {
+          const latest = await api("data");
+          data.catalog = latest.catalog;
+          data.chapterArt = latest.chapterArt || {};
+          data.chapterRevision = latest.chapterRevision;
+        } catch (error) {
+          status("更新外观列表失败：" + error.message);
+        }
+        fillAddFilters();
         refreshChapterManager();
+        $("#chapterManager").open = true;
+        showModal("#chapterModal");
         $("#manageChapter").focus();
-      };
+      }
+      function closeChapterModal() {
+        hideModal("#chapterModal");
+      }
+      $("#headerChapters").onclick = () => openChapterModal();
+      async function openImportedModal() {
+        if (!data) return;
+        try {
+          const latest = await api("data");
+          data.catalog = latest.catalog;
+          data.chapterArt = latest.chapterArt || {};
+          data.chapterRevision = latest.chapterRevision;
+        } catch (error) {
+          status("更新外观列表失败：" + error.message);
+        }
+        fillAddFilters();
+        $("#importedRole").value = "";
+        $("#importedChapter").value = "";
+        $("#importedSearch").value = "";
+        renderImportedList();
+        showModal("#importedModal");
+        $("#importedSearch").focus();
+      }
+      function closeImportedModal() {
+        hideModal("#importedModal");
+      }
       function addIdentity(id) {
         if (data.activeRule?.kind === "global" && data.activeRule.locked) {
           status("纯随机默认池不可编辑，请右键清空");
@@ -3684,6 +3819,7 @@
         render();
         autoSave();
         renderAddList();
+        renderImportedList();
         status("已添加到当前池");
       }
       function removeIdentity(id) {
@@ -3696,11 +3832,20 @@
         render();
         autoSave();
         renderAddList();
+        renderImportedList();
         status("已移出当前池");
       }
       $("#identityClose").onclick = () => closeIdentityModal();
       $("#identityModal").onclick = (event) => {
         if (event.target.id === "identityModal") closeIdentityModal();
+      };
+      $("#chapterClose").onclick = () => closeChapterModal();
+      $("#chapterModal").onclick = (event) => {
+        if (event.target.id === "chapterModal") closeChapterModal();
+      };
+      $("#importedClose").onclick = () => closeImportedModal();
+      $("#importedModal").onclick = (event) => {
+        if (event.target.id === "importedModal") closeImportedModal();
       };
       $("#scopeGo").onclick = () => {
         renderRulesets();
@@ -3877,6 +4022,7 @@
               if (rows.some(row => selected.has(String(row.identity_id)))) render();
               fillAddFilters();
               if (!$("#identityModal").classList.contains("hidden")) renderAddList();
+              if (!$("#importedModal").classList.contains("hidden")) renderImportedList();
             } catch (_) { refreshWarning = "；列表刷新失败，请重新打开工作台后在导入外观中查看"; }
           }
           const { summary, text } = importResult(p, refreshWarning);
@@ -3896,7 +4042,10 @@
         followImport(api("local-skin-import-start", {}));
       }
       $("#importLocalSkin").onclick = importLocalSkin;
-      $("#headerImportLocalSkin").onclick = importLocalSkin;
+      $("#headerImportLocalSkin").onclick = () => openImportedModal();
+      $("#importedSearch").oninput = renderImportedList;
+      $("#importedRole").onchange = renderImportedList;
+      $("#importedChapter").onchange = renderImportedList;
       initialImportCheck = followImport(api("local-skin-import-status"));
       initialImportCheck.finally(() => { initialImportCheck = null; });
       let syncingFolders = false;
@@ -3913,6 +4062,7 @@
               data[key] = latest[key];
             fillAddFilters();
             renderAddList();
+            renderImportedList();
             render();
             status("已卸载：" + report.removed.map(p => p.directory).join("、"));
           }
@@ -3936,11 +4086,9 @@
           )
         ) {
           $("#addRole").value = "";
-          $("#addStory").checked = true;
         }
         if (source === "paired") {
           $("#addChapter").value = "";
-          $("#addStory").checked = true;
         }
         renderAddList();
       };
@@ -3949,7 +4097,6 @@
         else renderAddList();
       };
       $("#addRole").onchange = renderAddList;
-      $("#addStory").onchange = () => renderAddList();
       document.addEventListener("click", (event) => {
         if (!event.target.closest("#identityMenu")) closeIdentityMenu();
       });
@@ -3963,6 +4110,8 @@
           }
           closeIdentityMenu();
           closeIdentityModal();
+          closeChapterModal();
+          closeImportedModal();
           closeNewRule();
           hideModal("#rulePickerModal");
           hideModal("#scanDetailModal");
@@ -3997,6 +4146,7 @@
             if (row) row.portrait_url = result.portrait_url;
             render();
             renderAddList();
+            renderImportedList();
             status("图片已保存");
           } finally {
             img.close();
@@ -4012,6 +4162,7 @@
           if (row) row.portrait_url = result.portrait_url;
           render();
           renderAddList();
+          renderImportedList();
           status(
             result.portrait_url
               ? "已恢复默认图片"
@@ -4364,7 +4515,10 @@
       let lastCatalogScan,
         scanRequest = 0;
       function watchingCatalog() {
-        return !$("#identityModal").classList.contains("hidden");
+        return (
+          !$("#identityModal").classList.contains("hidden") ||
+          !$("#importedModal").classList.contains("hidden")
+        );
       }
       async function refreshCatalogAfterScan(report, request) {
         const stamp = report.available
@@ -4395,6 +4549,7 @@
             );
           $("#pairedSource").hidden = $("#pairedSource").disabled = !hasPairs;
           renderAddList();
+          renderImportedList();
         }
         if (!report.scan?.running) lastCatalogScan = stamp;
       }
@@ -4788,6 +4943,55 @@
       document
         .querySelector('nav button[data-page="schemes"]')
         .addEventListener("click", loadSchemes);
+      function setupDetailsTransitions() {
+        document
+          .querySelectorAll("#identityModal .chapter-browser, #chapterModal #chapterManager")
+          .forEach((details) => {
+            const summary = details.querySelector("summary");
+            if (!summary || details.dataset.animateDetails) return;
+            details.dataset.animateDetails = "1";
+            let anim = null;
+            const settle = () => {
+              details.style.overflow = "";
+              details.style.height = "";
+              anim = null;
+            };
+            summary.addEventListener("click", (event) => {
+              if (event.defaultPrevented || event.button !== 0) return;
+              event.preventDefault();
+              const opening = !details.open;
+              if (anim) {
+                anim.cancel();
+                settle();
+              }
+              const closed = summary.getBoundingClientRect().height;
+              if (opening) {
+                details.style.height = closed + "px";
+                details.open = true;
+                void details.offsetHeight;
+              }
+              const full = details.scrollHeight;
+              details.style.overflow = "hidden";
+              anim = details.animate(
+                [
+                  { height: (opening ? closed : full) + "px" },
+                  { height: (opening ? full : closed) + "px" },
+                ],
+                {
+                  duration: opening ? 180 : 140,
+                  easing: opening
+                    ? "cubic-bezier(0.2, 0.8, 0.3, 1)"
+                    : "ease",
+                },
+              );
+              anim.onfinish = () => {
+                if (!opening) details.open = false;
+                settle();
+              };
+            });
+          });
+      }
+      setupDetailsTransitions();
       refresh().then(() => {
         ensureInitialScan();
         if (data?.tutorial) setTimeout(openTutorial, 650);
