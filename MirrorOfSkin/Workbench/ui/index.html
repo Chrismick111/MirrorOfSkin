@@ -303,14 +303,21 @@
       @media (prefers-reduced-motion: reduce) {
         article section:not(.hidden),
         .modal-backdrop:not(.hidden),
-        .modal-backdrop:not(.hidden) .modal {
+        .modal-backdrop:not(.hidden) .modal,
+        #importNotice:not([hidden]) {
           animation: none;
         }
         .modal-backdrop,
         .modal-backdrop .modal,
         .app-bg-image,
-        .pool-card {
+        .pool-card,
+        #importNotice,
+        .import-notice-bar > i {
           transition: none;
+        }
+        .import-notice-dot,
+        .import-notice-bar > i::after {
+          animation: none;
         }
       }
       .primary {
@@ -731,8 +738,211 @@
       .tutorial-tip-actions button {
         min-width: 66px;
       }
-      #importNotice { position: fixed; right: 20px; bottom: 20px; z-index: 9999; background: #222; color: white; padding: 14px; border: 1px solid #777; border-radius: 8px; width: min(420px, calc(100vw - 40px)); max-height: 40vh; overflow: auto; overflow-wrap: anywhere; box-sizing: border-box; }
-      #importProgress { width: 100%; }
+      #importNotice {
+        position: fixed;
+        right: 20px;
+        bottom: 20px;
+        z-index: 9999;
+        width: min(400px, calc(100vw - 40px));
+        max-height: 46vh;
+        padding: 16px 18px 14px;
+        overflow: hidden;
+        overflow-wrap: anywhere;
+        color: #e7e7e7;
+        background: linear-gradient(
+          180deg,
+          rgba(36, 40, 47, 0.96),
+          rgba(27, 30, 36, 0.97)
+        );
+        border: 1px solid rgba(255, 255, 255, 0.12);
+        border-radius: 12px;
+        box-shadow:
+          0 22px 60px rgba(0, 0, 0, 0.55),
+          inset 0 1px 0 rgba(255, 255, 255, 0.05);
+        backdrop-filter: blur(16px) saturate(1.1);
+        -webkit-backdrop-filter: blur(16px) saturate(1.1);
+        transform-origin: bottom right;
+        transition:
+          opacity 0.2s ease,
+          transform 0.2s cubic-bezier(0.2, 0.8, 0.3, 1);
+      }
+      #importNotice::before {
+        content: "";
+        position: absolute;
+        inset: 0 0 auto;
+        height: 2px;
+        background: linear-gradient(
+          90deg,
+          transparent,
+          rgba(228, 189, 118, 0.9),
+          transparent
+        );
+      }
+      #importNotice[hidden] {
+        display: none;
+      }
+      #importNotice:not([hidden]) {
+        animation: importNoticeIn 0.24s cubic-bezier(0.2, 0.8, 0.3, 1);
+      }
+      #importNotice.closing {
+        opacity: 0;
+        transform: translateY(10px) scale(0.98);
+        pointer-events: none;
+      }
+      .import-notice-head {
+        display: flex;
+        align-items: flex-start;
+        gap: 10px;
+      }
+      .import-notice-dot {
+        flex: 0 0 auto;
+        width: 8px;
+        height: 8px;
+        margin-top: 6px;
+        border-radius: 50%;
+        background: #e4bd76;
+        animation: importDotPulse 1.6s ease-out infinite;
+      }
+      #importNotice[data-stage="done"] .import-notice-dot {
+        background: #8bc48f;
+        animation: none;
+      }
+      #importNotice[data-stage="error"] .import-notice-dot {
+        background: #d97b7b;
+        animation: none;
+      }
+      #importNoticeText {
+        flex: 1;
+        min-width: 0;
+        font-size: 13.5px;
+        line-height: 1.45;
+        color: #eceef2;
+      }
+      .import-notice-percent {
+        flex: 0 0 auto;
+        font-size: 12px;
+        color: #c9b184;
+        font-variant-numeric: tabular-nums;
+        letter-spacing: 0.02em;
+      }
+      .import-notice-bar {
+        position: relative;
+        height: 6px;
+        margin-top: 12px;
+        overflow: hidden;
+        background: #14161a;
+        border-radius: 999px;
+        box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.45);
+      }
+      .import-notice-bar > i {
+        position: relative;
+        display: block;
+        width: 0;
+        height: 100%;
+        overflow: hidden;
+        border-radius: inherit;
+        background: linear-gradient(90deg, #8a6a2f, #e4bd76);
+        transition: width 0.45s cubic-bezier(0.2, 0.8, 0.3, 1);
+      }
+      .import-notice-bar > i::after {
+        content: "";
+        position: absolute;
+        inset: 0;
+        background: linear-gradient(
+          100deg,
+          transparent 25%,
+          rgba(255, 255, 255, 0.32),
+          transparent 75%
+        );
+        transform: translateX(-100%);
+        animation: importBarShimmer 1.5s ease-in-out infinite;
+      }
+      #importNotice[data-stage="done"] .import-notice-bar > i::after,
+      #importNotice[data-stage="error"] .import-notice-bar > i::after {
+        animation: none;
+      }
+      #importDetails {
+        margin-top: 10px;
+        padding-top: 10px;
+        border-top: 1px solid rgba(255, 255, 255, 0.08);
+        color: #b9bec9;
+        font-size: 12.5px;
+      }
+      #importDetails summary {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        color: #c9b184;
+        cursor: pointer;
+        list-style: none;
+        user-select: none;
+      }
+      #importDetails summary::-webkit-details-marker {
+        display: none;
+      }
+      #importDetails summary::before {
+        content: "";
+        width: 0;
+        height: 0;
+        border-left: 4px solid currentColor;
+        border-top: 3px solid transparent;
+        border-bottom: 3px solid transparent;
+        transition: transform 0.18s ease;
+      }
+      #importDetails[open] summary::before {
+        transform: rotate(90deg);
+      }
+      #importDetailsText {
+        margin-top: 8px;
+        max-height: 24vh;
+        overflow: auto;
+        line-height: 1.6;
+      }
+      #importDismiss {
+        width: 100%;
+        margin-top: 12px;
+        padding: 7px 12px;
+        font: inherit;
+        font-size: 13px;
+        color: #e7e7e7;
+        background: rgba(255, 255, 255, 0.05);
+        border: 1px solid rgba(255, 255, 255, 0.14);
+        border-radius: 8px;
+        cursor: pointer;
+        transition:
+          background 0.16s ease,
+          border-color 0.16s ease;
+      }
+      #importDismiss:hover {
+        background: rgba(228, 189, 118, 0.14);
+        border-color: rgba(228, 189, 118, 0.45);
+      }
+      @keyframes importNoticeIn {
+        from {
+          opacity: 0;
+          transform: translateY(14px) scale(0.97);
+        }
+        to {
+          opacity: 1;
+          transform: none;
+        }
+      }
+      @keyframes importDotPulse {
+        0% {
+          box-shadow: 0 0 0 0 rgba(228, 189, 118, 0.4);
+        }
+        70% {
+          box-shadow: 0 0 0 7px rgba(228, 189, 118, 0);
+        }
+        100% {
+          box-shadow: 0 0 0 0 rgba(228, 189, 118, 0);
+        }
+      }
+      @keyframes importBarShimmer {
+        to {
+          transform: translateX(100%);
+        }
+      }
       .tutorial-progress {
         color: #b4b8c1;
         font-size: 12px;
@@ -1557,6 +1767,76 @@
         text-overflow: ellipsis;
         white-space: nowrap;
       }
+      .mod-package-section {
+        flex: 0 0 auto;
+        margin: 4px 0 8px;
+        padding: 8px 10px;
+        border: 1px solid #3b4048;
+        border-radius: 8px;
+        background: #1c1f24;
+      }
+      .mod-package-head {
+        display: flex;
+        align-items: baseline;
+        gap: 8px;
+        margin-bottom: 6px;
+        color: #deb970;
+        font-size: 13px;
+      }
+      .mod-package-head .hint {
+        margin: 0;
+        font-size: 12px;
+      }
+      .mod-package-list {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+      }
+      .mod-package-card {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        min-width: 260px;
+        max-width: 100%;
+        padding: 6px 8px;
+        border: 1px solid #4a505b;
+        border-radius: 8px;
+        background: #24272e;
+      }
+      .mod-package-card.disabled {
+        opacity: 0.62;
+      }
+      .mod-package-icon {
+        width: 40px;
+        height: 40px;
+        flex: 0 0 auto;
+        border-radius: 6px;
+        object-fit: cover;
+        background: #121418;
+      }
+      .mod-package-body {
+        flex: 1 1 auto;
+        min-width: 0;
+      }
+      .mod-package-name {
+        font-size: 13px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+      .mod-package-meta {
+        color: #b4b8c1;
+        font-size: 12px;
+      }
+      .mod-package-error {
+        color: #ff8d8d;
+        font-size: 11px;
+        line-height: 1.35;
+      }
+      .mod-package-import {
+        flex: 0 0 auto;
+        padding: 5px 10px;
+      }
       .identity-modal {
         width: min(920px, 96vw);
         max-height: calc(100vh - 40px);
@@ -2370,7 +2650,6 @@
             <option value="">全部章节</option>
           </select>
         </div>
-        <button id="localImportResult" type="button" aria-controls="importNotice" hidden></button>
         <details class="chapter-browser" open>
           <summary>按章节浏览</summary>
           <div
@@ -2470,6 +2749,13 @@
             <option value="">全部章节</option>
           </select>
         </div>
+        <div id="modPackageSection" class="mod-package-section" hidden>
+          <div class="mod-package-head">
+            启动器外观包
+            <span class="hint">从启动器 mods 目录读取，需先在启动器中启用</span>
+          </div>
+          <div id="modPackageList" class="mod-package-list"></div>
+        </div>
         <div class="scroll identity-scroll">
           <table>
             <tbody id="importedRows"></tbody>
@@ -2539,11 +2825,25 @@
       hidden
     />
     <div id="importNotice" hidden>
-      <div id="importNoticeText" role="status" aria-live="polite"></div>
-      <progress id="importProgress" aria-label="导入进度"></progress>
+      <div class="import-notice-head">
+        <span class="import-notice-dot" aria-hidden="true"></span>
+        <div id="importNoticeText" role="status" aria-live="polite"></div>
+        <span id="importPercent" class="import-notice-percent"></span>
+      </div>
+      <div
+        id="importProgress"
+        class="import-notice-bar"
+        role="progressbar"
+        aria-label="导入进度"
+        aria-valuemin="0"
+        aria-valuemax="100"
+        aria-valuenow="0"
+      >
+        <i></i>
+      </div>
       <details id="importDetails" hidden>
         <summary>导入详情</summary>
-        <div id="importDetailsText" style="white-space:pre-wrap"></div>
+        <div id="importDetailsText" style="white-space: pre-wrap"></div>
       </details>
       <button id="importDismiss" type="button" hidden>关闭</button>
     </div>
@@ -3876,6 +4176,7 @@
         $("#importedChapter").value = "";
         $("#importedSearch").value = "";
         renderImportedList();
+        loadModPackages();
         showModal("#importedModal");
         $("#importedSearch").focus();
       }
@@ -4023,28 +4324,42 @@
       let importBusy = false;
       function showImport(p) {
         const active = p.stage === "picking" || p.stage === "importing";
-        $("#importNotice").hidden = false;
+        const notice = $("#importNotice");
+        clearTimeout(importNoticeTimer);
+        notice.classList.remove("closing");
+        notice.hidden = false;
+        notice.dataset.stage = p.stage || "";
         $("#importDismiss").hidden = active;
         $("#importDetails").hidden = true; $("#importDetails").open = false;
-        const bar = $("#importProgress"); bar.hidden = !active;
-        if (p.stage === "importing" && typeof p.percent === "number") { bar.max = 100; bar.value = Math.max(0, Math.min(100, p.percent)); } else bar.removeAttribute("value");
+        const bar = $("#importProgress");
+        bar.hidden = !active;
+        const percent = typeof p.percent === "number" ? Math.max(0, Math.min(100, p.percent)) : null;
+        const fill = bar.firstElementChild;
+        if (fill) fill.style.width = percent === null ? "0%" : percent + "%";
+        bar.setAttribute("aria-valuenow", percent === null ? "0" : String(Math.round(percent)));
+        $("#importPercent").textContent = p.stage === "error" ? "失败" : percent === null ? "" : Math.floor(percent) + "%";
         const details = [];
         if (p.filename) details.push(p.filename);
         if (p.total > 0) {
           const current = p.filename && p.stage === "importing" ? Math.min(p.total, (p.done || 0) + 1) : (p.done || 0);
           details.push(`文件 ${current}/${p.total}`);
         }
-        if (p.stage === "importing" && typeof p.percent === "number") details.push(`${Math.floor(p.percent)}%`);
         const text = (p.message || (active ? "正在导入，请稍候" : "导入完成")) + (details.length ? " · " + details.join(" · ") : "");
         $("#importNoticeText").textContent = text;
-        $("#localImportResult").hidden = false; $("#localImportResult").textContent = text;
         [$("#importLocalSkin"), $("#headerImportLocalSkin")].forEach(b => b.disabled = active);
       }
-      $("#importDismiss").onclick = () => { $("#importNotice").hidden = true; };
-      $("#localImportResult").onclick = () => {
-        $("#importNotice").hidden = false;
-        if (!$("#importDetails").hidden) $("#importDetails").open = true;
-      };
+      let importNoticeTimer = null;
+      function closeImport() {
+        const notice = $("#importNotice");
+        if (!notice || notice.hidden || notice.classList.contains("closing")) return;
+        clearTimeout(importNoticeTimer);
+        notice.classList.add("closing");
+        importNoticeTimer = setTimeout(() => {
+          notice.hidden = true;
+          notice.classList.remove("closing");
+        }, 200);
+      }
+      $("#importDismiss").onclick = closeImport;
       function importResult(p, refreshWarning = "") {
         const rows = Array.isArray(p.rows) ? p.rows : [];
         const errors = Array.isArray(p.errors) ? p.errors : [];
@@ -4106,7 +4421,6 @@
           $("#importNoticeText").textContent = summary;
           $("#importDetailsText").textContent = text;
           $("#importDetails").hidden = false;
-          $("#localImportResult").textContent = summary + "（点击查看详情）";
           status(summary);
         } catch (error) { showImport({stage:"error",message:"导入失败：" + error.message}); status("导入失败：" + error.message); }
         finally { importBusy = false; }
@@ -4119,6 +4433,43 @@
         followImport(api("local-skin-import-start", {}));
       }
       $("#importLocalSkin").onclick = importLocalSkin;
+      let modPackages = [];
+      function renderModPackages() {
+        const section = $("#modPackageSection"), box = $("#modPackageList");
+        if (!section || !box) return;
+        section.hidden = !modPackages.length;
+        box.innerHTML = modPackages.map((p) => {
+          const ready = p.status === "ready";
+          const meta = [
+            p.version ? "v" + p.version : "",
+            ready ? "可导入" : p.status === "disabled" ? "未启用" : "不可用",
+          ].filter(Boolean).join(" · ");
+          const icon = p.icon
+            ? `<img class="mod-package-icon" src="api/mod-package-icon/${encodeURIComponent(p.key)}" alt="">`
+            : `<span class="mod-package-icon"></span>`;
+          return `<div class="mod-package-card${ready ? "" : " disabled"}">${icon}<div class="mod-package-body"><div class="mod-package-name">${esc(p.name)}</div><div class="mod-package-meta">${esc(meta)}</div>${p.error ? `<div class="mod-package-error">${esc(p.error)}</div>` : ""}</div><button type="button" class="mod-package-import" data-key="${esc(p.key)}"${ready ? "" : " disabled"}>导入</button></div>`;
+        }).join("");
+        box.querySelectorAll("button[data-key]").forEach((button) => {
+          button.onclick = () => importModPackage(button.dataset.key, button);
+        });
+      }
+      async function loadModPackages() {
+        try {
+          const result = await api("mod-packages");
+          modPackages = Array.isArray(result.packages) ? result.packages : [];
+        } catch (_) {
+          modPackages = [];
+        }
+        renderModPackages();
+      }
+      async function importModPackage(key, button) {
+        if (importBusy) return;
+        const item = modPackages.find((p) => p.key === key);
+        if (button) button.disabled = true;
+        showImport({ stage: "importing", message: "正在导入外观包：" + ((item && item.name) || key), percent: 0 });
+        await followImport(api("mod-package-import", { id: key }));
+        await loadModPackages();
+      }
       $("#headerImportLocalSkin").onclick = () => openImportedModal();
       $("#importedSearch").oninput = renderImportedList;
       $("#importedRole").onchange = renderImportedList;

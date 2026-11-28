@@ -167,7 +167,8 @@ def mirror_import_assets(data_root, addon_root, *, reads_user_assets=False):
                 raise OSError('无法同步导入资源：' + str(target)) from exc
 
 
-def import_skin(archive, addon, *, name=None, unity=None, progress=None, check_cancelled=None):
+def import_skin(archive, addon, *, name=None, unity=None, progress=None, check_cancelled=None,
+                default_portrait=None, source=None):
     from contextlib import ExitStack
     from appearance_dialogue import scan_archive
     from dialogue_status import apply_binding, runtime_bindings
@@ -233,9 +234,10 @@ def import_skin(archive, addon, *, name=None, unity=None, progress=None, check_c
                     companion_warning = str(error)
         rows = (_import_normalized(path, root, name=name, unity=unity, dialogue_scans=scans,
                                    package_addon=addon_root if grouped else None,
-                                   package_source=Path(archive).name, progress=progress_range(report, 5, 94),
+                                   package_source=source or Path(archive).name, progress=progress_range(report, 5, 94),
                                    check_cancelled=check_cancelled, workflow=workflow, portraits=portraits,
                                    author_archive=container, expanded_members=expanded_members,
+                                   default_portrait=default_portrait,
                                    framepack_dialogue=grouped and manifest.get('framepack_dialogue') == 1)
                 if has_models else [])
         included=[r['identity_id'][6:] for r in rows if r['identity_id'].startswith('story_WBImp_')]
@@ -297,7 +299,8 @@ def install_roland_bundles(archive, root, *, destination=None):
 
 def _import_normalized(archive, addon, *, name=None, unity=None, package_addon=None, package_source=None,
                        progress=None, check_cancelled=None, workflow=None, dialogue_scans=(), portraits=None,
-                       framepack_dialogue=False, author_archive=None, expanded_members=None):
+                       framepack_dialogue=False, author_archive=None, expanded_members=None,
+                       default_portrait=None):
     from contextlib import ExitStack
     from zipfile import ZipFile
     from appearance_authors import read_attribution
@@ -345,6 +348,16 @@ def _import_normalized(archive, addon, *, name=None, unity=None, package_addon=N
                 portraits.setdefault(rec['entry']['identity_id'], portrait)
             if dialogue_scans:
                 rec['dialogue_detection'] = detected_status(rec, dialogue_scans, records)
+        if default_portrait is not None:
+            from scan.custom_portraits import validate_png
+            validate_png(default_portrait, max_dimension=512)
+            produced = {'story_' + rec['look'] for rec in records if rec.get('builtin') != 'roland'}
+            if any(rec.get('builtin') == 'roland' for rec in records):
+                produced.add(BUILTIN)
+            if len(produced) != 1:
+                raise ValueError('外观包包含多个外观，无法自动确定图标对应的人格；'
+                                 '请在 mos-mod.json 中声明 identity')
+            portraits.setdefault(produced.pop(), default_portrait)
         if package_addon is not None:
             from skill_ui import HEADER, SUFFIX, collect, icon_names, obsolete_icons
             from skill_ui_import import collect_external

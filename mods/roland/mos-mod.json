@@ -1,0 +1,18 @@
+{
+  "schema": 1,
+  "id": "roland",
+  "name": "罗兰",
+  "version": "1.0.0",
+  "description": "将罗兰的三个战斗模型包导入为内置罗兰人格，并使用 icon.png 作为头像。",
+  "strategy": "bundles",
+  "identity": "story_BRolandBaseAppearance",
+  "icon": "icon.png",
+  "bundles": [
+    "bundles/BRoland.bundle",
+    "bundles/BRolandGun.bundle",
+    "bundles/BRolandUltraSword.bundle"
+  ],
+  "requires": [
+    "镜像幻化（MOS）外观导入 v1"
+  ]
+}

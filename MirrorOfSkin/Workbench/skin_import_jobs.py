@@ -44,11 +44,11 @@ class ImportJobs:
         with self._lock:
             return _copy(self._state)
 
-    def start(self, paths=None):
-        return self._submit(paths, background=True)
+    def start(self, paths=None, *, importer=None):
+        return self._submit(paths, background=True, importer=importer)
 
-    def run(self, paths=None):
-        state = self._submit(paths, background=False)
+    def run(self, paths=None, *, importer=None):
+        state = self._submit(paths, background=False, importer=importer)
         return {'rows': state['rows'], 'errors': state['errors']}
 
     def stop(self):
@@ -61,7 +61,9 @@ class ImportJobs:
         if thread is not None:
             thread.join()
 
-    def _submit(self, paths, *, background):
+    def _submit(self, paths, *, background, importer):
+        if importer is not None and not callable(importer):
+            raise ValueError('导入处理器无效')
         paths = _paths(paths) if paths is not None else None
         with self._lock:
             if self._stopping.is_set():
@@ -74,13 +76,13 @@ class ImportJobs:
             message = '请选择要导入的模组文件' if paths is None else '正在准备导入'
             job = self._state = _state(stage, uuid4().hex, message)
             if background:
-                self._thread = Thread(target=self._run, args=(job, paths, False),
+                self._thread = Thread(target=self._run, args=(job, paths, False, importer),
                                       name='local-skin-import')
                 self._thread.start()
                 return _copy(job)
-        return self._run(job, paths, True)
+        return self._run(job, paths, True, importer)
 
-    def _run(self, job, paths, synchronous):
+    def _run(self, job, paths, synchronous, importer=None):
         def update(**fields):
             with self._lock:
                 job.update(fields)
@@ -117,7 +119,8 @@ class ImportJobs:
                 start = len(rows)
                 message = ''
                 try:
-                    imported = list(self._import(path, progress=report, check_cancelled=check_cancelled))
+                    imported = list((importer or self._import)(
+                        path, progress=report, check_cancelled=check_cancelled))
                 except Exception as error:
                     message = str(error) or type(error).__name__
                     errors.append(path.name + '：' + message)

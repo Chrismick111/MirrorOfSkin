@@ -1,0 +1,15 @@
+{
+  "name": "罗兰",
+  "desc": "为「镜像幻化」工作台提供罗兰的战斗外观与头像。导入后可在工作台的「添加外来人格」中直接使用；请先在启动器中启用本 Mod。",
+  "authors": {
+    "神必六角恐龙": "https://space.bilibili.com/499174950"
+  },
+  "version": "1.0.0",
+  "settings": {
+    "enable": true
+  },
+  "file_names": [],
+  "requires": [
+    "MOS"
+  ]
+}

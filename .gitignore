@@ -4,6 +4,9 @@
 # Local tool configuration / secrets
 /opencode.json
 
+# Local mod package payloads (manifests and icons stay tracked)
+/mods/*/bundles/
+
 # Python caches and runtime artifacts
 __pycache__/
 *.py[cod]

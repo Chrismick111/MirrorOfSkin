@@ -3,7 +3,9 @@
 适用于 [FaustLauncher](https://github.com/f0lkskill/FaustLauncher) 的《边狱巴士》(Limbus Company) 人格外观随机插件。
 通过 WarpHook 注入原生 DLL，在战斗中替换罪人外观、随机切换人格，并按原生触发条件播放 Boss 语音与气泡。
 
-当前源码版本 **1.4.3**
+当前源码版本 **1.4.4**
+
+1.4.4 新增自描述 Mod 包支持：把 `mod_info.json`、`mos-mod.json`、`icon.png` 与 `bundles/` 放入启动器的 `mods` 目录后，工作台会列出可导入包并显示图标，按包声明的策略导入模型并绑定头像；导入提示改为带平滑进度与收尾动画的面板。附罗兰示例包。
 
 1.4.3 新增「设置」页，技能名、技能图标、立绘与 buff 的外观覆盖改为可选功能，默认关闭总开关、按需开启分项；修复多阶段与形态切换时技能动画复读或索引越界的问题。插件文件与运行期数据文件统一改为 ASCII 文件名，升级时自动迁移旧目录、旧配置与外观库路径，不影响已导入外观和用户设置。
 
@@ -29,13 +31,13 @@
 
 ## 安装插件
 
-当前可下载的正式版为 **1.4.3**。在 Windows 64 位系统上打开 FaustLauncher，确认已安装并启用 WarpHook。下载下表第一项，在启动器中选择「从本地安装」，选中 ZIP。安装完成后，从启动器托盘打开「镜像幻化 → 人格、概率与演出设置」。
+当前可下载的正式版为 **1.4.4**。在 Windows 64 位系统上打开 FaustLauncher，确认已安装并启用 WarpHook。下载下表第一项，在启动器中选择「从本地安装」，选中 ZIP。安装完成后，从启动器托盘打开「镜像幻化 → 人格、概率与演出设置」。
 
 | 下载 | 用途 |
 | --- | --- |
-| [1.4.3 启动器安装包](https://github.com/Chrismick111/MirrorOfSkin/releases/download/v1.4.3/MirrorOfSkin-1.4.3-no-images.zip) | 首次安装或手动更新。公开版不含头像，可在工作台获取资源。 |
-| [1.4.3 兼容安装包](https://github.com/Chrismick111/MirrorOfSkin/releases/download/v1.4.3/MirrorOfSkin-1.4.3-no-images-store.zip) | 启动器解压上一个文件失败时选用。两个包的插件内容相同，安装其中一个即可。 |
-| [1.4.3 工作台更新包](https://github.com/Chrismick111/MirrorOfSkin/releases/download/v1.4.3/FaustRandomIdentity-WarpHook.zip) | 供旧版工作台的自动更新功能读取。 |
+| [1.4.4 启动器安装包](https://github.com/Chrismick111/MirrorOfSkin/releases/download/v1.4.4/MirrorOfSkin-1.4.4-no-images.zip) | 首次安装或手动更新。公开版不含头像，可在工作台获取资源。 |
+| [1.4.4 兼容安装包](https://github.com/Chrismick111/MirrorOfSkin/releases/download/v1.4.4/MirrorOfSkin-1.4.4-no-images-store.zip) | 启动器解压上一个文件失败时选用。两个包的插件内容相同，安装其中一个即可。 |
+| [1.4.4 工作台更新包](https://github.com/Chrismick111/MirrorOfSkin/releases/download/v1.4.4/FaustRandomIdentity-WarpHook.zip) | 供旧版工作台的自动更新功能读取。 |
 
 手动安装时，解压标准包，将其中 `MirrorOfSkin` 文件夹的内容放入 `FaustLauncher/addons/MOS/`。请确认 `addon_info.json` 直接位于 `addons/MOS/` 下。已经安装的用户请沿用原插件目录，避免启动器同时加载两份。
 
@@ -58,6 +60,21 @@
 **导入 Carra2 补丁。** 选择原始 `.carra2` 文件，或直接选择作者同时附带底包的完整压缩包。1.4.2 会按对象实际引用的脚本匹配类型，即使作者调整了类型编号，也能从同包资源或本机已下载的游戏资源恢复匹配的定义。提示缺少游戏底包时，请先下载对应的游戏资源，或改选作者的完整包。
 
 **语音和气泡分别判断。** 导入明细会区分「已检出」「已绑定」和「沿用基础模型语音」。仅检出音频或台词时会保留本体对应表现。已绑定的外观语音进入播放状态后才接管该佩戴者的原声；外观气泡成功显示后才隐藏对应的本体气泡。其他单位各自使用自己的声音和台词。
+
+### Mod 包（自描述）
+
+除了在文件选择框里逐个导入压缩包，也可以把作者整理好的 Mod 包文件夹放到启动器的 `mods` 目录（与 `addons` 同级）。打开「添加外来人格」时，工作台会列出扫描到的包，显示名称、版本和图标，点击「导入」即可。
+
+每个包目录至少包含：
+
+| 文件 | 作用 |
+| --- | --- |
+| `mod_info.json` | 启动器读取的名称、版本、依赖与启用开关；`settings.enable` 为 `false` 时工作台不会导入。 |
+| `mos-mod.json` | MOS 的导入声明：`schema`、`id`、`strategy`、`bundles`，可选 `identity`、`icon`、`recipe`。 |
+| `icon.png` | 包卡片图标；未声明 `identity` 时也作为该包唯一产出外观的头像。 |
+| `bundles/*.bundle` | 实际导入的模型文件，必须在 `mos-mod.json` 中逐个列出，未列出的文件不会导入。 |
+
+目前 `schema` 为 `1`，`strategy` 仅支持 `bundles`。包目录名不必与 `id` 相同，但 `id` 必须唯一。仓库中的 `mods/roland` 是罗兰示例包（模型文件不随仓库分发）。
 
 ### 善意的巡礼
 

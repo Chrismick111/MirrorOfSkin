@@ -20,6 +20,7 @@ import director
 import stage_files
 import custom_portraits
 import imported_portraits
+import mod_packages
 import rulesets
 import group_entries
 import schemes
@@ -656,6 +657,14 @@ def main():
  def import_local_skin(path, **callbacks):
   from skin_import import import_skin
   return import_skin(path,store.addon_root,**callbacks)
+ def import_mod_package(path, **callbacks):
+  from skin_import import import_skin
+  progress=callbacks.get('progress')
+  with mod_packages.prepared_archive(store.addon_root,pathlib.Path(path).name,
+                                     progress=progress) as prepared:
+   extra={'default_portrait':prepared.portrait} if prepared.portrait else {}
+   if prepared.source:extra['source']=prepared.source
+   return import_skin(prepared.archive,store.addon_root,**extra,**callbacks)
  skin_jobs=skin_import_jobs.ImportJobs(_pick_local_skins,import_local_skin)
  if lifetime.unowned():
   lifetime.close();instance.close();return
@@ -695,6 +704,11 @@ def main():
      return self.send({'error':'未找到'},404)
     if route=='portrait-progress':return self.send(_portrait_state())
     if route=='local-skin-import-status':return self.send(skin_jobs.state())
+    if route=='mod-packages':return self.send({'packages':mod_packages.scan(store.addon_root)})
+    if route and route.startswith('mod-package-icon/'):
+     image=mod_packages.icon_bytes(store.addon_root,unquote(route[len('mod-package-icon/'):].split('?',1)[0]))
+     if image is not None:return self.send(image,ctype='image/png',cache='no-store')
+     return self.send({'error':'未找到'},404)
     if route=='rulesets':return self.send(_ruleset_payload(store))
     if route=='data':return self.send(store.data())
     if route=='events':return self.send(store.events())
@@ -720,7 +734,7 @@ def main():
    except Exception as e:return self.send({'error':str(e)},500)
   def do_POST(self):
    route=self.route()
-   if route not in ('appearance-blood','appearance-name','chapter-save','chapter-move','package-folders','save','import','local-skin-import','local-skin-import-start','local-skin-delete','director','bundle','boss-preview','update-check','update-install','portrait-save','portrait-reset','portrait-download','images-delete','ruleset-activate','ruleset-select','ruleset-save','ruleset-create','ruleset-only','ruleset-deactivate','ruleset-fill','ruleset-clear','scan','scheme-save','scheme-load','scheme-delete','scheme-import','scheme-get','feature-settings-save','effect-scheme-save','effect-scheme-get','effect-scheme-delete','effect-timelines','effect-live-start','effect-live-status','effect-plan-preview','effect-selection','effect-sprites','effect-sprites-start','effect-sprites-status','effect-sprites-cancel','effect-sprite-export','tutorial-complete','instance-shutdown','instance-attach','instance-release'):return self.send({'error':'未找到'},404)
+   if route not in ('appearance-blood','appearance-name','chapter-save','chapter-move','package-folders','save','import','local-skin-import','local-skin-import-start','local-skin-delete','mod-package-import','director','bundle','boss-preview','update-check','update-install','portrait-save','portrait-reset','portrait-download','images-delete','ruleset-activate','ruleset-select','ruleset-save','ruleset-create','ruleset-only','ruleset-deactivate','ruleset-fill','ruleset-clear','scan','scheme-save','scheme-load','scheme-delete','scheme-import','scheme-get','feature-settings-save','effect-scheme-save','effect-scheme-get','effect-scheme-delete','effect-timelines','effect-live-start','effect-live-status','effect-plan-preview','effect-selection','effect-sprites','effect-sprites-start','effect-sprites-status','effect-sprites-cancel','effect-sprite-export','tutorial-complete','instance-shutdown','instance-attach','instance-release'):return self.send({'error':'未找到'},404)
    if self.headers.get('X-Workbench')!=token:return self.send({'error':'请求无效'},403)
    try:
     n=int(self.headers.get('Content-Length',0))
@@ -741,6 +755,12 @@ def main():
      return self.send(delete(store.root,identity,lock_factory=lambda _path:store.lock,addon=store.addon_root))
     if route=='local-skin-import':return self.send(skin_jobs.run(body.get('paths')))
     if route=='local-skin-import-start':return self.send(skin_jobs.start(body.get('paths')))
+    if route=='mod-package-import':
+     key=body.get('id')
+     package=mod_packages.find(store.addon_root,key)
+     if package is None:raise ValueError('未找到外观包')
+     if package['status']!='ready':raise ValueError(package['error'] or '外观包不可导入')
+     return self.send(skin_jobs.start([str(package['_folder'])],importer=import_mod_package))
     if route=='tutorial-complete':
      path=store.addon_root/'addon_info.json'
      info=read(path,{})
