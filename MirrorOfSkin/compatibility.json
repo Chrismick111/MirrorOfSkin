@@ -151,7 +151,7 @@
     "Workbench/ui/index.html": "2553b30b180505cb6948c606ebbca83a027b83df24ef978f6c9fa695027b798e",
     "Workbench/ui/launch_webview.py": "94ac82e4a18a9fe57762d4786f02f4a59ac9456c11c0d245496f8fa088e56ce2",
     "Workbench/ui/open_workbench.cmd": "57cc17d1648ad92afcf2fdd0a0a940d76786a8b01e7f0fba292a6bf3d48ce12a",
-    "Workbench/ui/open_workbench.ps1": "950154f90867b127119452e8210faa5d27e68f6cb279a1874b2a964282d46c57",
+    "Workbench/ui/open_workbench.ps1": "3e06fbac80c48b8fe30fc2e94fccad00fafa0a00acb1e36dcf8553b758b4147a",
     "Workbench/voice_binding.py": "eba87dc6859dc8806c4328935d75b0b27c87e508f3fca07831a69677b07a3ce0",
     "Workbench/workbench.py": "b47ab4012d9deaec2d887ddef57ee5cadf24b7dea53e623cda4ba5dee58ff549",
     "addon_info.json": "5989a2c65809b0acf82ac396e11a6601bb82f0a5ba24404382a19944f5324114",

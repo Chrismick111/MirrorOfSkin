@@ -24,6 +24,13 @@ function Attach-Workbench([string]$url){
  $answer=Invoke-RestMethod -Method Post -Uri ($url+'api/instance-attach') -Headers @{'X-Workbench'=$token} -ContentType 'application/json' -Body ($body|ConvertTo-Json -Compress) -TimeoutSec 2
  return $answer.attached
 }
+function Write-WebviewLog([string]$message){
+ try{
+  $dir=Join-Path $dataRoot 'Workbench'
+  New-Item -ItemType Directory -Force -Path $dir|Out-Null
+  Add-Content -LiteralPath (Join-Path $dir 'webview.log') -Value ((Get-Date -Format 'yyyy-MM-dd HH:mm:ss')+' '+$message) -Encoding UTF8
+ }catch{}
+}
 function Show-WorkbenchWindow([string]$url,[int]$serverId){
  $serverProcess=Get-Process -Id $serverId -ErrorAction SilentlyContinue
  if(-not $serverProcess){return}
@@ -32,6 +39,7 @@ function Show-WorkbenchWindow([string]$url,[int]$serverId){
  $core=Join-Path $lib 'Microsoft.Web.WebView2.Core.dll'
  $winForms=Join-Path $lib 'Microsoft.Web.WebView2.WinForms.dll'
  if(-not (Test-Path -LiteralPath $core) -or -not (Test-Path -LiteralPath $winForms)){
+  Write-WebviewLog ('webview2 dll missing: '+$lib)
   Start-Process $url;return
  }
  $lock=Join-Path $dataRoot 'Workbench\webview-window.json'
@@ -54,6 +62,11 @@ function Show-WorkbenchWindow([string]$url,[int]$serverId){
   Add-Type -Path $winForms
   $native=Join-Path $lib 'runtimes\win-x64\native'
   $env:PATH=$native+';'+$env:PATH
+  # WebView2 defaults its user data folder next to the host executable
+  # (powershell.exe under System32), which is not writable and fails with
+  # E_ACCESSDENIED. Always point it at a writable per-user folder.
+  $webData=Join-Path $dataRoot 'Workbench\webview2'
+  New-Item -ItemType Directory -Force -Path $webData|Out-Null
   $form=New-Object System.Windows.Forms.Form
   $form.Text='镜像幻化'
   $area=[System.Windows.Forms.Screen]::PrimaryScreen.WorkingArea
@@ -81,15 +94,28 @@ function Show-WorkbenchWindow([string]$url,[int]$serverId){
      $settings.AreDefaultContextMenusEnabled=$false
      $settings.AreDevToolsEnabled=$false
      $settings.IsStatusBarEnabled=$false
+     $web.CoreWebView2.add_NewWindowRequested({param($sender,$e)
+      $e.Handled=$true
+      Start-Process $e.Uri
+     })
      $web.CoreWebView2.Navigate($url)
-    }catch{Start-Process $url;$form.Close()}
-   }else{Start-Process $url;$form.Close()}
+    }catch{
+     Write-WebviewLog ('webview2 settings/navigate failed: '+$_.Exception.ToString())
+     Start-Process $url;$form.Close()
+    }
+   }else{
+    try{Write-WebviewLog ('webview2 init failed: '+$e.InitializationException.ToString())}
+    catch{Write-WebviewLog 'webview2 init failed: unknown exception'}
+    Start-Process $url;$form.Close()
+   }
   })
-  $web.add_NewWindowRequested({param($sender,$e)
-   $e.Handled=$true
-   Start-Process $e.Uri
-  })
-  $form.Add_Shown({try{$web.EnsureCoreWebView2Async($null)|Out-Null}catch{Start-Process $url;$form.Close()}})
+  $form.Add_Shown({try{
+    $wvEnv=[Microsoft.Web.WebView2.Core.CoreWebView2Environment]::CreateAsync($null,$webData,$null).GetAwaiter().GetResult()
+    $web.EnsureCoreWebView2Async($wvEnv)|Out-Null
+   }catch{
+    Write-WebviewLog ('webview2 environment failed: '+$_.Exception.ToString())
+    Start-Process $url;$form.Close()
+   }})
   $timer=New-Object System.Windows.Forms.Timer
   $timer.Interval=250
   $timer.add_Tick({if($serverProcess.HasExited){$form.Close()}})
@@ -98,6 +124,7 @@ function Show-WorkbenchWindow([string]$url,[int]$serverId){
   @{pid=$PID;url=$url;server_pid=$serverId}|ConvertTo-Json|Set-Content -LiteralPath $lock -Encoding UTF8
   [System.Windows.Forms.Application]::Run($form)
  }catch{
+  Write-WebviewLog ('webview2 window failed: '+$_.Exception.ToString())
   & $cleanup
   Start-Process $url
  }
