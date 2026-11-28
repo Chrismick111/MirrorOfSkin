@@ -2143,7 +2143,7 @@ static MotionDelivery forward_projected_motion(void *app,int detail,uint8_t a1,i
     sr_verified_paired_attack(skin->motionCounts,paired_source(u,skin),motion_identity(skin),sourceDetail,-1)<0&&
     !sr_salvador_s3(skin->motionCounts,u->baseName,motion_identity(skin),sourceDetail,coin,&specialDetail,&specialIndex)){
   SrSegmentLatch *l=&u->segmentLatch;
-  if(sr_segment_scope(l,u->observedAction,u->observedViewer,app,skin->internalStage))u->segmentSequence++;
+  if(sr_segment_scope(l,u->observedAction,u->observedViewer,app,skin->internalStage,skin->form))u->segmentSequence++;
   TimeRecord *src=NULL,*dst=NULL;
   if(!l->seen[coin]){
    for(int k=0;k<g_timeCount;k++){
@@ -3465,6 +3465,7 @@ static int resume_pending_cleanup(void){
  return 0;
 }
 #include "voice_dispatch.h"
+#include "feature_settings.h"
 #include "cosmetic_ui_data.inc"
 #include "cosmetic_ui_display.inc"
 
@@ -3473,7 +3474,8 @@ static void tick(void){
   int frame=m_frameCount?call_int(m_frameCount,NULL,NULL):-1;
   if(frame<0){fatal("Unity frame count unavailable",7);return;}
   if(frame==g_lastUnityFrame)return;g_lastUnityFrame=frame;g_frame=frame;
-  cosmetic_ui_frame(g_ready&&enabled_now()&&!cleanup_pending);
+  poll_feature_settings();
+  cosmetic_ui_frame(g_ready&&enabled_now()&&!cleanup_pending&&sr_ui_on(SR_UI_MASTER));
   int bloodConfigChanged=poll_appearance_blood_config();
   sync_appearance_blood(enabled_now(),bloodConfigChanged||frame%15==0);
   collect_retire();

@@ -83,8 +83,8 @@ class AppearanceAuthorsTest(unittest.TestCase):
 
         with tempfile.TemporaryDirectory() as directory:
             folder = Path(directory)
-            (folder / '演示视频.txt').write_text('https://video.example/demo?id=42', encoding='utf-8')
-            (folder / '发布页.url').write_text('[InternetShortcut]\n'
+            (folder / 'video.txt').write_text('https://video.example/demo?id=42', encoding='utf-8')
+            (folder / 'release.url').write_text('[InternetShortcut]\n'
                                              'IconFile=https://other.example/icon\n'
                                              'URL=https://release.example/mod', encoding='utf-8')
             (folder / 'other.url').write_text('URL=https://other.example/mod', encoding='utf-8')
@@ -167,7 +167,7 @@ class AppearanceAuthorsTest(unittest.TestCase):
             'Pack/README.txt': '作者：TXT Author',
             'Pack/README_CN.md': '作者：Localized Author\n演示视频：https://video.example/translation\n'
                                  '发布页：https://project.example/release',
-            'Pack/说明.txt': '作者：Other Author',
+            'Pack/readme.txt': '作者：Other Author',
             'Pack/README.md': '作者：Markdown Author\n演示视频：https://video.example/main',
             'Pack/docs/README.md': '作者：Documentation Author',
         }, records, include_links=True)

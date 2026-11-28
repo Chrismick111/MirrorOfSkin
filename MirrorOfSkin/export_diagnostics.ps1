@@ -4,8 +4,8 @@ Add-Type -AssemblyName System.IO.Compression
 Add-Type -AssemblyName System.IO.Compression.FileSystem
 $root=[IO.Path]::GetFullPath($AddonRoot)
 $stamp=Get-Date -Format 'yyyyMMdd-HHmmss-fff'
-$zipPath=Join-Path $OutputDirectory "随机人格诊断-$stamp.zip"
-$names=@('native.log','native_runtime.log','诊断日志.txt','诊断日志-上一份.txt','addon_info.json','compatibility.json','随机设置.json','自定义人格池.json','warmup_status.json','native_pools.bin','native_forms.json','auto_registry.json')
+$zipPath=Join-Path $OutputDirectory "mos-diagnostic-$stamp.zip"
+$names=@('native.log','native_runtime.log','diagnostic_log.txt','diagnostic_log-previous.txt','addon_info.json','compatibility.json','random_settings.json','custom_pools.json','warmup_status.json','native_pools.bin','native_forms.json','auto_registry.json')
 $report=New-Object 'System.Collections.Generic.List[string]'
 $report.Add("生成时间：$(Get-Date -Format o)")
 $report.Add('请补充：出战人格、使用的技能、异常硬币/拼点次数、是否卡顿，以及问题出现时间。')
@@ -19,7 +19,7 @@ try {
   try {
    # Bound live log snapshots to the last 8 MiB; do not race a growing log forever.
    $length=$inputStream.Length
-   $start=if($name.EndsWith('.log') -or $name.Contains('诊断日志')){[Math]::Max(0,$length-8MB)}else{0}
+   $start=if($name.EndsWith('.log') -or $name.StartsWith('diagnostic_log')){[Math]::Max(0,$length-8MB)}else{0}
    $null=$inputStream.Seek($start,[IO.SeekOrigin]::Begin)
    $entry=$zip.CreateEntry($name,[IO.Compression.CompressionLevel]::Optimal)
    $output=$entry.Open()
@@ -36,7 +36,7 @@ try {
   $path=Join-Path $root $name
   if(Test-Path -LiteralPath $path){$report.Add("SHA256 $name $((Get-FileHash -LiteralPath $path -Algorithm SHA256).Hash)")}
  }
- $entry=$zip.CreateEntry('反馈说明与文件校验.txt')
+ $entry=$zip.CreateEntry('diagnostic-report.txt')
  $writer=New-Object IO.StreamWriter($entry.Open(),(New-Object Text.UTF8Encoding($true)))
  try{$writer.Write(($report -join "`r`n"))}finally{$writer.Dispose()}
 }finally{$zip.Dispose()}

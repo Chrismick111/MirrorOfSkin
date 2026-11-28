@@ -2,7 +2,7 @@ import pathlib,time,threading
 LIMIT=8*1024*1024
 class DiagnosticLog:
  def __init__(self,root):
-  self.root=pathlib.Path(root);self.offsets={};self.target=self.root/'诊断日志.txt'
+  self.root=pathlib.Path(root);self.offsets={};self.target=self.root/'diagnostic_log.txt'
   with self.target.open('a',encoding='utf-8') as f:
    f.write('\n=== 诊断会话 '+time.strftime('%Y-%m-%d %H:%M:%S')+' ===\n')
    for name in ('addon_info.json','compatibility.json','warmup_status.json'):
@@ -22,7 +22,7 @@ class DiagnosticLog:
    with p.open('rb') as f:f.seek(old);data=f.read(262144);self.offsets[name]=f.tell()
    if data:chunks.append('\n['+time.strftime('%Y-%m-%d %H:%M:%S')+' '+name+']\n'+data.decode('utf-8',errors='replace'))
   if not chunks:return
-  if self.target.exists() and self.target.stat().st_size>LIMIT:self.target.replace(self.root/'诊断日志-上一份.txt')
+  if self.target.exists() and self.target.stat().st_size>LIMIT:self.target.replace(self.root/'diagnostic_log-previous.txt')
   with self.target.open('a',encoding='utf-8') as f:f.write(''.join(chunks))
  def run(self,stop):
   while not stop.is_set():

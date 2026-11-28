@@ -316,6 +316,37 @@
       .primary {
         background: #685125;
       }
+      .setting-group {
+        margin-top: 16px;
+        border: 1px solid #343840;
+        border-radius: 10px;
+        padding: 4px 16px;
+      }
+      .setting-row {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 18px;
+        padding: 13px 0;
+        border-bottom: 1px solid #343840;
+      }
+      .setting-row:last-child {
+        border-bottom: 0;
+      }
+      .setting-row label {
+        cursor: pointer;
+      }
+      .setting-row input[type="checkbox"] {
+        flex: 0 0 auto;
+        width: 20px;
+        height: 20px;
+        padding: 0;
+        accent-color: #deb970;
+        cursor: pointer;
+      }
+      .setting-row.disabled {
+        opacity: 0.45;
+      }
       textarea {
         width: 100%;
         height: 220px;
@@ -1853,8 +1884,8 @@
           href="effect-editor"
           target="_blank"
           rel="noopener"
-          title="特效方案"
-          aria-label="特效方案"
+          title="fx-schemes"
+          aria-label="fx-schemes"
         >
           <svg class="icon" aria-hidden="true">
             <use href="#i-spark"></use>
@@ -1868,6 +1899,7 @@
         <button data-page="pool">人格池</button
         ><button data-page="rulesets">规则集</button
         ><button data-page="schemes">方案管理</button
+        ><button data-page="settings">设置</button
         ><button data-page="prepare">准备状态</button
         ><button data-page="events">运行日志</button>
       </nav>
@@ -2000,6 +2032,56 @@
           </div>
           <div id="schemeList" class="scheme-grid"></div>
           <div id="schemeTip" class="scheme-tip hidden"></div>
+        </section>
+        <section id="settings" class="hidden">
+          <h2>设置</h2>
+          <p class="muted">
+            设置保存在 MOS_data/settings.json，配置带版本号；插件升级时会补齐新选项并保留已有选择。
+          </p>
+          <div class="notice">
+            外观覆盖会在游戏内把技能名、技能图标、立绘和状态文字替换为所选外观的内容。关闭总开关后全部保持游戏原样。
+          </div>
+          <div class="setting-group">
+            <div class="setting-row">
+              <div>
+                <label for="settingMaster"><strong>启用外观覆盖</strong></label>
+                <div class="muted">总开关，关闭时下方分项不生效</div>
+              </div>
+              <input type="checkbox" id="settingMaster" />
+            </div>
+            <div class="setting-row" data-feature="skill_name">
+              <div>
+                <label for="settingSkillName">技能名</label>
+                <div class="muted">用所选外观的技能名替换原生技能名</div>
+              </div>
+              <input type="checkbox" id="settingSkillName" />
+            </div>
+            <div class="setting-row" data-feature="skill_icon">
+              <div>
+                <label for="settingSkillIcon">技能图标</label>
+                <div class="muted">用所选外观的技能图标替换原生图标</div>
+              </div>
+              <input type="checkbox" id="settingSkillIcon" />
+            </div>
+            <div class="setting-row" data-feature="portrait">
+              <div>
+                <label for="settingPortrait">立绘</label>
+                <div class="muted">用所选外观的立绘替换战斗立绘</div>
+              </div>
+              <input type="checkbox" id="settingPortrait" />
+            </div>
+            <div class="setting-row" data-feature="buff">
+              <div>
+                <label for="settingBuff">状态文字</label>
+                <div class="muted">用所选外观的状态名称替换原生 buff 文字</div>
+              </div>
+              <input type="checkbox" id="settingBuff" />
+            </div>
+          </div>
+          <div class="bar" style="margin-top: 16px">
+            <button id="settingSave" class="primary">保存设置</button>
+            <span id="settingStatus" class="muted"></span>
+          </div>
         </section>
         <section id="prepare" class="hidden">
           <div id="prepareData" aria-live="polite"></div>
@@ -4324,6 +4406,7 @@
           $("#version").textContent = data.version;
           loadTarget();
           renderPrepare(data);
+          renderSettings(data);
           for (const item of folders.blocked) status(item.directory + "：" + item.error);
           $("#formRows").innerHTML = Object.entries(data.formAnnotations || {})
             .map(
@@ -4362,7 +4445,7 @@
         setTimeout(() => URL.revokeObjectURL(u), 1000);
       }
       $("#exportEvents").onclick = () =>
-        download("演出反馈包.json", {
+        download("performance-feedback.json", {
           version: data.version,
           generatedAt: new Date().toISOString(),
           pools: data.config,
@@ -4409,6 +4492,64 @@
           status(e.message);
         }
       }
+      function featureUi() {
+        return (
+          (data.featureSettings && data.featureSettings.config) || {
+            version: 1,
+            cosmetic_ui: {},
+          }
+        );
+      }
+      function featureChecked(key) {
+        const ui = featureUi().cosmetic_ui || {};
+        return typeof ui[key] === "boolean" ? ui[key] : false;
+      }
+      function applyFeatureEnable() {
+        const on = $("#settingMaster").checked;
+        document.querySelectorAll("#settings .setting-row[data-feature]").forEach(
+          (row) => {
+            row.classList.toggle("disabled", !on);
+            const box = row.querySelector("input");
+            if (box) box.disabled = !on;
+          },
+        );
+      }
+      function renderSettings(value) {
+        const ui = (value.featureSettings && value.featureSettings.config &&
+          value.featureSettings.config.cosmetic_ui) || {};
+        $("#settingMaster").checked = ui.enabled === true;
+        $("#settingSkillName").checked = ui.skill_name !== false;
+        $("#settingSkillIcon").checked = ui.skill_icon !== false;
+        $("#settingPortrait").checked = ui.portrait !== false;
+        $("#settingBuff").checked = ui.buff !== false;
+        applyFeatureEnable();
+        $("#settingStatus").textContent = ui.enabled
+          ? "当前已启用外观覆盖"
+          : "当前保持游戏原生外观";
+      }
+      async function saveSettings() {
+        const config = {
+          cosmetic_ui: {
+            enabled: $("#settingMaster").checked,
+            skill_name: $("#settingSkillName").checked,
+            skill_icon: $("#settingSkillIcon").checked,
+            portrait: $("#settingPortrait").checked,
+            buff: $("#settingBuff").checked,
+          },
+        };
+        try {
+          const saved = await api("feature-settings-save", { config });
+          data.featureSettings = saved;
+          renderSettings(data);
+          status("设置已保存");
+        } catch (e) {
+          status(e.message);
+        }
+      }
+      $("#settingMaster").onchange = () => {
+        applyFeatureEnable();
+      };
+      $("#settingSave").onclick = () => saveSettings();
       let scanPollAt = 0;
       async function pollScanStatus() {
         if (Date.now() - scanPollAt < 1500) return;

@@ -74,37 +74,93 @@ static int chapter_group(Unit *unit,Skin *skin,int requested,int skillId,int *ve
 /* A source skill can report the same motion index for several coins. Without
    per-coin de-duplication every one of those coins replays the same donor clip,
    which reads as a stuck animation. Prefer the game's native build order, then
-   the next unused ordinary clip of the same group. Never alter the final coin. */
-static int chapter_replay_avoid(Unit *unit,void *action,int coin,int detail,int *part,int count,int last){
-  if(!unit||!action)return 0;
+   the next unused ordinary clip of the same group, and finally borrow an unused
+   segment from the nearest attack group when the current group is exhausted. */
+static int chapter_segment_used(const Unit *unit,int coin,int detail,int part){
+  for(int c=0;c<coin;c++)
+    if(unit->chapterReplayDetail[c]==(unsigned char)detail&&
+       unit->chapterReplayPart[c]==(unsigned char)part)return 1;
+  return 0;
+}
+static int chapter_clip_allowed(const Skin *skin,int detail,int part){
+  if(!skin||detail<0||detail>=SR_MOTION_CACHE||part<0)return 0;
+  int n=skin->motionCounts[detail];
+  if(n<1||n>32||part>=n)return 0;
+  /* Without a cached ordinary mask every authored clip is fair game. */
+  uint32_t mask=skin->ordinaryClips[detail];
+  return !mask||(mask&(UINT32_C(1)<<part))!=0;
+}
+static int chapter_reroute(Unit *unit,Skin *skin,int coin,int fromDetail,int *detail,int *part){
+  int bestDetail=-1,bestPart=-1,bestScore=INT_MAX;
+  for(int d=0;d<SR_MOTION_CACHE;d++){
+    if(sr_attack_group_slot(d)<0)continue;
+    int n=skin->motionCounts[d];
+    if(n<1||n>32)continue;
+    int distance=d>fromDetail?d-fromDetail:fromDetail-d;
+    for(int k=0;k<n;k++){
+      if(!chapter_clip_allowed(skin,d,k))continue;
+      if(chapter_segment_used(unit,coin,d,k))continue;
+      /* Stay close to the requested group and keep the clip order stable. */
+      int score=distance*40+k;
+      if(score<bestScore){bestScore=score;bestDetail=d;bestPart=k;}
+    }
+  }
+  if(bestDetail<0)return 0;
+  *detail=bestDetail;*part=bestPart;return 1;
+}
+static int chapter_replay_avoid(Unit *unit,Skin *skin,void *action,int coin,int *detail,int *part,int count,int last){
+  if(!unit||!skin||!action||!detail||!part)return 0;
   if(unit->chapterReplayAction!=action){
     unit->chapterReplayAction=action;
     /* Group zero is a valid group. An unseen coin has no group yet. */
     memset(unit->chapterReplayDetail,0xff,sizeof(unit->chapterReplayDetail));
   }
-  if(coin<0||coin>=SR_VARIETY_COINS||detail<0||detail>=SR_MOTION_CACHE||*part<0||*part>=count||count<2||last)return 0;
-  int replay=0;
-  for(int c=0;c<coin;c++)if(unit->chapterReplayDetail[c]==(unsigned char)detail&&
-                            unit->chapterReplayPart[c]==(unsigned char)*part){replay=1;break;}
-  if(!replay){
-    unit->chapterReplayDetail[coin]=(unsigned char)detail;
-    unit->chapterReplayPart[coin]=(unsigned char)*part;
+  if(coin<0||coin>=SR_VARIETY_COINS)return 0;
+  int chosen=*detail;
+  if(chosen<0||chosen>=SR_MOTION_CACHE)return 0;
+  int limit=skin->motionCounts[chosen];
+  if(limit<1||count<1)return 0;
+  if(count>limit)count=limit;
+  int slot=*part;
+  if(slot<0||slot>=limit)return 0;
+  if(!last&&!chapter_segment_used(unit,coin,chosen,slot)){
+    unit->chapterReplayDetail[coin]=(unsigned char)chosen;
+    unit->chapterReplayPart[coin]=(unsigned char)slot;
     return 0;
   }
-  int start=*part;
-  if(native_order_index(unit,action,coin,count,&start)&&(start<0||start>=count))start=*part;
-  for(int j=0;j<count;j++){
-    int k=(start+j)%count,used=0;
-    for(int c=0;c<coin;c++)if(unit->chapterReplayDetail[c]==(unsigned char)detail&&
-                              unit->chapterReplayPart[c]==(unsigned char)k){used=1;break;}
-    if(!used){
-      char line[192];snprintf(line,sizeof(line),"chapter replay avoided coin=%d detail=%d from=%d to=%d",coin,detail,*part,k);
-      bootlog(line);
-      unit->chapterReplayDetail[coin]=(unsigned char)detail;
-      *part=k;unit->chapterReplayPart[coin]=(unsigned char)k;
-      return 1;
-    }
+  /* The final coin keeps the authored tail of its own group while it is free.
+     A shorter group that already exposed that clip may still need a reroute. */
+  if(last&&!chapter_segment_used(unit,coin,chosen,slot)&&chapter_clip_allowed(skin,chosen,slot)){
+    unit->chapterReplayDetail[coin]=(unsigned char)chosen;
+    unit->chapterReplayPart[coin]=(unsigned char)slot;
+    return 0;
   }
+  int start=slot;
+  if(!native_order_index(unit,action,coin,count,&start)||start<0||start>=count)start=slot;
+  for(int j=0;j<count;j++){
+    int k=(start+j)%count;
+    if(!chapter_clip_allowed(skin,chosen,k))continue;
+    if(chapter_segment_used(unit,coin,chosen,k))continue;
+    char line[208];snprintf(line,sizeof(line),"chapter replay avoided coin=%d detail=%d from=%d to=%d",coin,chosen,slot,k);
+    bootlog(line);
+    unit->chapterReplayDetail[coin]=(unsigned char)chosen;
+    unit->chapterReplayPart[coin]=(unsigned char)k;
+    *part=k;return 1;
+  }
+  /* Every authored clip of this group already appeared on an earlier coin.
+     Borrow the nearest unused attack segment instead of freezing on one clip. */
+  int nextDetail=chosen,nextPart=slot;
+  if(chapter_reroute(unit,skin,coin,chosen,&nextDetail,&nextPart)){
+    char line[232];snprintf(line,sizeof(line),"chapter replay rerouted coin=%d from=%d:%d to=%d:%d last=%d",
+                            coin,chosen,slot,nextDetail,nextPart,last);
+    bootlog(line);
+    unit->chapterReplayDetail[coin]=(unsigned char)nextDetail;
+    unit->chapterReplayPart[coin]=(unsigned char)nextPart;
+    *detail=nextDetail;*part=nextPart;return 1;
+  }
+  /* Nothing is free: keep the native choice rather than blanking the motion. */
+  unit->chapterReplayDetail[coin]=(unsigned char)chosen;
+  unit->chapterReplayPart[coin]=(unsigned char)slot;
   return 0;
 }
 static void *chapter_forward(Unit *unit,Skin *skin,int requested,int index,int skillId,void *action,int coin,int last,
@@ -131,7 +187,7 @@ static void *chapter_forward(Unit *unit,Skin *skin,int requested,int index,int s
    if(part>=count)part=count-1;
   }else if(index>=count||(is_skill_detail(requested)&&!sameSize&&last))part=count-1;
  }
- chapter_replay_avoid(unit,action,coin,detail,&part,count,last);
+ chapter_replay_avoid(unit,skin,action,coin,&detail,&part,count,last);
  void *savedApp=g_chapterPlaybackApp;int savedDetail=g_chapterPlaybackDetail;
  ProjectionContext savedProjection=g_projection;
  FxPlaybackPlan *savedCapture=g_fxCapture;uint64_t savedOwner=g_fxCaptureOwner;

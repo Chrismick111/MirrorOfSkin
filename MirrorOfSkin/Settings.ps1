@@ -11,7 +11,7 @@ Add-Type -AssemblyName System.Drawing
 [System.Windows.Forms.Application]::EnableVisualStyles()
 $root=$PSScriptRoot
 $poolPath=Join-Path $root 'Assets/runtime/all_sinners_pools.json'
-$settingsPath=Join-Path $root '随机设置.json'
+$settingsPath=Join-Path $root 'random_settings.json'
 $formNotes=@{};$formNotice='理智、体力和守备次数取当前出战角色；只改变外观。守备包括闪避、防御和反击。'
 $notePath=Join-Path $root 'Assets/runtime/form_annotations.json'
 if(Test-Path -LiteralPath $notePath){
@@ -22,7 +22,7 @@ if(Test-Path -LiteralPath $notePath){
  }catch{}
 }
 $pools=Get-Content -LiteralPath $poolPath -Raw -Encoding UTF8 | ConvertFrom-Json
-$customPath=Join-Path $root '自定义人格池.json'
+$customPath=Join-Path $root 'custom_pools.json'
 $custom=Get-Content -LiteralPath $customPath -Raw -Encoding UTF8|ConvertFrom-Json
 $customStamp=(Get-FileHash -LiteralPath $customPath).Hash
 $catalog=@{};foreach($p in $pools.PSObject.Properties){foreach($e in $p.Value.entries){$catalog[[string]$e.identity_id]=$e}}
@@ -40,7 +40,7 @@ if(Test-Path -LiteralPath $autoNotePath){
  }catch{}
 }
 # Include identities already discovered by the running component, retaining its authoritative entries.
-$logPath=Join-Path $root '随机动作日志.txt'
+$logPath=Join-Path $root 'random_action.log'
 if(Test-Path -LiteralPath $logPath){
  foreach($line in [IO.File]::ReadLines($logPath)){
   if($line -notmatch '"pool-auto-added"'){continue}
@@ -192,7 +192,7 @@ $saveAction={
   $temp=$poolPath+'.weights.tmp';[IO.File]::WriteAllText($temp,($latestPools|ConvertTo-Json -Depth 20),$utf8);[IO.File]::Replace($temp,$poolPath,($poolPath+'.weights.bak'))
   $temp=$settingsPath+'.tmp';[IO.File]::WriteAllText($temp,($settings|ConvertTo-Json -Depth 20),$utf8)
   if(Test-Path -LiteralPath $settingsPath){[IO.File]::Replace($temp,$settingsPath,($settingsPath+'.bak'))}else{[IO.File]::Move($temp,$settingsPath)}
-  if(-not $total.Checked){[IO.File]::WriteAllText((Join-Path $root '停止随机运行.flag'),'')}else{Remove-Item -LiteralPath (Join-Path $root '停止随机运行.flag') -ErrorAction SilentlyContinue}
+  if(-not $total.Checked){[IO.File]::WriteAllText((Join-Path $root 'stop_random.flag'),'')}else{Remove-Item -LiteralPath (Join-Path $root 'stop_random.flag') -ErrorAction SilentlyContinue}
   $status.Text='已保存。概率将在约1秒内更新，下一次抽取生效。'
  }catch{[void][Windows.Forms.MessageBox]::Show($_.Exception.Message,'保存失败')}
 }

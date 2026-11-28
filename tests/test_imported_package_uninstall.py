@@ -20,7 +20,7 @@ class PackageDeletion(unittest.TestCase):
         self.addCleanup(folder.cleanup)
         self.root = Path(folder.name)/'data'
         self.addon = Path(folder.name)/'addon'
-        self.managed = self.addon/'外来外观'
+        self.managed = self.addon/'imported-appearance'
         self.managed.mkdir(parents=True)
         self.catalog = self.root/'Assets/runtime/all_sinners_pools.json'
         self.assets = self.root/'Assets/ImportedSkins'
@@ -45,7 +45,7 @@ class PackageDeletion(unittest.TestCase):
             identities.append(identity)
             self.entries.append(dict(identity_id=identity, appearance_name=exact))
             (self.assets/(exact+'.cfg')).write_text('WBMOD1\na\nb\n'+model+'\nd\ne\nf\n')
-            locator_path(self.root, identity).write_text(f'外来外观/{directory}/{model}', encoding='utf8')
+            locator_path(self.root, identity).write_text(f'imported-appearance/{directory}/{model}', encoding='utf8')
         row = dict(directory=directory, source=directory+'.zip', id=package_id, identities=identities)
         self.packages.append(row)
         index_path(self.root).write_bytes(encode_index(dict(schema=1, packages=self.packages, library=self.library)))
@@ -65,12 +65,12 @@ class PackageDeletion(unittest.TestCase):
         path.rmdir()
 
     def test_missing_folder_uninstalls_whole_package_once(self):
-        gone, model, first = self.add('删除包', 1, [1,2])
-        kept, _, second = self.add('保留包', 2, [3])
-        rules = self.root/'自定义人格池.json'
+        gone, model, first = self.add('delete-pack', 1, [1,2])
+        kept, _, second = self.add('keep-pack', 2, [3])
+        rules = self.root/'custom_pools.json'
         rules.write_text(json.dumps(dict(entries=self.entries)))
         self.remove(gone, model)
-        self.assertEqual(self.refresh(), {'removed':[{'directory':'删除包','identities':first}], 'blocked':[]})
+        self.assertEqual(self.refresh(), {'removed':[{'directory':'delete-pack','identities':first}], 'blocked':[]})
         self.assertEqual(self.ids(), second)
         self.assertEqual([e['identity_id'] for e in json.loads(rules.read_bytes())['entries']], second)
         self.assertTrue((kept/model).is_file())
@@ -78,27 +78,27 @@ class PackageDeletion(unittest.TestCase):
         self.assertEqual(self.refresh(), {'removed':[], 'blocked':[]})
 
     def test_stage_protection_blocks_entire_package(self):
-        gone, model, identities = self.add('删除包', 1, [1,2])
-        (self.root/'演出编排.json').write_text(json.dumps(dict(stages=[dict(identity_id=identities[-1])])))
+        gone, model, identities = self.add('delete-pack', 1, [1,2])
+        (self.root/'director.json').write_text(json.dumps(dict(stages=[dict(identity_id=identities[-1])])))
         self.remove(gone, model)
         self.assertTrue(self.refresh()['blocked'])
         self.assertEqual(self.ids(), identities)
 
     def test_reimport_prunes_only_unconfigured_stock_siblings_of_proven_package(self):
         from imported_package_uninstall import prune_old_stock
-        _, _, group = self.add('服务器包', 1, [1,2,3])
-        _, _, unrelated = self.add('旁包', 2, [4])
-        (self.root/'自定义人格池.json').write_bytes(encode_index({'entries':[{'identity_id':group[2]}]}))
-        kept = prune_old_stock(self.root, self.addon, '服务器包.zip', group[:1],
+        _, _, group = self.add('server-pack', 1, [1,2,3])
+        _, _, unrelated = self.add('side-pack', 2, [4])
+        (self.root/'custom_pools.json').write_bytes(encode_index({'entries':[{'identity_id':group[2]}]}))
+        kept = prune_old_stock(self.root, self.addon, 'server-pack.zip', group[:1],
                               [*group,*unrelated])
         self.assertEqual(kept, [group[2]])
         self.assertEqual(self.ids(), [group[0], group[2], *unrelated])
         self.assertEqual(read_index(self.root)['packages'][0]['identities'], [group[0],group[2]])
 
     def test_reinstall_can_delete_one_orphan_and_its_rule(self):
-        _, _, identities = self.add('待恢复', 1, [1,2])
-        self.managed.rename(self.addon/'旧库')
-        rules = self.root/'自定义人格池.json'
+        _, _, identities = self.add('to-restore', 1, [1,2])
+        self.managed.rename(self.addon/'old-library')
+        rules = self.root/'custom_pools.json'
         rules.write_text(json.dumps(dict(entries=self.entries)))
         delete(self.root, identities[0], addon=self.addon, lock_factory=self.lock)
         self.assertEqual(self.ids(), identities[1:])
@@ -119,11 +119,11 @@ class PackageDeletion(unittest.TestCase):
             self.assertFalse(locator_path(self.root,identities[0]).exists())
 
     def test_missing_appearance_in_restored_package_keeps_model_and_group_protection(self):
-        path, model, identities = self.add('部分恢复', 1,[1,2])
+        path, model, identities = self.add('partial-restore', 1,[1,2])
         index=read_index(self.root)
         index['packages'][0]['missing_identities']=[identities[0]]
         index_path(self.root).write_bytes(encode_index(index))
-        group=self.root/'演出编排.json'
+        group=self.root/'director.json'
         group.write_text(json.dumps({'stages':[{'identity_id':identities[0]}]}))
         with self.assertRaisesRegex(ValueError, '形态组'):
             delete(self.root,identities[0],addon=self.addon,lock_factory=self.lock)
@@ -135,11 +135,11 @@ class PackageDeletion(unittest.TestCase):
         self.assertEqual((path/model).read_bytes(),b'art')
 
     def test_rename_missing_parent_and_empty_directory_do_not_uninstall(self):
-        path, model, identities = self.add('原名', 1, [1])
-        renamed = path.rename(path.with_name('改名'))
+        path, model, identities = self.add('original-name', 1, [1])
+        renamed = path.rename(path.with_name('renamed-name'))
         self.assertFalse(self.refresh()['removed'])
-        self.assertIn('外来外观/改名', locator_path(self.root, identities[0]).read_text(encoding='utf8'))
-        whole = self.managed.rename(self.managed.with_name('暂不可用'))
+        self.assertIn('imported-appearance/renamed-name', locator_path(self.root, identities[0]).read_text(encoding='utf8'))
+        whole = self.managed.rename(self.managed.with_name('unavailable'))
         self.managed.mkdir()
         self.assertFalse(self.refresh()['removed'])
         (self.managed/LIBRARY_MARKER).unlink(missing_ok=True)
@@ -150,7 +150,7 @@ class PackageDeletion(unittest.TestCase):
         self.assertEqual(self.ids(), identities)
 
     def test_workbench_delete_preserves_same_file_until_last_reference(self):
-        path, model, identities = self.add('原名', 1, [1,2])
+        path, model, identities = self.add('original-name', 1, [1,2])
         delete(self.root, identities[0], addon=self.addon, lock_factory=self.lock)
         self.assertTrue((path/model).is_file())
         delete(self.root, identities[1], addon=self.addon, lock_factory=self.lock)

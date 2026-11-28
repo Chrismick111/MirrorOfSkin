@@ -30,7 +30,7 @@ class FxCompatibilityTests(unittest.TestCase):
             builds = {build: {name: hashlib.sha256((build+name).encode()).hexdigest() for name in names} for build in ('old','new')}
             (addon/'compatibility.json').write_text(json.dumps({'game_files':builds['old'],'additional_game_builds':{'new':builds['new']}}),encoding='utf8')
             (data/'compatibility.json').write_text('{}',encoding='utf8')
-            (data/'特效启用状态.json').write_text(json.dumps({'enabled':True,'name':'fixture'}),encoding='utf8')
+            (data/'fx_active.json').write_text(json.dumps({'enabled':True,'name':'fixture'}),encoding='utf8')
             for build in ('old','new'):
                 for name in names:
                     path=game/name; path.parent.mkdir(parents=True,exist_ok=True); path.write_text(build+name,encoding='utf8')

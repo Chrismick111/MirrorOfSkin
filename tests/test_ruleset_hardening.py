@@ -26,9 +26,9 @@ class RulesetHardeningTest(unittest.TestCase):
         catalog = self.root / 'Assets/runtime/all_sinners_pools.json'
         catalog.parent.mkdir(parents=True)
         catalog.write_text(json.dumps(pools), encoding='utf8')
-        rules = self.root / '规则集'
+        rules = self.root / 'rulesets'
         rules.mkdir()
-        self.identity = rules / '人格-10117.json'
+        self.identity = rules / 'persona-10117.json'
         self.identity.write_text(json.dumps({
             'schema': 1, 'scope': 'identity', 'sinner': 101, 'identity': '10117',
             'name': 'Zero weight', 'entries': [],

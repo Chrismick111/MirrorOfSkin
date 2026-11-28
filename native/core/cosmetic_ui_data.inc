@@ -445,6 +445,10 @@ static int cosmetic_ui_resolve(Unit *u, int skill_id, int tier, int defense, int
     *new_text = NULL;
     *new_sprite = NULL;
     if (!ur_in_canvas || !enabled_now() || cleanup_pending || g_quitting) return 0;
+    /* Each optional surface is published from MOS_data/设置.json. A disabled
+       surface never writes, so the game keeps its original text and sprite. */
+    if (portrait && !sr_ui_on(SR_UI_PORTRAIT)) return 0;
+    if (status_key && *status_key && !sr_ui_on(SR_UI_BUFF)) return 0;
     Skin *skin = voice_worn_skin(u);
     if (!skin) return 0;
     CosmeticUiLook *look = cosmetic_ui_import(skin);
@@ -484,6 +488,8 @@ static int cosmetic_ui_resolve(Unit *u, int skill_id, int tier, int defense, int
                 cosmetic_ui_author_fields(table, skill_id, tier, defense, conditional, level, routed, mapped);
             *new_text = cosmetic_ui_text(look, art.text);
             *new_sprite = cosmetic_ui_png(look, art.png);
+            if (!sr_ui_on(SR_UI_SKILL_NAME)) *new_text = NULL;
+            if (!sr_ui_on(SR_UI_SKILL_ICON)) *new_sprite = NULL;
             return *new_text || *new_sprite;
         } else if (!skin->imported && defense >= 0) {
             stock_id = sr_cosmetic_stock_display_skill(identity, skin->look, skill_id, tier, defense, conditional);
@@ -497,6 +503,10 @@ static int cosmetic_ui_resolve(Unit *u, int skill_id, int tier, int defense, int
             if (portrait && stock->tried && !*new_sprite)
                 *new_sprite = cosmetic_ui_png(NULL, cosmetic_ui_workbench_portrait(row, skin->look));
         }
+    }
+    if (skill_id > 0 && !portrait) {
+        if (!sr_ui_on(SR_UI_SKILL_NAME)) *new_text = NULL;
+        if (!sr_ui_on(SR_UI_SKILL_ICON)) *new_sprite = NULL;
     }
     return *new_text || *new_sprite;
 }

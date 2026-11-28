@@ -3,7 +3,7 @@ import json,os,pathlib,tempfile,importlib.util
 import effect_schemes,effect_timelines,prepare_plan,scan_units
 import resource_catalog
 
-STATE='特效启用状态.json'
+STATE='fx_active.json'
 ACTIVE='fx-active.bin'
 
 def read_selection(root):

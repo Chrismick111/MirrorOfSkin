@@ -8,7 +8,7 @@ from contextlib import nullcontext
 from pathlib import Path, PurePosixPath
 
 from delete_imported import delete_many, rule_paths
-from import_packages import (MARKER, encode_index, ensure_library, index_path, locator_path, managed_root,
+from import_packages import (DIRECTORY, MARKER, encode_index, ensure_library, index_path, locator_path, managed_root,
                              read_index, read_library, relative_model_path, valid_identity)
 
 CATALOG = 'Assets/runtime/all_sinners_pools.json'
@@ -37,7 +37,7 @@ def _bundle_path(addon, locator):
     _safe_stat(locator)
     content = locator.read_text(encoding='utf8')
     parts = PurePosixPath(content).parts
-    if (len(parts) != 3 or parts[0] != '外来外观'
+    if (len(parts) != 3 or parts[0] != DIRECTORY
             or not BUNDLE_NAME.fullmatch(parts[2])
             or any(part in ('.', '..') or any(c in part for c in '\\:') for part in parts)):
         raise ValueError('外观模型位置无效')
@@ -291,7 +291,7 @@ def refresh_packages(root, addon, *, lock_factory):
         except FileNotFoundError:
             return report
         except (OSError, ValueError) as error:
-            report['blocked'].append({'directory': '外来外观', 'error': str(error)})
+            report['blocked'].append({'directory': DIRECTORY, 'error': str(error)})
             return report
         for package in absent:
             if all(current['id'] != package['id'] for current in index['packages']):

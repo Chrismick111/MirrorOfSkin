@@ -102,7 +102,7 @@ class FrontendPreviewTest(unittest.TestCase):
         self.write(self.addon, 'addon_info.json', {'version': 'test-fixture'})
         self.write(self.addon, 'compatibility.json', {'protocol': 17})
         self.write(self.addon, CATALOG, self.catalog('Installed default'))
-        self.write(self.addon, '演出编排.json', {'schema': 1, 'formations': {}})
+        self.write(self.addon, 'director.json', {'schema': 1, 'formations': {}})
         self.write(self.addon, 'Assets/ImportedSkins/model-fixture.bundle', b'model bytes')
         self.bundled_portrait = png(b'\x24\x31\x57')
         self.write(self.addon, 'Workbench/data/bundled_portraits/10101.png', self.bundled_portrait)
@@ -136,7 +136,7 @@ class FrontendPreviewTest(unittest.TestCase):
 
     def test_live_player_snapshot_does_not_migrate_or_write(self):
         self.write(self.profile, CATALOG, self.catalog('Player appearance name'))
-        self.write(self.profile, '随机设置.json', {'enabled': False, 'characters': {}})
+        self.write(self.profile, 'random_settings.json', {'enabled': False, 'characters': {}})
         self.write(self.profile, 'stage_director.json', {'legacy': True})
         user_portrait = png(b'\x86\x72\x33')
         portrait_id = hashlib.sha256(b'10101').hexdigest()

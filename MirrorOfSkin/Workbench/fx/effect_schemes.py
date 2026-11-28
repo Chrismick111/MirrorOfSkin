@@ -6,7 +6,7 @@ import pathlib
 import re
 import tempfile
 
-DIRECTORY = '特效方案'
+DIRECTORY = 'fx-schemes'
 _NAME = re.compile(r'^[^\\/:*?"<>|\x00-\x1f]{1,40}$')
 _RESERVED = re.compile(r'^(CON|PRN|AUX|NUL|COM[1-9]|LPT[1-9])(?:\.|$)', re.I)
 _COLOR = re.compile(r'^#[0-9a-fA-F]{6}(?:[0-9a-fA-F]{2})?$')

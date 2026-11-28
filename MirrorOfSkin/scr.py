@@ -105,7 +105,17 @@ def _load_data_module():
     return module
 
 
+def _load_core_module(filename, name):
+    import importlib.util
+    path = ROOT / 'Workbench' / 'core' / filename
+    spec = importlib.util.spec_from_file_location(name, path)
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
+
+
 _DATA_MODULE = _load_data_module()
+_FEATURE_MODULE = _load_core_module('feature_settings.py', '_sinners_feature_settings')
 DATA_ROOT = pathlib.Path(_DATA_MODULE.prepare(ROOT))
 
 
@@ -161,8 +171,8 @@ def report(session, previous):
 ROW4 = struct.Struct('<IIII d 64s 128s 64s 64s')
 ROW = struct.Struct('<IIII d 64s 128s 64s 64s I 64s')
 ROW3 = struct.Struct('<IIII d 64s 128s 64s')
-RULESET_DIR = DATA_ROOT / '规则集'
-RULESET_STATE = DATA_ROOT / '规则集状态.json'
+RULESET_DIR = DATA_ROOT / 'rulesets'
+RULESET_STATE = DATA_ROOT / 'ruleset_state.json'
 
 DEFAULT_SETTINGS = {'max_cached_skins': 3, 'prewarm_full_pool': False, 'disable_special_clash': True, 'enabled': True, 'characters': {str(i): False for i in range(101, 113)}}
 DEFAULT_CUSTOM_POOLS = {'schema': 1, 'characters': {}}
@@ -175,7 +185,7 @@ def ensure_user_config():
         RULESET_DIR.mkdir(exist_ok=True)
     except OSError:
         pass
-    defaults = {'随机设置.json': DEFAULT_SETTINGS, '自定义人格池.json': DEFAULT_CUSTOM_POOLS, '演出编排.json': DEFAULT_DIRECTOR, '规则集状态.json': DEFAULT_RULESET_STATE}
+    defaults = {'random_settings.json': DEFAULT_SETTINGS, 'custom_pools.json': DEFAULT_CUSTOM_POOLS, 'director.json': DEFAULT_DIRECTOR, 'ruleset_state.json': DEFAULT_RULESET_STATE}
     for name, data in defaults.items():
         path = DATA_ROOT / name
         if path.exists():
@@ -189,6 +199,14 @@ def ensure_user_config():
                 temp.unlink(missing_ok=True)
             except OSError:
                 pass
+
+
+def sync_feature_settings():
+    """Keep the versioned settings.json and its native mirror present at startup."""
+    try:
+        _FEATURE_MODULE.load(DATA_ROOT, ROOT, log)
+    except Exception as error:
+        log('feature settings unavailable: ' + str(error))
 
 
 def load_user_json(name, default):
@@ -206,18 +224,19 @@ def load_user_json(name, default):
 
 
 ensure_user_config()
+sync_feature_settings()
 
 
 def stopped_by_flag():
     try:
-        saved = json.loads((DATA_ROOT / '随机设置.json').read_text(encoding='utf-8-sig'))
+        saved = json.loads((DATA_ROOT / 'random_settings.json').read_text(encoding='utf-8-sig'))
         return not bool(saved.get('enabled', True))
     except (OSError, ValueError):
-        return (DATA_ROOT / '停止随机运行.flag').exists()
+        return (DATA_ROOT / 'stop_random.flag').exists()
 
 
 def prewarm_settings():
-    settings = load_user_json('随机设置.json', DEFAULT_SETTINGS)
+    settings = load_user_json('random_settings.json', DEFAULT_SETTINGS)
     try:
         skins = int(settings.get('max_cached_skins', 3))
     except (TypeError, ValueError):
@@ -242,7 +261,7 @@ def ruleset_state():
 
 
 def _identity_ruleset_path(identity):
-    return RULESET_DIR / ('人格-%s.json' % identity)
+    return RULESET_DIR / ('persona-%s.json' % identity)
 
 
 def _identity_ruleset(identity):
@@ -253,7 +272,7 @@ def _identity_ruleset(identity):
 
 
 def _global_ruleset():
-    data = _json_file(RULESET_DIR / '全局.json')
+    data = _json_file(RULESET_DIR / 'global.json')
     if not data or data.get('scope') != 'global':
         return None
     if not isinstance(data.get('entries'), list) and not isinstance(data.get('pools'), dict):
@@ -388,9 +407,9 @@ def _prepare_native_pools_unlocked():
     import math
     pools = json.loads((DATA_ROOT / 'Assets/runtime/all_sinners_pools.json').read_text(encoding='utf-8-sig'))
     catalog = _catalog_by_identity(pools)
-    custom = load_user_json('自定义人格池.json', DEFAULT_CUSTOM_POOLS)
+    custom = load_user_json('custom_pools.json', DEFAULT_CUSTOM_POOLS)
     state = ruleset_state()
-    settings = load_user_json('随机设置.json', DEFAULT_SETTINGS)
+    settings = load_user_json('random_settings.json', DEFAULT_SETTINGS)
 
     known = {}
 
@@ -444,7 +463,7 @@ def _prepare_native_pools_unlocked():
                     add_profile(target, profile)
 
     if RULESET_DIR.exists():
-        for path in sorted(RULESET_DIR.glob('人格-*.json')):
+        for path in sorted(RULESET_DIR.glob('persona-*.json')):
             data = _json_file(path)
             if not data or data.get('scope') != 'identity':
                 continue

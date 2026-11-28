@@ -2,7 +2,7 @@
 Add-Type -AssemblyName System.Windows.Forms
 Add-Type -AssemblyName System.Drawing
 $root=$PSScriptRoot
-$path=Join-Path $root '自定义人格池.json'
+$path=Join-Path $root 'custom_pools.json'
 $customStamp=(Get-FileHash -LiteralPath $path).Hash
 $config=Get-Content -LiteralPath $path -Raw -Encoding UTF8|ConvertFrom-Json
 $pools=Get-Content -LiteralPath (Join-Path $root 'Assets/runtime/all_sinners_pools.json') -Raw -Encoding UTF8|ConvertFrom-Json

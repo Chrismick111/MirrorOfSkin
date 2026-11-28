@@ -16,7 +16,7 @@ static unsigned sr_cached_body(const SrOrdinaryBodies *bodies,int detail,int par
 }
 typedef struct {
  void *action,*viewer,*app;
- int stage;
+ int stage,form;
  unsigned char seen[SR_VARIETY_COINS],groups[SR_VARIETY_COINS],indices[SR_VARIETY_COINS];
  unsigned playedBody[SR_VARIETY_COINS];
  unsigned char uses[128],nextClip[128];
@@ -25,11 +25,13 @@ typedef struct {
  int poolCount,poolCursor,poolRequested;
 } SrSegmentLatch;
 static void sr_segment_clear(SrSegmentLatch *s){memset(s,0,sizeof(*s));}
-static int sr_segment_scope(SrSegmentLatch *s,void *action,void *viewer,void *app,int stage){
+static int sr_segment_scope(SrSegmentLatch *s,void *action,void *viewer,void *app,int stage,int form){
  /* A skill can replace its viewer between coins. Keep the same action/app
-    plan in that case; only a new action, appearance or stage starts over. */
- if(s->action==action&&s->app==app&&s->stage==stage){s->viewer=viewer;return 0;}
- sr_segment_clear(s);s->action=action;s->viewer=viewer;s->app=app;s->stage=stage;return 1;
+    plan in that case; only a new action, appearance, stage or form starts
+    over. A form swap keeps the same app but replaces the motion set, so
+    reusing the previous form's used-clip bitmap would skip the new clips. */
+ if(s->action==action&&s->app==app&&s->stage==stage&&s->form==form){s->viewer=viewer;return 0;}
+ sr_segment_clear(s);s->action=action;s->viewer=viewer;s->app=app;s->stage=stage;s->form=form;return 1;
 }
 static int sr_ordinary_timeline(const char *name){
  if(!name||!*name)return 0;

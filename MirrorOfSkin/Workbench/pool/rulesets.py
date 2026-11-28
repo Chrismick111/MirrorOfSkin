@@ -3,9 +3,9 @@ from file_lock import FileLock
 import group_entries
 
 SINNER_NAMES = ['李箱', '浮士德', '堂吉诃德', '良秀', '默尔索', '鸿璐', '希斯克利夫', '以实玛利', '罗佳', '辛克莱', '奥提斯', '格里高尔']
-DIR = '规则集'
-STATE = '规则集状态.json'
-CUSTOM = '自定义人格池.json'
+DIR = 'rulesets'
+STATE = 'ruleset_state.json'
+CUSTOM = 'custom_pools.json'
 POOLS = 'Assets/runtime/all_sinners_pools.json'
 DEFAULT_STATE = {'schema': 1, 'global': False, 'active': {}, 'selected': None}
 MAX_ENTRIES = 256
@@ -38,7 +38,7 @@ def save_state(root, data):
 
 
 def settings(root):
-    return _read(pathlib.Path(root) / '随机设置.json', {'enabled': True, 'characters': {}})
+    return _read(pathlib.Path(root) / 'random_settings.json', {'enabled': True, 'characters': {}})
 
 
 def custom(root):
@@ -60,11 +60,11 @@ def catalog(root, pool_data=None):
 
 
 def identity_file(root, identity):
-    return pathlib.Path(root) / DIR / ('人格-%s.json' % identity)
+    return pathlib.Path(root) / DIR / ('persona-%s.json' % identity)
 
 
 def global_file(root):
-    return pathlib.Path(root) / DIR / '全局.json'
+    return pathlib.Path(root) / DIR / 'global.json'
 
 
 def _default_entries(pool, sinner):
@@ -143,7 +143,7 @@ def list_rulesets(root, portrait_ok, pool_data=None):
         })
     directory = root / DIR
     if directory.is_dir():
-        for path in sorted(directory.glob('人格-*.json')):
+        for path in sorted(directory.glob('persona-*.json')):
             data = _read(path, None)
             if not data or data.get('scope') != 'identity':
                 continue
@@ -388,7 +388,7 @@ def activate(root, rule):
     st['selected'] = {'id': rule['id'], 'kind': kind, 'sinner': sinner, 'identity': identity}
     with FileLock(root / 'workbench-save.lock'):
         save_state(root, st)
-        _write(root / '随机设置.json', cfg)
+        _write(root / 'random_settings.json', cfg)
     return st
 
 
@@ -452,7 +452,7 @@ def only(root, rule):
     cfg['characters'] = {str(i): str(i) == sinner for i in range(101, 113)}
     with FileLock(root / 'workbench-save.lock'):
         save_state(root, st)
-        _write(root / '随机设置.json', cfg)
+        _write(root / 'random_settings.json', cfg)
     return st
 
 def deactivate(root, rule):
@@ -485,6 +485,6 @@ def deactivate(root, rule):
             cfg['characters'][str(i)] = True
     with FileLock(root / 'workbench-save.lock'):
         save_state(root, st)
-        _write(root / '随机设置.json', cfg)
+        _write(root / 'random_settings.json', cfg)
     return st
 

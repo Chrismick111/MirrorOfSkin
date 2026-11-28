@@ -4,10 +4,10 @@ import director
 import rulesets
 import chapter_nine
 
-DIR = '方案'
+DIR = 'schemes'
 BACKUP = '读取前自动备份'
 _NAME = re.compile(r'^[^\\/:*?"<>|\x00-\x1f]{1,40}$')
-_RULE_FILE = re.compile(r'^(全局|人格-\d+)\.json$')
+_RULE_FILE = re.compile(r'^(全局|persona-\d+)\.json$')
 
 
 def _path(root, name):
@@ -67,7 +67,7 @@ def normalize(doc, root=None):
         for name, data in rules.get('files', {}).items():
             if not _RULE_FILE.match(name) or not isinstance(data, dict):
                 raise ValueError('方案中的规则集文件无效：' + str(name))
-            if name == '全局.json':
+            if name == 'global.json':
                 check_profiles(data.get('pools', {}))
             elif not isinstance(data.get('entries', []), list):
                 raise ValueError('方案中的专属规则条目无效')
@@ -120,7 +120,7 @@ def summary(root, doc, names=None):
         if items:
             groups.append({'label': _who(sinner) + ' · 罪人池', 'active': active.get(str(sinner)) == 'sinner', 'items': items})
     for name, data in sorted((rules.get('files') or {}).items()):
-        if name == '全局.json':
+        if name == 'global.json':
             for sinner, profile in sorted((data.get('pools') or {}).items()):
                 items = _items((profile or {}).get('entries'), names)
                 if items:
@@ -189,7 +189,7 @@ def load_document(store, name, data, known):
     for target, profile in pools['characters'].items():
         store.validate(target, profile, known)
     for filename, data in ((doc.get('rulesets') or {}).get('files') or {}).items():
-        if filename == '全局.json':
+        if filename == 'global.json':
             for target, profile in (data.get('pools') or {}).items():
                 store.validate(str(target), dict(profile, enabled=True), known)
         else:
@@ -199,11 +199,11 @@ def load_document(store, name, data, known):
         if any(k not in store.form_annotations() for k in doc['director'].get('forms', {})):
             raise ValueError('方案包含未确认支持的形态人格')
     with store.lock:
-        paths = {root / p for p in ('自定义人格池.json', '自定义人格池.workbench.bak')}
+        paths = {root / p for p in ('custom_pools.json', 'custom_pools.workbench.bak')}
         if doc['director'] is not None:
-            paths.update(root / p for p in ('演出编排.json', '演出编排.workbench.bak', 'workbench_rules.bin', 'workbench_forms.bin'))
+            paths.update(root / p for p in ('director.json', 'director.workbench.bak', 'workbench_rules.bin', 'workbench_forms.bin'))
         if doc['settings'] is not None:
-            paths.update((root / '随机设置.json', root / '停止随机运行.flag'))
+            paths.update((root / 'random_settings.json', root / 'stop_random.flag'))
         if doc['rulesets'] is not None:
             folder = root / rulesets.DIR
             paths.add(root / rulesets.STATE)
@@ -260,8 +260,8 @@ def apply_switches(root, settings):
     saved = _switches(settings)
     cfg['enabled'] = saved['enabled']
     cfg['characters'] = {str(i): saved['characters'].get(str(i), False) for i in range(101, 113)}
-    rulesets._write(root / '随机设置.json', cfg)
-    flag = root / '停止随机运行.flag'
+    rulesets._write(root / 'random_settings.json', cfg)
+    flag = root / 'stop_random.flag'
     if cfg['enabled']:
         flag.unlink(missing_ok=True)
     else:

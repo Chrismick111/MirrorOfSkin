@@ -93,7 +93,7 @@ class Discovery:
             return False
         self.next_poll = time.monotonic() + 5
         root = self.root
-        settings = json.loads((root/'随机设置.json').read_text(encoding='utf-8-sig'))
+        settings = json.loads((root/'random_settings.json').read_text(encoding='utf-8-sig'))
         if settings.get('auto_discover', True) is False:
             return False
         catalog = self.game/'LimbusCompany_Data/StreamingAssets/aa/catalog.bin'

@@ -75,7 +75,7 @@
 
 | 内容 | 默认位置 |
 | --- | --- |
-| 新导入的外观模型 | `FaustLauncher/addons/MirrorOfSkin/外来外观/<压缩包名>/`，跟随启动器所在磁盘 |
+| 新导入的外观模型 | `FaustLauncher/addons/MirrorOfSkin/imported-appearance/<压缩包名>/`，跟随启动器所在磁盘 |
 | 个人设置、规则集、方案、章节、头像、索引及独立语音库 | `%APPDATA%\FaustLauncher\MOS_data\` |
 | 战斗运行日志 | `%APPDATA%\FaustLauncher\MOS_data\native_runtime.log` |
 
@@ -85,7 +85,7 @@
 
 制作外观包时，可在包根目录的 `README.md` 写明作者全称，并用「演示视频」「作者主页」「项目仓库」等文字标注链接。如果同一包内的外观分别由不同作者制作，可在各自的外观目录中提供独立 README。依赖和致谢链接请放在相应章节。
 
-作者可在 `mos-skin.json` 中声明攻击、拼点、守备及语音归属，也可通过 `mos-portraits.json` 随包提供头像。格式和示例见[外来外观包动作配置](docs/外来外观包动作配置.md)。
+作者可在 `mos-skin.json` 中声明攻击、拼点、守备及语音归属，也可通过 `mos-portraits.json` 随包提供头像。格式和示例见[外来外观包动作配置](docs/foreign-appearance-motion.md)。
 
 反馈导入问题时，请附插件版本、压缩包名称和展开后的导入提示。反馈战斗表现时，请注明佩戴的人格、外观、技能，以及问题发生在第几枚硬币或哪一次拼点；遇到朝向问题时，也请指出角色和敌人各在哪一侧。[提交问题](https://github.com/Chrismick111/MirrorOfSkin/issues)
 

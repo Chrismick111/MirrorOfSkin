@@ -26,15 +26,15 @@ def binaries(config):
  forms=[struct.pack('<IIiIIIII',int(identity),modes[r['mode']],r.get('threshold',1),r.get('stage',1),r.get('compare',0),0,0,0) for identity,r in config.get('forms',{}).items()]
  return {'workbench_rules.bin':struct.pack('<4I',0x31525753,1,len(rows),16)+b''.join(rows),'workbench_forms.bin':struct.pack('<4I',0x31464657,1,zlib.crc32(b''.join(forms))&0xffffffff,len(forms))+b''.join(forms)}
 def snapshot(root):
- p=root/'演出编排.json';raw=p.read_bytes() if p.exists() else b''
+ p=root/'director.json';raw=p.read_bytes() if p.exists() else b''
  return {'revision':hashlib.sha256(raw).hexdigest(),'config':json.loads(raw.decode('utf-8-sig')) if raw else {'schema':1,'characters':{},'forms':{}}}
 def save(root,config,revision,known):
  validate(config,known)
  blobs=binaries(config)
- blobs['演出编排.json']=json.dumps(config,ensure_ascii=False,allow_nan=False,indent=2).encode('utf8')
+ blobs['director.json']=json.dumps(config,ensure_ascii=False,allow_nan=False,indent=2).encode('utf8')
  if snapshot(root)['revision']!=revision:raise ValueError('演出规则已在其他窗口修改，请刷新后重试')
  originals={name:(root/name).read_bytes() if (root/name).exists() else None for name in blobs}
- if originals['演出编排.json'] is not None:(root/'演出编排.workbench.bak').write_bytes(originals['演出编排.json'])
+ if originals['director.json'] is not None:(root/'director.workbench.bak').write_bytes(originals['director.json'])
  written=[]
  try:
   for name,blob in blobs.items():

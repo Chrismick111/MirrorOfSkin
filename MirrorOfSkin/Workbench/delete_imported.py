@@ -123,9 +123,9 @@ def _has_stage_reference(obj, identity):
 
 
 def rule_paths(root):
-    paths = [root / '自定义人格池.json', root / '演出编排.json', root / 'stage_director.json']
-    paths.extend((root / '规则集').glob('*.json'))
-    paths.extend((root / '方案').rglob('*.json'))
+    paths = [root / 'custom_pools.json', root / 'director.json', root / 'stage_director.json']
+    paths.extend((root / 'rulesets').glob('*.json'))
+    paths.extend((root / 'schemes').rglob('*.json'))
     return paths
 
 

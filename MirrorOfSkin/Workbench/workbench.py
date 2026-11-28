@@ -6,6 +6,7 @@ sys.path.insert(0, str(_HERE))
 import _module_paths
 import prepare_view
 import mos_data
+import feature_settings
 import chapter_nine
 import imported_catalog
 import chapter_cards
@@ -269,24 +270,32 @@ class Store:
    if path.is_file():return path.read_bytes()
   return local_portraits.get(self.root,self.local_portraits,identity)
  def snapshot(self):
-  p=self.root/'自定义人格池.json';data=p.read_bytes() if p.exists() else b''
+  p=self.root/'custom_pools.json';data=p.read_bytes() if p.exists() else b''
   return {'revision':hashlib.sha256(data).hexdigest(),'config':json.loads(data.decode('utf-8-sig')) if data else {'schema':1,'characters':{}}}
  def settings_snapshot(self):
-  p=self.root/'随机设置.json';data=p.read_bytes() if p.exists() else b''
+  p=self.root/'random_settings.json';data=p.read_bytes() if p.exists() else b''
   return {'revision':hashlib.sha256(data).hexdigest(),'config':json.loads(data.decode('utf-8-sig')) if data else {'enabled':True,'characters':{}}}
+ def feature_settings_snapshot(self):
+  p=self.root/feature_settings.FILE_NAME;data=p.read_bytes() if p.exists() else b''
+  return {'revision':hashlib.sha256(data).hexdigest(),'config':feature_settings.load(self.root,self.addon_root,persist=False)}
+ def save_feature_settings(self,config):
+  with self.lock:
+   settings=feature_settings.save(self.root,self.addon_root,config)
+   p=self.root/feature_settings.FILE_NAME;data=p.read_bytes() if p.exists() else b''
+   return {'revision':hashlib.sha256(data).hexdigest(),'config':settings}
  def save_pool_settings(self,target,profile,revision,known,settings=None,settings_revision=None):
   with self.lock:
    if settings is None:return self.save(target,profile,revision,known)
    if not isinstance(settings,dict) or not isinstance(settings.get('enabled'),bool) or not isinstance(settings.get('characters'),dict):raise ValueError('角色启用设置无效')
    if any(k not in {str(i) for i in range(101,113)} or not isinstance(v,bool) for k,v in settings['characters'].items()):raise ValueError('角色启用设置无效')
    if self.settings_snapshot()['revision']!=settings_revision:raise ValueError('启用设置已在其他窗口修改，请重新载入')
-   names=['自定义人格池.json','随机设置.json','停止随机运行.flag']
+   names=['custom_pools.json','random_settings.json','stop_random.flag']
    before={n:(self.root/n).read_bytes() if (self.root/n).exists() else None for n in names}
    try:
     result=self.save(target,profile,revision,known)
-    p=self.root/'随机设置.json';tmp=self.root/'随机设置.workbench.tmp'
+    p=self.root/'random_settings.json';tmp=self.root/'random_settings.workbench.tmp'
     tmp.write_text(json.dumps(settings,ensure_ascii=False,indent=2,allow_nan=False),encoding='utf8');os.replace(tmp,p)
-    flag=self.root/'停止随机运行.flag'
+    flag=self.root/'stop_random.flag'
     if settings['enabled']:flag.unlink(missing_ok=True)
     else:flag.write_bytes(b'')
     result['settings']=self.settings_snapshot();return result
@@ -313,9 +322,9 @@ class Store:
   with self.lock:
    old=self.snapshot()
    if old['revision']!=revision:raise ValueError('配置已在其他窗口更改，请重新载入后保存')
-   path=self.root/'自定义人格池.json'
-   if path.exists():(self.root/'自定义人格池.workbench.bak').write_bytes(path.read_bytes())
-   temp=self.root/'自定义人格池.workbench.tmp';temp.write_text(json.dumps(config,ensure_ascii=False,indent=2,allow_nan=False),encoding='utf8');os.replace(temp,path)
+   path=self.root/'custom_pools.json'
+   if path.exists():(self.root/'custom_pools.workbench.bak').write_bytes(path.read_bytes())
+   temp=self.root/'custom_pools.workbench.tmp';temp.write_text(json.dumps(config,ensure_ascii=False,indent=2,allow_nan=False),encoding='utf8');os.replace(temp,path)
   return self.snapshot()
  def save(self,target,profile,revision,known):
   self.validate(target,profile,known);config=self.snapshot()['config'];config['characters'][target]=profile
@@ -473,7 +482,7 @@ class Store:
   preparation=prepare_view.summarize(evidence,pid,alive,list(catalog.values()))
   addon_info=read(self.addon_root/'addon_info.json',{})
   tutorial=bool((addon_info.get('settings') or {}).get('是否展示教程',True))
-  return dict(self.snapshot(),blood_visible_ids=self.blood_visible_ids(),preparation=preparation,rulesetState=rule_state,rulesets=rule_items,activeRule=active_rule,ruleEntries=rule_entries,ruleRevision=rule_revision,settings=self.settings_snapshot(),runtime=self.runtime_status(pool_status,evidence),director=self.director_snapshot(),formAnnotations=self.form_annotations(),catalog=list(catalog.values()),chapterArt=chapter_art,chapterRevision=chapter_revision,pools=pools,forms=native_forms,warmup=read(self.root/'warmup_status.json',{}),version=addon_info.get('version','未知'),tutorial=tutorial,launcherBackground=self.launcher_background())
+  return dict(self.snapshot(),blood_visible_ids=self.blood_visible_ids(),preparation=preparation,rulesetState=rule_state,rulesets=rule_items,activeRule=active_rule,ruleEntries=rule_entries,ruleRevision=rule_revision,settings=self.settings_snapshot(),featureSettings=self.feature_settings_snapshot(),runtime=self.runtime_status(pool_status,evidence),director=self.director_snapshot(),formAnnotations=self.form_annotations(),catalog=list(catalog.values()),chapterArt=chapter_art,chapterRevision=chapter_revision,pools=pools,forms=native_forms,warmup=read(self.root/'warmup_status.json',{}),version=addon_info.get('version','未知'),tutorial=tutorial,launcherBackground=self.launcher_background())
  def known_appearances(self):
   """pool 里的外观名集合，按文件 mtime 缓存：扫描期间页面每 5 秒轮询，1.5 MB 的池文件不该重复解析。"""
   path=self.root/'Assets/runtime/all_sinners_pools.json'
@@ -711,7 +720,7 @@ def main():
    except Exception as e:return self.send({'error':str(e)},500)
   def do_POST(self):
    route=self.route()
-   if route not in ('appearance-blood','appearance-name','chapter-save','chapter-move','package-folders','save','import','local-skin-import','local-skin-import-start','local-skin-delete','director','bundle','boss-preview','update-check','update-install','portrait-save','portrait-reset','portrait-download','images-delete','ruleset-activate','ruleset-select','ruleset-save','ruleset-create','ruleset-only','ruleset-deactivate','ruleset-fill','ruleset-clear','scan','scheme-save','scheme-load','scheme-delete','scheme-import','scheme-get','effect-scheme-save','effect-scheme-get','effect-scheme-delete','effect-timelines','effect-live-start','effect-live-status','effect-plan-preview','effect-selection','effect-sprites','effect-sprites-start','effect-sprites-status','effect-sprites-cancel','effect-sprite-export','tutorial-complete','instance-shutdown','instance-attach','instance-release'):return self.send({'error':'未找到'},404)
+   if route not in ('appearance-blood','appearance-name','chapter-save','chapter-move','package-folders','save','import','local-skin-import','local-skin-import-start','local-skin-delete','director','bundle','boss-preview','update-check','update-install','portrait-save','portrait-reset','portrait-download','images-delete','ruleset-activate','ruleset-select','ruleset-save','ruleset-create','ruleset-only','ruleset-deactivate','ruleset-fill','ruleset-clear','scan','scheme-save','scheme-load','scheme-delete','scheme-import','scheme-get','feature-settings-save','effect-scheme-save','effect-scheme-get','effect-scheme-delete','effect-timelines','effect-live-start','effect-live-status','effect-plan-preview','effect-selection','effect-sprites','effect-sprites-start','effect-sprites-status','effect-sprites-cancel','effect-sprite-export','tutorial-complete','instance-shutdown','instance-attach','instance-release'):return self.send({'error':'未找到'},404)
    if self.headers.get('X-Workbench')!=token:return self.send({'error':'请求无效'},403)
    try:
     n=int(self.headers.get('Content-Length',0))
@@ -776,6 +785,10 @@ def main():
      if _PORTRAIT_THREAD is not None and _PORTRAIT_THREAD.is_alive():raise ValueError('资源检索正在进行，请结束后再删除')
      return self.send(_delete_images(store.root))
     if route=='scan':return self.send(start_scan(store.root))
+    if route=='feature-settings-save':
+     config=body.get('config')
+     if not isinstance(config,dict):raise ValueError('设置内容无效')
+     return self.send(store.save_feature_settings(config))
     if route in ('update-check','update-install'):
      import github_update
      return self.send(github_update.check(store.addon_root) if route=='update-check' else github_update.install(store.addon_root))
@@ -835,7 +848,7 @@ def main():
      if any(k not in store.form_annotations() for k in rules.get('forms',{})):raise ValueError('方案包含未确认支持的形态人格')
      with store.lock:
       if store.snapshot()['revision']!=body['revision'] or store.director_snapshot()['revision']!=body['directorRevision']:raise ValueError('配置已在其他窗口修改，请重新载入')
-      filenames=['自定义人格池.json','演出编排.json','workbench_rules.bin','workbench_forms.bin']
+      filenames=['custom_pools.json','director.json','workbench_rules.bin','workbench_forms.bin']
       before={n:(store.root/n).read_bytes() if (store.root/n).exists() else None for n in filenames}
       try:
        result=store.replace(pool,body['revision'],known)

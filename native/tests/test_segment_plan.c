@@ -13,8 +13,9 @@ static void setup(int counts[128],uint32_t ordinary[128],double donor[128][32]){
 int main(void){
  /* A new viewer within the same action must not reset the segment plan. */
  SrSegmentLatch scope={0};
- assert(sr_segment_scope(&scope,(void *)1,(void *)2,(void *)3,0)==1);
- assert(sr_segment_scope(&scope,(void *)1,(void *)4,(void *)3,0)==0);
+ assert(sr_segment_scope(&scope,(void *)1,(void *)2,(void *)3,0,0)==1);
+ assert(sr_segment_scope(&scope,(void *)1,(void *)4,(void *)3,0,0)==0);
+ assert(sr_segment_scope(&scope,(void *)1,(void *)4,(void *)3,0,1)==1);
  int counts[128];uint32_t ordinary[128];double donor[128][32];SrOrdinaryBodies bodies={0};
 
  /* A valid native request must win even when another group has fewer uses. */

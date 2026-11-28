@@ -94,7 +94,7 @@ def clean_document(doc, retired, legacy=None):
         identity = str(rule.get('identity', ''))
         group_id = 'ch9_' + identity
         rows = rule.get('entries') or []
-        if (name == '人格-' + identity + '.json' and len(rows) == 1 and
+        if (name == 'persona-' + identity + '.json' and len(rows) == 1 and
                 rows[0].get('entry_kind') == 'group' and rows[0].get('group_id') == group_id and group_id in retired):
             del files[name]
             removed.add('identity:' + identity)
@@ -128,7 +128,7 @@ def migrate(root, stage_files):
     retired = defaults(root)
     old_file = root / 'stage_director.json'
     legacy = _read(old_file)
-    for path in (root / '方案').glob('*.json'):
+    for path in (root / 'schemes').glob('*.json'):
         try:
             doc = _read(path)
             if not isinstance(doc, dict) or doc.get('schema') not in (1, 2, 3):
@@ -138,10 +138,10 @@ def migrate(root, stage_files):
             # An unreadable preset should stay available for repair without blocking game startup.
             continue
         _save_if_changed(path, doc)
-    folder = root / '规则集'
-    paths = [p for p in folder.glob('*.json') if re.fullmatch(r'全局\.json|人格-\d+\.json', p.name)]
+    folder = root / 'rulesets'
+    paths = [p for p in folder.glob('*.json') if re.fullmatch(r'global\\.json|persona-\d+\.json', p.name)]
     files = {p.name: _read(p) for p in paths}
-    state, pools = root / '规则集状态.json', root / '自定义人格池.json'
+    state, pools = root / 'ruleset_state.json', root / 'custom_pools.json'
     doc = clean_document({'pools': _read(pools), 'rulesets': {'files': files, 'state': _read(state)}}, retired, legacy)
     _save_if_changed(state, doc['rulesets']['state'])
     _save_if_changed(pools, doc['pools'])

@@ -19,8 +19,8 @@ def process_alive(pid):
     finally:kernel.CloseHandle(handle)
 
 def config_paths(root):
-    paths=[root/'随机设置.json',root/'自定义人格池.json',root/'规则集状态.json',root/'Assets/runtime/all_sinners_pools.json']
-    directory=root/'规则集'
+    paths=[root/'random_settings.json',root/'custom_pools.json',root/'ruleset_state.json',root/'Assets/runtime/all_sinners_pools.json']
+    directory=root/'rulesets'
     if directory.exists():paths.extend(sorted(directory.glob('*.json')))
     return paths
 

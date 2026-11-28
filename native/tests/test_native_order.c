@@ -7,20 +7,25 @@ static void *mock_order(void *self,int a,int b,int c,uint8_t d,void *mi){
 }
 static void test_chapter_repeated_parts(void){
  Unit *unit=&g_units[0];
- int action,next_action,part;
+ static Skin skin;
+ skin.motionCounts[9]=3;
+ int action,next_action,part,detail;
  for(int coin=0;coin<3;coin++){
-  part=0;
-  assert(chapter_replay_avoid(unit,&action,coin,9,&part,3,0)==(coin!=0));
+  part=0;detail=9;
+  assert(chapter_replay_avoid(unit,&skin,&action,coin,&detail,&part,3,0)==(coin!=0));
   assert(part==coin);
-  part=0;
-  assert(chapter_replay_avoid(unit,&action,coin,9,&part,3,0)==(coin!=0));
+  part=0;detail=9;
+  assert(chapter_replay_avoid(unit,&skin,&action,coin,&detail,&part,3,0)==(coin!=0));
   assert(part==coin);
  }
- part=0;
- assert(!chapter_replay_avoid(unit,&action,3,9,&part,3,1)&&part==0);
- assert(!chapter_replay_avoid(unit,&action,3,8,&part,3,0)&&part==0);
- assert(!chapter_replay_avoid(unit,&next_action,1,9,&part,3,0)&&part==0);
- assert(!chapter_replay_avoid(unit,&next_action,2,0,&part,3,0)&&part==0);
+ part=0;detail=9;
+ assert(!chapter_replay_avoid(unit,&skin,&action,3,&detail,&part,3,1)&&part==0);
+ detail=8;
+ assert(!chapter_replay_avoid(unit,&skin,&action,3,&detail,&part,3,0)&&part==0);
+ detail=9;
+ assert(!chapter_replay_avoid(unit,&skin,&next_action,1,&detail,&part,3,0)&&part==0);
+ detail=0;
+ assert(!chapter_replay_avoid(unit,&skin,&next_action,2,&detail,&part,3,0)&&part==0);
 }
 int main(void){
  test_chapter_repeated_parts();

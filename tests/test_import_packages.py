@@ -177,7 +177,7 @@ class ImportPackageTest(unittest.TestCase):
         first, old = self.dialogue_record('a', '11116', b'\0\1')
         second, same = self.dialogue_record('b', '10316', b'\0\1')
         self.assertEqual(old, same)
-        rows = self.convert('双人.zip', first, second, framepack_dialogue=True)
+        rows = self.convert('duo.zip', first, second, framepack_dialogue=True)
         folder = Path(rows[0]['package_directory'])
         first_id, second_id = (row['identity_id'] for row in rows)
         identities = (first_id, second_id)
@@ -193,14 +193,14 @@ class ImportPackageTest(unittest.TestCase):
         self.assertEqual(reopen(), [both, both])
         (folder / old).unlink()
         self.assertEqual(reopen(), [{'voice': 'found', 'bubble': 'connected'}] * 2)
-        self.convert('双人.zip', first, second, framepack_dialogue=True)
+        self.convert('duo.zip', first, second, framepack_dialogue=True)
         self.assertEqual(reopen(), [both, both])
         native.write_bytes(b'older core')
         self.assertEqual(reopen(), [{'voice': 'found', 'bubble': 'found'}] * 2)
         native.write_bytes(b'fixture core')
 
         changed, new = self.dialogue_record('a', '11116', b'\0\2')
-        [updated] = self.convert('双人.zip', changed, framepack_dialogue=True)
+        [updated] = self.convert('duo.zip', changed, framepack_dialogue=True)
         self.assertEqual(updated['status'], 'updated')
         self.assertEqual({path.name for path in folder.glob('*.wav')}, {old, new})
         delete_identity(self.data, self.addon, second_id, lock_factory=skin_import.FileLock)
@@ -208,7 +208,7 @@ class ImportPackageTest(unittest.TestCase):
         self.assertFalse((folder / (second['look'] + '.voice.tsv')).exists())
         self.assertTrue((folder / new).is_file())
 
-        [updated] = self.convert('双人.zip', first, framepack_dialogue=True)
+        [updated] = self.convert('duo.zip', first, framepack_dialogue=True)
         self.assertEqual(updated['status'], 'updated')
         self.assertEqual({path.name for path in folder.glob('*.wav')}, {old})
         delete_identity(self.data, self.addon, first_id, lock_factory=skin_import.FileLock)
@@ -217,7 +217,7 @@ class ImportPackageTest(unittest.TestCase):
 
     def test_framepack_dialogue_failure_restores_previous_manifest(self):
         old, wav_before = self.dialogue_record('a', '11116', b'\0\1')
-        [row] = self.convert('重导.zip', old, framepack_dialogue=True)
+        [row] = self.convert('reimport.zip', old, framepack_dialogue=True)
         folder = Path(row['package_directory'])
         sidecar = folder / (old['look'] + '.voice.tsv')
         before = sidecar.read_bytes()
@@ -231,14 +231,14 @@ class ImportPackageTest(unittest.TestCase):
 
         with patch.object(skin_import, 'write_atomic', side_effect=fail_sidecar):
             with self.assertRaisesRegex(OSError, 'simulated sidecar failure'):
-                self.convert('重导.zip', new, framepack_dialogue=True)
+                self.convert('reimport.zip', new, framepack_dialogue=True)
         self.assertEqual(sidecar.read_bytes(), before)
         self.assertTrue((folder / wav_before).is_file())
         self.assertFalse((folder / wav_after).exists())
 
     def test_folder_keeps_real_models_and_multiple_stable_identities(self):
-        rows = self.convert('测试压缩包.zip', record('a'), record('b'))
-        expected = self.addon / '外来外观' / '测试压缩包'
+        rows = self.convert('test-archive.zip', record('a'), record('b'))
+        expected = self.addon / 'imported-appearance' / 'test-archive'
         self.assertEqual([Path(row['package_directory']) for row in rows], [expected] * 2)
         self.assertEqual(len(list(expected.glob('*.bundle'))), 1)
         self.assertFalse(list((self.data / skin_import.LOCAL).glob('*.bundle')))
@@ -246,16 +246,16 @@ class ImportPackageTest(unittest.TestCase):
             locator = import_packages.locator_path(self.data, row['identity_id'])
             target = self.addon / locator.read_text('utf-8')
             self.assertEqual(target.read_bytes(), b'textured model')
-        rows = self.convert('测试压缩包.zip', record('a'), record('b'))
+        rows = self.convert('test-archive.zip', record('a'), record('b'))
         self.assertEqual([row['status'] for row in rows], ['existing', 'existing'])
         self.assertEqual(len(import_packages.read_index(self.data)['packages']), 1)
 
     def test_unrelated_same_name_and_known_asset_update(self):
-        a, = self.convert('同名.zip', record('a', b'a'))
-        b, = self.convert('同名.zip', record('b', b'b'))
-        self.assertEqual(Path(a['package_directory']).name, '同名')
-        self.assertEqual(Path(b['package_directory']).name, '同名 (2)')
-        updated, = self.convert('同名.zip', record('a', b'c'))
+        a, = self.convert('samename.zip', record('a', b'a'))
+        b, = self.convert('samename.zip', record('b', b'b'))
+        self.assertEqual(Path(a['package_directory']).name, 'samename')
+        self.assertEqual(Path(b['package_directory']).name, 'samename (2)')
+        updated, = self.convert('samename.zip', record('a', b'c'))
         self.assertEqual(updated['status'], 'updated')
         self.assertEqual(a['package_directory'], updated['package_directory'])
         locator = import_packages.locator_path(self.data, updated['identity_id'])
@@ -263,28 +263,28 @@ class ImportPackageTest(unittest.TestCase):
         self.assertEqual(len(list(Path(a['package_directory']).glob('*.bundle'))), 1)
 
     def test_update_keeps_shared_revision_and_does_not_transfer_ownership(self):
-        a, _ = self.convert('同一包.zip', record('a'), record('b'))
-        self.convert('同一包.zip', record('a', b'revised'))
+        a, _ = self.convert('same-package.zip', record('a'), record('b'))
+        self.convert('same-package.zip', record('a', b'revised'))
         self.assertEqual(len(list(Path(a['package_directory']).glob('*.bundle'))), 2)
         with self.assertRaisesRegex(ValueError, '已归属'):
-            self.convert('意外重名.zip', record('b'))
+            self.convert('accidental-rename.zip', record('b'))
         self.assertEqual(len(import_packages.read_index(self.data)['packages']), 1)
 
     def test_failed_new_import_leaves_no_registered_folder(self):
         with patch.object(skin_import, 'write_atomic', side_effect=OSError('simulated disk error')):
             with self.assertRaisesRegex(OSError, 'simulated disk error'):
-                self.convert('失败.zip', record('a'))
+                self.convert('failure.zip', record('a'))
         parent = import_packages.managed_root(self.addon)
-        self.assertFalse((parent / '失败').exists())
+        self.assertFalse((parent / 'failure').exists())
         self.assertEqual(import_packages.read_index(self.data)['packages'], [])
 
     def test_reinstall_preserves_catalog_and_can_restore_one_of_two_identities(self):
-        first, second = self.convert('一个包.zip', record('a'), record('b'))
+        first, second = self.convert('one-package.zip', record('a'), record('b'))
         catalog = self.data / skin_import.CATALOG
         snapshot = json.loads(catalog.read_bytes())
         snapshot['101']['entries'][0].update(enabled=False, weight=37)
         catalog.write_bytes(skin_import.encode(snapshot))
-        rules = self.data / '自定义人格池.json'
+        rules = self.data / 'custom_pools.json'
         rules.write_bytes(skin_import.encode({'entries': [{'identity_id': second['identity_id']}]}))
         old_library = import_packages.read_library(self.addon)
         managed = import_packages.managed_root(self.addon)
@@ -298,8 +298,8 @@ class ImportPackageTest(unittest.TestCase):
         self.assertEqual(import_packages.read_index(self.data)['packages'][0]['missing_identities'],
                          sorted([first['identity_id'], second['identity_id']]))
 
-        self.convert('新包.zip', record('c'))
-        restored, = self.convert('一个包.zip', record('a'))
+        self.convert('new-package.zip', record('c'))
+        restored, = self.convert('one-package.zip', record('a'))
         self.assertEqual(restored['status'], 'updated')
         self.assertFalse(synchronize(self.data, self.addon)['removed'])
         package = import_packages.read_index(self.data)['packages'][0]
@@ -315,24 +315,24 @@ class ImportPackageTest(unittest.TestCase):
         (model.parent / import_packages.MARKER).unlink()
         model.parent.rmdir()
         self.assertEqual(synchronize(self.data, self.addon)['removed'],
-                         [{'directory': '一个包', 'identities': [first['identity_id']]}])
+                         [{'directory': 'one-package', 'identities': [first['identity_id']]}])
         package = import_packages.read_index(self.data)['packages'][0]
         self.assertEqual(package['identities'], [second['identity_id']])
         self.assertTrue(import_packages.locator_path(self.data, second['identity_id']).exists())
         self.assertEqual(json.loads(rules.read_bytes())['entries'], [{'identity_id': second['identity_id']}])
 
     def test_reinstall_retry_and_returning_old_library(self):
-        old, = self.convert('旧包.zip', record('a'))
+        old, = self.convert('old-package.zip', record('a'))
         old_library = import_packages.read_library(self.addon)
         managed = import_packages.managed_root(self.addon)
         backup = managed.rename(self.addon / 'old-library')
         with patch.object(skin_import, 'write_atomic', side_effect=OSError('simulated disk error')):
             with self.assertRaisesRegex(OSError, 'simulated disk error'):
-                self.convert('旧包.zip', record('a'))
+                self.convert('old-package.zip', record('a'))
         packages = import_packages.read_index(self.data)['packages']
         self.assertEqual(packages[0]['missing_identities'], [old['identity_id']])
         self.assertFalse((managed / packages[0]['directory']).exists())
-        self.convert('新包.zip', record('b'))
+        self.convert('new-package.zip', record('b'))
         current = managed.rename(self.addon / 'new-library')
         backup.rename(managed)
         result = synchronize(self.data, self.addon)
@@ -349,7 +349,7 @@ class ImportPackageTest(unittest.TestCase):
         self.assertNotIn('missing_identities', packages[1])
 
     def test_rebuild_retry_resumes_after_index_is_written(self):
-        imported, = self.convert('一个包.zip', record('a'))
+        imported, = self.convert('one-package.zip', record('a'))
         managed = import_packages.managed_root(self.addon)
         managed.rename(self.addon / 'old-library')
         with patch.object(import_packages, '_write_marker', side_effect=OSError('simulated marker error')):
@@ -362,7 +362,7 @@ class ImportPackageTest(unittest.TestCase):
         self.assertEqual(import_packages.read_library(self.addon), interrupted['library'])
         self.assertNotIn('creating_library', import_packages.read_index(self.data))
 
-        self.convert('一个包.zip', record('a'))
+        self.convert('one-package.zip', record('a'))
         old_library = import_packages.read_library(self.addon)
         managed.rename(self.addon / 'second-library')
         self.assertFalse(synchronize(self.data, self.addon)['removed'])
@@ -371,7 +371,7 @@ class ImportPackageTest(unittest.TestCase):
         self.assertEqual(package['missing_identities'], [imported['identity_id']])
 
     def test_restored_index_can_adopt_library_initialized_before_restore(self):
-        imported, = self.convert('一个包.zip', record('a'))
+        imported, = self.convert('one-package.zip', record('a'))
         managed = import_packages.managed_root(self.addon)
         managed.rename(self.addon / 'old-library')
         fresh_profile = self.base / 'fresh-profile'
@@ -386,11 +386,11 @@ class ImportPackageTest(unittest.TestCase):
         self.assertEqual(index['library'], fresh_library)
         self.assertEqual(index['packages'][0]['missing_identities'], [imported['identity_id']])
         self.assertEqual(marker.read_bytes(), before)
-        restored, = self.convert('一个包.zip', record('a'))
+        restored, = self.convert('one-package.zip', record('a'))
         self.assertEqual(restored['status'], 'updated')
 
     def test_fresh_profile_can_use_an_existing_marked_library(self):
-        imported, = self.convert('已安装包.zip', record('a'))
+        imported, = self.convert('installed-package.zip', record('a'))
         observed = import_packages.read_library(self.addon)
         model = Path(imported['package_directory'])
         fresh_profile = self.base / 'fresh-profile'
@@ -401,7 +401,7 @@ class ImportPackageTest(unittest.TestCase):
         self.assertEqual(len(list(model.glob('*.bundle'))), 1)
 
     def test_nonempty_library_replacement_keeps_other_installation_identity(self):
-        self.convert('一个包.zip', record('a'))
+        self.convert('one-package.zip', record('a'))
         managed = import_packages.managed_root(self.addon)
         self.assertEqual(import_packages.read_library(self.addon),
                          import_packages.read_index(self.data)['library'])
@@ -410,7 +410,7 @@ class ImportPackageTest(unittest.TestCase):
         (managed / 'untouched.txt').write_bytes(b'unrelated')
         self.assertIsNone(import_packages.read_library(self.addon))
         with self.assertRaisesRegex(ValueError, '不匹配'):
-            self.convert('新建.zip', record('b'))
+            self.convert('new.zip', record('b'))
         self.assertEqual(list(managed.iterdir()), [managed / 'untouched.txt'])
         marker = managed / import_packages.LIBRARY_MARKER
         marker.write_bytes(import_packages.encode_index({'id': 'e' * 32}))
@@ -454,7 +454,7 @@ class ImportPackageTest(unittest.TestCase):
         self.assertEqual((folder / 'BRoland.bundle').read_bytes(), b'model')
         self.assertFalse((resources / 'BRoland.bundle').exists())
         self.assertEqual(import_packages.locator_path(self.data, import_packages.BUILTIN).read_text('utf8'),
-                         '外来外观/RolandBundle/BRoland.bundle')
+                         'imported-appearance/RolandBundle/BRoland.bundle')
         sidecar = folder / 'BRolandBaseAppearance.skill-ui.tsv'
         self.assertIn('作者的招式', sidecar.read_text(encoding='utf8'))
         [portrait] = icon_names(sidecar)

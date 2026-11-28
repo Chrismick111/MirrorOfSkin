@@ -19,17 +19,65 @@ def imported_config_shape(lines):
 
 # Files that live directly in MOS_data instead of the add-on directory.
 ROOT_FILES = (
-    '随机设置.json', '自定义人格池.json', '演出编排.json', '规则集状态.json',
-    '停止随机运行.flag',
+    'random_settings.json', 'custom_pools.json', 'director.json', 'ruleset_state.json',
+    'settings.json', 'native_ui.bin',
+    'stop_random.flag',
     'native_pools.bin', 'native_forms.json', 'native_stage_groups.bin', BLOOD_VISIBILITY_FILE,
     'pool_update_status.json', 'warmup_status.json', 'probe_asset.txt',
     'auto_forms.bin', 'auto_form_annotations.json', 'auto_internal_forms.jsonl',
     'auto_registry.json', 'identity_catalog.json', 'workbench_rules.bin',
-    'workbench_forms.bin', 'fx-active.bin', '特效启用状态.json',
-    'native.log', 'native_runtime.log', '诊断日志.txt', '诊断日志-上一份.txt',
+    'workbench_forms.bin', 'fx-active.bin', 'fx_active.json',
+    'native.log', 'native_runtime.log', 'diagnostic_log.txt', 'diagnostic_log-previous.txt',
     'stage_director.json',
 )
-ROOT_DIRS = ('规则集', '方案', '特效方案')
+ROOT_DIRS = ('rulesets', 'schemes', 'fx-schemes')
+# Older builds used Chinese file and folder names.  They are renamed in place
+# on first access so an upgrade keeps every existing setting and schedule.
+LEGACY_RENAMES = (
+    ('随机设置.json', 'random_settings.json'),
+    ('自定义人格池.json', 'custom_pools.json'),
+    ('演出编排.json', 'director.json'),
+    ('规则集状态.json', 'ruleset_state.json'),
+    ('停止随机运行.flag', 'stop_random.flag'),
+    ('特效启用状态.json', 'fx_active.json'),
+    ('诊断日志-上一份.txt', 'diagnostic_log-previous.txt'),
+    ('诊断日志.txt', 'diagnostic_log.txt'),
+    ('规则集', 'rulesets'),
+    ('方案', 'schemes'),
+    ('特效方案', 'fx-schemes'),
+    ('rulesets/全局.json', 'rulesets/global.json'),
+    ('Assets/Roland/出处.txt', 'Assets/Roland/source.txt'),
+    ('Assets/Roland/原作者声明.txt', 'Assets/Roland/author-notice.txt'),
+)
+LEGACY_PERSONA_PREFIX = '人格-'
+PERSONA_PREFIX = 'persona-'
+
+
+def migrate_legacy_names(root):
+    """Rename data written by older builds; never overwrite a newer file."""
+    root = pathlib.Path(root)
+    moved = []
+    for old, new in LEGACY_RENAMES:
+        source, target = root / old, root / new
+        if not source.exists() or target.exists():
+            continue
+        try:
+            source.replace(target)
+            moved.append((old, new))
+        except OSError:
+            continue
+    folder = root / 'rulesets'
+    if folder.is_dir():
+        for source in sorted(folder.glob(LEGACY_PERSONA_PREFIX + '*.json')):
+            target = source.with_name(PERSONA_PREFIX + source.name[len(LEGACY_PERSONA_PREFIX):])
+            if target.exists():
+                continue
+            try:
+                source.replace(target)
+                moved.append((source.name, target.name))
+            except OSError:
+                continue
+    return moved
 WORKBENCH_FILES = (
     'portrait_manifest.json', 'portrait_hashes.json', 'weekly_scan_status.json',
     'weekly_scan.lock', 'auto_translation_cache.json', 'scan_progress.json',
@@ -53,6 +101,7 @@ def data_dir(create=True):
         root = pathlib.Path(override).resolve()
         if create:
             root.mkdir(parents=True, exist_ok=True)
+            migrate_legacy_names(root)
         return root
     try:
         from functions.base.common import get_launcher_data_dir
@@ -61,6 +110,8 @@ def data_dir(create=True):
         path = pathlib.Path(_fallback_appdata()) / LAUNCHER_NAME / DATA_NAME
         if create:
             path.mkdir(parents=True, exist_ok=True)
+    if create:
+        migrate_legacy_names(path)
     return path
 
 
@@ -326,6 +377,19 @@ def _prepare_assets(addon, data):
         os.replace(temp, stamp)
 
 
+def _migrate_import_names(addon, data):
+    """Rename the legacy Chinese import folder and repair its ``.loc`` files."""
+    try:
+        import importlib.util
+        path = pathlib.Path(addon) / 'Workbench' / 'import_packages.py'
+        spec = importlib.util.spec_from_file_location('_sinners_import_packages', path)
+        module = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(module)
+        module.migrate_legacy(addon, data)
+    except Exception:
+        pass
+
+
 def prepare(addon_root):
     """Migrate legacy user files once, then return the MOS_data root."""
     addon = pathlib.Path(addon_root).resolve()
@@ -333,6 +397,7 @@ def prepare(addon_root):
     if data.resolve() == addon:
         raise ValueError('工作台数据目录必须与插件安装目录分开')
     data.mkdir(parents=True, exist_ok=True)
+    _migrate_import_names(addon, data)
     (data / 'Workbench').mkdir(parents=True, exist_ok=True)
     _prepare_assets(addon, data)
     _prepare_workbench_tables(addon, data)

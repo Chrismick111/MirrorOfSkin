@@ -161,7 +161,7 @@ def verify(candidate, archives, game, index, upgrade_from=None, rebuilt_models=F
                             prior_weights[identity] = entry['weight']
                 pool_path.write_text(json.dumps(pools, ensure_ascii=False), encoding='utf8')
         if candidate.is_dir():
-            shutil.copytree(candidate, addon, dirs_exist_ok=True, ignore=shutil.ignore_patterns('__pycache__', '外来外观'))
+            shutil.copytree(candidate, addon, dirs_exist_ok=True, ignore=shutil.ignore_patterns('__pycache__', 'imported-appearance'))
         else:
             with ZipFile(candidate) as installation:
                 installation.extractall(addon.parent)
@@ -221,7 +221,7 @@ def verify(candidate, archives, game, index, upgrade_from=None, rebuilt_models=F
                     assert cfg[0] == 'WBMOD1' and cfg[1].endswith('/' + declared['private_server']['vanilla_appearance_id'] + '.prefab')
                     relative = (data / LOCAL / (look + '.loc')).read_text('utf8')
                     model = (addon / relative).resolve()
-                    assert model.is_relative_to((addon / '外来外观').resolve())
+                    assert model.is_relative_to((addon / 'imported-appearance').resolve())
                     digest = sha256(model.read_bytes()).hexdigest()
                     if prior_models:
                         if rebuilt_models:
@@ -258,7 +258,7 @@ def verify(candidate, archives, game, index, upgrade_from=None, rebuilt_models=F
                         sound_sets[identity] = sounds
                         print(label, len(sounds), 'unique WAV files and', n, 'author captions', flush=True)
                     print(row['status'], label, digest, flush=True)
-        assert len(set(addon.glob('外来外观/**/*.bundle'))) == len(snapshots)
+        assert len(set(addon.glob('imported-appearance/**/*.bundle'))) == len(snapshots)
         if prior_models:
             assert set(snapshots) == set(prior_models)
         assert not list(data.rglob('*.wav')), 'audio duplicated in roaming profile'

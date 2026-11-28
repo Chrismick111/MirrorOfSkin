@@ -5,6 +5,8 @@ from pathlib import Path
 from tempfile import TemporaryDirectory
 
 _addon = ContextVar("model_import_addon", default=None)
+CACHE_DIR = "appearance-cache"
+LEGACY_CACHE_DIR = "外观资源缓存"
 
 
 @contextmanager
@@ -25,7 +27,14 @@ def carra_base_path(profile, revision, first, second):
     addon = _addon.get()
     if addon is None:
         return legacy, legacy
-    dest = addon / "外观资源缓存" / "Carra2" / revision / first / second / "__data"
+    cache = addon / CACHE_DIR
+    old = addon / LEGACY_CACHE_DIR
+    if old.is_dir() and not cache.exists():
+        try:
+            old.rename(cache)
+        except OSError:
+            pass
+    dest = cache / "Carra2" / revision / first / second / "__data"
     if dest.resolve() != dest:
         raise ValueError("Carra2 缓存目录不能指向其他位置")
     return dest, legacy

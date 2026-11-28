@@ -160,8 +160,8 @@ Workbench/carra_import.py
 Workbench/imported_catalog.py
 Workbench/mod_archive.py
 Workbench/skin_motions.py
-导入外观.cmd
-查看本地人格池.cmd
+import-appearance.cmd
+view-local-pools.cmd
 ```
 
 第一次基于主分支重新打包前，必须重新生成兼容性哈希，否则 `package_release.py` 会直接失败。

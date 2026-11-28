@@ -330,6 +330,7 @@ static void test_names_at_displayed_level(Unit *owner){
 int main(void){
  static void *functions[128];
  api=functions;
+ sr_ui_flags=SR_UI_ALL;sr_ui_loaded=1;
  functions[API_OBJECT_CLASS]=fake_class;
  functions[API_PARENT]=fake_parent;
  functions[API_UNBOX]=fake_unbox;

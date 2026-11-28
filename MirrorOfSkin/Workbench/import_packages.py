@@ -8,7 +8,8 @@ import tempfile
 from uuid import uuid4
 
 
-DIRECTORY = '外来外观'
+DIRECTORY = 'imported-appearance'
+LEGACY_DIRECTORY = '外来外观'
 MARKER = '.mos-package.json'
 LIBRARY_MARKER = '.mos-library.json'
 BUILTIN = 'story_BRolandBaseAppearance'
@@ -42,8 +43,42 @@ def _plain_directory(path):
     )
 
 
+def migrate_legacy(addon, *roots):
+    """Rename the old Chinese import folder and repair locator prefixes.
+
+    Older builds stored imported appearances under ``外来外观/`` and wrote that
+    prefix into every ``.loc`` pointer.  Renaming the folder alone would orphan
+    those pointers, so the locator text is rewritten as well.
+    """
+    addon = Path(addon)
+    old, new = addon / LEGACY_DIRECTORY, addon / DIRECTORY
+    if _plain_directory(old) and not new.exists():
+        try:
+            old.rename(new)
+        except OSError:
+            pass
+    prefix = LEGACY_DIRECTORY + '/'
+    for base in (addon, *[Path(root) for root in roots]):
+        assets = base / 'Assets' / 'ImportedSkins'
+        if not assets.is_dir():
+            continue
+        for locator in assets.glob('*.loc'):
+            if locator.is_symlink():
+                continue
+            try:
+                text = locator.read_text(encoding='utf8')
+            except OSError:
+                continue
+            if text.startswith(prefix):
+                try:
+                    locator.write_text(DIRECTORY + text[len(LEGACY_DIRECTORY):], encoding='utf8')
+                except OSError:
+                    pass
+
+
 def managed_root(addon, *, create=False):
     addon = Path(addon).resolve(strict=True)
+    migrate_legacy(addon)
     path = addon / DIRECTORY
     if create:
         path.mkdir(exist_ok=True)

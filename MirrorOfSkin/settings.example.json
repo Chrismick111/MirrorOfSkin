@@ -1,0 +1,10 @@
+{
+  "version": 1,
+  "cosmetic_ui": {
+    "enabled": false,
+    "skill_name": true,
+    "skill_icon": true,
+    "portrait": true,
+    "buff": true
+  }
+}

@@ -13,7 +13,7 @@ from build_link_release import VERSION, STORY_TIMINGS
 
 archive, game = map(pathlib.Path, sys.argv[1:])
 with tempfile.TemporaryDirectory() as temp:
-    addon = pathlib.Path(temp) / 'addons' / '人格演出工作台'
+    addon = pathlib.Path(temp) / 'addons' / 'persona-workbench'
     with zipfile.ZipFile(archive) as bundle:
         bundle.extractall(addon)
     sys.path[:0] = [str(addon/'Workbench'),str(addon)]

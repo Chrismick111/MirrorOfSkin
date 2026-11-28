@@ -21,7 +21,7 @@ def prepare(root,game_dir,log,python_exe=None,timeout=600,cancelled=None):
     except OSError as exc:raise RuntimeError('无法清除旧特效快照，停止加载原生插件') from exc
     runner=addon/'Workbench/fx/fx_prepare_runner.py'
     try:
-        state_file=mos_data.path(addon,'特效启用状态.json')
+        state_file=mos_data.path(addon,'fx_active.json')
         if not state_file.is_file():log('特效方案未启用');return False
         state=json.loads(state_file.read_text(encoding='utf-8-sig'))
         if not isinstance(state,dict) or type(state.get('enabled')) is not bool or not isinstance(state.get('name'),str):raise ValueError('特效启用状态无效')
