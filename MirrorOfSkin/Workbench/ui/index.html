@@ -304,7 +304,8 @@
         article section:not(.hidden),
         .modal-backdrop:not(.hidden),
         .modal-backdrop:not(.hidden) .modal,
-        #importNotice:not([hidden]) {
+        #importNotice:not([hidden]),
+        .source-card {
           animation: none;
         }
         .modal-backdrop,
@@ -312,6 +313,8 @@
         .app-bg-image,
         .pool-card,
         #importNotice,
+        .source-card,
+        .source-action .icon,
         .import-notice-bar > i {
           transition: none;
         }
@@ -1902,6 +1905,147 @@
         flex: 0 0 auto;
         padding: 5px 10px;
       }
+      .source-modal {
+        width: min(720px, 96vw);
+      }
+      .source-lead {
+        margin: -4px 0 18px;
+        color: #b4b8c1;
+        font-size: 13px;
+        line-height: 1.6;
+      }
+      .source-grid {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 18px;
+      }
+      .source-card {
+        position: relative;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 7px;
+        min-height: 276px;
+        padding: 16px 12px;
+        border: 1px solid #3d424b;
+        border-radius: 18px;
+        background: #202329;
+        color: #e7e7e7;
+        text-align: center;
+        cursor: pointer;
+        overflow: hidden;
+      }
+      .source-card::before {
+        content: "";
+        position: absolute;
+        inset: 0;
+        z-index: 0;
+        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='18' height='18'%3E%3Ccircle cx='1.5' cy='1.5' r='1' fill='%23b4b8c1' fill-opacity='0.11'/%3E%3C/svg%3E");
+        pointer-events: none;
+      }
+      .source-card:hover,
+      .source-card:focus-visible {
+        border-color: #deb970;
+        outline: none;
+      }
+      .source-tex {
+        position: absolute;
+        right: -14px;
+        bottom: -16px;
+        z-index: 0;
+        width: 156px;
+        height: 156px;
+        color: #b4b8c1;
+        opacity: 0.06;
+        fill: none;
+        stroke: currentColor;
+        stroke-width: 1.3;
+        stroke-linecap: round;
+        stroke-linejoin: round;
+        pointer-events: none;
+      }
+      .source-card > :not(.source-tex) {
+        position: relative;
+        z-index: 1;
+      }
+      .source-card,
+      .source-card * {
+        transition: none;
+      }
+      .source-orb {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 112px;
+        height: 112px;
+        border: 2px solid #4b505a;
+        border-radius: 50%;
+        background: #292c32;
+        color: #b4b8c1;
+      }
+      .source-orb .icon {
+        width: 40px;
+        height: 40px;
+      }
+      .source-card.mod .source-orb {
+        color: #deb970;
+      }
+      .source-card strong {
+        font-size: 15px;
+        letter-spacing: 0.02em;
+      }
+      .source-desc {
+        max-width: 15em;
+        min-height: 2.8em;
+        color: #b4b8c1;
+        font-size: 12px;
+        line-height: 1.45;
+      }
+      .source-card .source-tag {
+        position: static;
+        align-self: center;
+        padding: 1px 7px;
+        border: 1px solid #4b505a;
+        border-radius: 999px;
+        color: #b4b8c1;
+        font-size: 10px;
+        letter-spacing: 0.1em;
+      }
+      .source-card.mod .source-tag {
+        border-color: #685125;
+        color: #f0d79b;
+      }
+      .source-action {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 6px;
+        margin-top: auto;
+        padding: 7px 16px;
+        border: 1px solid #4b505a;
+        border-radius: 999px;
+        color: #d6c29a;
+        font-size: 12px;
+        letter-spacing: 0.06em;
+      }
+      .source-card:hover .source-action,
+      .source-card:focus-visible .source-action {
+        border-color: #deb970;
+        color: #f0d79b;
+      }
+      .source-action .icon {
+        width: 13px;
+        height: 13px;
+        rotate: 90deg;
+      }
+      @media (max-width: 680px) {
+        .source-grid {
+          grid-template-columns: 1fr;
+        }
+        .source-card {
+          min-height: 0;
+        }
+      }
       .identity-modal {
         width: min(920px, 96vw);
         max-height: calc(100vh - 40px);
@@ -2669,6 +2813,75 @@
       </div>
       <div class="progress-track">
         <div id="portraitMiniBar" class="progress-bar"></div>
+      </div>
+    </div>
+    <div
+      id="poolSourceModal"
+      class="modal-backdrop hidden"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="poolSourceTitle"
+    >
+      <div class="modal source-modal">
+        <div class="modal-title">
+          <h2 id="poolSourceTitle">
+            <svg class="icon" aria-hidden="true">
+              <use href="#i-plus"></use>
+            </svg>
+            添加人格
+          </h2>
+          <button
+            id="poolSourceClose"
+            class="icon-btn"
+            aria-label="关闭"
+            title="关闭"
+          >
+            <svg class="icon" aria-hidden="true">
+              <use href="#i-close"></use>
+            </svg>
+          </button>
+        </div>
+        <p class="source-lead">先选择角色来源，再挑选要加入当前池的人格。</p>
+        <div class="source-grid">
+          <button type="button" class="source-card" data-source="native">
+            <span class="source-tag">GAME</span>
+            <svg class="source-tex" aria-hidden="true">
+              <use href="#i-users"></use>
+            </svg>
+            <span class="source-orb">
+              <svg class="icon" aria-hidden="true">
+                <use href="#i-users"></use>
+              </svg>
+            </span>
+            <strong>原版角色</strong>
+            <span class="source-desc">包含全部游戏内出现过的角色</span>
+            <span class="source-action">
+              浏览游戏角色
+              <svg class="icon" aria-hidden="true">
+                <use href="#i-arrow-up"></use>
+              </svg>
+            </span>
+          </button>
+          <button type="button" class="source-card mod" data-source="imported">
+            <span class="source-tag">MOD</span>
+            <svg class="source-tex" aria-hidden="true">
+              <use href="#i-skin-import"></use>
+            </svg>
+            <span class="source-orb">
+              <svg class="icon" aria-hidden="true">
+                <use href="#i-skin-import"></use>
+              </svg>
+            </span>
+            <strong>Mod 角色</strong>
+            <span class="source-desc">私服 bundle 导入的视觉效果角色</span>
+            <span class="source-action">
+              查看已导入角色
+              <svg class="icon" aria-hidden="true">
+                <use href="#i-arrow-up"></use>
+              </svg>
+            </span>
+          </button>
+        </div>
       </div>
     </div>
     <div
@@ -3766,14 +3979,14 @@
           try {
             await api("ruleset-clear", { rule });
             await refresh();
-            openIdentityModal();
+            openPoolSourceModal();
             status("已恢复编辑");
           } catch (error) {
             status(error.message);
           }
           return;
         }
-        openIdentityModal();
+        openPoolSourceModal();
       }
       $("#poolGrid").addEventListener("click", (event) => {
         if (event.target.closest(".pool-add")) handlePoolAdd();
@@ -4306,6 +4519,31 @@
       function closeImportedModal() {
         hideModal("#importedModal");
       }
+      function openPoolSourceModal() {
+        showModal("#poolSourceModal");
+        requestAnimationFrame(() => {
+          const first = $("#poolSourceModal .source-card");
+          if (first) first.focus({ preventScroll: true });
+        });
+      }
+      function closePoolSourceModal() {
+        hideModal("#poolSourceModal");
+      }
+      function choosePoolSource(source) {
+        closePoolSourceModal();
+        setTimeout(() => {
+          if (source === "imported") openImportedModal();
+          else openIdentityModal();
+        }, 160);
+      }
+      $("#poolSourceClose").onclick = () => closePoolSourceModal();
+      $("#poolSourceModal").onclick = (event) => {
+        if (event.target.id === "poolSourceModal") closePoolSourceModal();
+      };
+      $("#poolSourceModal").addEventListener("click", (event) => {
+        const card = event.target.closest(".source-card");
+        if (card) choosePoolSource(card.dataset.source);
+      });
       function addIdentity(id) {
         if (data.activeRule?.kind === "global" && data.activeRule.locked) {
           status("纯随机默认池不可编辑，请右键清空");
@@ -4450,6 +4688,7 @@
         const active = p.stage === "picking" || p.stage === "importing";
         const notice = $("#importNotice");
         clearTimeout(importNoticeTimer);
+        clearImportAutoClose();
         notice.classList.remove("closing");
         notice.hidden = false;
         notice.dataset.stage = p.stage || "";
@@ -4475,10 +4714,20 @@
         [$("#importLocalSkin"), $("#headerImportLocalSkin")].forEach(b => b.disabled = active);
       }
       let importNoticeTimer = null;
+      let importNoticeAutoTimer = null;
+      function clearImportAutoClose() {
+        clearTimeout(importNoticeAutoTimer);
+        importNoticeAutoTimer = null;
+      }
+      function scheduleImportAutoClose(delay) {
+        clearImportAutoClose();
+        importNoticeAutoTimer = setTimeout(closeImport, delay);
+      }
       function closeImport() {
         const notice = $("#importNotice");
         if (!notice || notice.hidden || notice.classList.contains("closing")) return;
         clearTimeout(importNoticeTimer);
+        clearImportAutoClose();
         notice.classList.add("closing");
         importNoticeTimer = setTimeout(() => {
           notice.hidden = true;
@@ -4486,6 +4735,21 @@
         }, 180);
       }
       $("#importClose").onclick = closeImport;
+      $("#importNotice").addEventListener("pointerenter", clearImportAutoClose);
+      $("#importNotice").addEventListener("pointerleave", () => {
+        const notice = $("#importNotice");
+        if (notice.hidden || $("#importDetails").open) return;
+        if (notice.dataset.stage === "done") scheduleImportAutoClose(3000);
+        else if (notice.dataset.stage === "error") scheduleImportAutoClose(6000);
+      });
+      $("#importDetails").addEventListener("toggle", () => {
+        const notice = $("#importNotice");
+        if ($("#importDetails").open) {
+          clearImportAutoClose();
+        } else if (!notice.hidden && (notice.dataset.stage === "done" || notice.dataset.stage === "error")) {
+          scheduleImportAutoClose(3000);
+        }
+      });
       function importResult(p, refreshWarning = "") {
         const rows = Array.isArray(p.rows) ? p.rows : [];
         const errors = Array.isArray(p.errors) ? p.errors : [];
@@ -4551,6 +4815,7 @@
           $("#importNoticeText").textContent = summary;
           $("#importDetailsText").textContent = text;
           $("#importDetails").hidden = false;
+          scheduleImportAutoClose(p.stage === "error" ? 10000 : 5000);
           status(summary);
         } catch (error) { showImport({stage:"error",message:"导入失败：" + error.message}); status("导入失败：" + error.message); }
         finally { importBusy = false; }
