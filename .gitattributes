@@ -1,0 +1,2 @@
+# Release files are hashed byte for byte; never rewrite line endings on checkout.
+* -text
