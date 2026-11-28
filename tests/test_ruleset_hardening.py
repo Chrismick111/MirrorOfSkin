@@ -45,9 +45,9 @@ class RulesetHardeningTest(unittest.TestCase):
             'kind': kind, 'sinner': sinner, 'identity': identity,
         }
 
-    def test_empty_identity_ruleset_cannot_be_activated(self):
-        with self.assertRaisesRegex(ValueError, '没有可用的外观候选'):
-            rulesets.activate(self.root, self.rule())
+    def test_empty_identity_ruleset_can_be_activated(self):
+        rulesets.activate(self.root, self.rule())
+        self.assertEqual(rulesets.state(self.root)['active']['101'], 'identity:10117')
 
     def test_fill_default_rejects_empty_pool(self):
         with self.assertRaisesRegex(ValueError, '没有可填入的默认外观候选'):
@@ -58,16 +58,16 @@ class RulesetHardeningTest(unittest.TestCase):
         data = rulesets.create_identity(self.root, '102', '10201', known)
         self.assertEqual(data['entries'], [])
         self.assertEqual(rulesets.entries(self.root, self.rule('identity', '102', '10201')), [])
-        with self.assertRaisesRegex(ValueError, '没有可用的外观候选'):
-            rulesets.activate(self.root, self.rule('identity', '102', '10201'))
+        rulesets.activate(self.root, self.rule('identity', '102', '10201'))
+        self.assertEqual(rulesets.state(self.root)['active']['102'], 'identity:10201')
 
     def test_sinner_mode_without_custom_pool_still_activates(self):
         rulesets.activate(self.root, self.rule('sinner'))
         self.assertEqual(rulesets.state(self.root)['active']['101'], 'sinner')
 
-    def test_only_downgrades_a_broken_identity_to_sinner(self):
+    def test_only_keeps_existing_identity_even_when_empty(self):
         rulesets.only(self.root, self.rule())
-        self.assertEqual(rulesets.state(self.root)['active']['101'], 'sinner')
+        self.assertEqual(rulesets.state(self.root)['active']['101'], 'identity:10117')
 
     def test_fill_default_populates_positive_candidates(self):
         entries = rulesets.fill_default(self.root, self.rule())

@@ -214,9 +214,9 @@ def entries(root, rule, pool_data=None):
 def effective_entries(root, rule, pool_data=None):
     """Return only entries the native pool builder can actually resolve.
 
-    An empty rule set is valid JSON, so it used to be activated silently and
-    left the game with zero candidates. Every activation/creation path uses
-    this check to fail loudly instead of disabling all appearance replacement.
+    Empty rule sets are allowed to be activated. The native pool builder now
+    falls back to default candidates when an active rule set resolves to no
+    rows, so this helper is only used by diagnostics and import validation.
     """
     root = pathlib.Path(root)
     if pool_data is None:
@@ -365,8 +365,6 @@ def activate(root, rule):
     root = pathlib.Path(root)
     if not rule:
         raise ValueError('未选择规则集')
-    if not effective_entries(root, rule):
-        raise ValueError('该规则集没有可用的外观候选，已拒绝启用；请先点击“填入默认全随机”。')
     st = state(root)
     kind, sinner, identity = rule.get('kind'), rule.get('sinner'), rule.get('identity')
     cfg = settings(root)
@@ -446,10 +444,6 @@ def only(root, rule):
     current = st['active'].get(sinner, 'none')
     if current == 'none':
         current = 'sinner'
-    if current.startswith('identity:'):
-        identity = current.split(':', 1)[1]
-        if not effective_entries(root, {'kind': 'identity', 'sinner': sinner, 'identity': identity}):
-            current = 'sinner'
     st['global'] = False
     st['active'] = {sinner: current}
     st['selected'] = {'id': rule.get('id'), 'kind': rule.get('kind'), 'sinner': rule.get('sinner'), 'identity': rule.get('identity')}
