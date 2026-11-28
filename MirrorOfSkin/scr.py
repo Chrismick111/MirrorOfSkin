@@ -955,6 +955,31 @@ def _start_weekly():
     _weekly_thread.start()
 
 
+def _auto_open_panel_for_game(pid):
+    """Open the panel once per game process, not on every plugin reload.
+
+    MANAGER survives plugin reloads, so its marker distinguishes a real game
+    launch from scr.py being re-executed while the same game is already running.
+    """
+    if not pid:
+        return
+    try:
+        if not addon_settings().get('是否自动打开调整面板', True):
+            return
+    except Exception:
+        log('panel setting read failed: ' + traceback.format_exc())
+        return
+    marker = getattr(MANAGER, '_sinners_autopanel_pid', None)
+    if marker == pid:
+        return
+    MANAGER._sinners_autopanel_pid = pid
+    try:
+        threading.Thread(target=open_workbench, name='SinnersWorkbenchOpen', daemon=True).start()
+        log('workbench opening in background')
+    except Exception:
+        log('workbench open failed: ' + traceback.format_exc())
+
+
 def _workbench_game_changed(pid):
     global _GAME_STATE
     epoch, previous = _GAME_STATE
@@ -963,6 +988,9 @@ def _workbench_game_changed(pid):
         _WEEKLY_STOP.set()
     if pid and _WEEKLY_STOP.is_set():
         _start_weekly()
+    _auto_open_panel_for_game(pid)
+    if not pid and getattr(MANAGER, '_sinners_autopanel_pid', None) is not None:
+        MANAGER._sinners_autopanel_pid = None
     threading.Thread(target=_sync_panel, name='SinnersPanelSession', daemon=True).start()
 
 
@@ -1256,14 +1284,8 @@ except Exception:
     log('diagnostic logger failed: '+traceback.format_exc())
 log('Sinners Native host loaded; protocol '+str(VERSION))
 
-try:
-    if addon_settings().get('是否自动打开调整面板', True):
-        threading.Thread(target=open_workbench, name='SinnersWorkbenchOpen', daemon=True).start()
-        log('workbench opening in background')
-    else:
-        log('自动打开调整面板已关闭；可从启动器托盘打开调整菜单')
-except Exception:
-    log('workbench open failed: '+traceback.format_exc())
+# The panel is opened once when a new game process is detected. Plugin reload
+# no longer reopens it; the launcher run entry (▶ button) can open it manually.
 # Enabled plugin owns weekly discovery; opening a separate workbench does not.
 try:
     import importlib.util as _weekly_import
