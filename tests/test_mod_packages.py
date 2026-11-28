@@ -82,6 +82,14 @@ class ModPackageTest(unittest.TestCase):
         self.assertIn('MOS', items['broken']['error'])
         self.assertEqual(items['traversal']['status'], 'invalid')
 
+    def test_requires_accepts_the_addon_display_name(self):
+        (self.addon / mod_packages.ADDON_INFO).write_text(
+            json.dumps({'name': '镜像幻化'}, ensure_ascii=False), encoding='utf-8')
+        self.package('roland', info={'requires': ['镜像幻化']})
+        self.assertEqual(mod_packages.find(self.addon, 'roland')['status'], 'ready')
+        self.package('broken', info={'requires': ['WarpHook']})
+        self.assertEqual(mod_packages.find(self.addon, 'broken')['status'], 'invalid')
+
     def test_find_and_icon_are_confined_to_the_scanned_package(self):
         folder = self.package('roland')
         self.assertIsNotNone(mod_packages.find(self.addon, 'roland'))

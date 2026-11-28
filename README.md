@@ -74,7 +74,7 @@
 | `icon.png` | 包卡片图标；未声明 `identity` 时也作为该包唯一产出外观的头像。 |
 | `bundles/*.bundle` | 实际导入的模型文件，必须在 `mos-mod.json` 中逐个列出，未列出的文件不会导入。 |
 
-目前 `schema` 为 `1`，`strategy` 仅支持 `bundles`。包目录名不必与 `id` 相同，但 `id` 必须唯一。仓库中的 `mods/roland` 是罗兰示例包（模型文件不随仓库分发）。
+目前 `schema` 为 `1`，`strategy` 仅支持 `bundles`。包目录名不必与 `id` 相同，但 `id` 必须唯一。`requires` 可写插件显示名 `镜像幻化`，也可写目录名 `MOS`。仓库中的 `mods/roland` 是罗兰示例包（模型文件不随仓库分发）。
 
 ### 善意的巡礼
 

@@ -37,6 +37,7 @@ MAX_BUNDLES = 16
 MAX_AUTHORS = 32
 MAX_TEXT = 500
 MOS = 'MOS'
+ADDON_INFO = 'addon_info.json'
 _ID = re.compile(r'[a-z0-9][a-z0-9_-]{0,63}\Z', re.ASCII)
 _REPARSE = getattr(stat, 'FILE_ATTRIBUTE_REPARSE_POINT', 0x400)
 
@@ -117,7 +118,7 @@ def _relative(folder, value, label, *, suffix=None):
     return relative, path
 
 
-def _requirements(raw):
+def _requirements(raw, accepted=None):
     if raw is None:
         return []
     if isinstance(raw, str):
@@ -129,10 +130,41 @@ def _requirements(raw):
         name = _text(item, '依赖名称', 64)
         if name.casefold() not in {value.casefold() for value in result}:
             result.append(name)
+    if accepted is not None:
+        known = {value.casefold() for value in accepted}
+        if not any(value.casefold() in known for value in result):
+            raise ValueError(INFO + ' 的 requires 未声明依赖 ' + ' 或 '.join(accepted))
     return result
 
 
-def _mod_info(folder):
+def _addon_names(addon_root):
+    """Names a package may use to declare this addon as its dependency.
+
+    The launcher shows a mod's dependency by the addon's display name
+    (``镜像幻化``), while directory-keyed tools use ``MOS``.  Accept both so
+    the same package works in either place.
+    """
+    names = []
+
+    def add(value):
+        if isinstance(value, str) and value.strip():
+            value = value.strip()
+            if value.casefold() not in {name.casefold() for name in names}:
+                names.append(value)
+
+    root = Path(addon_root)
+    add(root.name)
+    try:
+        info = _read_json(root / ADDON_INFO, ADDON_INFO)
+    except (OSError, ValueError):
+        info = None
+    if isinstance(info, dict):
+        add(info.get('name'))
+    add(MOS)
+    return names
+
+
+def _mod_info(folder, addon_names):
     info = _read_json(folder / INFO, INFO)
     if not isinstance(info, dict):
         raise ValueError(INFO + '格式无效')
@@ -153,9 +185,7 @@ def _mod_info(folder):
         raise ValueError(INFO + '中的 settings 无效')
     if not isinstance(settings.get('enable', False), bool):
         raise ValueError(INFO + '中的 settings.enable 无效')
-    required = _requirements(info.get('requires'))
-    if MOS.casefold() not in {value.casefold() for value in required}:
-        raise ValueError(INFO + ' 的 requires 未声明依赖 ' + MOS)
+    _requirements(info.get('requires'), addon_names)
     return info
 
 
@@ -270,9 +300,9 @@ def _manifest(folder):
     return _Manifest(dict(data), bundles, icon, recipe)
 
 
-def _inspect(folder):
+def _inspect(folder, addon_names):
     manifest = _manifest(folder)
-    info = _mod_info(folder)
+    info = _mod_info(folder, addon_names)
     item = {
         'key': folder.name,
         'id': manifest['id'],
@@ -307,6 +337,7 @@ def scan(addon_root):
     folder = packages_folder(addon_root)
     if not _plain_directory(folder):
         return []
+    addon_names = _addon_names(addon_root)
     packages = []
     ids = {}
     try:
@@ -317,7 +348,7 @@ def scan(addon_root):
         if not _plain_directory(entry) or not _plain_file(entry / MANIFEST):
             continue
         try:
-            item = _inspect(entry)
+            item = _inspect(entry, addon_names)
         except ValueError as exc:
             item = {'key': entry.name, 'id': '', 'name': entry.name, 'version': '',
                     'description': '', 'authors': {}, 'icon': False, 'identity': None,
@@ -344,7 +375,7 @@ def find(addon_root, key):
     if not _plain_directory(directory) or not _plain_file(directory / MANIFEST):
         return None
     try:
-        item = _inspect(directory)
+        item = _inspect(directory, _addon_names(addon_root))
     except ValueError as exc:
         return {'key': key, 'id': '', 'name': key, 'version': '', 'description': '',
                 'authors': {}, 'icon': False, 'identity': None, 'status': 'invalid',

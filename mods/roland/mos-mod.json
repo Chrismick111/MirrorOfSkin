@@ -13,6 +13,6 @@
     "bundles/BRolandUltraSword.bundle"
   ],
   "requires": [
-    "镜像幻化（MOS）外观导入 v1"
+    "镜像幻化"
   ]
 }
