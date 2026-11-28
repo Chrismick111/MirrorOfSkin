@@ -2655,6 +2655,7 @@
         <div class="tutorial-tip-footer">
           <span id="tutorialTourProgress" class="tutorial-progress"></span>
           <div class="tutorial-tip-actions">
+            <button id="tutorialTourTry" type="button" class="hidden">帮我点一下</button>
             <button id="tutorialTourSkip" type="button">跳过教程</button>
             <button id="tutorialTourPrev" type="button">上一步</button>
             <button id="tutorialTourNext" class="primary" type="button">下一步</button>
@@ -3278,67 +3279,78 @@
       const tutorialSteps = [
         {
           page: "pool",
+          action: "#poolGrid .pool-add",
+          selector: "#poolGrid .pool-add",
+          title: "自己点一次“添加人格”",
+          html: `<p>先别急着往下翻。请点击高亮的“？？”加号卡片，亲自打开添加流程。</p><ul><li>不想动手也可以点“帮我点一下”。</li><li>这一步只打开窗口，不会改动你的外观池。</li></ul>`,
+        },
+        {
+          page: "pool",
           open: "source",
+          action: '#poolSourceModal .source-card[data-source="native"]',
           selector: '#poolSourceModal .source-card[data-source="native"]',
           title: "第一步：先选角色来源",
-          html: `<p>这是新版最重要的一步。点“添加人格”后会先让你选来源，选错来源就找不到想要的外观。</p><ul><li><strong>原版角色</strong>：游戏内出现的角色、Boss 与异想体外观。</li><li><strong>Mod 角色</strong>：私服 bundle 导入的外观，会进入独立的外来人格窗口。</li></ul><p>教程已经替你打开了这个窗口，按“下一步”继续。</p>`,
+          html: `<p>这就是新版最容易踩坑的地方。请点击<strong>原版角色</strong>，看看接下来会发生什么。</p><ul><li><strong>原版角色</strong>：游戏内的角色、Boss 与异想体外观。</li><li><strong>Mod 角色</strong>：私服 bundle 导入的外观，会进入独立窗口。</li></ul><p>选“Mod 角色”可以随时重来，不会弄坏配置。</p>`,
         },
         {
           page: "pool",
           open: "identities",
-          selector: "#identityModal .identity-filters",
-          title: "挑外观：搜索、角色、章节",
-          html: `<p>选“原版角色”后到这里。筛选栏现在只保留真正用来找外观的控件。</p><ul><li>输入名字、编号或来源即可搜索；再用角色、章节、类型缩小范围。</li><li>点行尾加号加入当前池；已有卡片上的数字是权重，改完自动保存。</li><li>这里不再混入导入按钮、章节管理和剧情开关，界面更干净。</li></ul>`,
+          action: "#identityModal .identity-add",
+          selector: "#identityModal .identity-add, #identityModal .identity-scroll",
+          title: "加一个外观试试",
+          html: `<p>现在请点任意一行的<strong>加号</strong>，把一个外观加入当前池。</p><ul><li>加入后再点同一行的减号就能移出，随时可撤销。</li><li>卡片上的数字是权重，改完会自动保存。</li><li>这里已经不再混入导入按钮和章节管理。</li></ul>`,
+          tryLabel: "帮我加一个",
         },
         {
           page: "pool",
-          open: "imported",
-          selector: "#importLocalSkin",
-          title: "外来人格：导入和管理",
-          html: `<p>顶部“导入外观”现在打开这个独立窗口，不再挤在添加人格里。</p><ul><li>支持 ZIP、7z、RAR、bundle、carra2、bank，可按住 Ctrl 或 Shift 多选。</li><li>导入结果按压缩包分组；某个包失败不会中断后面的文件。</li><li>卡片会显示作者和演示视频链接，重新导入原包可补齐署名与链接。</li></ul>`,
+          action: "#headerImportLocalSkin",
+          selector: "#headerImportLocalSkin",
+          title: "点顶部导入图标",
+          html: `<p>请点击右上角的<strong>导入外观</strong>图标，看看它现在打开的是什么。</p><ul><li>它不再混在添加人格里，而是打开独立的外来人格窗口。</li><li>支持多选 ZIP / 7z / RAR，某个包失败也不影响其他包。</li></ul>`,
         },
         {
           page: "pool",
-          open: "chapters",
-          selector: "#chapterManager",
-          title: "章节管理已独立",
-          html: `<p>“管理章节与批量归类”搬到了自己的窗口，顶部书本按钮随时打开。</p><ul><li>可新建、改名、上传或恢复章节封面。</li><li>搜索外观后批量移动到章节，也能一键恢复自动归类。</li><li>添加人格里仍保留“按章节浏览”，只用于筛选，不会误改归类。</li></ul>`,
+          action: "#headerChapters",
+          selector: "#headerChapters",
+          title: "点书本打开章节管理",
+          html: `<p>请点击右上角的<strong>书本图标</strong>。章节管理现在是独立窗口，不再挤在添加人格里。</p><ul><li>可新建、改名、上传封面。</li><li>可搜索外观后批量归类。</li></ul>`,
         },
         {
           page: "rulesets",
-          selector: "#rulesetList .ruleset-card[data-id] .ruleset-delete, #rulesetList .ruleset-card[data-id]",
-          title: "规则集：启用与删除",
-          html: `<p>点击卡片启用或停用；同一罪人同时只能启用一条规则。</p><ul><li>鼠标浮在<strong>自定义单人格规则集</strong>上，右上角会出现红色垃圾桶，确认后即可删除。</li><li>“所有角色”“某某 · 全部人格”是默认规则集，不会出现删除按钮。</li><li>删除规则集不会删除已导入的外观，只是移除这条规则。</li></ul>`,
+          action: '#rulesetList .ruleset-card[data-kind="identity"]',
+          event: "mouseover",
+          selector: '#rulesetList .ruleset-card[data-kind="identity"]',
+          title: "悬停看看删除按钮",
+          html: `<p>把鼠标移到一张<strong>自定义单人格规则集</strong>上，右上角会出现红色垃圾桶。</p><ul><li>默认规则集（所有角色、某某·全部人格）不会出现删除按钮。</li><li>只是看看，不要点垃圾桶；删除会二次确认。</li></ul>`,
+          tryLabel: "帮我指一下",
         },
         {
           page: "pool",
-          selector: "#poolGrid .pool-card[data-id], #poolGrid .pool-add",
-          title: "人格池：权重与血迹",
-          html: `<p>“？？”加号打开人格选择器；池里的卡片就是当前候选外观。</p><ul><li>权重数字决定抽中概率，百分比是相对占比。</li><li>右键或长按卡片可打开菜单，含“仅抽中此人格”“显示受伤血迹”等。</li><li>血迹开关按外观独立保存，不会因为借用模型串到别的角色。</li></ul>`,
+          action: "#poolGrid .pool-card[data-id]",
+          event: "contextmenu",
+          selector: "#poolGrid .pool-card[data-id]",
+          title: "右键卡片，找到血迹开关",
+          html: `<p>请在一张外观卡片上<strong>右键</strong>，打开它的菜单。</p><ul><li>菜单里有“仅抽中此人格”“显示受伤血迹”等按外观独立的设置。</li><li>血迹开关不会串到其他角色；按 Esc 或点空白处可关掉菜单。</li></ul>`,
+          tryLabel: "帮我打开菜单",
         },
         {
           page: "schemes",
+          action: "#saveScheme",
           selector: "#saveScheme",
-          title: "方案：一键保存整套配置",
-          html: `<p>调好后点软盘，把人格池、规则集、演出编排和随机开关存成一套方案。</p><ul><li>导入方案不会自动应用，点方案卡片的“读取”才会生效。</li><li>读取前会自动备份当前配置，可放心尝试。</li></ul>`,
-        },
-        {
-          page: "prepare",
-          selector: "#prepareData",
-          title: "进战斗前看一眼这里",
-          html: `<p>准备状态显示游戏进程、原生模块、规则池 revision 和已应用情况。</p><ul><li>改完规则后，等“已应用”追上新 revision 再进战斗。</li><li>如果一直没应用，去运行日志和 native.log 查原因。</li></ul>`,
+          title: "保存一套方案",
+          html: `<p>最后点一下<strong>软盘</strong>，体验保存整套配置。输入名字即可，也可以直接取消。</p><ul><li>方案包含人格池、规则集、演出编排和随机开关。</li><li>读取方案前会自动备份当前配置。</li></ul>`,
         },
         {
           selector: ".header-actions",
-          title: "随时重看教程",
-          html: `<p>右上角问号随时重新打开本教程；它只讲解，不会改你的配置。</p><p>教程完成后可在启动器设置里关闭自动打开调整面板，也可以从托盘重新进入工作台。</p>`,
+          title: "完成：随时重看",
+          html: `<p>你已经亲手走完了最重要的几步。以后右上角问号随时重开本教程。</p><p>教程只负责带路，不会替你做决定；所有操作都可以自己重来。</p>`,
         },
       ];
       let tutorialOpen = false, tutorialIndex = -1;
       function tutorialIntro() {
         $("#tutorialTitle").textContent = "欢迎使用镜像幻化";
-        $("#tutorialBody").innerHTML = `<p>新版引导只讲最重要、最常用的功能，并按新界面顺序带你看一遍。它会<strong>自动打开对应窗口、切换页面、滚动到目标</strong>，你只需要点“下一步”。</p><p>第一步就是最容易踩坑的：添加人格前先选<strong>原版角色 / Mod 角色</strong>。</p><p>教程只讲解和演示，不会替你修改任何配置。</p>`;
-        $("#tutorialProgress").textContent = "新功能优先 · 9 步";
+        $("#tutorialBody").innerHTML = `<p>这次不是只看说明：教程会让你<strong>亲手点几次</strong>，重要的按钮会发光，点对了才继续；不想动手也可以点“帮我点一下”。</p><p>先学最容易踩坑的：添加人格前选<strong>原版角色 / Mod 角色</strong>；再试着添加外观、打开导入和章节窗口、悬停删除按钮、右键查看血迹开关。</p><p>添加外观再点一次就能移出，随时可撤销。</p>`;
+        $("#tutorialProgress").textContent = "动手试一遍 · 9 步";
         $("#tutorialPrev").classList.add("hidden");
         $("#tutorialNext").textContent = "开始教程";
         tutorialIndex = -1;
@@ -3427,7 +3439,12 @@
         $("#tutorialKicker").textContent = "使用教程 · " + (tutorialIndex + 1);
         $("#tutorialTourTitle").textContent = step.title;
         $("#tutorialTourBody").innerHTML = step.html;
-        $("#tutorialTourProgress").textContent = `${tutorialIndex + 1} / ${tutorialSteps.length}`;
+        $("#tutorialTourProgress").textContent =
+          `${tutorialIndex + 1} / ${tutorialSteps.length}` +
+          (step.action ? " · 点高亮处继续" : " · 继续");
+        $("#tutorialTourTry").classList.toggle("hidden", !step.action);
+        $("#tutorialTourTry").textContent = step.tryLabel || "帮我点一下";
+        tutorialActionDone = false;
         $("#tutorialTourPrev").classList.toggle("hidden", tutorialIndex === 0);
         $("#tutorialTourNext").textContent =
           tutorialIndex === tutorialSteps.length - 1 ? "完成教程" : "下一步";
@@ -3506,6 +3523,56 @@
         if (event.target.id === "tutorialModal") requestSkipTutorial();
       };
       $("#helpButton").onclick = openTutorial;
+      let tutorialActionDone = false;
+      function tutorialStepMatches(step, target) {
+        if (!step?.action || !target) return false;
+        try {
+          return !!target.closest(step.action);
+        } catch (e) {
+          return false;
+        }
+      }
+      function completeTutorialAction() {
+        if (tutorialActionDone) return;
+        tutorialActionDone = true;
+        status("很好，学会了；继续下一步");
+        setTimeout(() => {
+          tutorialActionDone = false;
+          tutorialNext();
+        }, 420);
+      }
+      function listenTutorialAction(event) {
+        if (!tutorialOpen || tutorialIndex < 0 || tutorialActionDone) return;
+        if (event.target.closest("#tutorialTip")) return;
+        const step = tutorialSteps[tutorialIndex];
+        const wanted = step.event || "click";
+        if (event.type !== wanted) return;
+        if (tutorialStepMatches(step, event.target)) completeTutorialAction();
+      }
+      ["click", "contextmenu", "mouseover"].forEach((type) =>
+        document.addEventListener(type, listenTutorialAction, true),
+      );
+      $("#tutorialTourTry").onclick = () => {
+        if (!tutorialOpen || tutorialIndex < 0) return;
+        const step = tutorialSteps[tutorialIndex];
+        const target = tourStepTarget(step);
+        if (!target) return;
+        if (step.event === "contextmenu") {
+          const rect = target.getBoundingClientRect();
+          target.dispatchEvent(
+            new MouseEvent("contextmenu", {
+              bubbles: true,
+              cancelable: true,
+              clientX: rect.left + rect.width / 2,
+              clientY: rect.top + rect.height / 2,
+            }),
+          );
+        } else if (step.event === "mouseover") {
+          target.dispatchEvent(new MouseEvent("mouseover", { bubbles: true }));
+        } else {
+          target.click();
+        }
+      };
       document.addEventListener("keydown", (event) => {
         if (!tutorialOpen || tutorialIndex < 0) return;
         if (event.target.closest("input, select, textarea")) return;
@@ -3663,7 +3730,7 @@
           !picker && item.kind === "identity"
             ? `<span class="ruleset-delete icon-btn" role="button" tabindex="0" data-id="${esc(item.id)}" title="删除规则集" aria-label="删除规则集"><svg class="icon" aria-hidden="true"><use href="#i-trash"></use></svg></span>`
             : "";
-        return `<button class="ruleset-card${item.active ? " active" : ""}" data-id="${esc(item.id)}">${orb}<span class="ruleset-name">${esc(item.name)}</span>${remove}</button>`;
+        return `<button class="ruleset-card${item.active ? " active" : ""}" data-id="${esc(item.id)}" data-kind="${esc(item.kind)}">${orb}<span class="ruleset-name">${esc(item.name)}</span>${remove}</button>`;
       }
       function rulesetCreateCard(mode) {
         return `<button type="button" class="ruleset-card ruleset-add" data-create="${mode}" aria-label="新建单人格规则集"><span class="ruleset-orb"><svg class="icon" aria-hidden="true"><use href="#i-plus"></use></svg></span><span class="ruleset-name">新建</span></button>`;
