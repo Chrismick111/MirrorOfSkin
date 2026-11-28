@@ -1,6 +1,6 @@
 {
  "schema": 1,
- "version": "1.4.0",
+ "version": "1.4.1",
  "dll": "SinnersNative-v64.dll",
  "protocol": 75,
  "platform": "windows-amd64",
@@ -154,7 +154,7 @@
   "Workbench/ui/open_workbench.ps1": "950154f90867b127119452e8210faa5d27e68f6cb279a1874b2a964282d46c57",
   "Workbench/voice_binding.py": "eba87dc6859dc8806c4328935d75b0b27c87e508f3fca07831a69677b07a3ce0",
   "Workbench/workbench.py": "616e5d8b1ab896db1ae11091543b9a42d8c82d8724a71e78656ee81ebb3719b2",
-  "addon_info.json": "a936c8a1f859db4e91d8de44ed50f3ffad5b3e6e892a48c5bb9f4341e5f942bf",
+  "addon_info.json": "7c016cebff4b5cc010f610dbb1880f1194ba521b396d07c05ae13e528168bc8b",
   "auto_discovery.py": "4fb07fc278b523b452f61474e4b33b7e97b53b6df456a4e64e4c562e1b79e0bb",
   "boss_chapters.json": "672d789f627f49321034845d00eaed8e5c0a4044186f4adc8d33b5f0e0ca40b8",
   "custom_pools.py": "1813b2c131aa72598b8351b7aaccf9fd823676c4784964a10097a8eb07032122",

@@ -3,11 +3,13 @@
 适用于 [FaustLauncher](https://github.com/f0lkskill/FaustLauncher) 的《边狱巴士》(Limbus Company) 人格外观随机插件。
 通过 WarpHook 注入原生 DLL，在战斗中替换罪人外观、随机切换人格，并按原生触发条件播放 Boss 语音与气泡。
 
-当前源码版本 **1.4.0**
+当前源码版本 **1.4.1**
+
+1.4.1 修复章节/敌方式外观在同一技能里多个硬币重复播放同一个片段的问题：按动作与硬币记录已播片段，重复时优先使用游戏原生硬币顺序，再取同组未播片段。新增候选池塌缩、无可用动作候选、阶段组覆盖抽选的日志提示；工作台对全局只有一套素材给出复读提醒。实例目录统一使用 `addons/MOS` 作为日志前缀。
 
 1.4.0 修复了部分异想体外观出现双层外观的问题，获取许可并兼容了[@skadi00147](https://github.com/skadi00147)的特殊格式mod，添加了作者栏和视频链接的自动检验；修复了拥有语音和气泡的外观mod不会隐藏本体人格的气泡语音问题；添加支持批量导入外观功能；菜单添加了血迹开关按钮
 
-1.3.9 修复规则集候选为空时整个外观池被静默清空的问题：启用空规则集会直接提示并拒绝，自动填入与新建规则集在无候选时也会报错；运行时会检测激活规则集解析出的候选数，若为零则回退到该角色的默认候选并写入日志，避免游戏内所有角色突然不换装。工作台会在规则集为空时显示醒目的候选为空提示。同时把顶部章节管理按钮改为与其他图标按钮一致的样式。
+1.3.9 修复规则集候选为空时整个外观池被静默清空的问题：空规则集允许启用；运行时会检测激活规则集解析出的候选数，若为零则回退到该角色的默认候选并写入日志，避免游戏内所有角色突然不换装。工作台会在规则集为空时显示醒目的候选为空提示。同时把顶部章节管理按钮改为与其他图标按钮一致的样式。
 
 1.3.7 读取并兼容了多种不同格式的私服mod的导入，普适性得到初步验证；增加了允许自行添加自定义章节，自定义章节名称以及图像以及修改章节目录下外观的功能；修改了默认外观导入的路径，现在所有导入外观将于插件同处一个文件夹，而不是单独放到C盘中；添加了导入人格的进度；整理了联动章节外观，并修复了音效会不生效的问题
 
@@ -27,11 +29,11 @@
 
 | 下载 | 用途 |
 | --- | --- |
-| [1.4.0 启动器安装包](https://github.com/Chrismick111/MirrorOfSkin/releases/download/v1.4.0/MirrorOfSkin-1.4.0-no-images.zip) | 首次安装或手动更新。公开版不含头像，可在工作台获取资源。 |
-| [1.4.0 兼容安装包](https://github.com/Chrismick111/MirrorOfSkin/releases/download/v1.4.0/MirrorOfSkin-1.4.0-no-images-store.zip) | 启动器解压上一个文件失败时选用。两个包的插件内容相同，安装其中一个即可。 |
-| [1.4.0 工作台更新包](https://github.com/Chrismick111/MirrorOfSkin/releases/download/v1.4.0/FaustRandomIdentity-WarpHook.zip) | 供旧版工作台的自动更新功能读取。 |
+| [1.4.1 启动器安装包](https://github.com/Chrismick111/MirrorOfSkin/releases/download/v1.4.1/MirrorOfSkin-1.4.1-no-images.zip) | 首次安装或手动更新。公开版不含头像，可在工作台获取资源。 |
+| [1.4.1 兼容安装包](https://github.com/Chrismick111/MirrorOfSkin/releases/download/v1.4.1/MirrorOfSkin-1.4.1-no-images-store.zip) | 启动器解压上一个文件失败时选用。两个包的插件内容相同，安装其中一个即可。 |
+| [1.4.1 工作台更新包](https://github.com/Chrismick111/MirrorOfSkin/releases/download/v1.4.1/FaustRandomIdentity-WarpHook.zip) | 供旧版工作台的自动更新功能读取。 |
 
-手动解压安装时，将启动器安装包解压到 `FaustLauncher/addons/`。安装正确后能直接看到 `addons/MirrorOfSkin/addon_info.json`；如果中间多了一层同名目录，启动器可能识别不到插件。
+手动解压安装时，将启动器安装包解压到 `FaustLauncher/addons/MOS/`。安装正确后能直接看到 `addons/MOS/addon_info.json`；目录名保持 `MOS`，启动器与 WarpHook 日志前缀才会稳定显示为 `[MOS]`，不要使用启动器「从本地安装」生成的随机 `faust_inst_*` 目录。
 
 ## 第一次设置外观
 

@@ -7,9 +7,9 @@
   "settings": {
     "enable": true,
     "是否自动打开调整面板": true,
-    "是否展示教程": true
+    "是否展示教程": false
   },
-  "version": "1.4.0",
+  "version": "1.4.1",
   "requires": [
     "WarpHook"
   ]
