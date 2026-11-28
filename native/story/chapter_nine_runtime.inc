@@ -71,6 +71,40 @@ static int chapter_group(Unit *unit,Skin *skin,int requested,int skillId,int *ve
  }
  return sr_chapter_group(actor,source,skin->look,motion_identity(skin),skin->motionCounts,requested,verified);
 }
+/* A source skill can report the same motion index for several coins. Without
+   per-coin de-duplication every one of those coins replays the same donor clip,
+   which reads as a stuck animation. Prefer the game's native build order, then
+   the next unused ordinary clip of the same group. Never alter the final coin. */
+static int chapter_replay_avoid(Unit *unit,void *action,int coin,int detail,int *part,int count,int last){
+  if(!unit||!action||coin<0||coin>=SR_VARIETY_COINS||detail<0||detail>=256||*part<0||*part>=count||count<2||last)return 0;
+  if(unit->chapterReplayAction!=action){
+    unit->chapterReplayAction=action;
+    memset(unit->chapterReplayDetail,0,sizeof(unit->chapterReplayDetail));
+    memset(unit->chapterReplayPart,0,sizeof(unit->chapterReplayPart));
+  }
+  int replay=0;
+  for(int c=0;c<coin;c++)if(unit->chapterReplayDetail[c]==(unsigned char)detail&&
+                            unit->chapterReplayPart[c]==(unsigned char)*part){replay=1;break;}
+  if(!replay){
+    unit->chapterReplayDetail[coin]=(unsigned char)detail;
+    unit->chapterReplayPart[coin]=(unsigned char)*part;
+    return 0;
+  }
+  int start=*part;
+  if(native_order_index(unit,action,coin,count,&start)&&(start<0||start>=count))start=*part;
+  for(int j=0;j<count;j++){
+    int k=(start+j)%count,used=0;
+    for(int c=0;c<coin;c++)if(unit->chapterReplayDetail[c]==(unsigned char)detail&&
+                              unit->chapterReplayPart[c]==(unsigned char)k){used=1;break;}
+    if(!used){
+      char line[192];snprintf(line,sizeof(line),"chapter replay avoided coin=%d detail=%d from=%d to=%d",coin,detail,*part,k);
+      bootlog(line);
+      *part=k;unit->chapterReplayPart[coin]=(unsigned char)k;
+      return 1;
+    }
+  }
+  return 0;
+}
 static void *chapter_forward(Unit *unit,Skin *skin,int requested,int index,int skillId,void *action,int coin,int last,
  uint8_t a1,uint8_t a3,void *callback,uint8_t a5,void *method){
  int verified=0,detail=chapter_group(unit,skin,requested,skillId,&verified);
@@ -95,6 +129,7 @@ static void *chapter_forward(Unit *unit,Skin *skin,int requested,int index,int s
    if(part>=count)part=count-1;
   }else if(index>=count||(is_skill_detail(requested)&&!sameSize&&last))part=count-1;
  }
+ chapter_replay_avoid(unit,action,coin,detail,&part,count,last);
  void *savedApp=g_chapterPlaybackApp;int savedDetail=g_chapterPlaybackDetail;
  ProjectionContext savedProjection=g_projection;
  FxPlaybackPlan *savedCapture=g_fxCapture;uint64_t savedOwner=g_fxCaptureOwner;

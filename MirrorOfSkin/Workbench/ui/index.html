@@ -2861,13 +2861,17 @@
           warning.textContent = "";
           return;
         }
-        const empty = !(data.ruleEntries || []).length;
+        const entries = Array.isArray(data.ruleEntries) ? data.ruleEntries : [];
+        const empty = !entries.length;
+        const singleGlobal = !!data.rulesetState?.global && entries.length === 1;
         $("#scopeName").textContent = rule.name + (empty ? "（候选为空）" : "");
         $("#fillDefault").disabled = rule.kind === "global" && rule.locked;
-        warning.hidden = !empty;
+        warning.hidden = !(empty || singleGlobal);
         warning.textContent = empty
-          ? "当前规则集没有可用的外观候选，游戏内不会替换外观；请点击右侧随机按钮填入默认候选。"
-          : "";
+          ? "当前规则集没有可用候选，游戏内会回退到默认候选；建议点击右侧按钮填入默认池。"
+          : singleGlobal
+            ? "当前全局规则集只有 1 套素材，多个角色会随机到同一外观并出现重复动画；建议增加候选或只启用一个角色。"
+            : "";
       }
       function isImportedIdentity(id) {
         return /^story_WBImp_[a-f0-9]{24}$/.test(String(id)) || id === "story_BRolandBaseAppearance";

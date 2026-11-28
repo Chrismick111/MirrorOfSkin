@@ -389,6 +389,8 @@ typedef struct {
   uint32_t stageRevision;
   DWORD formHpAt,chapterAt;
   int chapterSignal,chapterPhase;void *chapterModel;
+  void *chapterReplayAction;
+  unsigned char chapterReplayDetail[SR_VARIETY_COINS],chapterReplayPart[SR_VARIETY_COINS];
   unsigned alternateForms, alternateSeen;
   int evaded;
   void *lastDefenseAction,*lastDefenseDrawAction;
@@ -620,6 +622,7 @@ static void draw_rules_tick(void){
  for(int i=0;i<SR_UNIT_MAX;i++)memset(g_units[i].drawState,0,sizeof(g_units[i].drawState));
  char line[160];snprintf(line,sizeof(line),"workbench draw rules applied revision=%lu:%lu; attack/clash/defense cycles reset",(unsigned long)stamp.dwHighDateTime,(unsigned long)stamp.dwLowDateTime);bootlog(line);
 }
+static uint32_t g_singleCandWarned;
 static int unit_draw(Unit *u,uint32_t action,double random){
  int category=action==2?0:action==8?1:action==1?2:-1;
  int mode=category>=0&&u->sinner>=101&&u->sinner<=112?(int)drawModes[u->sinner-101][category]:0;
@@ -628,6 +631,13 @@ static int unit_draw(Unit *u,uint32_t action,double random){
   int id=u->cand[i];PoolRow *r=&g_rows[id];
   if(!r->enabled||(r->excluded&action)||unit_bad(u,id)||!isfinite(r->weight)||r->weight<=0||r->weight>1000000)continue;
   ids[count]=id;weights[count++]=r->weight;
+ }
+ if(count==1){
+  int slot=(int)(u-g_units);
+  if(slot>=0&&slot<32&&!(g_singleCandWarned&(1u<<slot))){
+   g_singleCandWarned|=1u<<slot;
+   char line[192];snprintf(line,sizeof(line),"pool has a single candidate for sinner=%lu identity=%.63s; repeated animations are expected",(unsigned long)u->sinner,g_rows[ids[0]].identity);bootlog(line);
+  }
  }
  SrDrawState temporary={0};int result=sr_draw_mode(category>=0?&u->drawState[category]:&temporary,mode,ids,weights,count,random);
  return result<0?-1:selected_row(u,result,action);
@@ -2036,7 +2046,7 @@ static void decide_and_apply(void **pself,int *pdetail,int *pindex){
       if(attackAction&&sourceCoin>=0){u->attackDrawValid=1;u->attackDrawAction=attackAction;u->attackDrawViewer=u->observedViewer;u->attackDrawIndex=sourceCoin;u->attackDrawRow=row;}
     }
     else if(action==4||action==8)u->pending=row;
-    if(row<0){bootlog("no eligible identity for action");return;}
+    if(row<0){char line[176];snprintf(line,sizeof(line),"no eligible identity for action=%u sinner=%lu; keeping current appearance with native animation",action,(unsigned long)(u?u->sinner:0));bootlog(line);return;}
     if(action==1){
       u->lastDefenseDrawAction=defenseAction;u->defenseDrawLatched=1;u->defensePickedRow=row;
     }
@@ -2491,6 +2501,12 @@ static int event_select(Unit *u,int action,int coin,void *viewer){
  int keep=stage_keep_visible(u,row,0);Skin *visible=keep?skin_for_app(u,current):NULL;
  int resolved=stage_reselect_row(u,row,current,0);
  if(resolved==-1){trace_event(event,u,coin,"stage-row-missing");return 0;}
+ if(resolved>=0&&resolved!=row){
+  static DWORD lastStageLog[SR_UNIT_MAX];int slot=(int)(u-g_units);DWORD now=GetTickCount();
+  if(slot>=0&&slot<SR_UNIT_MAX&&(DWORD)(now-lastStageLog[slot])>=5000){
+   lastStageLog[slot]=now;char line[224];snprintf(line,sizeof(line),"stage group overrode drawn identity sinner=%lu drawn=%.63s stage=%.63s",(unsigned long)u->sinner,g_rows[row].identity,g_rows[resolved].identity);bootlog(line);
+  }
+ }
  if(resolved>=0)keep=1;else resolved=row;
  int slot=visible?(int)(visible-u->skins):(resolved>=0?skin_index(u,resolved):-1);if(slot<0){if(resolved>=0)queue_push(u,resolved);trace_event(event,u,coin,resolved>=0?"resource-not-ready":"no-eligible-row");return 0;}
  Skin *skin=&u->skins[slot];void *shown=current==skin->app?current:unit_switch(u,skin);

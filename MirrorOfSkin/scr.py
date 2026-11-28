@@ -518,6 +518,18 @@ def _prepare_native_pools_unlocked():
             active_rows.setdefault(row_key, row)
             known.pop(row_key, None)
 
+    active_counts = {}
+    for row in active_rows.values():
+        sinner = int(row['sinner'])
+        active_counts[sinner] = active_counts.get(sinner, 0) + 1
+    enabled_sinners = [sinner for sinner in range(101, 113)
+                       if settings.get('enabled', True)
+                       and (state['global'] or state['active'].get(str(sinner), 'none') != 'none')]
+    collapsed = [sinner for sinner in enabled_sinners if active_counts.get(sinner, 0) == 1]
+    if len(collapsed) >= 2:
+        log('Candidate pool collapsed to a single identity for sinners=%s; repeated animations are expected'
+            % ','.join(str(sinner) for sinner in collapsed))
+
     # The first eligible occurrence wins; inactive rows follow in catalog order.
     rows = [*active_rows.values(), *known.values()]
     if len(rows) > 4096:
