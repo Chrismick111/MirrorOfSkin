@@ -3296,7 +3296,7 @@
           page: "pool",
           open: "identities",
           action: "#identityModal .identity-add",
-          selector: "#identityModal .identity-add, #identityModal .identity-scroll",
+          selector: "#identityModal .identity-add",
           title: "加一个外观试试",
           html: `<p>现在请点任意一行的<strong>加号</strong>，把一个外观加入当前池。</p><ul><li>加入后再点同一行的减号就能移出，随时可撤销。</li><li>卡片上的数字是权重，改完会自动保存。</li><li>这里已经不再混入导入按钮和章节管理。</li></ul>`,
           tryLabel: "帮我加一个",
@@ -3460,7 +3460,19 @@
           }
         }
         positionTour(step, target);
-        requestAnimationFrame(() => setTimeout(() => positionTour(step, tourStepTarget(step)), 260));
+        const tourStepIndex = tutorialIndex;
+        let settleTries = 0;
+        const settleTourPosition = () => {
+          if (!tutorialOpen || tutorialIndex !== tourStepIndex) return;
+          const current = tourStepTarget(step);
+          const rect = current && current.getBoundingClientRect();
+          if (rect && (rect.width || rect.height)) {
+            positionTour(step, current);
+            return;
+          }
+          if (settleTries++ < 30) setTimeout(settleTourPosition, 100);
+        };
+        setTimeout(settleTourPosition, 120);
       }
       function beginTutorialTour() {
         if (!tutorialOpen) tutorialOpen = true;
