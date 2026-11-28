@@ -34,7 +34,7 @@ def apply(catalog, root=None, addon=None):
         for package in packages:
             for identity in package.get('missing_identities', []):
                 if identity in catalog:
-                    catalog[identity]['missing_package_source'] = package['source']
+                    catalog[identity]['missing_package_source'] = package.get('source_name') or package['source']
     for identity, entry in catalog.items():
         if not (re.fullmatch(r'story_WBImp_[a-f0-9]{24}', identity) or identity == 'story_BRolandBaseAppearance'):
             continue

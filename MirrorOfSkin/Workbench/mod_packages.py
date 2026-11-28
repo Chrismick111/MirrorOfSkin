@@ -397,29 +397,64 @@ def _portrait(path):
     return data
 
 
-Prepared = namedtuple('Prepared', 'archive portrait source')
+Prepared = namedtuple('Prepared', 'archive portrait source version name')
 
 
-def _owner_source(identity):
-    """Return the registered archive name that already owns ``identity``.
+def _same_version(left, right):
+    """Compare launcher mod versions without bumping on cosmetic text changes."""
+    left, right = (left or '').strip(), (right or '').strip()
+    if not left or not right:
+        return False
+    if left.casefold() == right.casefold():
+        return True
+    first = tuple(int(part) for part in re.findall(r'\d+', left))
+    second = tuple(int(part) for part in re.findall(r'\d+', right))
+    return bool(first and second and first == second)
 
-    An explicit identity is the primary key of an imported package.  When a
-    user previously imported the same appearance from another archive, the new
-    package adopts that archive name so the importer updates the existing
-    package instead of rejecting the transfer as an accidental rename.
+
+def unchanged_rows(addon_root, item):
+    """Return rows when the package version already imported is still complete.
+
+    Re-importing a launcher mod is decided by its declared version, not by
+    hashing hundreds of megabytes again.  ``None`` means the caller should run
+    the ordinary import, either because the version changed or because a file
+    from the recorded package has gone missing.
     """
-    if not identity:
+    if not item or item.get('status') != 'ready' or not item.get('version'):
         return None
     try:
         import import_packages
         import mos_data
-        index = import_packages.read_index(mos_data.data_dir(create=False))
+        data_root = mos_data.data_dir(create=False)
+        index = import_packages.read_index(data_root)
     except (OSError, ValueError, RuntimeError):
         return None
-    for package in index['packages']:
-        if identity in package.get('identities', ()):
-            return package.get('source')
-    return None
+    package = next((entry for entry in index['packages']
+                    if entry.get('source_kind') == 'mod'
+                    and entry['source'].casefold() == item['id'].casefold()), None)
+    if package is None or not _same_version(package.get('source_version'), item['version']):
+        return None
+    identities = list(package.get('identities') or ())
+    if not identities or package.get('missing_identities'):
+        return None
+    for identity in identities:
+        try:
+            location = Path(addon_root) / import_packages.locator_path(data_root, identity).read_text(
+                encoding='utf-8').strip()
+        except (OSError, UnicodeError, ValueError):
+            return None
+        if not location.is_file():
+            return None
+    names = {}
+    try:
+        catalog = json.loads((data_root / 'Assets/runtime/all_sinners_pools.json').read_bytes())
+        names = {entry['identity_id']: entry.get('name')
+                 for group in catalog.values() for entry in group['entries']}
+    except (OSError, ValueError, KeyError, TypeError):
+        pass
+    return [{'identity_id': identity, 'name': names.get(identity) or item['name'],
+             'status': 'existing', 'actions': [], 'version': item['version'],
+             'unchanged': True} for identity in identities]
 
 
 @contextmanager
@@ -432,7 +467,7 @@ def prepared_archive(addon_root, key, *, progress=None):
         raise ValueError(item['error'] or '外观包不可导入')
     manifest = item['_manifest']
     bundles = manifest.bundles
-    source = _owner_source(manifest.data.get('identity')) or (manifest['id'] + '.zip')
+    source = manifest['id']
     total = sum(path.stat().st_size for _, path in bundles)
     reported = -1
 
@@ -467,4 +502,4 @@ def prepared_archive(addon_root, key, *, progress=None):
                     archive.writestr('mos_portraits/' + identity + '.png', image)
                 else:
                     portrait = image
-        yield Prepared(archive_path, portrait, source)
+        yield Prepared(archive_path, portrait, source, item['version'], item['name'])

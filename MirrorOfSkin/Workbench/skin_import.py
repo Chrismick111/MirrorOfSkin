@@ -168,7 +168,8 @@ def mirror_import_assets(data_root, addon_root, *, reads_user_assets=False):
 
 
 def import_skin(archive, addon, *, name=None, unity=None, progress=None, check_cancelled=None,
-                default_portrait=None, source=None):
+                default_portrait=None, source=None, source_kind=None, source_name=None,
+                source_version=None):
     from contextlib import ExitStack
     from appearance_dialogue import scan_archive
     from dialogue_status import apply_binding, runtime_bindings
@@ -238,6 +239,8 @@ def import_skin(archive, addon, *, name=None, unity=None, progress=None, check_c
                                    check_cancelled=check_cancelled, workflow=workflow, portraits=portraits,
                                    author_archive=container, expanded_members=expanded_members,
                                    default_portrait=default_portrait,
+                                   package_kind=source_kind, package_name=source_name,
+                                   package_version=source_version,
                                    framepack_dialogue=grouped and manifest.get('framepack_dialogue') == 1)
                 if has_models else [])
         included=[r['identity_id'][6:] for r in rows if r['identity_id'].startswith('story_WBImp_')]
@@ -300,7 +303,7 @@ def install_roland_bundles(archive, root, *, destination=None):
 def _import_normalized(archive, addon, *, name=None, unity=None, package_addon=None, package_source=None,
                        progress=None, check_cancelled=None, workflow=None, dialogue_scans=(), portraits=None,
                        framepack_dialogue=False, author_archive=None, expanded_members=None,
-                       default_portrait=None):
+                       default_portrait=None, package_kind=None, package_name=None, package_version=None):
     from contextlib import ExitStack
     from zipfile import ZipFile
     from appearance_authors import read_attribution
@@ -425,7 +428,9 @@ def _import_normalized(archive, addon, *, name=None, unity=None, package_addon=N
                                              locator_path, prepare_package, relative_model_path)
                 identities = {rec['entry']['identity_id'] if rec.get('builtin') != 'roland' else BUILTIN
                               for rec in records}
-                package, folder, index, created = prepare_package(root, package_addon, package_source, identities)
+                package, folder, index, created = prepare_package(
+                    root, package_addon, package_source, identities, source_kind=package_kind,
+                    source_name=package_name, source_version=package_version)
                 if created:
                     rollback.callback(discard_failed_package, folder, package['id'], generated)
                 pending[index_path(root)] = index

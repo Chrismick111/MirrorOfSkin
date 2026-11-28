@@ -743,96 +743,141 @@
         right: 20px;
         bottom: 20px;
         z-index: 9999;
-        width: min(400px, calc(100vw - 40px));
-        max-height: 46vh;
-        padding: 16px 18px 14px;
+        width: min(340px, calc(100vw - 32px));
+        max-height: min(46vh, 420px);
+        padding: 13px 14px 12px;
         overflow: hidden;
         overflow-wrap: anywhere;
         color: #e7e7e7;
-        background: linear-gradient(
-          180deg,
-          rgba(36, 40, 47, 0.96),
-          rgba(27, 30, 36, 0.97)
-        );
-        border: 1px solid rgba(255, 255, 255, 0.12);
-        border-radius: 12px;
-        box-shadow:
-          0 22px 60px rgba(0, 0, 0, 0.55),
-          inset 0 1px 0 rgba(255, 255, 255, 0.05);
-        backdrop-filter: blur(16px) saturate(1.1);
-        -webkit-backdrop-filter: blur(16px) saturate(1.1);
+        background: rgba(15, 18, 24, 0.9);
+        border: 1px solid rgba(255, 255, 255, 0.07);
+        border-radius: 16px;
+        box-shadow: 0 18px 50px rgba(0, 0, 0, 0.28);
+        backdrop-filter: blur(14px);
+        -webkit-backdrop-filter: blur(14px);
         transform-origin: bottom right;
         transition:
-          opacity 0.2s ease,
-          transform 0.2s cubic-bezier(0.2, 0.8, 0.3, 1);
-      }
-      #importNotice::before {
-        content: "";
-        position: absolute;
-        inset: 0 0 auto;
-        height: 2px;
-        background: linear-gradient(
-          90deg,
-          transparent,
-          rgba(228, 189, 118, 0.9),
-          transparent
-        );
+          opacity 0.18s ease,
+          transform 0.22s cubic-bezier(0.2, 0.8, 0.3, 1);
       }
       #importNotice[hidden] {
         display: none;
       }
       #importNotice:not([hidden]) {
-        animation: importNoticeIn 0.24s cubic-bezier(0.2, 0.8, 0.3, 1);
+        animation: importNoticeIn 0.26s cubic-bezier(0.22, 0.85, 0.28, 1);
       }
       #importNotice.closing {
         opacity: 0;
-        transform: translateY(10px) scale(0.98);
+        transform: translateY(8px) scale(0.98);
         pointer-events: none;
       }
       .import-notice-head {
         display: flex;
         align-items: flex-start;
-        gap: 10px;
+        gap: 9px;
       }
       .import-notice-dot {
         flex: 0 0 auto;
-        width: 8px;
-        height: 8px;
+        width: 7px;
+        height: 7px;
         margin-top: 6px;
         border-radius: 50%;
-        background: #e4bd76;
-        animation: importDotPulse 1.6s ease-out infinite;
+        background: #deb970;
+        box-shadow: 0 0 0 3px rgba(222, 185, 112, 0.12);
+        animation: importDotPulse 1.8s ease-out infinite;
       }
       #importNotice[data-stage="done"] .import-notice-dot {
         background: #8bc48f;
+        box-shadow: 0 0 0 3px rgba(139, 196, 143, 0.14);
         animation: none;
       }
       #importNotice[data-stage="error"] .import-notice-dot {
         background: #d97b7b;
+        box-shadow: 0 0 0 3px rgba(217, 123, 123, 0.14);
         animation: none;
       }
-      #importNoticeText {
+      .import-notice-main {
         flex: 1;
         min-width: 0;
-        font-size: 13.5px;
-        line-height: 1.45;
-        color: #eceef2;
+      }
+      .import-notice-kicker {
+        display: flex;
+        align-items: center;
+        gap: 7px;
+        margin-bottom: 3px;
+        color: #8d929c;
+        font-size: 10.5px;
+        letter-spacing: 0.12em;
+      }
+      .import-notice-stage {
+        padding: 1px 6px;
+        border-radius: 999px;
+        background: rgba(222, 185, 112, 0.12);
+        color: #e4bd76;
+        font-size: 10.5px;
+        letter-spacing: 0.04em;
+      }
+      #importNotice[data-stage="done"] .import-notice-stage {
+        background: rgba(139, 196, 143, 0.14);
+        color: #9fd3a3;
+      }
+      #importNotice[data-stage="error"] .import-notice-stage {
+        background: rgba(217, 123, 123, 0.14);
+        color: #e5a3a3;
+      }
+      #importNoticeText {
+        font-size: 13px;
+        line-height: 1.5;
+        color: #e7e7e7;
+      }
+      .import-notice-side {
+        flex: 0 0 auto;
+        display: flex;
+        align-items: center;
+        gap: 4px;
       }
       .import-notice-percent {
-        flex: 0 0 auto;
-        font-size: 12px;
         color: #c9b184;
+        font-size: 11.5px;
         font-variant-numeric: tabular-nums;
         letter-spacing: 0.02em;
       }
+      .import-notice-close {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 22px;
+        height: 22px;
+        padding: 0;
+        color: #8d929c;
+        background: transparent;
+        border: 0;
+        border-radius: 7px;
+        font: inherit;
+        font-size: 16px;
+        line-height: 1;
+        cursor: pointer;
+        transition:
+          background 0.16s ease,
+          color 0.16s ease;
+      }
+      .import-notice-close:hover {
+        color: #e7e7e7;
+        background: rgba(255, 255, 255, 0.06);
+      }
+      .import-notice-close[hidden] {
+        display: none;
+      }
       .import-notice-bar {
         position: relative;
-        height: 6px;
-        margin-top: 12px;
+        height: 4px;
+        margin-top: 10px;
         overflow: hidden;
-        background: #14161a;
+        background: rgba(255, 255, 255, 0.07);
         border-radius: 999px;
-        box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.45);
+      }
+      .import-notice-bar[hidden] {
+        display: none;
       }
       .import-notice-bar > i {
         position: relative;
@@ -841,8 +886,14 @@
         height: 100%;
         overflow: hidden;
         border-radius: inherit;
-        background: linear-gradient(90deg, #8a6a2f, #e4bd76);
-        transition: width 0.45s cubic-bezier(0.2, 0.8, 0.3, 1);
+        background: linear-gradient(90deg, #8a6a2f, #deb970);
+        transition: width 0.4s cubic-bezier(0.2, 0.8, 0.3, 1);
+      }
+      #importNotice[data-stage="done"] .import-notice-bar > i {
+        background: linear-gradient(90deg, #5d8a62, #8bc48f);
+      }
+      #importNotice[data-stage="error"] .import-notice-bar > i {
+        background: linear-gradient(90deg, #8a4d4d, #d97b7b);
       }
       .import-notice-bar > i::after {
         content: "";
@@ -855,18 +906,18 @@
           transparent 75%
         );
         transform: translateX(-100%);
-        animation: importBarShimmer 1.5s ease-in-out infinite;
+        animation: importBarShimmer 1.6s ease-in-out infinite;
       }
       #importNotice[data-stage="done"] .import-notice-bar > i::after,
       #importNotice[data-stage="error"] .import-notice-bar > i::after {
         animation: none;
       }
       #importDetails {
-        margin-top: 10px;
-        padding-top: 10px;
-        border-top: 1px solid rgba(255, 255, 255, 0.08);
-        color: #b9bec9;
-        font-size: 12.5px;
+        margin-top: 9px;
+        padding-top: 9px;
+        border-top: 1px solid rgba(255, 255, 255, 0.06);
+        color: #b4b8c1;
+        font-size: 12px;
       }
       #importDetails summary {
         display: inline-flex;
@@ -893,34 +944,15 @@
         transform: rotate(90deg);
       }
       #importDetailsText {
-        margin-top: 8px;
-        max-height: 24vh;
+        margin-top: 7px;
+        max-height: 22vh;
         overflow: auto;
         line-height: 1.6;
-      }
-      #importDismiss {
-        width: 100%;
-        margin-top: 12px;
-        padding: 7px 12px;
-        font: inherit;
-        font-size: 13px;
-        color: #e7e7e7;
-        background: rgba(255, 255, 255, 0.05);
-        border: 1px solid rgba(255, 255, 255, 0.14);
-        border-radius: 8px;
-        cursor: pointer;
-        transition:
-          background 0.16s ease,
-          border-color 0.16s ease;
-      }
-      #importDismiss:hover {
-        background: rgba(228, 189, 118, 0.14);
-        border-color: rgba(228, 189, 118, 0.45);
       }
       @keyframes importNoticeIn {
         from {
           opacity: 0;
-          transform: translateY(14px) scale(0.97);
+          transform: translateY(10px) scale(0.985);
         }
         to {
           opacity: 1;
@@ -929,13 +961,13 @@
       }
       @keyframes importDotPulse {
         0% {
-          box-shadow: 0 0 0 0 rgba(228, 189, 118, 0.4);
+          box-shadow: 0 0 0 3px rgba(222, 185, 112, 0.16);
         }
         70% {
-          box-shadow: 0 0 0 7px rgba(228, 189, 118, 0);
+          box-shadow: 0 0 0 8px rgba(222, 185, 112, 0);
         }
         100% {
-          box-shadow: 0 0 0 0 rgba(228, 189, 118, 0);
+          box-shadow: 0 0 0 3px rgba(222, 185, 112, 0);
         }
       }
       @keyframes importBarShimmer {
@@ -2827,8 +2859,25 @@
     <div id="importNotice" hidden>
       <div class="import-notice-head">
         <span class="import-notice-dot" aria-hidden="true"></span>
-        <div id="importNoticeText" role="status" aria-live="polite"></div>
-        <span id="importPercent" class="import-notice-percent"></span>
+        <div class="import-notice-main">
+          <div class="import-notice-kicker">
+            <span>外观导入</span>
+            <span id="importStage" class="import-notice-stage" hidden></span>
+          </div>
+          <div id="importNoticeText" role="status" aria-live="polite"></div>
+        </div>
+        <div class="import-notice-side">
+          <span id="importPercent" class="import-notice-percent"></span>
+          <button
+            id="importClose"
+            type="button"
+            class="import-notice-close"
+            aria-label="关闭导入提示"
+            title="关闭"
+          >
+            ×
+          </button>
+        </div>
       </div>
       <div
         id="importProgress"
@@ -2845,7 +2894,6 @@
         <summary>导入详情</summary>
         <div id="importDetailsText" style="white-space: pre-wrap"></div>
       </details>
-      <button id="importDismiss" type="button" hidden>关闭</button>
     </div>
     <script>
       const $ = (s) => document.querySelector(s),
@@ -4322,6 +4370,7 @@
       };
       $("#addSearch").oninput = () => renderAddList();
       let importBusy = false;
+      const importStageText = { picking: "准备中", importing: "进行中", done: "完成", error: "失败" };
       function showImport(p) {
         const active = p.stage === "picking" || p.stage === "importing";
         const notice = $("#importNotice");
@@ -4329,8 +4378,10 @@
         notice.classList.remove("closing");
         notice.hidden = false;
         notice.dataset.stage = p.stage || "";
-        $("#importDismiss").hidden = active;
+        $("#importClose").hidden = active;
         $("#importDetails").hidden = true; $("#importDetails").open = false;
+        $("#importStage").textContent = importStageText[p.stage] || "";
+        $("#importStage").hidden = !importStageText[p.stage];
         const bar = $("#importProgress");
         bar.hidden = !active;
         const percent = typeof p.percent === "number" ? Math.max(0, Math.min(100, p.percent)) : null;
@@ -4357,23 +4408,27 @@
         importNoticeTimer = setTimeout(() => {
           notice.hidden = true;
           notice.classList.remove("closing");
-        }, 200);
+        }, 180);
       }
-      $("#importDismiss").onclick = closeImport;
+      $("#importClose").onclick = closeImport;
       function importResult(p, refreshWarning = "") {
         const rows = Array.isArray(p.rows) ? p.rows : [];
         const errors = Array.isArray(p.errors) ? p.errors : [];
         const files = Array.isArray(p.files) ? p.files : [];
         function rowMessage(row, directories) {
           const state = {added:"已加入",updated:"已更新",existing:"已在库中"}[row.status] || row.status || "";
+          const version = row.version ? "（版本 " + row.version + (row.unchanged ? "，未变化" : "") + "）" : "";
           const voice = row.kind === "voice" ? ((row.connected_to || []).length ? "，已接通 " + row.connected_to.join("、") : "，尚未绑定外观") : (dialogueDetectionText(row) ? "，" + dialogueDetectionText(row) : (row.voice_connected ? "，已接通语音（旧记录）" : ""));
           if (row.package_directory) directories.add(row.package_directory);
-          return row.name + " " + state + voice + (row.presentation_warning ? "，" + row.presentation_warning : "") + (row.voice_warning ? "，" + row.voice_warning : "") + (row.cleanup_warning ? "，" + row.cleanup_warning : "");
+          return row.name + " " + state + version + voice + (row.presentation_warning ? "，" + row.presentation_warning : "") + (row.voice_warning ? "，" + row.voice_warning : "") + (row.cleanup_warning ? "，" + row.cleanup_warning : "");
         }
         const warnings = rows.reduce((n, row) => n + [row.presentation_warning, row.voice_warning, row.cleanup_warning].filter(Boolean).length, 0) + (refreshWarning ? 1 : 0);
         const failedFiles = files.filter(file => file.error).length;
         const errorCount = Math.max(errors.length, failedFiles, p.stage === "error" ? 1 : 0);
-        const summary = (p.cancelled ? "已取消导入" : p.stage === "error" ? "导入失败" : errorCount ? `导入完成：${rows.length} 项，部分失败` : `导入完成：${rows.length} 项`) + (errorCount ? ` · 错误 ${errorCount}` : "") + (warnings ? ` · 警告 ${warnings}` : "");
+        const stale = rows.length > 0 && rows.every(row => row.unchanged);
+        const summary = (p.cancelled ? "已取消导入" : p.stage === "error" ? "导入失败"
+          : stale ? `已是最新版本：${rows.length} 项`
+          : errorCount ? `导入完成：${rows.length} 项，部分失败` : `导入完成：${rows.length} 项`) + (errorCount ? ` · 错误 ${errorCount}` : "") + (warnings ? ` · 警告 ${warnings}` : "");
         const directories = new Set();
         let messages;
         if (files.length > 1) {

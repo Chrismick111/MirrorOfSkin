@@ -141,7 +141,9 @@ class ModPackageTest(unittest.TestCase):
                     self.assertTrue(archive.read(
                         'mos_portraits/story_BRolandBaseAppearance.png').startswith(b'\x89PNG'))
                 self.assertIsNone(prepared.portrait)
-                self.assertEqual(prepared.source, 'roland.zip')
+                self.assertEqual(prepared.source, 'roland')
+                self.assertEqual(prepared.version, '1.0.0')
+                self.assertEqual(prepared.name, '罗兰')
         self.assertFalse(prepared.archive.exists())
         portrait = mod_packages._portrait(self.mods / 'roland' / 'icon.png')
         self.assertTrue(portrait.startswith(b'\x89PNG'))
@@ -151,25 +153,80 @@ class ModPackageTest(unittest.TestCase):
         self.package('plain', manifest={'identity': None})
         with mod_packages.prepared_archive(self.addon, 'plain') as prepared:
             self.assertEqual(prepared.portrait[1:4], b'PNG')
-            self.assertEqual(prepared.source, 'plain.zip')
+            self.assertEqual(prepared.source, 'plain')
             with ZipFile(prepared.archive) as archive:
                 self.assertNotIn('mos-portraits.json', archive.namelist())
 
-    def test_declared_identity_adopts_the_registered_archive_name(self):
+    def test_declared_identity_adopts_a_previously_imported_archive(self):
         import import_packages
         from uuid import uuid4
 
         self.package('roland')
         data = self.base / 'profile'
+        library = uuid4().hex
+        package_id = uuid4().hex
+        folder = self.addon / import_packages.DIRECTORY / 'roland'
+        folder.mkdir(parents=True)
+        (folder / 'BRoland.bundle').write_bytes(b'bundle')
+        import_packages._write_marker(folder / import_packages.MARKER, package_id)
         import_packages.write_index(data, {
-            'schema': 1, 'library': uuid4().hex,
-            'packages': [{'id': uuid4().hex, 'source': 'roland.7z', 'directory': 'roland',
+            'schema': 1, 'library': library,
+            'packages': [{'id': package_id, 'source': 'roland.7z', 'directory': 'roland',
                           'identities': ['story_BRolandBaseAppearance']}],
         })
+        import_packages._write_marker(
+            self.addon / import_packages.DIRECTORY / import_packages.LIBRARY_MARKER, library)
+        package, reserved, encoded, created = import_packages.prepare_package(
+            data, self.addon, 'roland', {'story_BRolandBaseAppearance'},
+            source_kind='mod', source_name='罗兰', source_version='1.0.0')
+        self.assertFalse(created)
+        self.assertEqual(package['source'], 'roland')
+        self.assertEqual(package['source_kind'], 'mod')
+        self.assertEqual(package['source_name'], '罗兰')
+        self.assertEqual(package['source_version'], '1.0.0')
+        self.assertEqual(package['directory'], 'roland')
+        self.assertEqual(json.loads(encoded)['packages'][0]['source'], 'roland')
+
+    def test_unchanged_rows_skips_a_complete_package_at_the_same_version(self):
+        import import_packages
+        from uuid import uuid4
+
+        self.package('roland')
+        data = self.base / 'profile'
+        folder = self.addon / import_packages.DIRECTORY / 'roland'
+        folder.mkdir(parents=True)
+        (folder / 'BRoland.bundle').write_bytes(b'bundle')
+        import_packages.write_index(data, {
+            'schema': 1, 'library': uuid4().hex,
+            'packages': [{'id': uuid4().hex, 'source': 'roland', 'source_kind': 'mod',
+                          'source_name': '罗兰', 'source_version': '1.0.0',
+                          'directory': 'roland',
+                          'identities': ['story_BRolandBaseAppearance']}],
+        })
+        locator = data / 'Assets/ImportedSkins/BRolandBaseAppearance.loc'
+        locator.parent.mkdir(parents=True, exist_ok=True)
+        locator.write_text('imported-appearance/roland/BRoland.bundle', encoding='utf-8')
+        catalog = data / skin_import.CATALOG
+        catalog.parent.mkdir(parents=True)
+        catalog.write_text(json.dumps({'101': {'entries': [
+            {'identity_id': 'story_BRolandBaseAppearance', 'name': '罗兰·漆黑缄默'}]}}),
+            encoding='utf-8')
+        item = mod_packages.find(self.addon, 'roland')
         with patch('mos_data.data_dir', return_value=data):
-            with mod_packages.prepared_archive(self.addon, 'roland') as prepared:
-                self.assertEqual(prepared.source, 'roland.7z')
-                self.assertEqual(prepared.archive.name, 'roland.zip')
+            rows = mod_packages.unchanged_rows(self.addon, item)
+        self.assertIsNotNone(rows)
+        self.assertEqual(rows[0]['status'], 'existing')
+        self.assertTrue(rows[0]['unchanged'])
+        self.assertEqual(rows[0]['version'], '1.0.0')
+        self.assertEqual(rows[0]['name'], '罗兰·漆黑缄默')
+
+        item['version'] = '1.0.1'
+        with patch('mos_data.data_dir', return_value=data):
+            self.assertIsNone(mod_packages.unchanged_rows(self.addon, item))
+        (folder / 'BRoland.bundle').unlink()
+        item['version'] = '1.0.0'
+        with patch('mos_data.data_dir', return_value=data):
+            self.assertIsNone(mod_packages.unchanged_rows(self.addon, item))
 
 
 class DefaultPortraitTest(unittest.TestCase):

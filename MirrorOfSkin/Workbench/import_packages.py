@@ -135,6 +135,12 @@ def read_index(root):
         if (not isinstance(missing, list) or not all(valid_identity(value) for value in missing)
                 or len(missing) != len(set(missing)) or set(missing) - set(item['identities'])):
             raise ValueError('导入包待恢复外观编号无效')
+        if item.get('source_kind') is not None and item['source_kind'] != 'mod':
+            raise ValueError('导入包来源类型无效')
+        for key, limit in (('source_name', 100), ('source_version', 64)):
+            value = item.get(key)
+            if value is not None and (not isinstance(value, str) or len(value) > limit):
+                raise ValueError('导入包来源信息无效')
         seen.add(item['id'])
         names.add(item['directory'].casefold())
     return index
@@ -260,8 +266,14 @@ def write_index(root, index):
         Path(staging).unlink(missing_ok=True)
 
 
-def prepare_package(root, addon, source, identities):
-    """Reserve a folder. The caller holds the data save lock and commits the index."""
+def prepare_package(root, addon, source, identities, *, source_kind=None, source_name=None,
+                    source_version=None):
+    """Reserve a folder. The caller holds the data save lock and commits the index.
+
+    A package imported from a launcher mod is keyed by the mod id, so a newer
+    release adopts the folder and identities of an earlier import even when that
+    import came from a plain archive such as ``roland.7z``.
+    """
     library = ensure_library(root, addon)
     directory = managed_root(addon)
     index = read_index(root)
@@ -269,6 +281,11 @@ def prepare_package(root, addon, source, identities):
     identities = set(identities)
     matches = [item for item in index['packages']
                if item['source'].casefold() == source.casefold() and identities.intersection(item['identities'])]
+    owners = [item for item in index['packages'] if identities.intersection(item['identities'])]
+    if len(owners) > 1:
+        raise ValueError('压缩包中的外观分属多个已导入包，请在工作台中先确认对应外观')
+    if not matches and owners and source_kind == 'mod':
+        matches = owners
     if len(matches) > 1:
         raise ValueError('压缩包同时匹配多个已导入包，请在工作台中先确认对应外观')
     if any(item not in matches and identities.intersection(item['identities']) for item in index['packages']):
@@ -293,6 +310,14 @@ def prepare_package(root, addon, source, identities):
         folder = None
         package = {'id': uuid4().hex, 'source': source, 'identities': []}
         index['packages'].append(package)
+    if source_kind == 'mod':
+        package['source'] = source
+        package['source_kind'] = 'mod'
+        package['source_name'] = source_name or package.get('source_name') or source
+        package['source_version'] = source_version or ''
+    else:
+        for key in ('source_kind', 'source_name', 'source_version'):
+            package.pop(key, None)
     if folder is None:
         base = package.get('directory', _package_name(source))
         reserved = {p.name.casefold() for p in directory.iterdir()}

@@ -659,11 +659,16 @@ def main():
   return import_skin(path,store.addon_root,**callbacks)
  def import_mod_package(path, **callbacks):
   from skin_import import import_skin
+  item=mod_packages.find(store.addon_root,pathlib.Path(path).name)
+  rows=mod_packages.unchanged_rows(store.addon_root,item)
+  if rows is not None:return rows
   progress=callbacks.get('progress')
   with mod_packages.prepared_archive(store.addon_root,pathlib.Path(path).name,
                                      progress=progress) as prepared:
    extra={'default_portrait':prepared.portrait} if prepared.portrait else {}
-   if prepared.source:extra['source']=prepared.source
+   if prepared.source:
+    extra.update(source=prepared.source,source_kind='mod',source_name=prepared.name,
+                 source_version=prepared.version)
    return import_skin(prepared.archive,store.addon_root,**extra,**callbacks)
  skin_jobs=skin_import_jobs.ImportJobs(_pick_local_skins,import_local_skin)
  if lifetime.unowned():
