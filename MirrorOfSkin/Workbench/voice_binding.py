@@ -9,11 +9,30 @@ import tempfile
 import time
 
 
+_EXPORT_SUFFIX = re.compile(
+    r'\s+(?P<project>\d+)\s+\d+\s+\d{4}-\d{2}-\d{2}T\d{2}[-:]\d{2}Z\s+[a-z0-9_-]+(?:\s*\(\d+\))?$', re.I)
+_VOICE_LABEL = re.compile(r'语音|音频|配音|\b(?:sounds?|voices?|audio)\b', re.I)
+_SKIN_LABEL = re.compile(r'皮肤|外观|\b(?:skins?|models?|appearance)\b', re.I)
+
+
 def family(text):
     text=unicodedata.normalize('NFKC',text).casefold()
-    text=re.sub(r'\b(?:audio|voices?|skins?|models?|sound|pack|fixed)\b',' ',text.replace('_',' '))
-    text=re.sub(r'语音包?|音频包?|皮肤包?|外观包?|(?:修复|调整坐标|修正)版?', '',text)
+    text=_EXPORT_SUFFIX.sub('',text).replace('_',' ')
+    text=re.sub(r'\b(?:audio|voices?|skins?|models?|sounds?|appearance|mod|pack|fixed)\b',' ',text)
+    text=re.sub(r'(?:语音|配音|音频|皮肤|外观)包?|(?:修复|调整坐标|修正)版?', '',text)
     return ''.join(c for c in text if c.isalnum())
+
+
+def _project(label):
+    match = _EXPORT_SUFFIX.search(unicodedata.normalize('NFKC', label))
+    return match.group('project') if match else None
+
+
+def named_package(label, *, voice_only=False):
+    if not label or not family(label) or re.match(r'^Voice_Default_',label,re.I):
+        return False
+    words = label.replace('_', ' ')
+    return bool(_VOICE_LABEL.search(words) or (not voice_only and _SKIN_LABEL.search(words)))
 
 
 def companion_archive(skin):
@@ -22,7 +41,8 @@ def companion_archive(skin):
     if not key:return None
     matches=[p for p in skin.parent.iterdir()
              if p!=skin and p.suffix.casefold() in ('.zip','.rar','.7z') and p.is_file()
-             and re.search(r'语音|音频|\b(?:voices?|audio)\b',p.stem.replace('_',' '),re.I)
+             and named_package(p.stem, voice_only=True)
+             and not (_project(skin.stem) and _project(p.stem) and _project(skin.stem)!=_project(p.stem))
              and family(p.stem)==key]
     return matches[0] if len(matches)==1 else None
 
@@ -105,16 +125,32 @@ def reconcile(root):
         return reconcile_locked(root)
 
 
+def refresh_saved_bindings(root):
+    """Re-evaluate imported banks when a workbench opens after an upgrade."""
+    from file_lock import FileLock
+    library = root / 'Assets/ImportedVoices'
+    if not library.is_dir() or not any(library.glob('*/voice.json')):
+        return
+    with FileLock(root/'workbench-save.lock'):
+        table = library/'bindings.tsv'
+        before = table.read_bytes() if table.is_file() else b''
+        reconcile_locked(root)
+        if table.read_bytes() != before:
+            signal_runtime(root)
+
+
 def reconcile_locked(root,evidence=None):
     library=root/'Assets/ImportedVoices'
     catalog=json.loads((root/'Assets/runtime/all_sinners_pools.json').read_bytes())
     models={}
+    projects={}
     declared={}
     for group in catalog.values():
         for entry in group['entries']:
             model=model_info(root,entry)
             if model:
                 models[model[0]]=model
+                projects[model[0]] = {p for k in ('import_source','name') if (p:=_project(entry.get(k,'')))}
                 if 'imported_voice' in entry:
                     try:
                         declared[model[0]] = validate_voice_policy(entry['imported_voice'])
@@ -157,7 +193,11 @@ def reconcile_locked(root,evidence=None):
             index[group]=(stamp,meta,banks)
     for _,meta,banks in index.values():
         targets=set(meta['targets'])
-        names={family(meta.get(k,'')) for k in ('name','source')}-{''}
+        labels=[meta.get('name',''),meta.get('source','')]+[
+            a for a in meta.get('package_aliases',[]) if isinstance(a,str)]
+        names={family(label) for label in labels if label}-{''}
+        voice_projects={p for label in labels if label and (p:=_project(label))}
+        named_voice=any(named_package(label,voice_only=True) for label in labels) or bool(meta.get('package_aliases'))
         together=set(meta.get('included_looks',[]))
         scoped=meta.get('scoped_to_appearances') or bool(together.intersection(declared))
         included_has_match=any(look in together and bool(owners&targets)
@@ -169,16 +209,21 @@ def reconcile_locked(root,evidence=None):
         for look,owners,aliases,label in models.values():
             if scoped and look not in together:
                 continue
+            related=bool(aliases&names)
+            if look not in together:
+                if voice_projects and projects[look] and voice_projects.isdisjoint(projects[look]):
+                    continue
+                if named_voice and (not related or not targets):
+                    continue
             if look in declared:
                 rule=declared[look]
-                if rule and look in together and rule['owner'] in targets:
+                if rule and (look in together or (not together and related)) and rule['owner'] in targets:
                     matched=[b for b in banks if b.casefold()==rule['bank'].casefold()]
                     if len(matched)==1:
                         selected_banks[look]=matched
                         scores[look]=(4,rule['owner'])
                 continue
             overlap=owners&targets
-            related=bool(aliases&names)
             if targets and owners and not overlap:
                 # A single-target voice included with otherwise unmatched
                 # artwork is explicit evidence even when its prefab layout

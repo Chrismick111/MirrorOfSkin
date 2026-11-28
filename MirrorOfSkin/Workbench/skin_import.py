@@ -250,7 +250,7 @@ def import_skin(archive, addon, *, name=None, unity=None, progress=None, check_c
             if check_cancelled is not None:
                 check_cancelled(committing=True)
             try:
-                bank_row = import_banks(path,root,name,source=Path(archive).stem,included=included,scoped=bool(declared))
+                bank_row = import_banks(path,root,name,source=Path(archive).stem,included=included,scoped=bool(declared),source_path=archive)
                 if bank_row:
                     rows.append(bank_row)
             except (OSError,ValueError,BadZipFile) as error:
@@ -259,7 +259,7 @@ def import_skin(archive, addon, *, name=None, unity=None, progress=None, check_c
                 companion_warning = str(error)
         if included and voice_path is not None:
             try:
-                voice=import_banks(voice_path,root,source=companion.stem,included=declared,scoped=bool(declared))
+                voice=import_banks(voice_path,root,source=companion.stem,included=declared,scoped=bool(declared),source_path=companion)
                 if voice:
                     for row in rows:row['voice_companion']=companion.name
             except (OSError,ValueError,RuntimeError,BadZipFile) as error:
@@ -274,14 +274,28 @@ def import_skin(archive, addon, *, name=None, unity=None, progress=None, check_c
         signal_runtime(root)
         for row in rows:
             if row.get('kind')=='voice':
-                row['connected_to']=[label for rev,label in mapped.values() if rev==row['revision']]
+                row['connected_to'] = sorted({label for rev, label in mapped.values() if rev == row['revision']})
+                row['voice_binding_status'] = voice_binding_status(row)
             else:
                 identity = row['identity_id']
                 row['voice_connected'] = (identity.removeprefix('story_') in mapped
                                           or bindings.get(identity, {}).get('voice') == 'connected')
                 apply_binding(row, bindings)
-    report(100, '导入完成')
+    if rows and all(row.get('kind') == 'voice' and not row['connected_to'] for row in rows):
+        report(100, '语音已收录，尚未绑定外观')
+    else:
+        report(100, '导入完成')
     return rows
+
+
+def voice_binding_status(row):
+    if row.get('connected_to'):
+        return 'bound'
+    if not row.get('playable_banks'):
+        return 'incomplete_banks'
+    if not (row.get('targets') or row.get('included_looks')):
+        return 'unknown_owner'
+    return 'unmatched'
 
 
 def install_roland_bundles(archive, root, *, destination=None):
@@ -696,15 +710,23 @@ def main():
             print(json.dumps(rows, ensure_ascii=False))
         else:
             for row in rows:
+                if row.get('kind')=='voice':
+                    state = {'added': '语音已收录', 'updated': '已更新语音资料', 'existing': '语音已在库中'}[row['status']]
+                    print(row['name'], state)
+                    print('  语音库：'+'、'.join(row['banks']))
+                    print('  人格线索：'+('、'.join(row['targets']) or '未识别'))
+                    if row['connected_to']:
+                        print('  已绑定到外观：' + '、'.join(row['connected_to']))
+                    else:
+                        reasons = {
+                            'incomplete_banks': '未确认完整的 FMOD 事件库和音频素材',
+                            'unknown_owner': '未识别对应人格或外观',
+                            'unmatched': '未匹配到唯一可绑定的外观',
+                        }
+                        print('  尚未绑定外观，' + reasons[row['voice_binding_status']])
+                    continue
                 state={'added':'已加入','updated':'已更新','existing':'已在池中'}[row['status']]
                 print(row['name'],state)
-                if row.get('kind')=='voice':
-                    print('  语音库：'+'、'.join(row['banks']))
-                    print('  关联人格：'+('、'.join(row['targets']) or '未标明'))
-                    if row['connected_to']:print('  已接通：'+'、'.join(row['connected_to']))
-                    elif not row.get('playable_banks'):print('  已入库，缺少配套的 FMOD 事件库或音频素材。')
-                    else:print('  已入库，等待可唯一匹配的外观或语音线索。')
-                    continue
                 for key,label in [('attack','攻击'),('clash','拼点'),('defense','守备')]:
                     slots=[str(item['detail']) for item in row['actions'][key]]
                     print('  '+label+'动作槽：'+('、'.join(slots) or '未识别'))

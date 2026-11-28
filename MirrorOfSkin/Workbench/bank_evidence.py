@@ -64,7 +64,15 @@ def game_bank_dir(folder: Path):
     return None
 
 
-def _chunks(data, start, end):
+def _sound_offset(data, start, end):
+    # FSB starts at a 32-byte alignment inside its RIFF chunk.
+    fsb = data.find(b'FSB5', start, min(start + 35, end))
+    if fsb < 0 or fsb + 60 > end:
+        raise ValueError('unsupported sound chunk')
+    return fsb
+
+
+def _chunks(data, start, end, *, terminal_sound=False):
     while start < end:
         if end - start < 8:
             raise ValueError('short RIFF chunk')
@@ -72,15 +80,24 @@ def _chunks(data, start, end):
         body = start + 8
         start = body + size + (size % 2)
         if start > end:
-            raise ValueError('chunk exceeds container')
+            if not terminal_sound or tag != b'SND ' or body + size <= end:
+                raise ValueError('chunk exceeds container')
+            # A sample repacker can retain the stock SND size even though the
+            # enclosing RIFF and replacement FSB both end at the physical EOF.
+            fsb = _sound_offset(data, body, end)
+            if not _sample_times(data, fsb, end, exact_end=True):
+                raise ValueError('empty replacement sound chunk')
+            size = end - body
+            start = end
         yield tag, body, size
 
 
-def _sample_times(data, fsb, end, fingerprints=False):
+def _sample_times(data, fsb, end, fingerprints=False, *, exact_end=False):
     version, count, headers, names, audio = struct.unpack_from('<5I', data, fsb + 4)
     base = fsb + 60 + headers
+    audio_end = base + names + audio
     if (version != 1 or count > 65536 or headers < 8 * count or names < count * 4
-            or base + names + audio > end):
+            or audio_end > end or (exact_end and audio_end != end)):
         raise ValueError('unsupported FSB5 sample directory')
     pos = fsb + 60
     result = {}
@@ -96,7 +113,10 @@ def _sample_times(data, fsb, end, fingerprints=False):
         name = data[namepos:term]
         bits = struct.unpack_from('<Q', data, pos)[0]
         pos += 8
-        offsets.append((name, ((bits >> 7) & 0x7ffffff) * 32))
+        offset = ((bits >> 7) & 0x7ffffff) * 32
+        if offset > audio or (offsets and offset < offsets[-1][1]):
+            raise ValueError('invalid sample audio offsets')
+        offsets.append((name, offset))
         more = bits & 1
         rate_id = (bits >> 1) & 15
         rate = _RATES[rate_id] if rate_id < len(_RATES) else 0
@@ -121,8 +141,6 @@ def _sample_times(data, fsb, end, fingerprints=False):
         data_start=base+names
         for i,(name,offset) in enumerate(offsets):
             next_offset=offsets[i+1][1] if i+1<len(offsets) else audio
-            if offset>next_offset or next_offset>audio:
-                raise ValueError('invalid sample audio offsets')
             view=memoryview(data)[data_start+offset:data_start+next_offset]
             try:sample_hash=hashlib.sha256(view).digest()
             finally:view.release()
@@ -130,7 +148,7 @@ def _sample_times(data, fsb, end, fingerprints=False):
     return result
 
 
-def _read_bank(path, times=False, fingerprints=False):
+def _read_bank(path, times=False, fingerprints=False, *, sample_groups=None):
     with path.open('rb') as stream:
         if not 12 <= os.fstat(stream.fileno()).st_size <= 1024**3:
             raise ValueError('unsupported bank size')
@@ -140,21 +158,20 @@ def _read_bank(path, times=False, fingerprints=False):
                 raise ValueError('unsupported bank')
             events = audio = False
             samples = {}
-            for tag, pos, size in _chunks(data, 12, len(data)):
+            for tag, pos, size in _chunks(data, 12, len(data), terminal_sound=True):
                 if tag == b'LIST' and data[pos:pos+4] == b'PROJ':
                     for child, start, length in _chunks(data, pos+4, pos+size):
                         if child == b'LIST' and length > 4 and data[start:start+4] == b'EVTS':
                             events = True
                 if tag == b'SND ':
-                    # FSB starts at a 32-byte alignment inside its RIFF chunk.
-                    fsb = data.find(b'FSB5', pos, min(pos+35, pos+size))
-                    if fsb < 0 or fsb+60 > pos+size:
-                        raise ValueError('unsupported sound chunk')
+                    fsb = _sound_offset(data, pos, pos + size)
                     audio = True
                     if times:
                         clips = _sample_times(data, fsb, pos+size, fingerprints=fingerprints)
                         if samples.keys() & clips.keys():
                             raise ValueError('ambiguous sample bank')
+                        if sample_groups is not None:
+                            sample_groups.append(tuple(clips))
                         samples.update(clips)
             return events, audio, samples
 
@@ -203,7 +220,7 @@ def target_probe_key(folder: Path, banks: list[str]) -> str:
     for name in sorted(banks,key=str.casefold):
         if _BANK.fullmatch(name):
             rows.append((name,stamp(folder/name),stamp(game/name) if game else None))
-    data=json.dumps([2,str(game) if game else None,rows],ensure_ascii=True,separators=(',',':'))
+    data=json.dumps([3,str(game) if game else None,rows],ensure_ascii=True,separators=(',',':'))
     return hashlib.sha256(data.encode('ascii')).hexdigest()
 
 
@@ -215,7 +232,8 @@ def probe_targets(folder: Path, banks: list[str]) -> set[str]:
         if not _BANK.fullmatch(name):
             continue
         try:
-            changed = _read_bank(folder / name, times=True, fingerprints=True)[2]
+            changed_groups = []
+            changed = _read_bank(folder / name, times=True, fingerprints=True, sample_groups=changed_groups)[2]
             if not game or not (game / name).is_file():
                 identities = set()
                 for key in changed:
@@ -227,10 +245,13 @@ def probe_targets(folder: Path, banks: list[str]) -> set[str]:
                     if len(identities) == 1:
                         owners.update(identities)
                 continue
-            stock = _read_bank(game / name, times=True, fingerprints=True)[2]
+            stock_groups = []
+            stock = _read_bank(game / name, times=True, fingerprints=True, sample_groups=stock_groups)[2]
         except _ERRORS:
             continue
-        if stock.keys() != changed.keys():
+        # A replacement can supply only the opening stock FSB regions. Require
+        # every retained region and its sample sequence to match in full.
+        if stock.keys() != changed.keys() and (not changed_groups or stock_groups[:len(changed_groups)] != changed_groups):
             continue
         duration_owners=set()
         fingerprint_owners=set()

@@ -396,6 +396,7 @@ static void test_local_repeated_coin(Unit *u,Skin *skin){
  ImportedConfig config={0};strcpy(config.layout,"fixture_unpaired");
  strcpy(u->baseName,"10101_YiSang_BaseAppearance");strcpy(skin->look,"WBImp_0123456789abcdef01234567");
  skin->imported=&config;skin->chapterActor=NULL;u->preserveSpecial=0;u->coinDefense=0;u->coinKnown=1;
+ u->coinLast=0;
  u->observedAction=&view;u->observedViewer=&stock;u->viewerActive=1;u->ordinarySourceClips[9]=(1u<<1);
  memset(skin->motionCounts,0,sizeof(skin->motionCounts));memset(skin->ordinaryClips,0,sizeof(skin->ordinaryClips));
  skin->motionCounts[9]=3;skin->ordinaryClips[9]=7;g_rows[skin->row].excluded=0;
@@ -406,6 +407,11 @@ static void test_local_repeated_coin(Unit *u,Skin *skin){
  assert(lastDetail==9&&lastPart==2);
  forward_projected_motion(&donor,9,0,1,0,NULL,0,NULL,9,1,1,1,&view,1);
  assert(lastDetail==9&&lastPart==2);
+ /* A final coin uses the authored ending even when part zero is unused. */
+ u->coinLast=1;
+ forward_projected_motion(&donor,9,0,1,0,NULL,0,NULL,9,1,2,1,&view,2);
+ assert(lastDetail==9&&lastPart==2);
+ u->coinLast=0;
  skin->imported=NULL;set_roland_policy(skin);
  strcpy(u->baseName,"10115_YiSang_Index_FatherAppearance");sr_segment_clear(&u->segmentLatch);
  forward_projected_motion(&donor,9,0,1,0,NULL,0,NULL,9,1,0,1,&view,0);

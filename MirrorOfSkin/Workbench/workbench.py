@@ -194,6 +194,11 @@ class Store:
   self.lock=FileLock(self.root/'workbench-save.lock');self.portraits=read(self.root/'Workbench/portrait_manifest.json',{});self.local_portraits=local_portraits.load(self.root)
   with self.lock:
    chapter_nine.migrate(self.root,stage_files)
+  from voice_binding import refresh_saved_bindings
+  try:
+   refresh_saved_bindings(self.root)
+  except (OSError,ValueError,TypeError,KeyError,TimeoutError) as error:
+   print(f'外来语音绑定未能刷新：{error}',file=sys.stderr)
  def _launcher_background_init(self):
   if hasattr(self,'_launcher_bg_files'):return
   self._launcher_bg_files=[];self._launcher_bg_blur=7.5;self._launcher_bg_path=None

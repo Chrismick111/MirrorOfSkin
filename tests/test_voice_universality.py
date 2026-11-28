@@ -21,7 +21,7 @@ def chunk(tag, data):
     return tag + struct.pack('<I', len(data)) + data + b'\0' * (len(data) % 2)
 
 
-def bank(samples, events=True):
+def sample_region(samples):
     names = bytearray(len(samples) * 4)
     headers = bytearray()
     data = bytearray()
@@ -31,9 +31,23 @@ def bank(samples, events=True):
         headers.extend(struct.pack('<Q', (frames << 34) | (i << 7) | (7 << 1)))
         data.extend(bytes([content]) * 32)
     head = struct.pack('<4s6I', b'FSB5', 1, len(samples), len(headers), len(names), len(data), 2)
-    snd = head.ljust(60, b'\0') + headers + names + data
+    return head.ljust(60, b'\0') + headers + names + data
+
+
+def bank_regions(*regions, events=True):
     proj = chunk(b'LIST', b'PROJ' + chunk(b'LIST', b'EVTS' + (b'EVNT' if events else b'')))
-    return chunk(b'RIFF', b'FEV ' + proj + chunk(b'SND ', snd))
+    return chunk(b'RIFF', b'FEV ' + proj + b''.join(chunk(b'SND ', sample_region(samples)) for samples in regions))
+
+
+def bank(samples, events=True):
+    return bank_regions(samples, events=events)
+
+
+def stale_sound_length(samples):
+    raw = bytearray(bank(samples, events=False))
+    sound = raw.index(b'SND ') + 4
+    struct.pack_into('<I', raw, sound, len(raw) + 512)
+    return raw
 
 
 class VoiceUniversalityTests(unittest.TestCase):
@@ -101,6 +115,58 @@ class VoiceUniversalityTests(unittest.TestCase):
         self.voice(['10109'])
         self.assertEqual(voice_binding.reconcile(self.root), {})
 
+    def test_separate_downloads_match_in_either_order_without_borrowing_another_skin(self):
+        self.skin('a', '10109', 'Different actor')
+        self.voice(['10109'], name='Quartz Sound Mod 290 1 2026-11-27T04-32Z UeXKxo7kv')
+        self.assertEqual(voice_binding.reconcile(self.root), {})
+        look = self.skin('b', '10109', 'Quartz Skin Mod 290 1 2026-11-27T04-31Z bdtqf9inB')
+        self.assertEqual(set(voice_binding.reconcile(self.root)), {look})
+        self.assertEqual(set(voice_binding.reconcile(self.root)), {look})
+
+    def test_split_exporter_names_work_for_sibling_discovery_and_reject_ambiguity(self):
+        skin = self.root / 'Quartz Skin Mod 290 1 2026-11-27T04-31Z bdtqf9inB.7z'
+        audio = self.root / 'Quartz Sound Mod 290 1 2026-11-27T04-32Z UeXKxo7kv.zip'
+        skin.touch(); audio.touch()
+        self.assertEqual(voice_binding.companion_archive(skin), audio)
+        (self.root / 'Quartz Voice Mod.7z').touch()
+        self.assertIsNone(voice_binding.companion_archive(skin))
+
+    def test_voice_in_named_folder_binds_only_its_matching_appearance(self):
+        self.skin('a', '10109', 'Different actor')
+        look = self.skin('b', '10109', 'Quartz Skin Mod')
+        rev = self.voice(['10109'], name='Voice_Default_S7_3.assets')
+        p = self.library / rev / 'voice.json'
+        record = json.loads(p.read_bytes())
+        record['package_aliases'] = ['Quartz Audio Mod']
+        p.write_text(json.dumps(record),encoding='utf8')
+        self.assertEqual(set(voice_binding.reconcile(self.root)), {look})
+
+    def test_bare_bank_remembers_its_labelled_parent_across_reimport(self):
+        filename = 'Voice_Default_S7_3.assets.bank'
+        source = self.root/'Quartz Sound Mod'/filename
+        wrapper = self.root/'normalized.zip'
+        with ZipFile(wrapper,'w') as z:
+            z.writestr(filename,bank([('battle_s1_10109_1',32000,1)]))
+        first = bank_mod.import_banks(wrapper,self.root,source=source.stem,source_path=source)
+        second = bank_mod.import_banks(wrapper,self.root,source='renamed')
+        self.assertEqual(first['revision'],second['revision'])
+        self.assertEqual(second['package_aliases'],['Quartz Sound Mod'])
+
+    def test_conflicting_exporter_ids_do_not_bind_same_title(self):
+        self.skin('a','10109','Quartz Skin Mod 178 1 2026-11-27T04-31Z AbCd1234')
+        self.voice(['10109'],name='Quartz Sound Mod 290 1 2026-11-27T04-32Z EfGh6789')
+        self.assertFalse(voice_binding.reconcile(self.root))
+
+    def test_reopening_repairs_saved_pack_without_reimport_or_repeated_notifications(self):
+        look = self.skin('b','10109','Quartz Skin Mod')
+        self.voice(['10109'], name='Quartz Sound Mod')
+        (self.library/'bindings.tsv').write_bytes(b'')
+        with patch.object(voice_binding,'signal_runtime') as notify:
+            voice_binding.refresh_saved_bindings(self.root)
+            self.assertTrue((self.library/'bindings.tsv').read_text().startswith(look+'\t10109\t'))
+            voice_binding.refresh_saved_bindings(self.root)
+            notify.assert_called_once_with(self.root)
+
     def test_package_voice_owner_and_bank_select_only_the_declared_bank(self):
         look = self.skin('a', '10109', 'A')
         other = self.skin('b', '10916', 'B')
@@ -167,6 +233,34 @@ class VoiceUniversalityTests(unittest.TestCase):
         (mod / name).write_bytes(bank([(samples[0][0], 48000, 9), (samples[1][0], 32000, 8)]))
         with patch.dict(os.environ, {'LIMBUS_GAME_DIR': str(game)}):
             self.assertEqual(bank_evidence.probe_targets(mod, [name]), {'10916'})
+
+    def test_reencoded_primary_region_with_stale_sound_length_pairs_and_infers_owner(self):
+        game = self.root / 'Desktop'; mod = self.root / 'mod'
+        game.mkdir(); mod.mkdir()
+        name = 'Voice_Season.assets.bank'
+        first = [('battle_s1_10115_1', 32000, 1), ('battle_s1_11215_1', 32000, 2)]
+        second = [('battle_s2_11215_2', 32000, 3)]
+        (game / name).write_bytes(bank_regions(first, second, events=False))
+        (game / 'Voice_Season.bank').write_bytes(bank_regions())
+        replacement = [('battle_s1_10115_1', 48000, 4), ('battle_s1_11215_1', 32000, 5)]
+        (mod / name).write_bytes(stale_sound_length(replacement))
+        with patch.dict(os.environ, {'LIMBUS_GAME_DIR': str(game)}):
+            self.assertEqual(bank_evidence.playable_banks(mod, [name]), [name])
+            self.assertEqual(bank_evidence.probe_targets(mod, [name]), {'10115'})
+            # Removing or moving individual samples would not preserve the stock region.
+            for ambiguous in (replacement[:1], list(reversed(replacement)), second):
+                (mod / name).write_bytes(stale_sound_length(ambiguous))
+                self.assertEqual(bank_evidence.probe_targets(mod, [name]), set())
+
+    def test_oversized_sound_chunk_cannot_hide_truncated_samples_or_extra_payload(self):
+        name = 'Voice_Season.assets.bank'
+        raw = stale_sound_length([('battle_s1_10115_1', 48000, 4)])
+        for damaged in (raw[:-2], raw + b'JUNK'):
+            struct.pack_into('<I', damaged, 4, len(damaged) - 8)
+            path = self.root / name
+            path.write_bytes(damaged)
+            with self.assertRaises(ValueError):
+                bank_evidence._read_bank(path)
 
     def test_reimport_restores_missing_and_corrupt_files(self):
         archive = self.root / 'voice.zip'

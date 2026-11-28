@@ -3372,11 +3372,15 @@
         closeTourModals();
         if (!step?.open) return;
         if (step.open === "source") openPoolSourceModal();
-        else if (step.open === "identities") openIdentityModal();
-        else if (step.open === "imported") openImportedModal();
-        else if (step.open === "chapters") openChapterModal();
+        else if (step.open === "identities") openIdentityModal(step);
+        else if (step.open === "imported") openImportedModal(step);
+        else if (step.open === "chapters") openChapterModal(step);
+      }
+      function isCurrentTourStep(step) {
+        return tutorialOpen && tutorialSteps[tutorialIndex] === step;
       }
       function positionTour(step, target) {
+        if (!isCurrentTourStep(step)) return;
         const layer = $("#tutorialLayer");
         const spot = $("#tutorialSpot");
         const tip = $("#tutorialTip");
@@ -4444,13 +4448,15 @@
             .includes(query);
         }));
       }
-      async function openIdentityModal() {
+      async function openIdentityModal(tourStep = null) {
         try {
           const latest = await api("data");
+          if (tourStep && !isCurrentTourStep(tourStep)) return;
           data.catalog = latest.catalog;
           data.chapterArt = latest.chapterArt || {};
           data.chapterRevision = latest.chapterRevision;
         } catch (error) {
+          if (tourStep && !isCurrentTourStep(tourStep)) return;
           status("更新外观列表失败：" + error.message);
         }
         $("#identityTargetName").textContent =
@@ -4476,14 +4482,16 @@
       function closeIdentityModal() {
         hideModal("#identityModal");
       }
-      async function openChapterModal() {
+      async function openChapterModal(tourStep = null) {
         if (!data) return;
         try {
           const latest = await api("data");
+          if (tourStep && !isCurrentTourStep(tourStep)) return;
           data.catalog = latest.catalog;
           data.chapterArt = latest.chapterArt || {};
           data.chapterRevision = latest.chapterRevision;
         } catch (error) {
+          if (tourStep && !isCurrentTourStep(tourStep)) return;
           status("更新外观列表失败：" + error.message);
         }
         fillAddFilters();
@@ -4496,14 +4504,16 @@
         hideModal("#chapterModal");
       }
       $("#headerChapters").onclick = () => openChapterModal();
-      async function openImportedModal() {
+      async function openImportedModal(tourStep = null) {
         if (!data) return;
         try {
           const latest = await api("data");
+          if (tourStep && !isCurrentTourStep(tourStep)) return;
           data.catalog = latest.catalog;
           data.chapterArt = latest.chapterArt || {};
           data.chapterRevision = latest.chapterRevision;
         } catch (error) {
+          if (tourStep && !isCurrentTourStep(tourStep)) return;
           status("更新外观列表失败：" + error.message);
         }
         fillAddFilters();
@@ -4753,10 +4763,33 @@
         const rows = Array.isArray(p.rows) ? p.rows : [];
         const errors = Array.isArray(p.errors) ? p.errors : [];
         const files = Array.isArray(p.files) ? p.files : [];
+        const reasons = {
+          incomplete_banks: "未确认完整的 FMOD 事件库和音频素材",
+          unknown_owner: "未识别对应人格或外观",
+          unmatched: "未匹配到唯一可绑定的外观",
+        };
+        const isVoice = row => row.kind === "voice";
+        const isBound = row => isVoice(row) && Boolean(row.connected_to?.length);
+        const isPending = row => isVoice(row) && !isBound(row);
+        function voiceMessage(row) {
+          if (isBound(row)) return "已绑定到外观：" + row.connected_to.join("、");
+          let reason = reasons[row.voice_binding_status];
+          if (!reason) {
+            if (Array.isArray(row.playable_banks) && !row.playable_banks.length) reason = reasons.incomplete_banks;
+            else if (row.targets?.length || row.included_looks?.length) reason = reasons.unmatched;
+            else if (Array.isArray(row.targets)) reason = reasons.unknown_owner;
+          }
+          return "尚未绑定外观" + (reason ? "，" + reason : "");
+        }
         function rowMessage(row, directories) {
-          const state = {added:"已加入",updated:"已更新",existing:"已在库中"}[row.status] || row.status || "";
+          const stateLabels = isVoice(row)
+            ? {added: "语音已收录", updated: "已更新语音资料", existing: "语音已在库中"}
+            : {added: "已加入", updated: "已更新", existing: "已在库中"};
+          const state = stateLabels[row.status] || row.status || "";
           const version = row.version ? "（版本 " + row.version + (row.unchanged ? "，未变化" : "") + "）" : "";
-          const voice = row.kind === "voice" ? ((row.connected_to || []).length ? "，已接通 " + row.connected_to.join("、") : "，尚未绑定外观") : (dialogueDetectionText(row) ? "，" + dialogueDetectionText(row) : (row.voice_connected ? "，已接通语音（旧记录）" : ""));
+          const dialogue = isVoice(row) ? voiceMessage(row)
+            : dialogueDetectionText(row) || (row.voice_connected ? "已接通语音（旧记录）" : "");
+          const voice = dialogue ? "，" + dialogue : "";
           if (row.package_directory) directories.add(row.package_directory);
           return row.name + " " + state + version + voice + (row.presentation_warning ? "，" + row.presentation_warning : "") + (row.voice_warning ? "，" + row.voice_warning : "") + (row.cleanup_warning ? "，" + row.cleanup_warning : "");
         }
@@ -4764,17 +4797,32 @@
         const failedFiles = files.filter(file => file.error).length;
         const errorCount = Math.max(errors.length, failedFiles, p.stage === "error" ? 1 : 0);
         const stale = rows.length > 0 && rows.every(row => row.unchanged);
+        const bound = rows.filter(isBound).length;
+        const pending = rows.filter(isPending).length;
+        const onlyPending = pending > 0 && pending === rows.length;
         const summary = (p.cancelled ? "已取消导入" : p.stage === "error" ? "导入失败"
           : stale ? `已是最新版本：${rows.length} 项`
-          : errorCount ? `导入完成：${rows.length} 项，部分失败` : `导入完成：${rows.length} 项`) + (errorCount ? ` · 错误 ${errorCount}` : "") + (warnings ? ` · 警告 ${warnings}` : "");
+          : errorCount ? `导入完成：${rows.length} 项，部分失败`
+          : onlyPending ? `语音已收录，尚未绑定外观（${pending} 项）` : `导入完成：${rows.length} 项`)
+          + (bound ? ` · 语音已绑定 ${bound} 项` : "")
+          + (pending && (!onlyPending || errorCount || p.cancelled) ? ` · 语音待绑定 ${pending} 项` : "")
+          + (errorCount ? ` · 错误 ${errorCount}` : "") + (warnings ? ` · 警告 ${warnings}` : "");
         const directories = new Set();
         let messages;
         if (files.length > 1) {
           messages = files.map(file => {
             const start = Math.max(0, Number(file.rowStart) || 0);
             const count = Math.max(0, Number(file.rowCount) || 0);
-            const detail = rows.slice(start, start + count).map(row => "  " + rowMessage(row, directories));
-            return [String(file.filename || "未命名文件") + (file.error ? "：失败 · " + file.error : "：成功"), ...detail].join("\n");
+            const fileRows = rows.slice(start, start + count);
+            const detail = fileRows.map(row => "  " + rowMessage(row, directories));
+            let result = "成功";
+            if (fileRows.some(isPending)) {
+              result = fileRows.every(isPending) ? "仅收录，尚未绑定外观" : "已处理，部分语音待绑定";
+            } else if (fileRows.length && fileRows.every(isBound)) {
+              result = "语音已绑定";
+            }
+            const heading = file.error ? "失败 · " + file.error : result;
+            return [String(file.filename || "未命名文件") + "：" + heading, ...detail].join("\n");
           });
           if (errors.length > failedFiles) messages.push(...errors.slice(failedFiles));
         } else {
@@ -4795,7 +4843,8 @@
             p = await api("local-skin-import-status");
           }
           if (p.stage === "idle") return;
-          showImport(p);
+          const outcome = importResult(p);
+          showImport({ ...p, message: outcome.summary });
           const rows = p.rows || [];
           let refreshWarning = "";
           if (rows.length && data) {
@@ -4810,7 +4859,7 @@
               if (!$("#importedModal").classList.contains("hidden")) renderImportedList();
             } catch (_) { refreshWarning = "；列表刷新失败，请重新打开工作台后在导入外观中查看"; }
           }
-          const { summary, text } = importResult(p, refreshWarning);
+          const { summary, text } = refreshWarning ? importResult(p, refreshWarning) : outcome;
           $("#importNoticeText").textContent = summary;
           $("#importDetailsText").textContent = text;
           $("#importDetails").hidden = false;

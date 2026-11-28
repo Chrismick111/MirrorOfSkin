@@ -31,13 +31,13 @@
 
 ## 安装插件
 
-当前可下载的正式版为 **1.4.4**。在 Windows 64 位系统上打开 FaustLauncher，确认已安装并启用 WarpHook。下载下表第一项，在启动器中选择「从本地安装」，选中 ZIP。安装完成后，从启动器托盘打开「镜像幻化 → 人格、概率与演出设置」。
+当前可下载的正式版为 **1.4.5**。在 Windows 64 位系统上打开 FaustLauncher，确认已安装并启用 WarpHook。下载下表第一项，在启动器中选择「从本地安装」，选中 ZIP。安装完成后，从启动器托盘打开「镜像幻化 → 人格、概率与演出设置」。
 
 | 下载 | 用途 |
 | --- | --- |
-| [1.4.4 启动器安装包](https://github.com/Chrismick111/MirrorOfSkin/releases/download/v1.4.4/MirrorOfSkin-1.4.4-no-images.zip) | 首次安装或手动更新。公开版不含头像，可在工作台获取资源。 |
-| [1.4.4 兼容安装包](https://github.com/Chrismick111/MirrorOfSkin/releases/download/v1.4.4/MirrorOfSkin-1.4.4-no-images-store.zip) | 启动器解压上一个文件失败时选用。两个包的插件内容相同，安装其中一个即可。 |
-| [1.4.4 工作台更新包](https://github.com/Chrismick111/MirrorOfSkin/releases/download/v1.4.4/FaustRandomIdentity-WarpHook.zip) | 供旧版工作台的自动更新功能读取。 |
+| [1.4.5 启动器安装包](https://github.com/Chrismick111/MirrorOfSkin/releases/download/v1.4.5/MirrorOfSkin-1.4.5-no-images.zip) | 首次安装或手动更新。公开版不含头像，可在工作台获取资源。 |
+| [1.4.5 兼容安装包](https://github.com/Chrismick111/MirrorOfSkin/releases/download/v1.4.5/MirrorOfSkin-1.4.5-no-images-store.zip) | 启动器解压上一个文件失败时选用。两个包的插件内容相同，安装其中一个即可。 |
+| [1.4.5 工作台更新包](https://github.com/Chrismick111/MirrorOfSkin/releases/download/v1.4.5/FaustRandomIdentity-WarpHook.zip) | 供旧版工作台的自动更新功能读取。 |
 
 手动安装时，解压标准包，将其中 `MirrorOfSkin` 文件夹的内容放入 `FaustLauncher/addons/MOS/`。请确认 `addon_info.json` 直接位于 `addons/MOS/` 下。已经安装的用户请沿用原插件目录，避免启动器同时加载两份。
 
@@ -58,6 +58,8 @@
 文件选择框支持 ZIP、7z、RAR，也可选择 `.bundle` 模型、`.carra2` 替换资源或 `.bank` 语音库。语音库需要与外观建立绑定。导入私服模组时，工作台结合包内人格声明、身体图像和动作轨选择作者制作的外观。已验证的形式包括独立角色模型、替换原版身体帧，以及逐枚硬币切换模型。只有技能数值、被动或 E.G.O 配置的模组会提示属于玩法改动包；单独的依赖 DLL 不能生成外观。
 
 **导入 Carra2 补丁。** 选择原始 `.carra2` 文件，或直接选择作者同时附带底包的完整压缩包。1.4.2 会按对象实际引用的脚本匹配类型，即使作者调整了类型编号，也能从同包资源或本机已下载的游戏资源恢复匹配的定义。提示缺少游戏底包时，请先下载对应的游戏资源，或改选作者的完整包。
+
+**分开下载的外观和语音。** 外观包和 FMOD 语音包可以按任意顺序导入。单独导入语音后若显示「尚未绑定外观」，可继续导入配套外观。工作台结合包名、包内声明和语音事件归属进行匹配，成功后会列出绑定的外观。多个候选同样匹配时保留待绑定。已收录的语音会在重新打开工作台时复查。
 
 **语音和气泡分别判断。** 导入明细会区分「已检出」「已绑定」和「沿用基础模型语音」。仅检出音频或台词时会保留本体对应表现。已绑定的外观语音进入播放状态后才接管该佩戴者的原声；外观气泡成功显示后才隐藏对应的本体气泡。其他单位各自使用自己的声音和台词。
 

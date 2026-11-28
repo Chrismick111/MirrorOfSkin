@@ -35,12 +35,26 @@ def _subtitle_members(archive, items):
             yield path.name, raw
 
 
-def import_banks(archive, root, name=None, *,source=None,included=(),scoped=False):
+def import_banks(archive, root, name=None, *,source=None,included=(),scoped=False,source_path=None):
     with ZipFile(archive) as z:
         items = [(i, PurePosixPath(i.filename.replace('\\','/'))) for i in z.infolist() if not i.is_dir()]
         banks = [(i,p) for i,p in items if p.suffix.lower()=='.bank']
         if not banks:
             return None
+        from voice_binding import named_package
+        # Only directories shared by all banks can identify the whole voice pack.
+        common_parts = []
+        for level in zip(*(p.parts[:-1] for _,p in banks)):
+            if len(set(level)) != 1:
+                break
+            common_parts.append(level[0])
+        aliases = {part for part in common_parts if named_package(part)}
+        if source and named_package(source):
+            aliases.add(source)
+        if source_path is not None and Path(source_path).suffix.casefold()=='.bank':
+            parent = Path(source_path).parent.name
+            if named_package(parent):
+                aliases.add(parent)
         library = (root/'Assets/ImportedVoices').resolve()
         library.mkdir(parents=True,exist_ok=True)
         with TemporaryDirectory(dir=library) as tmp:
@@ -81,6 +95,8 @@ def import_banks(archive, root, name=None, *,source=None,included=(),scoped=Fals
                       banks=bank_names,playable_banks=playable,imported_at=time.time_ns(),files=files)
             if scoped:
                 meta['scoped_to_appearances']=True
+            if aliases:
+                meta['package_aliases']=sorted(aliases)
             (folder/'voice.json').write_text(json.dumps(meta,ensure_ascii=False,indent=2),encoding='utf8')
             with FileLock(root/'workbench-save.lock'):
                 existing=(library/key).is_dir()
@@ -106,6 +122,8 @@ def import_banks(archive, root, name=None, *,source=None,included=(),scoped=Fals
                     meta['name']=name or old.get('name',meta['name'])
                     meta['source']=old.get('source',meta['source'])
                     meta['included_looks']=sorted(set(old.get('included_looks',[]))|set(included))
+                    if aliases or old.get('package_aliases'):
+                        meta['package_aliases']=sorted(aliases | set(old.get('package_aliases',[])))
                     if old.get('scoped_to_appearances'):
                         meta['scoped_to_appearances']=True
                     meta['targets']=sorted(set(old.get('targets',[]))|targets)

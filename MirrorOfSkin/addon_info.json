@@ -9,7 +9,7 @@
     "是否自动打开调整面板": true,
     "是否展示教程": false
   },
-  "version": "1.4.4",
+  "version": "1.4.5",
   "requires": [
     "WarpHook"
   ]
