@@ -47,6 +47,9 @@ def plan(root, identity, addon=None, removing=()):
         if portrait.is_file():
             if portrait.is_symlink() or not portrait.resolve().is_relative_to(root): raise ValueError('头像路径无效')
             files.append(portrait)
+        imported = imported_portraits.path_for(root, identity)
+        if imported.is_file():
+            files.append(imported)
         return {'identity': identity, 'appearance': look, 'catalog': catalog_path,
                 'files': files, 'bundle_shared': False}
 

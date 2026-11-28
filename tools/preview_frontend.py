@@ -5,7 +5,7 @@ add-on, with all API calls answered locally. Nothing is imported or saved, so
 it is safe to use for style/interaction checks while the launcher is closed.
 
 Usage:
-    python tools/preview_frontend.py --addon D:\\FaustLauncher\\addons\\faust_inst_uplabl34
+    python tools/preview_frontend.py --addon "path/to/installed/MirrorOfSkin"
     python tools/preview_frontend.py --no-browser
 """
 
@@ -37,13 +37,41 @@ def load_snapshot(addon):
         path = addon / folder
         if path.is_dir():
             sys.path.insert(0, str(path))
-    import _module_paths  # noqa: F401
-    import workbench
+    # Some Workbench modules resolve the data directory as they are imported.
+    # Point those reads at the normal location without creating it or writing
+    # Python bytecode to the installed add-on.
+    previous_bytecode = sys.dont_write_bytecode
+    sys.dont_write_bytecode = True
+    try:
+        import _module_paths  # noqa: F401
+        import mos_data
 
-    store = workbench.Store(addon)
-    data = store.data()
+        data_dir = mos_data.data_dir
+        mos_data.data_dir = lambda create=False: data_dir(create=False)
+        try:
+            import workbench
+
+            class PreviewStore(workbench.Store):
+                def __init__(self):
+                    # Store.__init__ migrates player data and synchronizes the
+                    # installed library. Only initialize the readers used here.
+                    self.addon_root = addon
+                    player = mos_data.data_dir()
+                    catalog = "Assets/runtime/all_sinners_pools.json"
+                    self.root = player if (player / catalog).is_file() else addon
+                    self.evidence = workbench.prepare_view.SessionEvidence(self.root / "native_runtime.log")
+                    self.portraits = workbench.read(self.root / "Workbench/portrait_manifest.json", {})
+
+                def launcher_background(self):
+                    return {}
+
+            store = PreviewStore()
+            data = store.data()
+        finally:
+            mos_data.data_dir = data_dir
+    finally:
+        sys.dont_write_bytecode = previous_bytecode
     data["tutorial"] = False
-    data["launcherBackground"] = {}
     data["warmup"] = {}
     return data, store
 
@@ -106,17 +134,17 @@ class Handler(BaseHTTPRequestHandler):
             self._json([])
         elif route.startswith("portrait/"):
             identity = unquote(route[len("portrait/"):])
-            source = None
+            raw, mime = TRANSPARENT_PNG, "image/png"
             try:
                 source = self.store.portrait(identity)
-            except Exception:
-                source = None
-            if source and pathlib.Path(source).is_file():
-                raw = pathlib.Path(source).read_bytes()
-                mime = mimetypes.guess_type(str(source))[0] or "image/png"
-                self._bytes(raw, mime)
-            else:
-                self._bytes(TRANSPARENT_PNG, "image/png")
+                if isinstance(source, bytes) and source:
+                    raw = source
+                elif source and pathlib.Path(source).is_file():
+                    raw = pathlib.Path(source).read_bytes()
+                    mime = mimetypes.guess_type(str(source))[0] or mime
+            except (OSError, TypeError, ValueError):
+                pass
+            self._bytes(raw, mime)
         else:
             self._json({})
 

@@ -103,14 +103,20 @@ def delete_identity(root, addon, identity, *, lock_factory, replace=os.replace):
                 filename = PurePosixPath(relative).name
                 if relative == relative_model_path(package, filename):
                     extra = _files(root, addon, [identity])
-            if owns_folder and identity not in missing and identity.startswith('story_WBImp_'):
+            if owns_folder and identity not in missing and valid_identity(identity):
                 from framepack_dialogue import audio_names, obsolete_audio
+                from skill_ui import SUFFIX, icon_names, obsolete_icons
                 folder = managed_root(addon) / package['directory']
                 sidecar = folder / (identity.removeprefix('story_') + '.voice.tsv')
                 if sidecar.exists() or sidecar.is_symlink():
                     audio = audio_names(sidecar)
                     extra.append(sidecar)
                     extra.extend(sorted(obsolete_audio(folder, audio, excluding={sidecar})))
+                sidecar = folder / (identity.removeprefix('story_') + SUFFIX)
+                if sidecar.exists() or sidecar.is_symlink():
+                    icons = icon_names(sidecar)
+                    extra.append(sidecar)
+                    extra.extend(sorted(obsolete_icons(folder, icons, excluding={sidecar})))
             package['identities'].remove(identity)
             if identity in missing:
                 missing.remove(identity)

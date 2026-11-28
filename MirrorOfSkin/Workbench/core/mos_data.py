@@ -146,15 +146,26 @@ def _animation_dirs(addon):
         yield 'archive-times-candidate'
 
 
+def chapter_seed_bytes(path):
+    import lzma
+    packed = path.with_suffix('.json.xz')
+    if packed.is_file():
+        with lzma.open(packed, 'rb') as stream:
+            return stream.read()
+    return path.read_bytes()
+
+
 def _copy_shared(addon, data, rel):
     src = pathlib.Path(addon) / rel
     dst = pathlib.Path(data) / rel
-    if not src.is_file():
+    packed_chapters = rel == 'boss_chapters.json' and src.with_suffix('.json.xz').is_file()
+    if not packed_chapters and not src.is_file():
         return
     try:
-        if dst.is_file() and dst.read_bytes() == src.read_bytes():
+        content = chapter_seed_bytes(src) if packed_chapters else src.read_bytes()
+        if dst.is_file() and dst.read_bytes() == content:
             return
-        _atomic_copy(src, dst)
+        _atomic_copy(src, dst, content=content if packed_chapters else None)
     except OSError as exc:
         raise OSError(f'同步共享文件失败：{src} -> {dst}: {exc}') from exc
 
@@ -178,14 +189,17 @@ def remove_legacy_links(addon_root):
                 _remove_junction(path)
 
 
-def _atomic_copy(source, dest):
+def _atomic_copy(source, dest, *, content=None):
     from tempfile import NamedTemporaryFile
     dest.parent.mkdir(parents=True, exist_ok=True)
     dest = dest.parent.resolve() / dest.name
     with NamedTemporaryFile(dir=dest.parent, delete=False) as stream:
         temp = pathlib.Path(stream.name)
     try:
-        shutil.copy2(source, temp)
+        if content is None:
+            shutil.copy2(source, temp)
+        else:
+            temp.write_bytes(content)
         os.replace(temp, dest)
     finally:
         temp.unlink(missing_ok=True)

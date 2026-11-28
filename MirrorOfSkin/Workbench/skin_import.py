@@ -345,6 +345,16 @@ def _import_normalized(archive, addon, *, name=None, unity=None, package_addon=N
                 portraits.setdefault(rec['entry']['identity_id'], portrait)
             if dialogue_scans:
                 rec['dialogue_detection'] = detected_status(rec, dialogue_scans, records)
+        if package_addon is not None:
+            from skill_ui import HEADER, SUFFIX, collect, icon_names, obsolete_icons
+            from skill_ui_import import collect_external
+            with ExitStack() as archive_files:
+                skin_archive = archive_files.enter_context(ZipFile(author_archive or archive))
+                model_archive = (archive_files.enter_context(ZipFile(archive))
+                                 if author_archive and Path(author_archive).resolve() != archive else skin_archive)
+                external = collect_external(skin_archive, records, model_archive=model_archive,
+                                            expanded_members=expanded_members, unity=unity)
+                skill_ui = collect(skin_archive, records, portraits, external=external)
         report(91, '正在校验外观与动作')
         pending = {}
         assets = {}
@@ -377,7 +387,10 @@ def _import_normalized(archive, addon, *, name=None, unity=None, package_addon=N
                 except (OSError, ValueError, KeyError, TypeError) as exc:
                     raise ValueError('无法读取当前插件版本') from exc
             pending[root/LOCAL/(look+'.cfg')] = config(rec, sha, plugin_version=plugin_version)
-        if portraits.keys() - {'story_' + look for look in seen}:
+        appearance_ids = {'story_' + look for look in seen}
+        if any(rec.get('builtin') == 'roland' for rec in records):
+            appearance_ids.add(BUILTIN)
+        if portraits.keys() - appearance_ids:
             raise ValueError('外观头像声明的人格不在本次导入的战斗外观中')
         report(94, '正在写入模型和人格池')
         if check_cancelled is not None:
@@ -388,6 +401,8 @@ def _import_normalized(archive, addon, *, name=None, unity=None, package_addon=N
             generated = set()
             replaced = set()
             previous_audio = set()
+            previous_icons = set()
+            skill_ui_changed = set()
             dialogue_changed = set()
             catalog_file = root/CATALOG
             catalog = json.loads(catalog_file.read_bytes())
@@ -405,15 +420,34 @@ def _import_normalized(archive, addon, *, name=None, unity=None, package_addon=N
                 for old, data in tuple(assets.items()):
                     assets[folder / old.name] = data
                     del assets[old]
-                for rec in records:
+                for rec, (skill_data, icons) in zip(records, skill_ui):
                     identity = BUILTIN if rec.get('builtin') == 'roland' else rec['entry']['identity_id']
                     filename = ('BRoland.bundle' if identity == BUILTIN else
                                 pending[root/LOCAL/(rec['look']+'.cfg')].decode('ascii').splitlines()[3])
                     loc = locator_path(root, identity)
                     pending[loc] = relative_model_path(package, filename).encode('utf-8')
+                    from framepack_dialogue import plain_file
+                    sidecar = folder / (identity.removeprefix('story_') + SUFFIX)
+                    if sidecar.exists() or sidecar.is_symlink():
+                        previous_icons.update(icon_names(sidecar))
+                        skill_data = skill_data or (HEADER + '\n').encode('ascii')
+                    if skill_data:
+                        pending[sidecar] = skill_data
+                        if not sidecar.exists() or sidecar.read_bytes() != skill_data:
+                            skill_ui_changed.add(identity)
+                    for name, image in icons.items():
+                        destination = folder / name
+                        if destination.exists() or destination.is_symlink():
+                            if not plain_file(destination) or digest(destination) != name[:-4]:
+                                raise ValueError('战斗外观图标已存在但内容不匹配')
+                            continue
+                        write_atomic(destination, image)
+                        generated.add(destination)
+                        rollback.callback(destination.unlink, missing_ok=True)
+                        skill_ui_changed.add(identity)
                     if identity != BUILTIN:
                         if framepack_dialogue:
-                            from framepack_dialogue import audio_names, plain_file
+                            from framepack_dialogue import audio_names
                             path = folder / (rec['look'] + '.voice.tsv')
                             data, audio = rec.get('framepack_dialogue', (b'', {}))
                             exists = path.exists() or path.is_symlink()
@@ -475,7 +509,7 @@ def _import_normalized(archive, addon, *, name=None, unity=None, package_addon=N
                     entry.update(attribution)
                     builtin_author_changed = previous != {key: entry[key] for key in author_fields if key in entry}
                     status = ('added' if restored_builtin else
-                              'updated' if not already_present or builtin_author_changed else 'existing')
+                              'updated' if not already_present or builtin_author_changed or BUILTIN in skill_ui_changed else 'existing')
                     results.append(dict(identity_id=BUILTIN, name=entry['name'], status=status, actions=actions,
                                         **attribution))
                     if 'dialogue_detection' in rec:
@@ -513,7 +547,7 @@ def _import_normalized(archive, addon, *, name=None, unity=None, package_addon=N
                     pointer = root/LOCAL/(rec['look']+'.cfg')
                     before_entry = dict(old, private_declaration=owner) if owner and 'private_declaration' not in old else old
                     changed = before_entry != entry or not pointer.is_file() or pointer.read_bytes()!=pending[pointer]
-                    changed = changed or identity in dialogue_changed
+                    changed = changed or identity in dialogue_changed or identity in skill_ui_changed
                     if identity in portraits:
                         changed = changed or imported_portraits.get(root, identity) != portraits[identity]
                     if folder is not None:
@@ -605,6 +639,12 @@ def _import_normalized(archive, addon, *, name=None, unity=None, package_addon=N
                 if previous_audio:
                     from framepack_dialogue import obsolete_audio
                     for path in obsolete_audio(folder, previous_audio):
+                        try:
+                            path.unlink()
+                        except OSError:
+                            continue
+                if previous_icons:
+                    for path in obsolete_icons(folder, previous_icons):
                         try:
                             path.unlink()
                         except OSError:

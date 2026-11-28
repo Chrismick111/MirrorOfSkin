@@ -48,14 +48,7 @@ def cache_root(game_dir, override=None):
     root they are reading.
     """
     import resource_catalog
-    if override:
-        chosen = pathlib.Path(override)
-        return chosen if chosen.is_dir() else None
-    env = os.environ.get(resource_catalog.ENV_RESOURCE)
-    if env:
-        chosen = pathlib.Path(env)
-        return chosen if chosen.is_dir() else None
-    return resource_catalog.find_resource_root(game_dir)
+    return resource_catalog.resolve_roots(game_dir=game_dir, resource_root=override)['resource_root']
 
 
 def steam_libraries():
@@ -118,8 +111,28 @@ def find_game_dir():
 GROUP_NAMES = ('SD_Enemy', 'SD_Personality', 'SD_Abnormality', 'SD_EGO', 'SD_DeadScene')
 
 
-def catalog_groups(game_dir):
-    """prefab basename -> Addressables group, read straight out of catalog.bin.
+def _catalog_paths(game_dir):
+    if game_dir is None:
+        return ()
+    data = pathlib.Path(game_dir) / 'LimbusCompany_Data'
+    installed = data / 'StreamingAssets/aa/catalog.bin'
+    override = os.environ.get('LIMBUS_ADDRESSABLE_CATALOG_DIR')
+    if override:
+        downloaded = pathlib.Path(override)
+    else:
+        try:
+            title = [line.strip() for line in (data / 'app.info').read_text(encoding='utf-8-sig').splitlines()[:2]]
+        except (OSError, ValueError):
+            return (installed,)
+        if len(title) != 2 or any(part in ('', '.', '..') or pathlib.Path(part).name != part for part in title):
+            return (installed,)
+        profile = pathlib.Path(os.environ.get('USERPROFILE') or pathlib.Path.home())
+        downloaded = profile / 'AppData/LocalLow' / title[0] / title[1] / 'com.unity.addressables'
+    return (installed, *sorted(downloaded.glob('catalog*.bin')))
+
+
+def _read_catalog_groups(path):
+    """Yield prefab basenames and Addressables groups from one binary catalog.
 
     The catalog is a string table. Every address record is
     '<ascii name>.prefab' followed by two uint32 words:
@@ -130,17 +143,11 @@ def catalog_groups(game_dir):
     that same length word); the anchor we match against is that offset, which
     equals (position of G in the blob) + len(G).
 
-    Verified against every pool entry: 663/663 exact, zero mismatches. That is
-    why this is used instead of guessing from directory, id family or bundle --
-    all three of those were measured and are ambiguous.
     """
-    if game_dir is None:
-        return {}
-    path = pathlib.Path(game_dir) / 'LimbusCompany_Data/StreamingAssets/aa/catalog.bin'
     try:
         blob = path.read_bytes()
     except OSError:
-        return {}
+        return
 
     anchors = {}
     for name in GROUP_NAMES:
@@ -148,7 +155,6 @@ def catalog_groups(game_dir):
         if at >= 0:
             anchors[at + len(name)] = name
 
-    records = {}
     suffix = b'.prefab'
     pos = 0
     while True:
@@ -178,21 +184,46 @@ def catalog_groups(game_dir):
                 if self_off == len(raw) and blob[end + 4:end + 4 + len(raw)] == raw:
                     group = candidate
                     break
-        if group and name not in records:
-            records[name] = group
+        if group:
+            yield name, group
+
+
+def catalog_groups(game_dir):
+    """Use installed and downloaded catalogs, preserving ambiguous names."""
+    records = {}
+    for path in _catalog_paths(game_dir):
+        for name, group in _read_catalog_groups(path):
+            if records.setdefault(name, group) != group:
+                records[name] = None
     return records
 
 
 def catalog_hash(game_dir):
-    """catalog.hash changes on every content update. It is the one cheap signal
-    that says 'the game shipped new prefabs' without opening a single bundle."""
-    if game_dir is None:
+    """Detect catalog updates without reopening Unity bundles."""
+    paths = _catalog_paths(game_dir)
+    if not paths:
         return None
-    path = pathlib.Path(game_dir) / 'LimbusCompany_Data/StreamingAssets/aa/catalog.hash'
-    try:
-        return path.read_text(encoding='utf-8-sig').strip()
-    except OSError:
-        return None
+
+    def read_hash(path):
+        try:
+            return path.with_suffix('.hash').read_text(encoding='utf-8-sig').strip()
+        except (OSError, ValueError):
+            return None
+
+    installed_hash = read_hash(paths[0])
+    if len(paths) == 1:
+        return installed_hash
+    fingerprints = [installed_hash or '']
+    for path in paths[1:]:
+        value = read_hash(path)
+        if not value:
+            try:
+                stat = path.stat()
+            except OSError:
+                continue
+            value = f'{stat.st_size}:{stat.st_mtime_ns}'
+        fingerprints.append(f'{path.name}:{value}')
+    return hashlib.sha256('\n'.join(fingerprints).encode('utf-8')).hexdigest()
 
 
 def bundle_paths(root):
@@ -596,9 +627,10 @@ def main(argv=None):
                 known_hits += 1
                 continue
             directory = payload['path'].rsplit('/', 1)[0]
-            real = catalog_map.get(name)
-            if real:
-                group, confidence, evidence = real, 'catalog', 'catalog.bin'
+            if name in catalog_map:
+                group = catalog_map[name]
+                confidence = 'catalog' if group else 'unknown'
+                evidence = 'Addressables catalog' if group else 'conflicting Addressables groups'
             else:
                 group, confidence, evidence = predict_group(name, directory, by_combo, by_family)
             # Only a group we can stand behind becomes a copyable asset_key; a

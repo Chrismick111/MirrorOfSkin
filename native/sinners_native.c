@@ -3449,12 +3449,15 @@ static int resume_pending_cleanup(void){
  return 0;
 }
 #include "voice_dispatch.h"
+#include "cosmetic_ui_data.inc"
+#include "cosmetic_ui_display.inc"
 
 static void tick(void){
   if(g_quitting)return;
   int frame=m_frameCount?call_int(m_frameCount,NULL,NULL):-1;
   if(frame<0){fatal("Unity frame count unavailable",7);return;}
   if(frame==g_lastUnityFrame)return;g_lastUnityFrame=frame;g_frame=frame;
+  cosmetic_ui_frame(g_ready&&enabled_now()&&!cleanup_pending);
   int bloodConfigChanged=poll_appearance_blood_config();
   sync_appearance_blood(enabled_now(),bloodConfigChanged||frame%15==0);
   collect_retire();
@@ -3585,6 +3588,7 @@ static void tick(void){
   }
 }
 static void cleanup_all(void){
+  if(cosmetic_ui_reset(1))cosmetic_ui_data_clear();
   private_voice_close();
   imported_wav_tick(0);
   fx_plan_close_all();
@@ -4056,6 +4060,7 @@ static int resolve_all(void){
   m_setActive=find_method(c_goClass,"SetActive",1);
   m_getTransform=find_method(c_goClass,"get_transform",0);
   m_getActiveSelf=find_method(c_goClass,"get_activeSelf",0);
+  m_getActiveInHierarchy=find_method(c_goClass,"get_activeInHierarchy",0);
   {
     const char *instantiateTypes[3]={"UnityEngine.Object","UnityEngine.Transform","System.Boolean"};
     m_instantiate=method_by_types(c_objectClass,"Instantiate",instantiateTypes,3);

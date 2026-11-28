@@ -9,8 +9,8 @@ from scan.custom_portraits import MAX_BYTES, validate_png
 
 
 MANIFEST = 'mos-portraits.json'
-IDENTITY = re.compile(r'story_WBImp_[0-9a-f]{24}')
-MEMBER = re.compile(r'mos_portraits/story_WBImp_[0-9a-f]{24}\.png', re.IGNORECASE | re.ASCII)
+IDENTITY = re.compile(r'story_(?:WBImp_[0-9a-f]{24}|BRolandBaseAppearance)')
+MEMBER = re.compile('mos_portraits/' + IDENTITY.pattern + r'\.png', re.IGNORECASE | re.ASCII)
 MAX_MANIFEST = 16 * 1024
 MAX_PORTRAITS = 64
 MAX_TOTAL = 16 * 1024 * 1024

@@ -1,4 +1,4 @@
-// Install Playwright and its Chromium browser, or set BROWSER_PATH.
+// Set NODE_PATH to the bundled node_modules directory and optionally BROWSER_PATH.
 const fs = require('fs');
 const path = require('path');
 const assert = require('assert');
@@ -8,7 +8,7 @@ async function main() {
   const html = fs.readFileSync(path.join(__dirname, '../MirrorOfSkin/Workbench/ui/index.html'), 'utf8');
   const browser = await chromium.launch({
     headless: true,
-    executablePath: process.env.BROWSER_PATH,
+    ...(process.env.BROWSER_PATH ? { executablePath: process.env.BROWSER_PATH } : process.platform === 'win32' ? { channel: 'msedge' } : {}),
   });
   try {
     const page = await browser.newPage({ viewport: { width: 1366, height: 900 } });

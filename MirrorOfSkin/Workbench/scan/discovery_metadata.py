@@ -41,7 +41,12 @@ def load_metadata(game_dir, chapters_path):
                         chapter_candidates.setdefault(str(row['id']), set()).add(int(match.group(1)))
                         part = re.fullmatch(r'Enemies-a1c(\d+)p(\d+)\.json', path.name, re.IGNORECASE)
                         if part: part_candidates.setdefault(str(row['id']), set()).add((int(part.group(1)), int(part.group(2))))
-    chapters = _read(pathlib.Path(chapters_path), {})
+    chapters_path = pathlib.Path(chapters_path)
+    if chapters_path.with_suffix('.json.xz').is_file():
+        from mos_data import chapter_seed_bytes
+        chapters = json.loads(chapter_seed_bytes(chapters_path))
+    else:
+        chapters = _read(chapters_path, {})
     return {'names': candidates, 'chapters': chapters if isinstance(chapters, dict) else {}, 'chapter_candidates': chapter_candidates, 'part_candidates': part_candidates}
 
 

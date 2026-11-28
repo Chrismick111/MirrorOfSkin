@@ -37,7 +37,12 @@ def problems():
     return list(PROBLEMS)
 
 def _config_path(root=None):
-    return pathlib.Path(root or DATA) / CONFIG_NAME
+    path = pathlib.Path(root or DATA) / CONFIG_NAME
+    if root is None and not path.exists():
+        migrated = DATA / 'Workbench' / CONFIG_NAME
+        if migrated.is_file():
+            return migrated
+    return path
 
 def read_config(root=None):
     """Config is optional; a missing or broken file must never stop a lookup."""
@@ -269,6 +274,22 @@ def _prefabs_in_bundle(path, unity_py):
     return found
 
 
+def _cached_scan(index_dir, root):
+    # The index carries the original root and schema. Using it also honors
+    # deletion of the index or of an individual entry to force a fresh read.
+    index, _ = load_index(index_dir, root, auto_build=False)
+    if index is None or not isinstance(index.get('entries'), dict):
+        return {}
+    recorded = index.get('failures')
+    if not isinstance(recorded, list):
+        recorded = []
+    failed = {row['bundle'] for row in recorded if isinstance(row, dict) and isinstance(row.get('bundle'), str)}
+    failure_count = index.get('failure_count')
+    unlisted_failures = type(failure_count) is int and failure_count > len(failed)
+    return {name: row for name, row in index['entries'].items()
+            if isinstance(row, dict) and name not in failed and (not unlisted_failures or row.get('prefabs'))}
+
+
 def build_index(resource_root, index_dir, full=False, unity_py=None, progress=None):
     """Scan the local bundles once and write the appearance index.
 
@@ -283,12 +304,7 @@ def build_index(resource_root, index_dir, full=False, unity_py=None, progress=No
     index_dir = pathlib.Path(index_dir)
     index_dir.mkdir(parents=True, exist_ok=True)
     index_file, state_file = index_paths(index_dir)
-    try:
-        state = json.loads(state_file.read_text(encoding='utf-8'))
-        if not isinstance(state, dict) or state.get('__version__') != INDEX_VERSION:
-            state = {}
-    except (OSError, ValueError):
-        state = {}
+    state = {} if full else _cached_scan(index_dir, root)
     bundles = bundle_files(root)
     entries = {}
     scanned = 0
@@ -301,7 +317,7 @@ def build_index(resource_root, index_dir, full=False, unity_py=None, progress=No
             failures.append({'bundle': relative, 'error': str(exc)})
             continue
         cached = state.get(relative)
-        if not full and isinstance(cached, dict) and cached.get('fingerprint') == mark:
+        if isinstance(cached, dict) and cached.get('fingerprint') == mark:
             entries[relative] = cached
             if progress:
                 progress(position, len(bundles), scanned)
@@ -310,8 +326,8 @@ def build_index(resource_root, index_dir, full=False, unity_py=None, progress=No
             prefabs = _prefabs_in_bundle(bundle, unity_py)
         except Exception as exc:
             failures.append({'bundle': relative, 'error': str(exc)})
-            prefabs = {}
-        entries[relative] = {'fingerprint': mark, 'prefabs': prefabs}
+        else:
+            entries[relative] = {'fingerprint': mark, 'prefabs': prefabs}
         scanned += 1
         if progress:
             progress(position, len(bundles), scanned)
@@ -327,7 +343,9 @@ def build_index(resource_root, index_dir, full=False, unity_py=None, progress=No
     tmp = index_file.with_name(index_file.name + '.tmp')
     tmp.write_text(json.dumps(payload, ensure_ascii=False, separators=(',', ':')), encoding='utf-8')
     tmp.replace(index_file)
-    state_file.write_text(json.dumps(entries, ensure_ascii=False, separators=(',', ':')), encoding='utf-8')
+    temp_state = state_file.with_name(state_file.name + '.tmp')
+    temp_state.write_text(json.dumps(entries, ensure_ascii=False, separators=(',', ':')), encoding='utf-8')
+    temp_state.replace(state_file)
     return payload
 
 

@@ -84,4 +84,9 @@ static int imported_bundle_path(const char *look,const wchar_t *file,const char 
  return imported_bundle_path_mode(look,file,assetPath,out,cap,1);
 }
 
+static int imported_bundle_matches_loaded(const char *look,const wchar_t *file,const wchar_t *loaded){
+ wchar_t managed[2048];
+ return loaded&&imported_bundle_path_mode(look,file,NULL,managed,2048,0)&&!_wcsicmp(loaded,managed);
+}
+
 #endif

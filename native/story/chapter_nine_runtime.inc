@@ -76,12 +76,13 @@ static int chapter_group(Unit *unit,Skin *skin,int requested,int skillId,int *ve
    which reads as a stuck animation. Prefer the game's native build order, then
    the next unused ordinary clip of the same group. Never alter the final coin. */
 static int chapter_replay_avoid(Unit *unit,void *action,int coin,int detail,int *part,int count,int last){
-  if(!unit||!action||coin<0||coin>=SR_VARIETY_COINS||detail<0||detail>=256||*part<0||*part>=count||count<2||last)return 0;
+  if(!unit||!action)return 0;
   if(unit->chapterReplayAction!=action){
     unit->chapterReplayAction=action;
-    memset(unit->chapterReplayDetail,0,sizeof(unit->chapterReplayDetail));
-    memset(unit->chapterReplayPart,0,sizeof(unit->chapterReplayPart));
+    /* Group zero is a valid group. An unseen coin has no group yet. */
+    memset(unit->chapterReplayDetail,0xff,sizeof(unit->chapterReplayDetail));
   }
+  if(coin<0||coin>=SR_VARIETY_COINS||detail<0||detail>=SR_MOTION_CACHE||*part<0||*part>=count||count<2||last)return 0;
   int replay=0;
   for(int c=0;c<coin;c++)if(unit->chapterReplayDetail[c]==(unsigned char)detail&&
                             unit->chapterReplayPart[c]==(unsigned char)*part){replay=1;break;}
@@ -99,6 +100,7 @@ static int chapter_replay_avoid(Unit *unit,void *action,int coin,int detail,int 
     if(!used){
       char line[192];snprintf(line,sizeof(line),"chapter replay avoided coin=%d detail=%d from=%d to=%d",coin,detail,*part,k);
       bootlog(line);
+      unit->chapterReplayDetail[coin]=(unsigned char)detail;
       *part=k;unit->chapterReplayPart[coin]=(unsigned char)k;
       return 1;
     }

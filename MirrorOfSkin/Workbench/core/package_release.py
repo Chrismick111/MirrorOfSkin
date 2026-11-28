@@ -2,7 +2,7 @@ import pathlib, sys
 sys.path.insert(0, str(pathlib.Path(__file__).resolve().parents[1]))
 import _module_paths
 """Build the release archive consumed by github_update without changing the addon."""
-import argparse, hashlib, json, pathlib, zipfile
+import argparse, hashlib, json, lzma, pathlib, zipfile
 from github_update import ASSET, CATALOG, _protected, _safe_path, UpdateError
 
 def package(root, output, *, launcher=False):
@@ -32,11 +32,20 @@ def package(root, output, *, launcher=False):
     entry.pop('enabled',None)
    # Locally imported IDs refer to private, non-shipped bundles.
    p['entries']=[entry for entry in p['entries'] if not entry['identity_id'].startswith('story_WBImp_')]
-  items[CATALOG]=(json.dumps(pools,ensure_ascii=False,indent=2)+'\n').encode('utf8')
+  items[CATALOG]=(json.dumps(pools,ensure_ascii=False,separators=(',',':'))+'\n').encode('utf8')
  except (ValueError,TypeError,UnicodeError) as exc:raise UpdateError('人格目录格式无效') from exc
- items['compatibility.json']=manifest_path.read_bytes()
+ # Keep the editable chapter evidence in the source tree. The release stores
+ # its exact bytes once in XZ; all runtime readers still see the full JSON.
+ chapters='boss_chapters.json'
+ if chapters in items:
+  packed=chapters+'.xz'
+  if packed in items:raise UpdateError('章节目录同时声明了两个版本')
+  items[packed]=lzma.compress(items.pop(chapters))
+  del expected[chapters]
+  expected[packed]=hashlib.sha256(items[packed]).hexdigest()
+ items['compatibility.json']=(json.dumps(manifest,ensure_ascii=False,indent=2)+'\n').encode('utf8')
  output.parent.mkdir(parents=True,exist_ok=True)
- with zipfile.ZipFile(output,'x',compression=zipfile.ZIP_DEFLATED,compresslevel=6) as z:
+ with zipfile.ZipFile(output,'x',compression=zipfile.ZIP_DEFLATED,compresslevel=9) as z:
   prefix = 'MirrorOfSkin/' if launcher else ''
   for name,data in sorted(items.items()):z.writestr(prefix+name,data)
  return len(items)

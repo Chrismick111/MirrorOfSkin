@@ -3,7 +3,7 @@ const path = require('path');
 const assert = require('assert');
 const {chromium} = require('playwright');
 (async () => {
-  const browser = await chromium.launch({headless:true, executablePath:process.env.BROWSER_PATH});
+  const browser = await chromium.launch({headless:true, ...(process.env.BROWSER_PATH ? { executablePath: process.env.BROWSER_PATH } : process.platform === 'win32' ? { channel: 'msedge' } : {})});
   try {
     const page = await browser.newPage();
     await page.route('**/*', route => route.abort());

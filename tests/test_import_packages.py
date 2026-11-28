@@ -109,6 +109,50 @@ class ImportPackageTest(unittest.TestCase):
         self.assertEqual(update(), 'updated')
         self.assertEqual(update(), 'existing')
 
+    def test_skill_ui_reimport_and_uninstall_keep_shared_art_until_last_reference(self):
+        from imported_package_uninstall import delete_identity
+        from skill_ui import icon_names
+        from test_skill_ui import png
+
+        source = 'Family.zip'
+        first, second = record('a'), record('b')
+        for candidate, personality in [(first, '12345'), (second, '12346')]:
+            candidate['entry']['private_declaration'] = {
+                'root': 'family', 'source': 'family.zip', 'personality': personality,
+            }
+
+        def prepare(first_name, *, include_first=True):
+            with ZipFile(self.archive, 'w') as archive:
+                archive.writestr('Family/custom_limbus_data/personality/units.json', json.dumps({'list': [
+                    {'id': 12345, 'defenseSkillIDList': [1234504]},
+                    {'id': 12346, 'defenseSkillIDList': [1234604]},
+                ]}))
+                archive.writestr('Family/custom_limbus_locale/EN/skillList/names.json',
+                                 json.dumps({'1234504': {'name': first_name},
+                                             '1234604': {'name': 'Second guard'}}))
+                for skill_id in ([1234504] if include_first else []) + [1234604]:
+                    archive.writestr(f'Family/custom_sprites/skill_{skill_id}.png', png())
+
+        prepare('First guard')
+        rows = self.convert(source, first, second)
+        folder = Path(rows[0]['package_directory'])
+        sidecars = [folder / (candidate['look'] + '.skill-ui.tsv') for candidate in (first, second)]
+        [shared] = icon_names(sidecars[0])
+        self.assertEqual(icon_names(sidecars[1]), {shared})
+        self.assertTrue((folder / shared).is_file())
+        self.assertEqual([row['status'] for row in self.convert(source, first, second)], ['existing'] * 2)
+
+        prepare('Updated', include_first=False)
+        self.assertEqual([row['status'] for row in self.convert(source, first, second)], ['updated', 'existing'])
+        self.assertIn('Updated', sidecars[0].read_text(encoding='utf8'))
+        self.assertEqual(icon_names(sidecars[0]), set())
+        self.assertTrue((folder / shared).is_file())
+
+        delete_identity(self.data, self.addon, second['entry']['identity_id'], lock_factory=skin_import.FileLock)
+        self.assertFalse(sidecars[1].exists())
+        self.assertFalse((folder / shared).exists())
+        self.assertTrue(sidecars[0].is_file())
+
     def dialogue_record(self, digit, owner, sample):
         buffer = BytesIO()
         with wave.open(buffer, 'wb') as clip:
@@ -375,6 +419,10 @@ class ImportPackageTest(unittest.TestCase):
         self.assertEqual((managed / 'untouched.txt').read_bytes(), b'unrelated')
 
     def test_builtin_writes_into_named_package(self):
+        from imported_package_uninstall import delete_identity
+        from test_skill_ui import png
+        from skill_ui import icon_names
+
         runtime = self.data / 'Assets/runtime/story_native/story_BRolandBaseAppearance.bin'
         runtime.parent.mkdir()
         runtime.write_bytes(b'compatible')
@@ -396,11 +444,24 @@ class ImportPackageTest(unittest.TestCase):
             self.assertEqual(package['missing_identities'], [import_packages.BUILTIN])
             restored, = self.convert('RolandBundle.zip', {'builtin': 'roland'})
             self.assertEqual(restored['status'], 'updated')
+            art = png()
+            with patch('skill_ui_import.collect_external', return_value=[
+                    (10115, [(1011501, 'attack1', 0, '作者的招式', b'')], {}, art)]):
+                changed, = self.convert('RolandBundle.zip', {'builtin': 'roland'})
+                same, = self.convert('RolandBundle.zip', {'builtin': 'roland'})
+                self.assertEqual((changed['status'], same['status']), ('updated', 'existing'))
         folder = Path(row['package_directory'])
         self.assertEqual((folder / 'BRoland.bundle').read_bytes(), b'model')
         self.assertFalse((resources / 'BRoland.bundle').exists())
         self.assertEqual(import_packages.locator_path(self.data, import_packages.BUILTIN).read_text('utf8'),
                          '外来外观/RolandBundle/BRoland.bundle')
+        sidecar = folder / 'BRolandBaseAppearance.skill-ui.tsv'
+        self.assertIn('作者的招式', sidecar.read_text(encoding='utf8'))
+        [portrait] = icon_names(sidecar)
+        self.assertEqual((folder / portrait).read_bytes(), art)
+        delete_identity(self.data, self.addon, import_packages.BUILTIN, lock_factory=skin_import.FileLock)
+        self.assertFalse(sidecar.exists())
+        self.assertFalse((folder / portrait).exists())
 
 
 if __name__ == '__main__':

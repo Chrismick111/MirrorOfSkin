@@ -3409,16 +3409,19 @@
             )
             .join("");
         const chapters = new Map();
+        const importedChapters = new Map();
         const counts = new Map();
         for (const entry of data.catalog) {
-          if (isImportedIdentity(String(entry.identity_id))) continue;
+          const imported = isImportedIdentity(String(entry.identity_id));
           for (const [key, label] of catalogChapters(entry)) {
             chapters.set(key, label);
             counts.set(key, (counts.get(key) || 0) + 1);
+            if (imported) importedChapters.set(key, label);
           }
         }
         for (const [id, info] of Object.entries(data.chapterArt || {})) {
           if (info.label) chapters.set(id, info.label);
+          if (info.label && importedChapters.has(id)) importedChapters.set(id, info.label);
           if (!chapters.has(id)) {
             const label =
               info.label ||
@@ -3427,31 +3430,21 @@
             chapters.set(id, label);
           }
         }
-        const orderedChapters = [...chapters].sort(
+        const sortChapters = groups => [...groups].sort(
           (a, b) => chapterRank(a[0]) - chapterRank(b[0]) || a[1].localeCompare(b[1], "zh-CN"),
         );
-        $("#addChapter").innerHTML =
-          '<option value="">全部章节</option>' + orderedChapters
-            .map(
-              ([id, label]) =>
-                `<option value="${esc(id)}">${esc(label)}</option>`,
-            )
-            .join("");
+        const chapterOptions = groups => '<option value="">全部章节</option>' +
+          groups.map(([id, label]) => `<option value="${esc(id)}">${esc(label)}</option>`).join("");
+        const orderedChapters = sortChapters(chapters);
+        $("#addChapter").innerHTML = chapterOptions(orderedChapters);
         $("#addRole").value = selectedRole;
         $("#addChapter").value = chapters.has(selectedChapter) ? selectedChapter : "";
         const importedRole = $("#importedRole").value;
         const importedChapter = $("#importedChapter").value;
-        const options = orderedChapters
-          .map(([id, label]) => `<option value="${esc(id)}">${esc(label)}</option>`)
-          .join("");
-        $("#importedRole").innerHTML =
-          '<option value="">全部角色</option>' +
-          names
-            .map((name, index) => `<option value="${101 + index}">${esc(name)}</option>`)
-            .join("");
-        $("#importedChapter").innerHTML = '<option value="">全部章节</option>' + options;
+        $("#importedRole").innerHTML = $("#addRole").innerHTML;
+        $("#importedChapter").innerHTML = chapterOptions(sortChapters(importedChapters));
         $("#importedRole").value = importedRole;
-        $("#importedChapter").value = chapters.has(importedChapter) ? importedChapter : "";
+        $("#importedChapter").value = importedChapters.has(importedChapter) ? importedChapter : "";
         renderChapterCards(orderedChapters, counts);
       }
       function renderChapterCards(chapters, counts) {
@@ -3462,10 +3455,7 @@
           ? `<img src="${esc(personalityArt.image_url)}" alt="" loading="lazy">`
           : "";
         const personalityCard = `<button type="button" class="chapter-card" data-chapter="__personality__" title="全部人物的人格外观">${personalityImage}<span class="chapter-tag">人格</span><span class="chapter-name">人格外观 <small>· ${personalityCount}项</small></span></button>`;
-        const stockCount = data.catalog.filter(
-          (entry) => !isImportedIdentity(String(entry.identity_id)),
-        ).length;
-        const allCard = `<button type="button" class="chapter-card" data-chapter=""><span class="chapter-name">全部外观 <small>· ${stockCount}项</small></span></button>`;
+        const allCard = `<button type="button" class="chapter-card" data-chapter=""><span class="chapter-name">全部外观 <small>· ${data.catalog.length}项</small></span></button>`;
         $("#chapterCards").innerHTML =
           allCard +
             personalityCard +
@@ -3538,7 +3528,9 @@
           buttons.forEach(button => button.disabled = false);
         }
       }
-      $("#chapterManager").addEventListener("toggle", () => { if ($("#chapterManager").open) refreshChapterManager(); });
+      $("#chapterManager").addEventListener("toggle", () => {
+        if (data && $("#chapterManager").open) refreshChapterManager();
+      });
       $("#manageChapter").onchange = () => { $("#chapterName").value = $("#manageChapter").selectedOptions[0]?.textContent || ""; };
       $("#chapterSearch").oninput = renderChapterManageList;
       $("#chapterManageList").onchange = e => { const el = e.target.closest("[data-manage-id]"); if (!el) return; if (el.checked) chapterSelection.add(el.dataset.manageId); else chapterSelection.delete(el.dataset.manageId); $("#chapterSelectionCount").textContent = `已选 ${chapterSelection.size} 项`; };
@@ -3594,13 +3586,16 @@
         const match = name.match(/^(10[1-9]|11[0-2])\d{2}(?:_|$)/i);
         return match ? match[1] : "";
       }
+      function appearanceQuery(input) {
+        const query = input.value.trim().toLowerCase();
+        return query.replace(/\.(zip|rar|7z|carra2|bank)$/, "") || query;
+      }
       function addCandidates() {
-        const query = $("#addSearch").value.trim().toLowerCase().replace(/\.(zip|rar|7z|carra2|bank)$/i, "");
+        const query = appearanceQuery($("#addSearch"));
         const source = $("#addSource").value;
         const role = $("#addRole").value;
         const chapter = $("#addChapter").value;
         return data.catalog.filter((entry) => {
-          if (isImportedIdentity(String(entry.identity_id))) return false;
           if (
             source === "paired" &&
             !entry.paired_identities?.includes(
@@ -3718,7 +3713,7 @@
         renderIdentityRows($("#identityRows"), addCandidates());
       }
       function renderImportedList() {
-        const query = $("#importedSearch").value.trim().toLowerCase();
+        const query = appearanceQuery($("#importedSearch"));
         const role = $("#importedRole").value;
         const chapter = $("#importedChapter").value;
         renderIdentityRows($("#importedRows"), data.catalog.filter((entry) => {

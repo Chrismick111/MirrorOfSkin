@@ -1,3 +1,6 @@
+#ifdef NDEBUG
+#undef NDEBUG
+#endif
 #include <assert.h>
 #include <stdio.h>
 #include <string.h>
@@ -57,6 +60,7 @@ int main(void){
  swprintf(dirs[3],MAX_PATH,L"%ls\\ImportedSkins",dirs[2]);
  for(int i=0;i<4;i++)assert(CreateDirectoryW(dirs[i],NULL));
  assert(imported_bundle_path(look,filename,"Roland/BRoland.bundle",out,MAX_PATH)&&wcsstr(out,L"Assets\\Roland\\BRoland.bundle"));
+ assert(!imported_bundle_matches_loaded(look,filename,out));
  assert(imported_bundle_path(look,filename,NULL,out,MAX_PATH)&&wcsstr(out,L"MOS_data\\Assets\\ImportedSkins"));
  wchar_t loc[MAX_PATH],top[MAX_PATH],folder[MAX_PATH],bundle[MAX_PATH];
  swprintf(loc,MAX_PATH,L"%ls\\%hs.loc",dirs[3],look);
@@ -71,6 +75,10 @@ int main(void){
  save(bundle,"bundle",6);
  assert(imported_bundle_path(look,filename,"Roland/BRoland.bundle",out,MAX_PATH)&&!wcscmp(out,bundle));
  assert(imported_bundle_path(look,filename,NULL,out,MAX_PATH)&&!wcscmp(out,bundle));
+ assert(imported_bundle_matches_loaded(look,filename,bundle));
+ assert(!imported_bundle_matches_loaded(look,filename,L"C:\\original\\BRoland.bundle"));
+ assert(!imported_bundle_matches_loaded(look,filename,NULL));
+ assert(!imported_bundle_matches_loaded("OtherAppearance",filename,bundle));
 
  assert(DeleteFileW(bundle)&&RemoveDirectoryW(folder)&&RemoveDirectoryW(top));
  assert(!imported_bundle_path(look,filename,NULL,out,MAX_PATH));

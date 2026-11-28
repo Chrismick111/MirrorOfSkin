@@ -18,6 +18,7 @@ from framepack_manifest import skin_member_roots
 
 
 def _supported_member(path, size=1):
+    from skill_ui_import import supported_member
     folders = {part.casefold() for part in path.parts[:-1]}
     # These are game asset directories. Their internal notes do not credit the skin.
     asset_dirs = {'custom_sprites', 'custom_sounds', 'custom_limbus_locale', 'custom_buffs'}
@@ -25,7 +26,13 @@ def _supported_member(path, size=1):
         return True
     if portrait_member_limit(str(path)):
         return True
+    if supported_member(path, size):
+        return True
     suffix = path.suffix.casefold()
+    if (suffix in ('.webp', '.jpeg', '.jpg') and 0 < size <= 2 * 1024**2
+            and ({'custom_sprites', 'skill_icons'} & folders)
+            and path.stem.casefold().startswith(('profile_', 'skill_', 'bufficon_'))):
+        return True
     if next(skin_member_roots(path), None) is not None and suffix in (
             AUDIO_EXTENSIONS | {'.json', '.png', '.atlas', '.skel', '.bank'}):
         return True
