@@ -2154,7 +2154,16 @@ static MotionDelivery forward_projected_motion(void *app,int detail,uint8_t a1,i
   }
   if(sr_segment_pick(l,coin,u->segmentSequence-1,src?src->seconds[sourceDetail][sourceIndex]:0,
                      dst?dst->seconds:NULL,skin->motionCounts,skin->ordinaryClips,skin->ordinaryBodies,
-                     sourceIndex,&detail,&index))chosen=detail;
+                     sourceIndex,(uint8_t)(u&&u->coinKnown&&u->coinLast),&detail,&index))chosen=detail;
+ }
+ if(chosen<0&&skin&&detail>=0&&detail<SR_MOTION_CACHE&&skin->motionCounts[detail]>0&&
+    !u->coinDefense&&is_skill_detail(sourceDetail)){
+  chosen=detail;
+  if(index>=skin->motionCounts[detail])index=skin->motionCounts[detail]-1;
+  static DWORD lastProjLog[SR_UNIT_MAX];int slot=(int)(u-g_units);DWORD now=GetTickCount();
+  if(slot>=0&&slot<SR_UNIT_MAX&&(DWORD)(now-lastProjLog[slot])>=5000){
+   lastProjLog[slot]=now;char line[192];snprintf(line,sizeof(line),"segment planner unavailable; using mapped detail for projection look=%.63s detail=%d index=%d",skin->look,detail,index);bootlog(line);
+  }
  }
  if(u&&skin&&validAction&&coin>=0&&is_skill_detail(sourceDetail)){char msg[256];snprintf(msg,sizeof(msg),"segment actual look=%.95s source=%d:%d coin=%d target=%d:%d planned=%d",skin->look,sourceDetail,sourceIndex,coin,detail,index,chosen);bootlog(msg);}
  if(u&&skin&&(importedAttack||is_skill_detail(sourceDetail)))g_projection=(ProjectionContext){app,sourceDetail,sourceIndex,chosen};
@@ -2465,6 +2474,13 @@ static void change_motion_hook(void *self,int detail,uint8_t a1,int index,uint8_
       seen[word]|=bit;char line[224];
       snprintf(line,sizeof(line),"attack playback %s look=%.63s detail=%d->%d index=%d->%d known=%d tier=%d",targetDetail!=requested?"fallback":"unavailable",current_skin->look,requested,targetDetail,index,targetIndex,current_unit->coinKnown,current_unit->coinTier);bootlog(line);
     }
+  }
+  /* The game rejects a motion index past the donor's own hitdata ("character
+     viewer exceeded the current hitdata's motion count"). Different forms of
+     the source identity can expose more motions than this appearance has. */
+  if(current_skin&&targetDetail>=0&&targetDetail<SR_MOTION_CACHE){
+    int donorCount=current_skin->motionCounts[targetDetail];
+    if(donorCount>0&&targetIndex>=donorCount)targetIndex=donorCount-1;
   }
   MotionDelivery sent=forward_projected_motion(target,targetDetail,a1,targetIndex,a3,callback,a5,mi,detail,index,current_attack_coin(current_unit),current_unit&&current_unit->coinKnown,current_unit?current_unit->observedAction:NULL,current_unit&&current_unit->coinKnown?current_unit->coinIndex:-1);
   if(enabled_now()&&current_unit&&!g_motionDepth&&detail!=0&&detail!=18&&detail!=5){

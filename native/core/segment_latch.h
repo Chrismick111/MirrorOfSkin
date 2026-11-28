@@ -70,8 +70,18 @@ static int sr_segment_pool_all_used(const SrSegmentLatch *s){
 static int sr_segment_pick(SrSegmentLatch *s,int coin,unsigned ordinal,double source,
                            const double donor[128][32],const int counts[128],
                            const uint32_t ordinary[128],const SrOrdinaryBodies *bodies,
-                           int sourceIndex,int *detail,int *index){
+                           int sourceIndex,uint8_t last,int *detail,int *index){
  if(coin<0||coin>=SR_VARIETY_COINS||!s||!detail||!index)return 0;
+ /* The final coin must land on a real authored part of the selected group.
+    A source with more motions than the donor can otherwise ask for a part the
+    donor does not have, which the game rejects at playback time. */
+ if(last&&*detail>=0&&*detail<128&&counts&&counts[*detail]>0){
+  int n=counts[*detail];
+  *index=n-1;
+  s->seen[coin]=1;s->groups[coin]=(unsigned char)*detail;s->indices[coin]=(unsigned char)*index;
+  s->uses[*detail]++;s->nextClip[*detail]=0;s->usedClips[*detail]|=UINT32_C(1)<<*index;
+  return 1;
+ }
  if(!s->seen[coin]){
   int requested=*detail,requestedIndex=*index;
   int targetValid=sr_segment_target_valid(counts,ordinary,requested,requestedIndex);
