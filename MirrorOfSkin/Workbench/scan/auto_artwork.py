@@ -55,7 +55,9 @@ def prefab_sprite(env, appearance):
     return found[0][2].read().image
 
 def classify_asset(key):
-    m=re.search(r'/Sprite/Unit/Portrait/(\d+)_portrait\.png$',key,re.I)
+    # Some event enemies keep their portrait in a dated subfolder, e.g.
+    # Sprite/Unit/Portrait/Ep7_3_Portrait/8412_portrait.png.
+    m=re.search(r'/Sprite/Unit/Portrait/(?:[^/]+/)*(\d+)_portrait\.png$',key,re.I)
     if m:return ('portrait',m.group(1))
     m=re.search(r'/SkinPreview/(?:[^/]+/)*(\d+)\.png$',key,re.I)
     if m:return ('preview',m.group(1))
@@ -103,13 +105,13 @@ class BundleReader:
                 env.load_file(str(dep));loaded.add(cab)
         raise ValueError('图片资源依赖过多')
 
-def extract(root,cache,unity,files=None,*,game=None,index=None,progress=lambda *args: None,portraits=True,images=True,aliases=None):
+def extract(root,cache,unity,files=None,*,game=None,index=None,progress=lambda *args: None,portraits=True,images=True,aliases=None,search_bundles=None,pools=None):
     root=pathlib.Path(root); cache=pathlib.Path(cache); wb=root/'Workbench';out=wb/'local_portraits';out.mkdir(parents=True,exist_ok=True)
     def load(path,default):
         try:return json.loads(path.read_text(encoding='utf-8-sig'))
         except (OSError,ValueError):return default
     manifest_path=out/'local_portraits.json'; manifest=load(manifest_path,{})
-    pools=load(root/'Assets/runtime/all_sinners_pools.json',{})
+    pools=load(root/'Assets/runtime/all_sinners_pools.json',{}) if pools is None else pools
     appearances={str(e.get('identity_id','')):str(e.get('appearance_name','')) for p in pools.values() for e in p.get('entries',[])}
     wanted=candidates(pools,load(wb/'portrait_manifest.json',{}),manifest,root=root)
     source_paths=load(wb/'data/portrait_source_paths.json',{})
@@ -126,11 +128,20 @@ def extract(root,cache,unity,files=None,*,game=None,index=None,progress=lambda *
         if isinstance(row,dict) and (out/str(row.get('file',''))).is_file():continue
         if isinstance(known,dict) and (wb/'portraits'/str(known.get('file',''))).is_file():continue
         wanted['@'+identity]=[identity]
-    if not portraits or not images: wanted = {}
+    # Disabling chapter art must not disable portrait restore.
+    if not portraits: wanted = {}
     matches={}; explicit={};chapters={};errors=[]
     bundle_paths=[cache/key for key in index] if index is not None else list(files if files is not None else (pathlib.Path(d)/'__data' for d,_,f in os.walk(cache) if '__data' in f))
     indexed={str(cache/key):row for key,row in index.items()} if index is not None else None
     reader=BundleReader(unity,bundle_paths,indexed)
+    if search_bundles:
+        # A portrait sprite often lives in an older bundle whose CAB dependency
+        # was downloaded with a newer update. Keep the indexed (newest-first)
+        # bundles in front, then let find() walk the remaining bundles lazily.
+        ordered=[str(p) for p in bundle_paths]
+        known=set(ordered)
+        ordered.extend(str(p) for p in search_bundles if str(p) not in known)
+        reader.paths=iter(ordered)
     paths = ((cache/key, row['art_keys']) for key,row in index.items()) if index is not None else ((p,None) for p in bundle_paths)
     for path, keys in paths:
         try:

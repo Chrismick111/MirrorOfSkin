@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 """Restore workbench images from the local game's cached Unity bundles."""
 import argparse,json,os,pathlib,sys
+from collections import defaultdict
 sys.path.insert(0,str(pathlib.Path(__file__).resolve().parents[1]))
 import _module_paths
 from file_lock import FileLock
@@ -131,8 +132,75 @@ def scan(root,cache,unity,game=None):
     emit('done',saved,total_missing,'已从本地游戏资源恢复 %d 张图片，%d 张未找到'%(saved,remaining),count=saved,missing=remaining,errors=failed)
     return {'count':saved,'missing':remaining,'errors':failed}
 
+def targeted(root,cache,unity,ids,*,max_newest=400,game=None):
+    """Find portraits only for identities that are known but still have no art.
+
+    Bundles are walked newest-first and the loop stops as soon as every target
+    has a candidate key. CAB dependencies are resolved lazily from the remaining
+    bundles by auto_artwork, so a sprite in an older bundle can still be decoded
+    when its CAB arrived with a newer update.
+    """
+    import re
+    import auto_artwork
+    root=pathlib.Path(root);wb=root/'Workbench'
+    pools=read(root/'Assets/runtime/all_sinners_pools.json')
+    source_paths=read(wb/'data/portrait_source_paths.json')
+    if not isinstance(source_paths,dict):source_paths={}
+    explicit={str(k).lower().replace('\\','/'):str(v) for k,v in source_paths.items() if isinstance(v,str)}
+    wanted=set(map(str,ids))
+    target={};prefixes={}
+    for sinner,pool in pools.items():
+        rows=[]
+        for entry in pool.get('entries',[]):
+            identity=str(entry.get('identity_id',''))
+            if identity not in wanted:continue
+            rows.append(entry)
+            m=re.match(r'^(\d+)_',str(entry.get('appearance_name','')))
+            if m:prefixes[identity]=m.group(1)
+        if rows:target[sinner]={'entries':rows}
+    missing=wanted-set(prefixes)
+    if missing:emit('verify',0,0,'部分目标缺少可用外观名：'+','.join(sorted(missing)))
+    if not target:
+        emit('done',0,0,'没有需要定向获取的外观')
+        return {'added':[],'unresolved':sorted(wanted),'errors':[],'scanned':0}
+    bundles=[pathlib.Path(d)/'__data' for d,_,files in os.walk(cache) if '__data' in files]
+    bundles.sort(key=lambda p:p.stat().st_mtime,reverse=True)
+    index={};matches=defaultdict(set);scanned=0
+    for n,bundle in enumerate(bundles,1):
+        try:env=unity.load(str(bundle))
+        except Exception:continue
+        art_keys=[];prefab_keys=[]
+        for key in env.container.keys():
+            text=str(key);low=text.lower().replace('\\','/')
+            hit=auto_artwork.classify_asset(text)
+            if hit:
+                art_keys.append(text);matches[hit[1]].add(low)
+            elif low in explicit:
+                art_keys.append(text);matches[explicit[low]].add(low)
+            if '/prefab/sd/' in low and low.endswith('.prefab'):prefab_keys.append(text)
+        index[str(bundle.relative_to(cache))]={'art_keys':art_keys,'prefab_keys':prefab_keys,
+                                                'cab_keys':list(getattr(env,'cabs',{})),'fingerprint':None}
+        scanned=n
+        if n%20==0 or all(prefix in matches for prefix in prefixes.values()):
+            emit('scanning',n,len(bundles),'正在定向检索 %d 个外观'%len(wanted),saved=0,missing=len(wanted))
+        if all(prefix in matches for prefix in prefixes.values()) and n>=min(max_newest,len(bundles)):
+            break
+    emit('scanning',scanned,len(bundles),'正在提取定向外观图片')
+    artwork=auto_artwork.extract(root,cache,unity,index=index,game=game,aliases=None,
+                                 portraits=True,images=False,search_bundles=bundles,pools=target)
+    added=artwork.get('added',[])
+    unresolved=sorted(wanted-set(added))
+    if unresolved:
+        emit('warning',0,0,'仍未取得图片：'+','.join(unresolved))
+    emit('done',len(added),len(wanted),'定向获取 %d/%d 个外观图片，扫描 %d/%d 个资源包'%
+         (len(added),len(wanted),scanned,len(bundles)),count=len(added),missing=len(unresolved))
+    return dict(artwork,scanned=scanned,total_bundles=len(bundles),unresolved_targets=unresolved)
+
 def main():
     parser=argparse.ArgumentParser();parser.add_argument('--addon',required=True);parser.add_argument('--cache');parser.add_argument('--game')
+    parser.add_argument('--targeted',action='store_true',help='only restore portraits for --ids')
+    parser.add_argument('--ids',default='',help='comma-separated identity ids for targeted restore')
+    parser.add_argument('--max-newest',type=int,default=400,help='index at most this many newest bundles first')
     args=parser.parse_args();root=pathlib.Path(args.addon)
     try:
         import scan_units
@@ -147,7 +215,12 @@ def main():
             (root/'Workbench/images_disabled.flag').unlink(missing_ok=True)
             UnityPy=unity()
             UnityPy.config.FALLBACK_UNITY_VERSION='6000.3.0f1'
-            scan(root,cache,UnityPy,game=game)
+            if args.targeted:
+                ids=[item.strip() for item in args.ids.split(',') if item.strip()]
+                if not ids:raise RuntimeError('定向获取需要 --ids')
+                targeted(root,cache,UnityPy,ids,max_newest=args.max_newest,game=game)
+            else:
+                scan(root,cache,UnityPy,game=game)
         return 0
     except Exception as exc:
         emit('error',message='本地资源读取失败：'+str(exc));return 1

@@ -18,6 +18,11 @@ class ArtworkRecovery(unittest.TestCase):
         self.assertEqual(auto_artwork.classify_asset('Assets/Sprites/SkinPreview/SkinPreview-Archived/01/10104_Name_0_idle.png'),('archive_preview','10104'))
         self.assertIsNone(auto_artwork.classify_asset('Assets/Sprites/SkinPreview/SkinPreview-Archived/01/10104_Name_attack.png'))
 
+    def test_nested_event_portrait_key_is_detected(self):
+        self.assertEqual(auto_artwork.classify_asset(
+            'Assets/Resources_moved/Sprite/Unit/Portrait/Ep7_3_Portrait/8412_portrait.png'),
+            ('portrait','8412'))
+
     def test_same_source_in_multiple_bundles_retries_an_unreadable_copy(self):
         class Image:
             def save(self,path,format):Path(path).write_bytes(b'PNG')
