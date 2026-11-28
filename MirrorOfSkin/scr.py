@@ -1199,6 +1199,19 @@ def open_settings(*unused):
     open_workbench(from_menu=True)
 
 
+def open_panel():
+    """Launcher run-entry (▶ button): open the MOS workbench."""
+    open_workbench(from_menu=True)
+
+
+_register_run = getattr(MANAGER, 'register_run_func', None)
+if callable(_register_run):
+    try:
+        _register_run(NAME, open_panel, '打开设置面板')
+    except Exception:
+        log('run entry registration failed: ' + traceback.format_exc())
+
+
 _registry = getattr(MANAGER, '_sinners_warp_workers', None)
 if _registry is None:
     _registry = {}
